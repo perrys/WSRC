@@ -1,0 +1,109 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+
+<head>
+  <title>WSRC Tournaments 2014</title>
+  <link type='text/css' rel="stylesheet" href="http://code.jquery.com/ui/1.10.3/themes/smoothness/jquery-ui.css" />
+  <link type='text/css' rel="stylesheet" href="/jquery-ui-1.10.3/themes/base/jquery-ui.css" />
+
+  <link type='text/css' rel='stylesheet' href='resources/css/jquery.loadmask.css'/>
+  <link type='text/css' rel='stylesheet' href='resources/css/tournament.css'/>
+
+  <script type="text/javascript" src="/jquery-1.9.1.js"></script>
+  <script type="text/javascript" src="http://code.jquery.com/jquery-1.9.1.js"></script>
+
+  <script type="text/javascript" src="/jquery-ui-1.10.3/ui/jquery-ui.js"></script>
+<!--  <script type="text/javascript" src="http://code.jquery.com/ui/1.10.3/jquery-ui.js"></script> -->
+  <script type="text/javascript" src="resources/js/jquery.loadmask.js"></script>
+
+  <script type="text/javascript">
+  jQuery.noConflict();
+  </script>
+
+  <script type="text/javascript" src="resources/js/restful.js"></script>
+  <script type="text/javascript">
+  WSRC.COMP_METAS = [{{ competitions_array }}];
+  jQuery(document).ready(function(){WSRC.onReady()});
+  </script>
+</head>
+<body>
+
+ <div id="header">
+  <img alt="WSRC Logo" src="resources/images/WSRC-logo_web_.jpg" width="169" height="61" style="float:left" />
+  <h1 id="title">Tournaments 2014</h1>
+ </div>
+
+ <div id="topbox">
+   <button id="EditButton"    class='initiallyHidden'>Edit</button>
+   <button id="RefreshButton" class='initiallyHidden'>Refresh</button>
+ </div>
+
+ <div id="tabs" class="initiallyHidden">
+   <ul>
+{% for comp in competitions %}
+     <li><a href="#comp_{{ comp.id }}">{{ comp.name }}</a></li>
+{% endfor %}
+   </ul>
+{% for comp in competitions %}
+   <div id="comp_{{ comp.id }}" class="x-competition" style="padding-left: 5px; padding-right: 5px">
+{{ comp.table }}
+   </div>
+{% endfor %}
+ </div>
+
+ <div id="dialog-confirm" title="" style="display:none;">  
+ </div>
+
+
+ <div id="score-entry-form" title="Match Scores" style="display:none;" class="ui-widget">
+   <p class="validateTips" style="border: 1px solid white;">Please enter match scores.</p>
+   <form action="">
+     <p>
+       <label class="field" for="matchselector">Match:</label>
+       <input name="matchselector" id="matchselector" class="text ui-widget-content ui-corner-all" />
+       <input type="hidden" name="tournament_id" value=""/>
+       <input type="hidden" name="match_id" value=""/>
+       <input type="hidden" name="player1_id" value=""/>
+       <input type="hidden" name="player2_id" value=""/>
+     </p>
+     <p>
+       <label class="field" for="result_type_normal">Result Type:</label>
+       <input type="radio" name="result_type" id="result_type_normal" value="normal" class="ui-widget-content" onchange="WSRC.onResultTypeChanged(this)" checked="checked"/>Normal Match
+     </p>
+     <p>
+       <label class="field" for="result_type_walkover"></label>
+       <input type="radio" name="result_type" id="result_type_walkover" value="walkover" class="ui-widget-content" onchange="WSRC.onResultTypeChanged(this)"/>Walkover
+     </p>
+     <p id="walkover_input" style="display: none;">
+       <label class="field" for="walkover_result">Winner:</label>
+       <select name="walkover_result" id="walkover_result" class="ui-widget-content, ui-corner-all">
+       </select>
+     </p>
+
+     <table class="score_entry" border="0" cellpadding="0" cellspacing="0">
+       <tr>
+	 <th></th>
+	 <th class="score_column">Player 1</th>
+	 <th class="score_column">Player 2</th>
+       </tr>
+{% for i in range(1,6) %}
+       <tr class="score_row" id="set_{{ i }}_row">
+	 <td class="score_row_label">Set&nbsp;{{ i }}:</td>
+	 <td class="score_column">
+	   <div>
+	   <input id="team1_score{{ i }}" name="team1_score{{ i }}"/>
+	   </div>
+	 </td>
+	 <td class="score_column">
+	   <div>
+	   <input id="team2_score{{ i }}", name="team2_score{{ i }}"/>
+	   </div>
+	 </td>
+       </tr>
+{% endfor %}
+     </table>
+   </form>
+ </div>
+</body>
+</html>

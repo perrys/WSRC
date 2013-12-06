@@ -1,0 +1,155 @@
+body {
+  font-family: Verdana, Tahoma, Geneva, "Lucida Sans Unicode", "Lucida Grande", sans-serif;
+  font-size: 12px;
+}
+
+.initiallyHidden {
+  display: none;
+}
+
+label.field, td.score_row_label { 
+  float:left;
+  width: 100px;
+  padding-top:5px;
+  text-align:left;
+  font-weight:bold;
+}
+
+input.text { 
+	margin-bottom:12px; 
+	width: 270px; 
+	padding: 4px; 
+}
+
+fieldset { 
+	padding:0; 
+	border:0; 
+	margin-top:25px; 
+}
+
+div#header {
+	height: 80px;
+}
+
+div#topbox {
+	position: absolute;
+	top: 10px;
+	right: 10px;
+}
+
+h1#title {
+  padding: 10px 0px 10px 20px;
+  margin: 0 0 0 100px;
+  font-size: 40px;
+}
+
+table.score_entry {
+ padding-top: 25px;
+ text-align:center;	
+}
+
+table.score_entry th {
+ padding:0 10px 5px 0px;
+}
+
+td.score_column, th.score_column {
+ padding:0 10px 0px 0px;
+ max-width: 130px;
+ vertical-align: bottom;
+}
+
+table.score_entry tr.score_row td input{
+ width: 110px;
+ text-align:center;
+}
+
+table.bracket {
+  font-size: 90%; 
+  margin: 0;
+  padding: 0;
+  border: 0;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  -khtml-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+
+tbody.bracket {
+  padding: 0px;
+}
+
+table.bracket td {
+  margin: 0px;
+}
+
+th.leftspacer {
+  width: 6px;
+}
+
+th.rightspacer {
+  width: 5px;
+}
+
+td.verticalspacer {
+	height: 7px;
+}
+
+td.toplink {
+  border-style: solid; 
+  border-color: black; 
+  border-width: 0 0 2px 0;
+}
+
+td.bottomlink {
+  border-style: solid; 
+  border-color: black; 
+  border-width: 2px 0 0 0;
+}
+
+td.stretchlink {
+  border-style: solid; 
+  border-color: black; 
+  border-width: 2px 2px 2px 0;
+}
+
+td.seed {
+  text-align: center;
+  border: 1px solid #aaa;
+  background-color: #F8F8F8;
+  padding: 2px 2px 2px 2px;
+  white-space: nowrap;
+}
+
+td.score {
+  text-align: center;
+  border: 1px solid #aaa;
+  border-left: 0px;
+  background-color: #F8F8F8;
+  padding: 2px 2px 2px 2px;
+}
+
+td.player {
+  border: 1px solid #aaa;
+  border-left: 0px;
+  padding: 2px 6px 2px 4px;
+  white-space: nowrap;
+  max-width: 150px;
+  min-width: 80px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 0.9em;
+}
+
+td.wsrc-highlight {
+ background-color: #dadada;
+}
+
+td.bye {
+  border: 1px solid #eee;	
+}
+
+td.winningscore, td.winner {
+  font-weight: bold; 
+}

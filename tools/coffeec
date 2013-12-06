@@ -1,0 +1,40 @@
+#!/usr/bin/nodejs
+
+var fs = require('fs');
+var CoffeeScript = require('coffee-script');
+
+(function() {
+  return {
+    compilerOptions: {},
+    walk: function(directory){
+      var _this = this;
+      fs.readdir(directory, function(err, files) {
+//	console.log("examining: " + directory);
+	var i;
+	for (i=0; i<files.length; ++i) {
+	  var file = directory + "/" + files[i];
+	  var statbuf = fs.statSync(file);
+	  if (statbuf.isDirectory()) {
+	    _this.walk(file);
+	  } else if (statbuf.isFile(file) && file.slice(-7) === '.coffee') {
+	    var target = file.slice(0, -7) + ".js";
+	    var statbufTarget;
+	    if (fs.existsSync(target)) {
+		statbufTarget = fs.statSync(target);
+	    }
+	    if (typeof(statbufTarget) == "undefined" || statbuf.mtime.getTime() > statbufTarget.mtime.getTime()) {
+	      console.log(" " + file + " is newer than " + target + ", compiling...");
+	      var input = fs.readFileSync(file, 'utf8');
+	      try {		
+		var output = CoffeeScript.compile(input, _this.compilerOptions);
+		fs.writeFileSync(target, output);
+	      } catch(err) {
+		console.log(err);
+	      }
+	    }
+	  }
+	}
+      });
+    }
+  };
+})().walk(".");
