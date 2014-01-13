@@ -14,13 +14,13 @@ window.WSRC =
     jQuery("#dialog-confirm").html(msg)
     jQuery("#dialog-confirm").dialog(
       resizable: false
-      height:200
+      height:200 
       width: 300
       modal: true
       title: "ERROR"
       buttons: 
         "Close": () ->
-          jQuery( this ).dialog( "close" );
+          jQuery( this ).dialog( "close" )
     )
     return true
 
