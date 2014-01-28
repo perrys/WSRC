@@ -5,6 +5,7 @@ import os.path
 import flask
 import httplib
 import datetime
+import hashlib
 
 app = flask.Flask(__name__)
 
@@ -12,6 +13,9 @@ import logging
 
 sys.path.append(os.path.dirname(__file__) + "/lib")
 from Database import DataBase
+
+AUTH_USER = "wsrc2014"
+AUTH_TOKEN = hashlib.md5("1945").hexdigest()
 
 def plain_response(msg, status):
   return flask.make_response(msg, status, {"Content-Type": "text/plain"})
@@ -102,11 +106,13 @@ def get_or_update_match():
 
   else:
     # request to update or delete a match score
+    login_id    = request_args.get("login_id")
+    login_token = request_args.get("login_token")
 
-    if False: # TODO: not authenticated
+    if (not login_id) or (not login_token):
       return plain_response("Authentication Failed", httplib.UNAUTHORIZED)
-    if False: # TODO: not authorized to change this result
-      return plain_response("User <user> cannot change match (%(match_id)d, %(tournament_id)d)" % locals(), httplib.FORBIDDEN)
+    if (login_id != AUTH_USER) or (login_token != AUTH_TOKEN): 
+      return plain_response("User \"%(login_id)s\" cannot change match (%(match_id)d, %(tournament_id)d)" % locals(), httplib.FORBIDDEN)
 
     try:
       player1_id = safeint(request_args.get("player1_id"))

@@ -5,17 +5,19 @@
 <head>
   <title>WSRC Tournaments 2014</title>
   <link type='text/css' rel="stylesheet" href="http://code.jquery.com/ui/1.10.3/themes/smoothness/jquery-ui.css" />
-  <link type='text/css' rel="stylesheet" href="/jquery-ui-1.10.3/themes/base/jquery-ui.css" />
+<!--  <link type='text/css' rel="stylesheet" href="/jquery-ui-1.10.3/themes/base/jquery-ui.css" /> -->
 
   <link type='text/css' rel='stylesheet' href='resources/css/jquery.loadmask.css'/>
   <link type='text/css' rel='stylesheet' href='resources/css/tournament.css'/>
 
-  <script type="text/javascript" src="/jquery-1.10.2.js"></script>
-<!--    <script type="text/javascript" src="http://code.jquery.com/jquery-1.10.2.js"></script> --->
+<!--  <script type="text/javascript" src="/jquery-1.10.2.js"></script> -->
+  <script type="text/javascript" src="http://code.jquery.com/jquery-1.10.2.js"></script>
 
-  <script type="text/javascript" src="/jquery-ui-1.10.3/ui/jquery-ui.js"></script>
-<!--  <script type="text/javascript" src="http://code.jquery.com/ui/1.10.3/jquery-ui.js"></script> -->
+<!--  <script type="text/javascript" src="/jquery-ui-1.10.3/ui/jquery-ui.js"></script> -->
+  <script type="text/javascript" src="http://code.jquery.com/ui/1.10.3/jquery-ui.js"></script>
   <script type="text/javascript" src="resources/js/jquery.loadmask.js"></script>
+  <script type="text/javascript" src="resources/js/jquery.cookie.js"></script>
+  <script type="text/javascript" src="resources/js/webtoolkit_md5.js"></script>
 
   <script type="text/javascript">
   jQuery.noConflict();
@@ -30,7 +32,7 @@
 <body>
 
  <div id="header">
-  <img alt="WSRC Logo" src="resources/images/WSRC-logo_web_.jpg" width="169" height="61" style="float:left" />
+  <a href="/index.html"><img alt="WSRC Logo" src="resources/images/WSRC-logo_web_.jpg" width="169" height="61" style="float:left" /></a>
   <h1 id="title">Tournaments 2014</h1>
  </div>
 
@@ -66,6 +68,8 @@
        <input type="hidden" name="match_id" value=""/>
        <input type="hidden" name="player1_id" value=""/>
        <input type="hidden" name="player2_id" value=""/>
+       <input type="hidden" name="login_id" value=""/>
+       <input type="hidden" name="login_token" value=""/>
      </p>
      <p>
        <label class="field" for="result_type_normal">Result Type:</label>
@@ -104,6 +108,18 @@
 {% endfor %}
      </table>
    </form>
+ </div>
+ <div id="score-login-form" title="Login" style="display:none;" class="ui-widget">
+   <form action="">
+     <p>
+       <label class="field" for="login_id">Login ID:</label>
+       <input name="login_id" id="login_id" class="text ui-widget-content ui-corner-all" />
+     </p>
+     <p>
+       <label class="field" for="login_pw">Password:</label>
+       <input name="login_pw" id="login_pw" class="text ui-widget-content ui-corner-all" />
+     </p>
+    </form>
  </div>
 </body>
 </html>
