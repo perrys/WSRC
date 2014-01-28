@@ -214,4 +214,4 @@ def get_or_update_match():
 if __name__ == "__main__":
   app.logger.addHandler(logging.StreamHandler(sys.stderr))
   app.logger.setLevel(logging.DEBUG)
-  app.run(debug=True)
+  app.run(debug=True,  host='0.0.0.0')
