@@ -1,7 +1,9 @@
 
 window.WSRC =
 
-  BASE_URL: "/wsrc"  
+  BASE_URL: "/tournaments"
+  PROXY_PREFIX: if document.URL == "http://localhost/" then "" else ".php"
+
 #  HIGHLIGHT_CLASS: "ui-state-hover" # includes bg image which changes dimensions
   HIGHLIGHT_CLASS: "wsrc-highlight"
   MIN_WIDTH: 100
@@ -167,7 +169,7 @@ window.WSRC =
     return true
 
   populateCompetition: (metaData, callback) ->
-    this.loadFromServer "/competition?id=" + metaData.id, #      "/competition" + metaData.id
+    this.loadFromServer "/competition" + this.PROXY_PREFIX + "?id=" + metaData.id, #      "/competition" + metaData.id
       successCB: (json) =>
         matches = json.payload
         this.competitions[metaData.id] = matches
@@ -240,6 +242,8 @@ window.WSRC =
       comp = this.getActiveTabIndex() + 1
       scoreform = jQuery("div#score-entry-form")
       scoreform.find("input[name='tournament_id']")[0].value = comp
+      scoreform.find("input[name='login_id']")[0].value    = jQuery.cookie("login_id") or ""
+      scoreform.find("input[name='login_token']")[0].value = jQuery.cookie("login_token") or ""
       opponentsCombo = scoreform.find("select#walkover_result")[0]
       clearOpponentsCombo = () ->
         while (opponentsCombo.options.length > 0)
@@ -309,6 +313,17 @@ window.WSRC =
         callback(c) 
     return true
 
+  onLoginButton: (callback) ->
+    login_id = jQuery("div#score-login-form input#login_id").val()
+    login_pw = jQuery("div#score-login-form input#login_pw").val()
+    jQuery.cookie("login_id", login_id)
+    token = MD5(login_pw)
+    jQuery.cookie("login_token", token)
+    scoreform = jQuery("div#score-entry-form")
+    scoreform.find("input[name='login_id']")[0].value    = login_id
+    scoreform.find("input[name='login_token']")[0].value = token
+    jQuery("div#score-login-form").dialog("close")
+    callback()
 
   onResultTypeChanged: (cmp) ->
     if cmp.value == "walkover"
@@ -348,7 +363,7 @@ window.WSRC =
     jQuery("div#score-entry-form").dialog("close")      
 
     jQuery.ajax(
-      url: this.BASE_URL + "/match"
+      url: this.BASE_URL + "/match" + this.PROXY_PREFIX
       type: "DELETE"
       data: formfields
       error:  (xhr, status) =>
@@ -362,10 +377,12 @@ window.WSRC =
     systemfields = jQuery("div#score-entry-form form input[type='hidden']")
     userfields   = jQuery("div#score-entry-form form :input").not(":hidden")
 
-    tournament_id  = systemfields.filter("[name='tournament_id']").val()
-    match_id       = systemfields.filter("[name='match_id']").val()
-    player1_id     = systemfields.filter("[name='player1_id']").val()
-    player2_id     = systemfields.filter("[name='player1_id']").val()
+    tournament_id = systemfields.filter("[name='tournament_id']").val()
+    match_id      = systemfields.filter("[name='match_id']").val()
+    player1_id    = systemfields.filter("[name='player1_id']").val()
+    player2_id    = systemfields.filter("[name='player2_id']").val()
+    login_id      = systemfields.filter("[name='login_id']").val()
+    login_token   = systemfields.filter("[name='login_token']").val()
 
     if player1_id == "" or player2_id = "" or match_id == "" or tournament_id == ""
       userfields.filter("#matchselector").addClass( "ui-state-error" )
@@ -385,23 +402,31 @@ window.WSRC =
       this.updateValidationTips("Please check results - cannot enter a draw")
       return false
 
-    jQuery("div#score-entry-form").dialog("close")      
-      
     formfields = {}
-    systemfields.each (idx, elt) ->
-      formfields[this.name] = this.value
-    userfields.each (idx, elt) ->
-      formfields[this.name] = this.value
-    jQuery.ajax(
-      url: this.BASE_URL + "/match"
-      type: "POST"
-      data: formfields
-      error:  (xhr, status) =>
-        this.errorDialog("Unable to save match result<br>Status: #{ xhr.statusText }<br>Reason: #{ xhr.responseText }")
-      success: (xhr, status) =>
-        this.refresh()
-    )
-          
+    systemfields.each((idx, elt) -> formfields[this.name] = this.value)
+    userfields.each((idx, elt) -> formfields[this.name] = this.value)
+
+    complete = () => 
+      jQuery.ajax(
+        url: this.BASE_URL + "/match" + this.PROXY_PREFIX
+        type: "POST"
+        data: formfields
+        error:  (xhr, status) =>
+          if (xhr.status == 403)
+            systemfields.filter("[name='login_token']").val("")
+          this.errorDialog("Unable to save match result<br>Status: #{ xhr.statusText }<br>Reason: #{ xhr.responseText }")
+        success: (xhr, status) =>
+          jQuery("div#score-entry-form").dialog("close")              
+          this.refresh()
+      )
+
+    if login_id == "" or login_token == ""
+      loginform = jQuery("div#score-login-form")
+      loginform.on("dialogclose", () => this.onLoginButton(complete))
+      loginform.dialog("open")
+    else
+      complete()
+
       
   onReady: () ->
 
@@ -439,6 +464,16 @@ window.WSRC =
           jQuery( this ).dialog( "close" )
       close: () ->
 
+    jQuery("div#score-login-form").dialog
+      autoOpen: false
+      show: "blind"
+      width: 350
+      modal: true
+      closeOnEscape: true
+      close: () ->
+      buttons:
+        "Login": () -> jQuery( this ).dialog( "close" )
+        
     jQuery("div#score-entry-form table.score_entry td input").spinner
       change: (evt, ui) =>
         this.updateValidationTips()
@@ -472,9 +507,9 @@ window.WSRC =
         loadMaskId: "body" 
       return true
       
-    loadGlobal("/tournament", (payload) =>
+    loadGlobal("/tournament" + this.PROXY_PREFIX, (payload) =>
       this.setEndDates(payload)
-      loadGlobal("/players", (payload) =>
+      loadGlobal("/players" + this.PROXY_PREFIX, (payload) =>
         this.players = payload
         # now the other loads are complete, fetch and load all competitions
         this.refresh(true, (comp) =>
