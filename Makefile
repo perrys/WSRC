@@ -5,7 +5,7 @@ SED = sed
 
 IMG_SRCS = $(notdir $(wildcard resources/images/*))
 CSS_SRCS = $(notdir $(wildcard resources/css/*.css))
-JS_SRCS  = restful.js jquery.loadmask.js
+JS_SRCS  = restful.js jquery.loadmask.js jquery.cookie.js webtoolkit_md5.js
 
 TARGETS = $(INSTALLDIR)/index.html $(INSTALLDIR)/wsrc/wsrc.wsgi $(INSTALLDIR)/wsrc/wsrc_server.py $(INSTALLDIR)/wsrc/lib/Database.py \
 	$(addprefix $(INSTALLDIR)/resources/js/,$(JS_SRCS)) \
