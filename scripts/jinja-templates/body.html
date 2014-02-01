@@ -4,17 +4,28 @@
 
 <head>
   <title>WSRC Tournaments 2014</title>
-  <link type='text/css' rel="stylesheet" href="http://code.jquery.com/ui/1.10.3/themes/smoothness/jquery-ui.css" />
-<!--  <link type='text/css' rel="stylesheet" href="/jquery-ui-1.10.3/themes/base/jquery-ui.css" /> -->
+
+{% if USE_LOCALLINKS %}
+  <link type='text/css' rel="stylesheet" href="/jquery-ui-1.10.3/themes/base/jquery-ui.css" />
+{% else %}
+  <link type='text/css' rel="stylesheet" href="http://code.jquery.com/ui/1.10.3/themes/smoothness/jquery-ui.css" /> 
+{% endif %}
 
   <link type='text/css' rel='stylesheet' href='resources/css/jquery.loadmask.css'/>
   <link type='text/css' rel='stylesheet' href='resources/css/tournament.css'/>
 
-<!--  <script type="text/javascript" src="/jquery-1.10.2.js"></script> -->
-  <script type="text/javascript" src="http://code.jquery.com/jquery-1.10.2.js"></script>
+{% if USE_LOCALLINKS %}
+  <script type="text/javascript" src="/jquery-1.10.2.js"></script>
+{% else %}
+  <script type="text/javascript" src="http://code.jquery.com/jquery-1.10.2.js"></script> 
+{% endif %}
 
-<!--  <script type="text/javascript" src="/jquery-ui-1.10.3/ui/jquery-ui.js"></script> -->
+{% if USE_LOCALLINKS %}
+  <script type="text/javascript" src="/jquery-ui-1.10.3/ui/jquery-ui.js"></script>
+{% else %}
   <script type="text/javascript" src="http://code.jquery.com/ui/1.10.3/jquery-ui.js"></script>
+{% endif %}
+
   <script type="text/javascript" src="resources/js/jquery.loadmask.js"></script>
   <script type="text/javascript" src="resources/js/jquery.cookie.js"></script>
   <script type="text/javascript" src="resources/js/webtoolkit_md5.js"></script>
@@ -117,7 +128,7 @@
      </p>
      <p>
        <label class="field" for="login_pw">Password:</label>
-       <input name="login_pw" id="login_pw" class="text ui-widget-content ui-corner-all" />
+       <input name="login_pw" id="login_pw" type="password" class="text ui-widget-content ui-corner-all" />
      </p>
     </form>
  </div>
