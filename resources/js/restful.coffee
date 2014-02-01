@@ -239,7 +239,7 @@ window.WSRC =
     try
       # reset all the form fields:
       this.ignore_change_events = true
-      comp = this.getActiveTabIndex() + 1
+      comp = WSRC.COMP_METAS[this.getActiveTabIndex()].id
       scoreform = jQuery("div#score-entry-form")
       scoreform.find("input[name='tournament_id']")[0].value = comp
       scoreform.find("input[name='login_id']")[0].value    = jQuery.cookie("login_id") or ""
