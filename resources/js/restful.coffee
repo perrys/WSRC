@@ -2,7 +2,7 @@
 window.WSRC =
 
   BASE_URL: "/tournaments"
-  PROXY_PREFIX: if document.URL == "http://localhost/" then "" else ".php"
+  PROXY_PREFIX: if document.URL.indexOf("localhost") > -1 then "" else ".php"
 
 #  HIGHLIGHT_CLASS: "ui-state-hover" # includes bg image which changes dimensions
   HIGHLIGHT_CLASS: "wsrc-highlight"
@@ -11,6 +11,13 @@ window.WSRC =
   ignore_change_events: false
   competitions: {}
 
+  getParameterByName: (name) ->
+    name = name.replace(/[\[]/, "\\\[").replace(/[\]]/, "\\\]")
+    regex = new RegExp("[\\?&]" + name + "=([^&#]*)")
+    results = regex.exec(location.search)
+    if results == null
+      return null
+    return decodeURIComponent(results[1].replace(/\+/g, " "))
 
   errorDialog: (msg) ->
     jQuery("#dialog-confirm").html(msg)
@@ -197,6 +204,12 @@ window.WSRC =
         header.innerHTML += "<br>[#{ endDateStr }]"
     return true
 
+
+  getIndexForId: (id) ->
+    for i in [0..WSRC.COMP_METAS.length-1]
+      if WSRC.COMP_METAS[i].id == id
+        return i
+    return null  
         
   getActiveTabIndex: () ->
     return jQuery("#tabs").tabs("option", "active")
@@ -430,11 +443,18 @@ window.WSRC =
       
   onReady: () ->
 
+    activeIndex = 0
+    selectedId = WSRC.getParameterByName("competition")
+    if selectedId?
+      idx = this.getIndexForId(parseInt(selectedId))
+      activeIndex = idx if idx?
+        
     # tabify the competition divs and display them:
     jQuery( "#tabs" )
       .tabs(
         beforeActivate: (evt) =>
           this.onResize(evt);
+        active: activeIndex
       )
       .removeClass("initiallyHidden")
 
