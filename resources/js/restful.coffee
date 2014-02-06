@@ -8,9 +8,16 @@ window.WSRC =
   HIGHLIGHT_CLASS: "wsrc-highlight"
   MIN_WIDTH: 100
   COMP_PADDING: 10
-  ignore_change_events: false
-  competitions: {}
 
+  competitions: {}
+  login_id:    jQuery.cookie("login_id") or ""
+  login_token: jQuery.cookie("login_token") or ""
+  ignore_change_events: false
+                
+
+  ##
+  # Get the value of a parameter in the query string
+  ##
   getParameterByName: (name) ->
     name = name.replace(/[\[]/, "\\\[").replace(/[\]]/, "\\\]")
     regex = new RegExp("[\\?&]" + name + "=([^&#]*)")
@@ -19,7 +26,10 @@ window.WSRC =
       return null
     return decodeURIComponent(results[1].replace(/\+/g, " "))
 
-  errorDialog: (msg) ->
+  ##
+  # Show a model click-through dialog
+  ##
+  showErrorDialog: (msg) ->
     jQuery("#dialog-confirm").html(msg)
     jQuery("#dialog-confirm").dialog(
       resizable: false
@@ -33,7 +43,13 @@ window.WSRC =
     )
     return true
 
-    
+  ##
+  # Helper method for Ajax requests back to the server.
+  # OPTS is an object containing
+  #  successCB - function to call when successful
+  #  failureCB - function to call when there is an error
+  #  loadMaskId (optional) - ID of loadmask which should always be closed.
+  ## 
   loadFromServer: (url, opts) ->
     if opts.loadMaskId?
       jQuery(opts.loadMaskId).mask("Loading...")
@@ -49,7 +65,9 @@ window.WSRC =
     )
     return true
 
-    
+  ##
+  # Setup various UI events as part of initialization
+  ##    
   bindEvents: (comp_id) ->
     HIGHLIGHT_CLASS = this.HIGHLIGHT_CLASS
     playerElts = jQuery("div#comp_#{ comp_id } td.player").filter(() -> this.innerHTML != "&nbsp;")
@@ -187,7 +205,7 @@ window.WSRC =
           callback()
         return true
       failureCB: (xhr, status) =>
-        this.errorDialog("Failed to load competition: " + metaData.name)
+        this.showErrorDialog("Failed to load competition: " + metaData.name)
         return false
       loadMaskId: "div#comp_" + metaData.id
     return true
@@ -249,14 +267,18 @@ window.WSRC =
         jQuery("div#score-entry-form input").removeClass( "ui-state-error" )
 
   showScoreEntryDialog: (choices) ->
+
+    if this.login_id == "" or this.login_token == ""
+      loginform = jQuery("div#score-login-form")
+      loginform.dialog("open")
+      return true
+
     try
       # reset all the form fields:
       this.ignore_change_events = true
       comp = WSRC.COMP_METAS[this.getActiveTabIndex()].id
       scoreform = jQuery("div#score-entry-form")
       scoreform.find("input[name='tournament_id']")[0].value = comp
-      scoreform.find("input[name='login_id']")[0].value    = jQuery.cookie("login_id") or ""
-      scoreform.find("input[name='login_token']")[0].value = jQuery.cookie("login_token") or ""
       opponentsCombo = scoreform.find("select#walkover_result")[0]
       clearOpponentsCombo = () ->
         while (opponentsCombo.options.length > 0)
@@ -313,7 +335,7 @@ window.WSRC =
     finally
       this.ignore_change_events = false
     return true
-
+  
   refresh: (refreshAll, callback) ->
     if refreshAll?
       comps = this.COMP_METAS
@@ -326,17 +348,26 @@ window.WSRC =
         callback(c) 
     return true
 
-  onLoginButton: (callback) ->
+  onLoginButton: () ->
     login_id = jQuery("div#score-login-form input#login_id").val()
-    login_pw = jQuery("div#score-login-form input#login_pw").val()
-    jQuery.cookie("login_id", login_id)
-    token = MD5(login_pw)
-    jQuery.cookie("login_token", token)
-    scoreform = jQuery("div#score-entry-form")
-    scoreform.find("input[name='login_id']")[0].value    = login_id
-    scoreform.find("input[name='login_token']")[0].value = token
-    jQuery("div#score-login-form").dialog("close")
-    callback()
+    login_token = MD5(jQuery("div#score-login-form input#login_pw").val())
+    jQuery.ajax(
+        url: this.BASE_URL + "/match" + this.PROXY_PREFIX
+        type: "GET"
+        data:
+          checkEditCredentials: true
+          login_id: login_id
+          login_token: login_token
+        error:  (xhr, status) =>
+          this.showErrorDialog("Login error<br>Status: #{ xhr.statusText }<br>Reason: #{ xhr.responseText }")
+        success: (xhr, status) =>
+          this.login_id = login_id
+          jQuery.cookie("login_id", login_id)
+          this.login_token = login_token
+          jQuery.cookie("login_token", login_token)
+          jQuery("div#score-login-form").dialog("close")              
+          this.showScoreEntryDialog()
+      )
 
   onResultTypeChanged: (cmp) ->
     if cmp.value == "walkover"
@@ -380,7 +411,7 @@ window.WSRC =
       type: "DELETE"
       data: formfields
       error:  (xhr, status) =>
-        this.errorDialog("Unable to delete match<br>Status: #{ xhr.statusText }<br>Reason: #{ xhr.responseText }")
+        this.showErrorDialog("Unable to delete match<br>Status: #{ xhr.statusText }<br>Reason: #{ xhr.responseText }")
       success: (xhr, status) =>
         this.clearCompetition(formfields.tournament_id)
         this.refresh()
@@ -415,30 +446,25 @@ window.WSRC =
       this.updateValidationTips("Please check results - cannot enter a draw")
       return false
 
-    formfields = {}
+    formfields =
+      login_id: this.login_id
+      login_token: this.login_token
     systemfields.each((idx, elt) -> formfields[this.name] = this.value)
     userfields.each((idx, elt) -> formfields[this.name] = this.value)
 
-    complete = () => 
-      jQuery.ajax(
-        url: this.BASE_URL + "/match" + this.PROXY_PREFIX
-        type: "POST"
-        data: formfields
-        error:  (xhr, status) =>
-          if (xhr.status == 403)
-            systemfields.filter("[name='login_token']").val("")
-          this.errorDialog("Unable to save match result<br>Status: #{ xhr.statusText }<br>Reason: #{ xhr.responseText }")
-        success: (xhr, status) =>
-          jQuery("div#score-entry-form").dialog("close")              
-          this.refresh()
-      )
+    jQuery.ajax(
+      url: this.BASE_URL + "/match" + this.PROXY_PREFIX
+      type: "POST"
+      data: formfields
+      error:  (xhr, status) =>
+        if (xhr.status == 403)
+          systemfields.filter("[name='login_token']").val("")
+        this.showErrorDialog("Unable to save match result<br>Status: #{ xhr.statusText }<br>Reason: #{ xhr.responseText }")
+      success: (xhr, status) =>
+        jQuery("div#score-entry-form").dialog("close")              
+        this.refresh()
+    )
 
-    if login_id == "" or login_token == ""
-      loginform = jQuery("div#score-login-form")
-      loginform.on("dialogclose", () => this.onLoginButton(complete))
-      loginform.dialog("open")
-    else
-      complete()
 
       
   onReady: () ->
@@ -448,7 +474,7 @@ window.WSRC =
     if selectedId?
       idx = this.getIndexForId(parseInt(selectedId))
       activeIndex = idx if idx?
-        
+
     # tabify the competition divs and display them:
     jQuery( "#tabs" )
       .tabs(
@@ -492,7 +518,7 @@ window.WSRC =
       closeOnEscape: true
       close: () ->
       buttons:
-        "Login": () -> jQuery( this ).dialog( "close" )
+        "Login": () => this.onLoginButton()
         
     jQuery("div#score-entry-form table.score_entry td input").spinner
       change: (evt, ui) =>
@@ -522,7 +548,7 @@ window.WSRC =
           callback(json.payload) 
           return true
         failureCB: (xhr, status) => 
-          this.errorDialog("ERROR: Failed to load data from #{ url }")
+          this.showErrorDialog("ERROR: Failed to load data from #{ url }")
           return true
         loadMaskId: "body" 
       return true

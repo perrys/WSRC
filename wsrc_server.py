@@ -89,6 +89,24 @@ def get_or_update_match():
 
   request_args = flask.request.values
 
+  def authenticate():
+    login_id    = request_args.get("login_id")
+    login_token = request_args.get("login_token")
+
+    if (not login_id) or (not login_token):
+      return plain_response("Authentication Failed", httplib.UNAUTHORIZED)
+    if (login_token != AUTH_TOKEN): 
+      return plain_response("Authentication Failed", httplib.UNAUTHORIZED)
+    if (login_id != AUTH_USER):
+      return plain_response("User \"%(login_id)s\" not authorized to edit results" % locals(), httplib.FORBIDDEN)
+    return None
+
+  if flask.request.method == 'GET' and request_args.get("checkEditCredentials"):
+      response = authenticate()
+      if response is not None:
+        return response
+      return plain_response("", httplib.ACCEPTED)
+
   try:
     tournament_id = int(request_args.get("tournament_id"))
     match_id      = int(request_args.get("match_id"))
@@ -106,13 +124,9 @@ def get_or_update_match():
 
   else:
     # request to update or delete a match score
-    login_id    = request_args.get("login_id")
-    login_token = request_args.get("login_token")
-
-    if (not login_id) or (not login_token):
-      return plain_response("Authentication Failed", httplib.UNAUTHORIZED)
-    if (login_id != AUTH_USER) or (login_token != AUTH_TOKEN): 
-      return plain_response("User \"%(login_id)s\" cannot change match (%(match_id)d, %(tournament_id)d)" % locals(), httplib.FORBIDDEN)
+    response = authenticate()
+    if response is not None:
+      return response
 
     try:
       player1_id = safeint(request_args.get("player1_id"))
