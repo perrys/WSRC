@@ -253,19 +253,24 @@ def renderCompetition(nbrackets, ngames, tournamentId, compressFirstRound):
 
 def getCompetitions():
   dbh = DataBase()
-#  comps = dbh.queryAndStore("select T.Id, T.Name, max(M.Match_Id) from Tournament T, TournamentMatch M where T.Year = 2014 and T.Id = M.Tournament_Id group by T.Id")
-  comps = dbh.queryAndStore("select T.Id, T.Name, max(M.Round) from Tournament T, TournamentRound M where T.Year = 2014 and T.Id = M.Tournament_Id group by T.Id")
+  comps = dbh.queryAndStore("select T.Id, T.Name, max(M.Match_Id) from Tournament T, TournamentMatch M where T.Year = 2014 and T.Id = M.Tournament_Id group by T.Id")
+#  comps = dbh.queryAndStore("select T.Id, T.Name, max(M.Round) from Tournament T, TournamentRound M where T.Year = 2014 and T.Id = M.Tournament_Id group by T.Id")
   
   def toDict(comp):
-    # (id, name, maxId) = comp
-    # nRounds = 1
-    # while (maxId>>1) > 0:
-    #   nRounds += 1
-    #   maxId = (maxId>>1)
-    # maxId = 1<<(nRounds-1)
-    # nFirstMatches = dbh.queryAndStore("select count(*) from TournamentMatch where Tournament_Id = %s and Match_Id > %s", [id, maxId])[0][0]
-    (id, name, nRounds) = comp
-    return {"id": id, "name": name, "nRounds": nRounds, "compressesFirst": True}
+    if True:
+      (id, name, maxId) = comp
+      nRounds = 1
+      while (maxId>>1) > 0:
+        nRounds += 1
+        maxId = (maxId>>1)
+      maxId = 1<<(nRounds-1)
+      nFirstMatches = dbh.queryAndStore("select count(*) from TournamentMatch where Tournament_Id = %s and Match_Id > %s", [id, maxId])[0][0]
+      return {"id": id, "name": name, "nRounds": nRounds, "compressesFirst": (nFirstMatches < (1 << (nRounds-2)))}
+
+    else:
+      (id, name, nRounds) = comp
+      return {"id": id, "name": name, "nRounds": nRounds, "compressesFirst": True}
+
   return [toDict(comp) for comp in comps]
                             
 

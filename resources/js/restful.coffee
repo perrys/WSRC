@@ -3,20 +3,18 @@ window.WSRC =
 
   BASE_URL: "/tournaments"
   PROXY_PREFIX: if document.URL.indexOf("localhost") > -1 then "" else ".php"
-
-#  HIGHLIGHT_CLASS: "ui-state-hover" # includes bg image which changes dimensions
   HIGHLIGHT_CLASS: "wsrc-highlight"
   MIN_WIDTH: 100
   COMP_PADDING: 10
 
   competitions: {}
-  login_id:    jQuery.cookie("login_id") or ""
-  login_token: jQuery.cookie("login_token") or ""
+  login_id:     jQuery.cookie("login_id") or ""
+  login_token:  jQuery.cookie("login_token") or ""
   ignore_change_events: false
                 
 
   ##
-  # Get the value of a parameter in the query string
+  # Helper function to get the value of a parameter in the query string
   ##
   getParameterByName: (name) ->
     name = name.replace(/[\[]/, "\\\[").replace(/[\]]/, "\\\]")
@@ -27,7 +25,40 @@ window.WSRC =
     return decodeURIComponent(results[1].replace(/\+/g, " "))
 
   ##
-  # Show a model click-through dialog
+  # Helper function to find the zero-offset index in the competition
+  # array and tabs array for a competition Id.
+  ##
+  getIndexForId: (id) ->
+    for i in [0..WSRC.COMP_METAS.length-1]
+      if WSRC.COMP_METAS[i].id == id
+        return i
+    return null  
+
+  ##
+  # Helper function to get the zero-offset index of the active tab.
+  ##
+  getActiveTabIndex: () ->
+    return jQuery("#tabs").tabs("option", "active")
+
+  ##
+  # Helper function to find the winner given two sets of scores
+  ##
+  findWinner: (scores) ->
+    wins = [0,0]
+    injury = false
+    for [score1, score2] in scores 
+      if score1 > score2
+        ++wins[0]
+      else if score1 < score2
+        ++wins[1]
+      injury = injury or score1 < 0 or score2 < 0 
+    return {
+      wins: wins
+      injury: injury        
+    }    
+
+  ##
+  # Helper function to show a modal click-through dialog
   ##
   showErrorDialog: (msg) ->
     jQuery("#dialog-confirm").html(msg)
@@ -44,11 +75,11 @@ window.WSRC =
     return true
 
   ##
-  # Helper method for Ajax requests back to the server.
-  # OPTS is an object containing
-  #  successCB - function to call when successful
-  #  failureCB - function to call when there is an error
-  #  loadMaskId (optional) - ID of loadmask which should always be closed.
+  # Helper function for Ajax requests back to the server.
+  # OPTS is an object containing:
+  #  successCB - function to call back when successful
+  #  failureCB - function to call back when there is an error
+  #  loadMaskId (optional) - ID of HTML element to show a loadmask over
   ## 
   loadFromServer: (url, opts) ->
     if opts.loadMaskId?
@@ -92,7 +123,9 @@ window.WSRC =
       scoreDialog(target)
     return true
 
-    
+  ##
+  # Find cells without a player in the first column and add a CSS class to blank them out
+  ##
   populateByes: (comp_id, comp_nRounds) ->
     min_id = 1<<(comp_nRounds-1)
     findFirstColumnEmptyCells = (cell) ->
@@ -108,32 +141,18 @@ window.WSRC =
     emptyElts.nextUntil(".seed", ".bottomlink").removeClass("bottomlink")      
     return true
 
-  findWinner: (scores) ->
-    wins = [0,0]
-    injury = false
-    for [score1, score2] in scores 
-      if score1 > score2
-        ++wins[0]
-      else if score1 < score2
-        ++wins[1]
-      injury = injury or score1 < 0 or score2 < 0 
-    return {
-      wins: wins
-      injury: injury        
-    }
-    
-  clearCompetition: (comp_id) ->
-    jQuery("div#comp_" + comp_id + " td.seed").html("&nbsp;")
-    jQuery("div#comp_" + comp_id + " td.player").html("&nbsp;")
-    jQuery("div#comp_" + comp_id + " td.score").html("&nbsp;")
-    
-
+  ##
+  # Fill in the seedings, player names and any scores for a particular
+  # match into the correct cells in the HTML table.
+  ##
   populateMatch: (comp, match_id, match) ->
-    baseSelector = "div#comp_" + comp.id + " td#match_" + comp.id + "_" + match_id
-    team1Elt = jQuery(baseSelector + "_t") 
-    team2Elt = jQuery(baseSelector + "_b") 
 
-    userName = (id1, id2) =>
+    # start with the html cells for the player names
+    baseSelector = "div#comp_" + comp.id + " td#match_" + comp.id + "_" + match_id
+    team1Elt = jQuery(baseSelector + "_t")  # top cell
+    team2Elt = jQuery(baseSelector + "_b")  # bottom cell
+
+    makeTeamName = (id1, id2) =>
       selector = (user) ->
         if id2
           if user.shortname
@@ -144,20 +163,22 @@ window.WSRC =
       result = selector(this.players[id1])
       if id2
         result += " & " + selector(this.players[id2]) 
-      return result
+      return result.replace(" ", "&nbsp;")
       
-    team1Name = userName(match.Team1_Player1_Id, match.Team1_Player2_Id) 
-    team2Name = userName(match.Team2_Player1_Id, match.Team2_Player2_Id) 
-    team1Elt.html(team1Name.replace(" ", "&nbsp;"))
-    team2Elt.html(team2Name.replace(" ", "&nbsp;"))
+    team1Name = makeTeamName(match.Team1_Player1_Id, match.Team1_Player2_Id) 
+    team2Name = makeTeamName(match.Team2_Player1_Id, match.Team2_Player2_Id) 
+    team1Elt.html(team1Name)
+    team2Elt.html(team2Name)
 
+    # now the seeds:
     addSeed = (id, elt) =>
       if id?
         if (seed = this.players[id].seeding[comp.id])?
           elt.prev().html(seed)
     addSeed(match.Team1_Player1_Id, team1Elt)
     addSeed(match.Team2_Player1_Id, team2Elt)
-        
+
+    # if we have two players, add any scores avaialble:
     if match.Team1_Player1_Id? and match.Team2_Player1_Id
       team1ScoreElt = team1Elt.next()
       team2ScoreElt = team2Elt.next()
@@ -193,6 +214,9 @@ window.WSRC =
     match.id = match_id
     return true
 
+  ##
+  # Fill in the HTML table for an entire competition, and bind mouseover events etc.
+  ##
   populateCompetition: (metaData, callback) ->
     this.loadFromServer "/competition" + this.PROXY_PREFIX + "?id=" + metaData.id, #      "/competition" + metaData.id
       successCB: (json) =>
@@ -200,7 +224,7 @@ window.WSRC =
         this.competitions[metaData.id] = matches
         this.populateMatch(metaData, id, match) for id,match of matches
         this.populateByes(metaData.id, metaData.nRounds)
-        this.bindEvents(metaData.id)
+        this.bindEvents(metaData.id) # also set up hover bindings etc
         if callback?
           callback()
         return true
@@ -210,7 +234,9 @@ window.WSRC =
       loadMaskId: "div#comp_" + metaData.id
     return true
 
-
+  ##
+  # Populate the end dates above the rounds in a competition
+  ##
   setEndDates: (tournament) ->
     for id,compDates of tournament
       headers = jQuery("div#comp_#{ id } th.roundtitle")
@@ -221,16 +247,6 @@ window.WSRC =
         endDateStr = jQuery.datepicker.formatDate("D d M", endDate)
         header.innerHTML += "<br>[#{ endDateStr }]"
     return true
-
-
-  getIndexForId: (id) ->
-    for i in [0..WSRC.COMP_METAS.length-1]
-      if WSRC.COMP_METAS[i].id == id
-        return i
-    return null  
-        
-  getActiveTabIndex: () ->
-    return jQuery("#tabs").tabs("option", "active")
 
 
   ensureSufficientScores: (evt, ui) ->
@@ -404,6 +420,11 @@ window.WSRC =
     systemfields.each (idx, elt) ->
       formfields[this.name] = this.value
 
+    clearCompetition = (comp_id) ->
+      jQuery("div#comp_" + comp_id + " td.seed").html("&nbsp;")
+      jQuery("div#comp_" + comp_id + " td.player").html("&nbsp;")
+      jQuery("div#comp_" + comp_id + " td.score").html("&nbsp;")
+
     jQuery("div#score-entry-form").dialog("close")      
 
     jQuery.ajax(
@@ -413,7 +434,7 @@ window.WSRC =
       error:  (xhr, status) =>
         this.showErrorDialog("Unable to delete match<br>Status: #{ xhr.statusText }<br>Reason: #{ xhr.responseText }")
       success: (xhr, status) =>
-        this.clearCompetition(formfields.tournament_id)
+        clearCompetition(formfields.tournament_id)
         this.refresh()
     )
 
