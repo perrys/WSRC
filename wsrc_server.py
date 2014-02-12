@@ -47,10 +47,13 @@ def get_players():
   dbh = DataBase()
   users = dbh.queryAndStore("select Id, Name, ShortName from User")
   result = dict([(u[0], {"name": u[1], "shortname": u[2], "seeding": {}}) for u in users])
-  seeds = dbh.queryAndStore("select User_Id, Tournament_Id, Seed from Seed")
+  seeds = dbh.queryAndStore("select User_Id, Tournament_Id, Seed, Suffix from Seed")
   for row in seeds:
     seeding = result[row[0]]["seeding"]
-    seeding[row[1]] = row[2]
+    seed_string = str(row[2])
+    if row[3] is not None:
+      seed_string += row[3]
+    seeding[row[1]] = seed_string
   return flask.json.jsonify(payload=result)
 
 @app.route("/tournament")
