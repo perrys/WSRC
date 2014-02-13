@@ -1,0 +1,261 @@
+#!/usr/bin/python
+
+import MySQLdb
+import os.path
+import re
+import sys
+import time
+import traceback
+
+from jinja2 import Environment, FileSystemLoader
+
+sys.path.append(os.path.expanduser("~/dev/WSRC/lib"))
+
+from Match import Match
+import Config
+import Email
+
+TEST_MODE = False
+YEAR = 2014
+
+def sendMail(email, subject, textMsg, htmlMsg):
+  config = Config.getSMTPConfig(os.path.expanduser("~/dev/WSRC/etc/smtp.xml"))
+  boundary = "------=_NextPart_DC7E1BB5_1105_4DB3_BAE3_2A6208EB099D"
+  headers = {"From": "tournaments@wokingsquashclub.org", 
+             "To": email, 
+             "Reply-to": "stewart.c.perry@gmail.com", 
+             "Subject": subject,
+             "Content-type": "multipart/alternative; boundary=\"%(boundary)s\"" % locals()}
+
+  msg = """--%(boundary)s
+Content-type: text/plain; charset=iso-8859-1
+""" % locals()
+  msg += textMsg
+  msg += """--%(boundary)s
+Content-type: text/html; charset=iso-8859-1
+""" % locals()
+  msg += htmlMsg
+  msg += "--%(boundary)s--" % locals()
+
+  if email == "stewart.c.perry@gmail.com":
+    try:
+      if TEST_MODE:
+        print headers
+        print msg
+      else:
+        Email.sendmail(headers, msg, config)
+        print "*successs* " + email 
+        time.sleep(2) # some SMTP servers have anti-spammer lock-outs if you send mails too quickly
+    except Exception, e:
+      print e
+      traceback.print_last()
+      print headers
+      print msg
+      raise e
+
+def plural(l, extra=""):
+  if len(l) == 1:
+    return ""
+  return extra + "s"
+
+
+def formatTable(dataTable, hasHeader = False, nspaces=1):
+  maxlengths = []
+  buf = ""
+  data = []
+  for row in dataTable:
+    data.append([cell or "" for cell in row])
+
+  spaces = " " * nspaces
+
+  for row in data:
+    for i,cell in enumerate(row):
+      while len(maxlengths) <= i:
+        maxlengths.append(0)
+      maxlengths[i] = max(maxlengths[i], len(cell))
+  for i,row in enumerate(data):
+    if hasHeader and i == 1:
+      buf += spaces.join(["-" * l for l in maxlengths]) + "\n"
+    buf += spaces.join([cell.ljust(maxlengths[i]) for i,cell in enumerate(row)]) + "\n"
+  
+  return buf
+
+def sendEmails(users, tournaments, matches, userMatches):
+
+  def formatTeam(team):
+    return " & ".join([users[id][0] for id in team])
+
+  def getPreviousMatchDescription(matchId, tournamentId):
+    def getMatch(matchId, tournamentId):
+      for match in matches:
+        if match.id == matchId and match.tournament_id == tournamentId:
+          return match
+      return None
+    thisMatch = getMatch(matchId, tournamentId)
+    try:
+      previousMatch = getMatch(thisMatch.previous, tournamentId)
+    except Exception, e:
+      print "Missing previous match in " + tournaments[tournamentId]
+      print """Update TournamentMatch set Previous_Id = "" where Id = "%s" and Tournament_Id = %d;""" % (matchId, tournamentId)
+      raise e
+    return "(WINNER of [%s] %s vs %s)" % (previousMatch.id, formatTeam(previousMatch.team1), formatTeam(previousMatch.team2)) 
+
+  subject = "WSRC Tournaments 2014"
+  updateIds = []
+  emails = {}
+  for id,matchList in userMatches.iteritems():
+    kwargs = {"plural": plural, "match": re.match, "subject": subject}
+    [name,email] = users[id][0:2]
+    emails[name] = email
+    kwargs["firstname"] = name.split()[0]
+    tables = dict()
+    kwargs["tables"] = tables;
+
+    def addTable(name, data, hasHeader=False, spacing=1):
+      tbl = tables[name] = dict()
+      tbl["rawdata"] = rows
+      tbl["hasHeader"] = hasHeader
+      tbl["textData"] = formatTable(rows, hasHeader, spacing)
+
+    rows = []
+    for match in matchList:
+      team2Str = len(match.team2) > 0 and formatTeam(match.team2) or getPreviousMatchDescription(match.id, match.tournament_id)
+      rows.append([tournaments[match.tournament_id][0] + "  ", formatTeam(match.team1), "vs", team2Str])
+    addTable("matches", rows)
+
+    rows = []
+    rows.append(["Tournament", "Round", "Deadline", "Web Link"])
+    for match in matchList:
+      t = tournaments[match.tournament_id]
+      rows.append([t[0], "%d" % match.round, match.deadline.strftime("%a %d %B"), t[1]])
+    addTable("deadlines", rows, True, 2)
+
+    opponents = []
+    for match in matchList:
+      opposition = match.team1
+      if id in opposition:
+        opposition = match.team2
+      for opponentId in opposition:
+        if opponentId not in opponents:
+          opponents.append(opponentId)
+
+    rows = []
+    rows.append(["Name", "Email", "Home Phone", "Mobile"])
+    for opponentId in opponents:
+      u = users[opponentId]
+      rows.append([u or "" for u in u[0:4]])
+    addTable("opponents", rows, True, 2)
+
+    templateEnv = Environment(loader=FileSystemLoader("/home/stu/dev/WSRC/scripts/jinja-templates"))
+
+    def render(isHTML):
+      kwargs["isHTML"] = isHTML
+      template = templateEnv.get_template("reminder.html")
+      return template.render(**kwargs)
+
+    try:
+      sendMail(email, subject, render(False), render(True))
+      updateIds.append(id)
+    except Exception, e:
+      raise e
+
+  print ", ".join(["%s <%s>" % kv for kv in emails.iteritems()])
+
+  return updateIds
+
+def hasVetsOrVintageMatch(matchList):
+  for match in matchList:
+    if match.tournament_id == 6 or match.tournament_id == 5:
+      return True
+  return False
+
+def analyseTournaments(dbh):
+  rows = dbh.queryAndStore("select Tournament_Id, count(Round) from TournamentRound group by Tournament_Id");
+  nrounds = dict()
+  for row in rows:
+    nrounds[row[0]] = row[1];
+
+  rows = dbh.queryAndStore("select * from TournamentRound order by Tournament_Id");
+  rounds = dict()
+  for row in rows:
+    t = rounds.get(row[0])
+    if t is None:
+      t = dict()
+      rounds[row[0]] = t
+    t[row[1]] = row[2]
+
+  # get all matches from the database:
+  rows = dbh.queryAndStore("""
+select A.Match_Id, A.Tournament_Id, floor(log2(A.Match_Id)), Last_Email, Previous_Id, Team1_Player1_Id, Team1_Player2_Id, Team2_Player1_Id, Team2_Player2_Id, null, null, null 
+from TournamentMatch A, Tournament T where T.Id = A.Tournament_Id and T.Year = %s order by Tournament_Id, External_Id""", [YEAR])
+  matches = [Match(row) for row in rows]
+  for match in matches:
+    reverseround = nrounds[match.tournament_id] - match.round
+    match.round += 1
+    match.deadline = rounds[match.tournament_id][reverseround]
+
+  # get all users from the database:
+  users = dict([(row[0], row[1:]) for row in dbh.queryAndStore("""
+select Id, A.Name, A.Email, Phone1, Phone2
+from User A, BookingSystemContact B 
+where A.Name = B.Name""")])
+
+  # get all tournament metadata from the database
+  tournaments = dict([(row[0], list(row[1:])) for row in dbh.queryAndStore("select Id, Name, URL from Tournament where Year = %s", [YEAR])])
+  for k in tournaments:
+    tournaments[k][0] = tournaments[k][0].replace("WSRC ", "").replace(" %d" % YEAR, "")
+  
+  # map by user
+  userMatches = dict()
+  for match in matches:
+    for team in match.team1, match.team2:
+      for playerId in team:
+        matchList = userMatches.get(playerId)
+        if matchList is None:
+          matchList = []
+          userMatches[playerId] = matchList
+        matchList.append(match)
+
+  # filtering down the user set
+  # userMatches = dict([(k, v) for (k,v) in userMatches.iteritems() if hasVetsOrVintageMatch(v)])
+
+  # remove matches which aren't fully resolved:
+  for user in userMatches:
+    userMatches[user] = [m for m in userMatches[user] if len(m.team1) > 0 and len(m.team2) > 0]
+  userMatches = dict([(k, v) for (k,v) in userMatches.iteritems() if len(v) > 0])
+
+  # remove matches which have been played:
+  for user in userMatches:
+    userMatches[user] = [m for m in userMatches[user] if m.scores[0] is None]
+  userMatches = dict([(k, v) for (k,v) in userMatches.iteritems() if len(v) > 0])
+
+  # sanity check only one match per tournament
+  def assertUniqueTournamentMatches(matchList):
+    tournamentMap = dict([(match.tournament_id, None) for match in matchList])
+    if len(tournamentMap) != len(matchList):
+      print tournamentMap
+      print [(match.id, match.tournament_id) for match in matchList]
+    assert len(tournamentMap) == len(matchList)
+  for matchList in userMatches.itervalues():
+    assertUniqueTournamentMatches(matchList)
+
+  
+  return users, tournaments, matches, userMatches
+
+if __name__ == "__main__":
+  import Database
+  dbh = Database.DataBase()
+  (users, tournaments, matches, userMatches) = analyseTournaments(dbh)
+  updatedIds = sendEmails(users, tournaments, matches, userMatches)
+  now = dbh.queryAndStore("select now()")[0][0]
+
+  if not TEST_MODE:
+    for id in updatedIds:
+      for match in userMatches[id]:
+        sql = "update TournamentMatch set Last_Email = %s where Tournament_Id = %s and Match_Id = %s"
+        params = (now, match.tournament_id, match.id)
+        dbh.update(sql, params)
+
+
+# Local Variables:
+# Mode: Python

@@ -1,0 +1,204 @@
+#!/usr/bin/python
+
+import os.path
+from bs4 import BeautifulSoup
+#from selenium import webdriver
+import re
+import httplib
+import sys
+import getopt
+
+sys.path.append("../lib")
+
+from Database import DataBase
+from Match import Match
+
+CHALLONGE_SERVER = "challonge.com"
+
+tournament_rounds = 5
+match_count     = [0,1,0,0,0,0,0,0]
+match_increment = [1,4,1,1,1,1,1,1]
+
+def log(msg):
+  sys.stderr.write(msg)
+  sys.stderr.write("\n")
+
+def get_webpage(selector):
+
+  h1 = httplib.HTTPConnection(CHALLONGE_SERVER)
+  h1.request("GET", selector)
+  response = h1.getresponse()
+  return response.read()  
+
+def convertToUnicode(str):
+#  return str.decode("latin-1").encode("utf-8")
+  return unicode(str, errors='ignore')
+
+def getFirstTR(tableElt):
+  tmp = tableElt.findChild("tbody")
+  if tmp is not None:
+    return tmp.findChild("tr")
+  else:
+    return tableElt.findChild("tr")
+
+
+def extractMatches(soup, nameToIdConverter, tournamentNameToIdConverter):
+  "Return a list of lists - the inner lists are rounds of matches"
+
+  tournament_name = soup.find("div", {"id": "title"})
+  tournament_name =  tournament_name.text.strip().split("\n")[0]
+  tournament_id = tournamentNameToIdConverter(tournament_name)
+
+  log ("Tournament: \"%(tournament_name)s\", id: %(tournament_id)d" % locals())
+  rounds = soup.find_all("div", "rounds")[0]
+  table = rounds.find_next_siblings("table")[0]
+
+  main_row = getFirstTR(table)
+  
+  round_elements = main_row.find_all("td", recursive=False)
+  results = []
+
+  for (round_number, round) in enumerate(round_elements):
+    round_matches = round.find_all("table", recursive=False)
+    round_list = []
+    results.append(round_list)
+    for match in round_matches:
+      elts = getFirstTR(match).find_all("td", recursive=False)
+      match_name_elt = elts[0].div.a
+      match_name = None
+      if match_name_elt is not None:
+        text = "".join(match_name_elt.stripped_strings)
+        if len(text) > 0:
+          match_name = str(text)
+          def getPlayerAndScore(elt, prefix):
+            player = elt.find_next("div", "inner_content").span.get("title")
+            score = elt.find_next("div", "%(prefix)s_score" % locals()).string
+            if score is not None:
+              try:
+                score = int(score)
+              except ValueError:
+                score = None
+            return player, score
+          player1, score1 = getPlayerAndScore(elts[1].find_next("div", "match_top_half"), "top")
+          player2, score2 = getPlayerAndScore(elts[1].find_next("div", "match_bottom_half"), "bottom")
+          assert ((score1 is None and score2 is None) \
+                    or (score1 is not None and score2 is not None))
+          match = Match((match_name, tournament_id))
+          round_list.append(match)
+          if player1 is not None:
+            match.addPlayerOrPlayersToTeam(1, player1, nameToIdConverter, score1);
+          if player2 is not None:
+            match.addPlayerOrPlayersToTeam(2, player2, nameToIdConverter, score2);
+
+  return (tournament_id, results)
+
+def extractMatchesAndUpdateDB(dbh, soup):
+  
+  users = dbh.queryAndStore("select Id, Name, ShortName from User")
+  userMap = dict([(row[0], row[1]) for row in users])
+
+  def getPlayerIdFromDB(name):
+    # linear search could be optimized to binary search
+    for user in users:
+      if name.startswith(user[1]):
+        return user[0]
+    for user in users:
+      if user[2] is not None and name.startswith(user[2]):
+        return user[0]
+    raise Exception("Player %(name)s not know" % locals())
+
+  def getTournamentIdForName(tournament_name):
+    results = dbh.queryAndStore("select Id from Tournament where Name=%s", (tournament_name))
+    assert(len(results) == 1)
+    return int(results[0][0])
+
+  tournament_id, matches = extractMatches(soup, getPlayerIdFromDB, getTournamentIdForName)
+
+  def getMatchFromDB(tournament_id, match_id):
+    results = dbh.queryAndStore("""select External_Id, Tournament_Id, null, Last_Email, null, Team1_Player1_Id, Team1_Player2_Id, Team2_Player1_Id, Team2_Player2_Id, null, null, null
+from TournamentMatch 
+where External_Id=%s
+and Tournament_Id=%s""", (match_id, tournament_id))
+    assert(len(results) < 2)
+    if len(results) > 0:
+      return Match(results[0])
+    return None
+
+  def updateMatchInDB(tournament_id, round_number, match, existing):
+
+    def addClause(sql, team, player):
+      if team == 1:
+        team_list = match.team1
+      else:
+        team_list = match.team2
+      id = len(team_list) >= player and team_list[player-1] or None
+      if id is not None:
+        sql += ", Team%d_Player%d_Id=" % (team, player) + "%s"
+        params.append(id)
+      return sql
+
+    params = [round_number]
+    if existing is not None:
+      sql = "update TournamentMatch set Last_Update=NOW(), Round=%s"
+      sql = addClause(sql, 1, 1)
+      sql = addClause(sql, 1, 2)
+      sql = addClause(sql, 2, 1)
+      sql = addClause(sql, 2, 2)
+      if match.scores[0] is not None and match.scores[1] is not None:
+        sql += ", Score1=%s, Score2=%s"
+        params.extend(match.scores)
+      sql += " where Tournament_Id=%s and Id=%s"
+      params.append(tournament_id)
+      params.append(match.id)
+      log("Updating match %s in tournament %d: %s" % (match.id, tournament_id, match.describeDiff(existing, userMap)))
+    else:
+      binomial_match_id = (1 << (tournament_rounds-round_number)) + match_count[round_number]
+      match_count[round_number] += match_increment[round_number]
+      params=[binomial_match_id, tournament_id, match.id]
+      sql = "insert into TournamentMatch set Last_Update=NOW(), Match_Id=%s ,Tournament_Id=%s, External_Id=%s"
+      sql = addClause(sql, 1, 1)
+      sql = addClause(sql, 1, 2)
+      sql = addClause(sql, 2, 1)
+      sql = addClause(sql, 2, 2)
+      log("Creating match %s in tournament %d" % (match.id, tournament_id))
+    dbh.update(sql, params)
+      
+  for round_idx, round_matches in enumerate(matches):
+    round_number = round_idx + 1
+    for match in round_matches:
+      existing_match = getMatchFromDB(tournament_id, match.id)
+      if existing_match is None or existing_match != match:
+        updateMatchInDB(tournament_id, round_number, match, existing_match)
+
+def removeAdDiv(markup):
+  idx1 = markup.find("""<div class="ad">""")
+  if idx1 < 0:
+    idx1 = markup.find("""<div class='ad'>""")
+  if idx1 >= 0:
+    idx2 = markup.find("""</div>""", idx1+1)
+    return markup[:idx1] + markup[idx2+6:]
+  return markup
+    
+if __name__ == "__main__":
+
+  dbh = DataBase()
+
+  if len(sys.argv) > 1:
+    for filename in sys.argv[1:]:
+      log("Processing %(filename)s" % locals())
+      if filename.startswith("http:"):
+        markup = get_webpage(filename)
+#        sys.stderr.write(markup)
+      else:
+        fh = open(os.path.expanduser(filename))
+        markup = fh.read()
+      markup = removeAdDiv(markup)
+      soup = BeautifulSoup(markup, "lxml")
+      extractMatchesAndUpdateDB(dbh, soup)
+      
+  else:
+    soup = BeautifulSoup(sys.stdin, "lxml")
+    extractMatchesAndUpdateDB(dbh, soup)
+
+# Local Variables:
+# Mode: Python

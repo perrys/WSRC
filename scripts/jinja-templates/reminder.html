@@ -1,0 +1,67 @@
+{%- macro renderCell(cell) %}
+{%- if match("^http://", cell|lower) %}<a href="{{ cell|e }}">{{ cell|e }}</a>
+{%- elif match("^[\w\.]+@[\w\.]+$", cell) %}<a href="mailto:{{ cell|e }}">{{ cell|e }}</a>
+{%- else %}{{ cell|e }}
+{%- endif %}
+{%- endmacro %}
+{%- macro renderTable(name) %}
+{%- set tbl = tables[name] %}
+{%- if isHTML %}
+<table border="0">
+{%- for row in tbl.rawdata %}
+{%- set bold = (loop.index == 1 and tbl.hasHeader) %}
+<tr>{% for cell in row %}<td style="padding-right: 10px;">{% if bold %}<b>{% endif %}{{ renderCell(cell) }}{% if bold %}</b>{% endif %}</td>{% endfor %}</tr>
+{%- endfor %}
+</table>
+{%- else %}
+{{ tbl.textData }}
+{%- endif %}
+{%- endmacro %}
+{%- if isHTML %}
+<html>
+<head>
+<title>{{ subject }}</title>
+</head>
+<body>
+{%- endif %}
+{%- if isHTML %}<b>{% endif %}
+*This is an automated email*
+{%- if isHTML %}</b><p>{% endif %}
+
+Dear {{ firstname }},
+{%- if isHTML %}<p>{% endif %}
+
+The finals of the first set of tournaments will be held on the weekend of 21st March. Please try to complete your matches as soon as possible.
+
+{%- if isHTML %}<p>{% endif %}
+
+You have the following match{{ plural(tables.matches.rawdata, "e") }} to play:
+{%- if isHTML %}<p>{% endif %}
+
+{{ renderTable("matches") }}
+{%- if isHTML %}<p>{% endif %}
+
+The deadlines for these rounds are as follows:
+{%- if isHTML %}<p>{% endif %}
+
+{{ renderTable("deadlines") }}
+{%- if isHTML %}<p>{% endif %}
+
+Contact details for your opponents are:
+{%- if isHTML %}<p>{% endif %}
+
+{{ renderTable("opponents") }}
+{%- if isHTML %}<p>{% endif %}
+
+Please enter your match scores onto the web site - double click on the match or use the "Edit" button. The login for the site is "wsrc2014" and the password is the same as the door entry code at the club.
+{%- if isHTML %}<p>{% endif %}
+
+Best Regards
+{%- if isHTML %}<p>{% endif %}
+
+Stewart.
+
+{% if isHTML %}
+</body>
+</html>
+{% endif %}
