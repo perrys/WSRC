@@ -325,7 +325,7 @@ window.WSRC =
         ids = (parseInt(id) for id,m of thisComp)
         ids.sort((lhs,rhs) -> lhs - rhs)
         choices = (thisComp[id] for id in ids)
-      displayChoices = ("#{m.team1_name} vs #{m.team2_name}" for m in choices) 
+      displayChoices = (("#{m.team1_name} vs #{m.team2_name}").replace(/&nbsp;/g, " ") for m in choices) 
       onChange = (evt, ui) =>
         idx = displayChoices.indexOf(matchName[0].value)
         if idx >= 0
