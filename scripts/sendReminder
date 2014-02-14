@@ -23,7 +23,7 @@ def sendMail(email, subject, textMsg, htmlMsg):
   boundary = "------=_NextPart_DC7E1BB5_1105_4DB3_BAE3_2A6208EB099D"
   headers = {"From": "tournaments@wokingsquashclub.org", 
              "To": email, 
-             "Reply-to": "stewart.c.perry@gmail.com", 
+             "Reply-to": "tournaments@wokingsquashclub.org", 
              "Subject": subject,
              "Content-type": "multipart/alternative; boundary=\"%(boundary)s\"" % locals()}
 
@@ -37,6 +37,7 @@ Content-type: text/html; charset=iso-8859-1
   msg += htmlMsg
   msg += "--%(boundary)s--" % locals()
 
+#  if True:
   if email == "stewart.c.perry@gmail.com":
     try:
       if TEST_MODE:
