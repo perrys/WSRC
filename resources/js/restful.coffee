@@ -301,7 +301,7 @@ window.WSRC =
           opponentsCombo.options.remove(opponentsCombo.options.length-1)
       addOpponent = (text, value) ->
         newopt = document.createElement("option")
-        newopt.text = text
+        newopt.text = text.replace(/&nbsp;/g, " ")
         newopt.value = value
         try
          opponentsCombo.add(newopt, null)
