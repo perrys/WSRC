@@ -1,6 +1,8 @@
 #!/usr/bin/python
 
 import MySQLdb
+import sys
+import os.path
 
 def batchCursor(store, batchsize=512):
   while True:
@@ -65,8 +67,18 @@ def updateUsers(users):
       dbh.update("insert into User set Name = %s", [user])
       print user
   
+def updateSeeds(tournamentId, filename):
+  fh = open(os.path.expanduser(filename))
+  dbh = DataBase()
+  for line in fh:
+    tokens = line.split("\t")
+    params = [tournamentId, tokens[0], tokens[8], tokens[9]]
+    print tokens
+    dbh.update("insert into Seed values (%s, (select Id from User where Name = %s), %s, %s)", params) 
+            
 
 if __name__ == "__main__":
 #  for i in range(1,9):
 #    addMatchNumbers(i)
-  updateUsers(["Adrian Hayward", "Andrew Grace", "Andy Todd", "Anthony Muggeridge", "Brian Greatorex", "Chris Bartlett", "Craig Swinerd", "Danny Jones", "Dave Wallond", "David Alford", "David Dommett", "David Guy", "David Ironside", "Dennis White", "Diane Benford", "Ed Walters", "Elliot Lee", "Eric Butterworth", "Freddie Lawson", "Gerry Summers", "Graham Norton", "Hamza Ali", "Iain Bremner", "Ian Dermody", "Jack Ross", "Janik Karunaratne", "John Bryant", "John Hughes", "Karl Loynton", "Keith Brakefield", "Keith Holdaway", "Kerryn Bartlett", "Kieron Harwood", "Leigh Masters", "Leroy Valentine", "Martin Shelley", "Mike Herington", "Mike McElhatton", "Mike Rivers", "Mike Wardle", "Nicholas Hiley", "Paddy Bascombe", "Paul Garbutt", "Paul Perry", "Peter Richardson", "Ragoo Pema", "Ralph Goldstein", "Rich Jamieson", "Rob Heasman", "Robin Griffiths", "Rob Kemp", "Rob Ready", "Ryan McLaughlin", "Sharon Bains", "Simon Browne", "Spencer Harris", "Stewart Perry", "Sukhy Bains", "Toby Fenton", "Tom Pewter", "Usman Hussain"])
+#  updateUsers(["Adrian Hayward", "Andrew Grace", "Andy Todd", "Anthony Muggeridge", "Brian Greatorex", "Chris Bartlett", "Craig Swinerd", "Danny Jones", "Dave Wallond", "David Alford", "David Dommett", "David Guy", "David Ironside", "Dennis White", "Diane Benford", "Ed Walters", "Elliot Lee", "Eric Butterworth", "Freddie Lawson", "Gerry Summers", "Graham Norton", "Hamza Ali", "Iain Bremner", "Ian Dermody", "Jack Ross", "Janik Karunaratne", "John Bryant", "John Hughes", "Karl Loynton", "Keith Brakefield", "Keith Holdaway", "Kerryn Bartlett", "Kieron Harwood", "Leigh Masters", "Leroy Valentine", "Martin Shelley", "Mike Herington", "Mike McElhatton", "Mike Rivers", "Mike Wardle", "Nicholas Hiley", "Paddy Bascombe", "Paul Garbutt", "Paul Perry", "Peter Richardson", "Ragoo Pema", "Ralph Goldstein", "Rich Jamieson", "Rob Heasman", "Robin Griffiths", "Rob Kemp", "Rob Ready", "Ryan McLaughlin", "Sharon Bains", "Simon Browne", "Spencer Harris", "Stewart Perry", "Sukhy Bains", "Toby Fenton", "Tom Pewter", "Usman Hussain"])
+  updateSeeds(sys.argv[1], sys.argv[2])
