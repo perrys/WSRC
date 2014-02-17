@@ -134,7 +134,7 @@ def get_or_update_match():
     try:
       player1_id = safeint(request_args.get("player1_id"))
       player2_id = safeint(request_args.get("player2_id"))
-    except TypeError, e:
+    except ValueError, e:
       return plain_response("Must supply valid player ids", httplib.BAD_REQUEST)
 
     if player1_id != match["Team1_Player1_Id"] or player2_id != match["Team2_Player1_Id"]:
@@ -232,3 +232,5 @@ if __name__ == "__main__":
   app.logger.addHandler(logging.StreamHandler(sys.stderr))
   app.logger.setLevel(logging.DEBUG)
   app.run(debug=True,  host='0.0.0.0')
+else:
+  logging.basicConfig(stream=sys.stderr)
