@@ -108,11 +108,7 @@ window.WSRC =
     playerElts.mouseleave (evt) ->      
       jQuery("div#comp_#{ comp_id } td.#{ HIGHLIGHT_CLASS }").removeClass(HIGHLIGHT_CLASS)
     scoreDialog = (elt) =>
-      tokens = elt.id.split("_")
-      comp = tokens[1]
-      matchId = parseInt(tokens[2])
-      match = this.competitions[comp][matchId]
-      this.showScoreEntryDialog([match])
+      this.showScoreEntryDialog(elt.id)
       
     playerElts.dblclick (evt) ->
       scoreDialog(evt.target)
@@ -267,26 +263,25 @@ window.WSRC =
   updateValidationTips: (t) ->
       tips = jQuery("div#score-entry-form p.validateTips")
       if t?
-        tips      
-          .text( t )
-          .addClass( "ui-state-error" )
-          .show()
+        tips.text(t).addClass( "ui-state-error" ).show()
         setTimeout(
           () -> 
             tips.removeClass( "ui-state-error", 1500 )
           500
         )
       else
-        tips
-          .text("Please enter match scores.")
-          .removeClass( "ui-state-error")
+        tips.text("Please enter match scores.").removeClass( "ui-state-error")
         jQuery("div#score-entry-form input").removeClass( "ui-state-error" )
 
-  showScoreEntryDialog: (choices) ->
+  showScoreEntryDialog: (compAndMatchId) ->
 
     if this.login_id == "" or this.login_token == ""
       loginform = jQuery("div#score-login-form")
       loginform.dialog("open")
+      if compAndMatchId?
+        loginform.find("input#comp_and_match_id").val(compAndMatchId)
+      else
+        loginform.find("input#comp_and_match_id").val("")
       return true
 
     try
@@ -320,11 +315,28 @@ window.WSRC =
       this.onResultTypeChanged(radios[0])
       scoreform.find("table.score_entry td input").spinner("value", 0)
       scoreform.find("table.score_entry tr.score_row").slice(1).css("display", "none")
-      unless choices?
+      choices = []
+      firstScoreBox = jQuery('div#score-entry-form input#team1_score1')
+
+      unless compAndMatchId?
+        savedId = jQuery("div#score-login-form input#comp_and_match_id").val()
+        if savedId?.length > 0
+          compAndMatchId = savedId
+          
+      if compAndMatchId?
+        tokens = compAndMatchId.split("_")
+        comp = tokens[1]
+        matchId = parseInt(tokens[2])
+        match = this.competitions[comp][matchId]
+        choices.push(match)
+        firstScoreBox.attr("autofocus", 1)
+      else
         thisComp = this.competitions[comp]
         ids = (parseInt(id) for id,m of thisComp)
         ids.sort((lhs,rhs) -> lhs - rhs)
         choices = (thisComp[id] for id in ids)
+        if firstScoreBox.attr("autofocus")?
+          firstScoreBox.removeAttr("autofocus")
       displayChoices = (("#{m.team1_name} vs #{m.team2_name}").replace(/&nbsp;/g, " ") for m in choices) 
       onChange = (evt, ui) =>
         idx = displayChoices.indexOf(matchName[0].value)
@@ -416,7 +428,9 @@ window.WSRC =
 
   onScoreDeleteButton: () ->
     systemfields = jQuery("div#score-entry-form form input[type='hidden']")
-    formfields = {}
+    formfields =
+      login_id: this.login_id
+      login_token: this.login_token
     systemfields.each (idx, elt) ->
       formfields[this.name] = this.value
 
@@ -446,8 +460,6 @@ window.WSRC =
     match_id      = systemfields.filter("[name='match_id']").val()
     player1_id    = systemfields.filter("[name='player1_id']").val()
     player2_id    = systemfields.filter("[name='player2_id']").val()
-    login_id      = systemfields.filter("[name='login_id']").val()
-    login_token   = systemfields.filter("[name='login_token']").val()
 
     if player1_id == "" or player2_id = "" or match_id == "" or tournament_id == ""
       userfields.filter("#matchselector").addClass( "ui-state-error" )
