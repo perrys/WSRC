@@ -186,25 +186,36 @@ def get_or_update_match():
       return plain_response("Cannot submit a draw, must have a winner, %(scores)s" % locals(), 
                             httplib.BAD_REQUEST)
     winner = wins[0] > wins[1] and player1_id or player2_id
+    winner_partner = wins[0] > wins[1] and match["Team1_Player2_Id"] or match["Team2_Player2_Id"]
 
     # Check next match, create or udpate as necessary:
-    def getNextPlayerColumn():
+    def getNextPlayersSetter(params):
+      params.append(winner)
+      columnSetter = ""
       isFirst = 0 == (match_id & 0x1)
-      return (isFirst and "Team1_Player1_Id" or "Team2_Player1_Id") + " = %s"
+      teamOrdinal = isFirst and 1 or 2
+      columnSetter += "Team%(teamOrdinal)d_Player1_Id" % locals() + " = %s" 
+      if winner_partner is not None:
+        columnSetter += ", Team%(teamOrdinal)d_Player2_Id" % locals() + " = %s"
+        params.append(winner_partner)
+      return columnSetter
 
     if next_match is not None:
       isFirst = 0 == (match_id & 0x1)
       nextPlayer = isFirst and next_match["Team1_Player1_Id"] or next_match["Team2_Player1_Id"]
       if nextPlayer is not None and nextPlayer != winner and next_match.get("Team1_Score1") is not None:
-        return plain_response("Changing this resuult conflicts with next round match already played", httplib.CONFLICT)
+        return plain_response("Changing this result conflicts with next round match already played", httplib.CONFLICT)
+      params = []
       sql = "UPDATE TournamentMatch SET Last_Update = NOW(), "
-      sql += getNextPlayerColumn()
+      sql += getNextPlayersSetter(params)
       sql += " WHERE Match_Id = %s and Tournament_Id = %s"
-      DataBase().update(sql, [winner, next_match_id, tournament_id])
+      params.extend([next_match_id, tournament_id])
+      DataBase().update(sql, params)
     else:
+      params = [next_match_id, tournament_id]
       sql = "INSERT INTO TournamentMatch SET Match_id = %s, Tournament_Id = %s, Last_Update = NOW(), "
-      sql += getNextPlayerColumn()
-      DataBase().update(sql, [next_match_id, tournament_id, winner])
+      sql += getNextPlayersSetter(params)
+      DataBase().update(sql, params)
       
     # now update the result for this match:
     sql = "UPDATE TournamentMatch SET"
