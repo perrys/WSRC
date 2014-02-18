@@ -47,9 +47,9 @@ window.WSRC =
     wins = [0,0]
     injury = false
     for [score1, score2] in scores 
-      if score1 > score2
+      if parseInt(score1) > parseInt(score2)
         ++wins[0]
-      else if score1 < score2
+      else if parseInt(score1) < parseInt(score2)
         ++wins[1]
       injury = injury or score1 < 0 or score2 < 0 
     return {
