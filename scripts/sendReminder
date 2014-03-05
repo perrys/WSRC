@@ -37,8 +37,8 @@ Content-type: text/html; charset=iso-8859-1
   msg += htmlMsg
   msg += "--%(boundary)s--" % locals()
 
-#  if True:
-  if email == "stewart.c.perry@gmail.com":
+  if True:
+#  if email == "stewart.c.perry@gmail.com":
     try:
       if TEST_MODE:
         print headers
@@ -187,7 +187,7 @@ def analyseTournaments(dbh):
 
   # get all matches from the database:
   rows = dbh.queryAndStore("""
-select A.Match_Id, A.Tournament_Id, floor(log2(A.Match_Id)), Last_Email, Previous_Id, Team1_Player1_Id, Team1_Player2_Id, Team2_Player1_Id, Team2_Player2_Id, null, null, null 
+select A.Match_Id, A.Tournament_Id, floor(log2(A.Match_Id)), Last_Email, Previous_Id, Team1_Player1_Id, Team1_Player2_Id, Team2_Player1_Id, Team2_Player2_Id, null, Team1_Score1, Team2_Score1 
 from TournamentMatch A, Tournament T where T.Id = A.Tournament_Id and T.Year = %s order by Tournament_Id, External_Id""", [YEAR])
   matches = [Match(row) for row in rows]
   for match in matches:
