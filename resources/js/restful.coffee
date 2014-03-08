@@ -1,7 +1,7 @@
 
 window.WSRC =
 
-  BASE_URL: "/tournaments"
+  BASE_URL: if document.URL.indexOf("eustacia") > -1 then "/wsrc_proxy" else "/tournaments"
   PROXY_PREFIX: if document.URL.indexOf("localhost") > -1 then "" else ".php"
   HIGHLIGHT_CLASS: "wsrc-highlight"
   MIN_WIDTH: 100
