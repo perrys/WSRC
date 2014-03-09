@@ -46,12 +46,19 @@ window.WSRC =
   findWinner: (scores) ->
     wins = [0,0]
     injury = false
+    first = true
     for [score1, score2] in scores 
+      if first
+        if (score1 == -1 and score2 == 0) or (score1 == 0 and score2 == -1)
+          injury = true
+        first = false
+      else
+        if score1? or score2?
+          injury = false
       if parseInt(score1) > parseInt(score2)
         ++wins[0]
       else if parseInt(score1) < parseInt(score2)
         ++wins[1]
-      injury = injury or score1 < 0 or score2 < 0 
     return {
       wins: wins
       injury: injury        
