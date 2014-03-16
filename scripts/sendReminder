@@ -15,7 +15,7 @@ from Match import Match
 import Config
 import Email
 
-TEST_MODE = False
+TEST_MODE = True
 YEAR = 2014
 
 def sendMail(email, subject, textMsg, htmlMsg):
@@ -164,12 +164,6 @@ def sendEmails(users, tournaments, matches, userMatches):
 
   return updateIds
 
-def hasVetsOrVintageMatch(matchList):
-  for match in matchList:
-    if match.tournament_id == 6 or match.tournament_id == 5:
-      return True
-  return False
-
 def analyseTournaments(dbh):
   rows = dbh.queryAndStore("select Tournament_Id, count(Round) from TournamentRound group by Tournament_Id");
   nrounds = dict()
@@ -218,7 +212,7 @@ where A.Name = B.Name""")])
         matchList.append(match)
 
   # filtering down the user set
-  # userMatches = dict([(k, v) for (k,v) in userMatches.iteritems() if hasVetsOrVintageMatch(v)])
+  userMatches = dict([(k, v) for (k,v) in userMatches.iteritems() if users[k].email is not None])
 
   # remove matches which aren't fully resolved:
   for user in userMatches:
