@@ -1,0 +1,25 @@
+{
+    "league_id": "88877d9c-faaa-11e3-aea4-1867b0ab0d99",
+    "boxes": [{
+        "box_id": "96500bb0-faaa-11e3-aea4-1867b0ab0d99",
+        "results": [{
+            "timestamp": "2014-06-23 14:45:34",
+            "player1": 1,
+            "player2": 3,
+            "scores": [[9,4],[9,8],[9,10],[9,3]],
+            "points": [6,4]
+        },{
+            "timestamp": "2014-06-23 14:45:34",
+            "player1": 1,
+            "player2": 4,
+            "scores": [[4,9],[8,9],[3,9]],
+            "points": [2,7]
+        },{
+            "timestamp": "2014-06-23 14:45:34",
+            "player1": 4,
+            "player2": 2,
+            "scores": [[9,5],[9,8],[9,10],[9,3]],
+            "points": [6,4]
+        }]
+    }]
+}

@@ -2,6 +2,11 @@ body {
   font-size: 0.9em;
 }
 
+.ui-content {
+ padding-left: 0.3em;
+ padding-right: 0.3em;
+}
+
 .custom-corners .ui-bar {
   -webkit-border-top-left-radius: inherit;
   border-top-left-radius: inherit;
@@ -82,6 +87,30 @@ fieldset#match-type label {
  text-align: center;
 }
 
+.custom-size-flipswitch.ui-flipswitch .ui-btn.ui-flipswitch-on {
+    text-indent: -5.9em;
+}
+.custom-size-flipswitch.ui-flipswitch .ui-flipswitch-off {
+    text-indent: 0.5em;
+}
+
+.custom-size-flipswitch.ui-flipswitch {
+    width: 100%;
+}
+.custom-size-flipswitch.ui-flipswitch.ui-flipswitch-active {
+    padding-left: 7em;
+    width: 100%;
+}
+
+.winner {
+ font-weight: bold;
+}
+
+div#league-results-div div.date {
+ float: right;
+}
+
+
 table.score_entry {
  padding-top: 5px;
  text-align:center;	
@@ -104,10 +133,19 @@ td.score_row_label {
  padding-right: 5px;
 }
 
+td.score_total {
+ font-weight: bold;
+}
+
 @media ( min-width: 1000px ) {
 
  body {
   font-size: 1em;
+ }
+
+ .ui-content {
+  padding-left: 1em;
+  padding-right: 1em;
  }
 
  div.boxes-wrapper-doublecolumn {

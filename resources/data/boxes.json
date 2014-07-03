@@ -6,60 +6,60 @@
         "id": "96500bb0-faaa-11e3-aea4-1867b0ab0d99",
         "name": "Premier League",
         "players": [
-            "Pete Richardson",
-            "Rob Heasman",
-            "Herman van den Berg",
-            "Richard Jamieson",
-            "Kieron Harwood",
-            "Jack Ross"
+ {"id": 1, "name": "Pete Richardson"},
+{"id": 2, "name": "Rob Heasman"},
+{"id": 3, "name": "Herman van den Berg"},
+{"id": 4, "name": "Richard Jamieson"},
+{"id": 5, "name": "Kieron Harwood"},
+{"id": 6, "name": "Jack Ross"}
         ]
     },{
         "id": "ce887570-faab-11e3-aea4-1867b0ab0d99",
         "name": "League 1A",
         "doublecolumn": true,
         "players": [
-            "Usman Hussain",
-            "Mike McElhatton",
-            "Freddie Lawson",
-            "Jez Foulsham",
-            "Leroy Valentine",
-            "Chris Bartlett"
+{"id": 11, "name": "Usman Hussain"},
+{"id": 12, "name": "Mike McElhatton"},
+{"id": 13, "name": "Freddie Lawson"},
+{"id": 14, "name": "Jez Foulsham"},
+{"id": 15, "name": "Leroy Valentine"},
+{"id": 16, "name": "Chris Bartlett"}
         ]
     },{
         "id": "d64b95b2-faab-11e3-aea4-1867b0ab0d99",
         "name": "League 1B",
         "doublecolumn": true,
         "players": [
-            "Mike Neale",
-            "Stuart Gilfillan",
-            "David Compton",
-            "Warren Jones",
-            "Patrick Bascombe",
-            "Mike Herington"
+{"id": 21, "name": "Mike Neale"},
+{"id": 22, "name": "Stuart Gilfillan"},
+{"id": 23, "name": "David Compton"},
+{"id": 24, "name": "Warren Jones"},
+{"id": 25, "name": "Patrick Bascombe"},
+{"id": 26, "name": "Mike Herington"}
         ]
     },{
         "id": "dbc2ac9c-faab-11e3-aea4-1867b0ab0d99",
         "name": "League 2A",
         "doublecolumn": true,
         "players": [
-            "Kerryn Bartlett",
-            "Toby Fenton",
-            "Simon Browne",
-            "Elliot Lee",
-            "Mike Reilly",
-            "Eric Butterworth"
+{"id": 31, "name": "Kerryn Bartlett"},
+{"id": 32, "name": "Toby Fenton"},
+{"id": 33, "name": "Simon Browne"},
+{"id": 34, "name": "Elliot Lee"},
+{"id": 35, "name": "Mike Reilly"},
+{"id": 36, "name": "Eric Butterworth"}
         ]
     },{
         "id": "e2cc322e-faab-11e3-aea4-1867b0ab0d99",
         "name": "League 2B",
         "doublecolumn": true,
         "players": [
-            "Graham Norton",
-            "Matt O'Connor",
-            "Alan Buckland",
-            "David Dommett",
-            "Ian Dermody",
-            "Tim McGrath"        
+{"id": 41, "name": "Graham Norton"},
+{"id": 42, "name": "Matt O'Connor"},
+{"id": 43, "name": "Alan Buckland"},
+{"id": 44, "name": "David Dommett"},
+{"id": 45, "name": "Ian Dermody"},
+{"id": 46, "name": "Tim McGrath"}
         ]
     }]
 }
