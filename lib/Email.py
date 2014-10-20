@@ -2,11 +2,8 @@
 
 import smtplib
 import unittest
-import Config
 
-def sendmail(headers, body, config=None):
-  if config is None:
-    config = Config.getSMTPConfig()
+def sendmail(headers, body, config):
 
   if "From" not in headers:
     headers["From"] = config.username
@@ -34,13 +31,17 @@ def sendmail(headers, body, config=None):
 class tester(unittest.TestCase):
   def testEmailer(self):
 
+    import jsonutils
+    import os.path
+    config = open(os.path.expanduser("~/etc/smtp.json"))
+    config = jsonutils.deserializeFromFile(config)["gmail"]
     toAddress = "stewart.c.perry@gmail.com"
     headers = {"To": toAddress,
                "From": "foobar@dbsquash.org",
                "Subject": "testing testing",
                "MIME-Version": "1.0"}
     body = "test message"
-    print sendmail(headers, body)
+    print sendmail(headers, body, config)
 
 
 if __name__ == "__main__":
