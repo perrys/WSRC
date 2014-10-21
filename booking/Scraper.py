@@ -5,7 +5,7 @@ import sys
 import os.path
 from bs4 import BeautifulSoup
 from Calendar import Event
-from GBEireTimeZone import GBEireTimeZone
+from timezones import GBEireTimeZone
 
 UK_TZINFO = GBEireTimeZone()
 

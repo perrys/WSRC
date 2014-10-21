@@ -7,8 +7,8 @@ import os.path
 import sys
 import uuid
 
-from GBEireTimeZone import GBEireTimeZone
-from GBEireTimeZone import UTC
+from timezones import GBEireTimeZone
+from timezones import UTC
 
 # installation:
 # pip install --upgrade google-api-python-client
@@ -82,6 +82,50 @@ class CalendarWrapper:
     LOGGER.info("Updating event {evt.name} [{evt.location}@{evt.time:%Y-%m-%d %H:%M:%S}]".format(**locals()))
     if not self.testing:
       self.service.events().update(calendarId=self.calendarId, eventId=evt.id, body=evt.toGoogleCalendarEvent()).execute()
+
+class EventInterceptor:
+  def __init__(self, cal, addCB, updateCB, removeCB):
+    self.calendar = cal
+    self.addEvent = addCB
+    self.updateEvent = updateCB
+    self.deleteEvent = removeCB
+  def addEvent(self, evt):
+    self.calendar.addEvent(evt)
+    self.add(evt)
+  def updateEvent(self, evt):
+    self.calendar.updateEvent(evt)
+    self.updateEvent(evt)
+  def deleteEvent(self, evt):
+    self.calendar.deleteEvent(evt)
+    self.deleteEvent(evt)
+
+class FilteredCalendar:
+  def __init__(self, cal, filter):
+    self.calendar = cal
+    self.filter = filter
+  def addEvent(self, evt):
+    if self.filter(evt):
+      self.calendar.addEvent(evt)
+  def updateEvent(self, evt):
+    if self.filter(evt):
+      self.calendar.updateEvent(evt)
+  def deleteEvent(self, evt):
+    if self.filter(evt):
+      self.calendar.deleteEvent(evt)
+
+class MulticastCalendar:
+  def __init__(self, calendars):
+    self.calendars = calendars
+  def addEvent(self, evt):
+    for c in self.calendars:
+      c.addEvent(evt)
+  def updateEvent(self, evt):
+    for c in self.calendars:
+      c.updateEvent(evt)
+  def deleteEvent(self, evt):
+    for c in self.calendars:
+      c.deleteEvent(evt)
+
     
 class Event:
   "Simple wrapper for a calendar event. Has some utilities to convert to/from Google calendar event structures."
