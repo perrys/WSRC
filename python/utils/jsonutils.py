@@ -8,9 +8,16 @@ def _json_object_hook(dct):
   className = dct.get("cls")
   if className is not None:
     table = globals()
-    for m in className.split("."):
-      clazz = table[m]
-      table = clazz.__dict__
+    dotidx = className.rfind(".")
+    if dotidx > 0:
+      mod = className[:dotidx]
+      className = className[dotidx+1:]
+      if mod in sys.modules:
+        table = sys.modules[mod].__dict__
+      else:
+        raise Exception("Couldn't find module/package {mod}".format(**locals()))
+    clazz = table[className]
+    table = clazz.__dict__
     args = dct["args"]
     return clazz(**args)
 

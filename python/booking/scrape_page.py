@@ -4,12 +4,12 @@ import datetime
 import sys
 import os.path
 from bs4 import BeautifulSoup
-from Calendar import Event
-from timezones import GBEireTimeZone
+from cal_events import Event
+from wsrc.utils.timezones import GBEireTimeZone
 
 UK_TZINFO = GBEireTimeZone()
 
-def tagGenerator(head, next_func=lambda(x): x.next_sibling, filt=lambda(x): hasattr(x, "name")):
+def tag_generator(head, next_func=lambda(x): x.next_sibling, filt=lambda(x): hasattr(x, "name")):
   """Generator for tag collections. 
   HEAD is the first element in the collection
   NEXT_FUNC provides the next element given the current one
@@ -20,12 +20,12 @@ def tagGenerator(head, next_func=lambda(x): x.next_sibling, filt=lambda(x): hasa
       yield head
     head = next_func(head)
 
-def cellContent(c):
-  def convertNBSP(s):
+def get_tag_content(c):
+  def cvt_nbsp(s):
     return s.replace(u'\xa0', ' ')
-  return convertNBSP(c.string)
+  return cvt_nbsp(c.string)
 
-def processBooking(cell):
+def process_booking(cell):
   """Parse the cell contents into a either a string (in the case of
   text-only content, such as dittos), or a partially constructed Event
   object. The Event contains just the description (i.e. member name)
@@ -33,10 +33,10 @@ def processBooking(cell):
   processing"""
   link = cell.a
   if link is None:
-    return cellContent(cell)
-  return Event(cellContent(link), 'http://www.court-booking.co.uk/WokingSquashClub/' + link['href'])
+    return get_tag_content(cell)
+  return Event(get_tag_content(link), 'http://www.court-booking.co.uk/WokingSquashClub/' + link['href'])
 
-def processWeekRow(row):
+def process_week_row(row):
   """Parse a 15-minute row in the weekly timetable, returning a time
   string and a list of 7 Event objects, or None if the cell is empty"""
   class Result:
@@ -58,10 +58,10 @@ def processWeekRow(row):
     return False
 
   # loop over valid cells in the row
-  for cell in tagGenerator(first, filt=filtfunc):
+  for cell in tag_generator(first, filt=filtfunc):
     cssclasses = cell.get("class") # interesting cells are identifiable by their CSS class:
     if cssclasses is not None and ('I' in cssclasses or 'E' in cssclasses):
-      booking = processBooking(cell)
+      booking = process_booking(cell)
       if booking is not None:
         result.bookings.append(booking)
         continue
@@ -72,7 +72,7 @@ def processWeekRow(row):
 
   return result
                        
-def processWeekPage(soup) :
+def process_week_page(soup) :
   """Parse the weekly timetable for a court, returning a list of
   objects representing the 15-minute slots, in time order. Each object
   contains the fields "time" and "bookings", which are respectively
@@ -84,12 +84,12 @@ def processWeekPage(soup) :
   slots = []
   first_data_row = first_col_cell.parent
   title_row = first_data_row.previous_sibling
-  for row in tagGenerator(first_data_row):
-    data = processWeekRow(row)
+  for row in tag_generator(first_data_row):
+    data = process_week_row(row)
     slots.append(data)
   return slots
 
-def extractEvents(time_list, first_date, location):
+def extract_events(time_list, first_date, location):
   """Process all of the information scraped from the page to produce a list of Event objects.
   TIME_LIST is the list of 15-minute slots representing the court bookings for a week at that time.
   FIRST_DATE is the date of the first column (which should be a Monday)
@@ -122,16 +122,16 @@ def extractEvents(time_list, first_date, location):
 
   return flatten(result)
 
-def scrapeWeekEvents(eventData, first_date, location):
+def scrape_week_events(eventData, first_date, location):
   soup = BeautifulSoup(eventData, "lxml")
-  time_list = processWeekPage(soup)
-  return extractEvents(time_list, first_date, location)
+  time_list = process_week_page(soup)
+  return extract_events(time_list, first_date, location)
 
 if __name__ == "__main__":
   infile = sys.stdin
   if len(sys.argv) > 1:
     infile = open(os.path.expanduser(sys.argv[1]))
-  entries = scrapeWeekEvents(infile, datetime.date(2014,9,22), "WSRC Court 1")
+  entries = scrape_week_events(infile, datetime.date(2014,9,22), "WSRC Court 1")
   for e in entries:
       print e.__dict__
   

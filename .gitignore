@@ -4,3 +4,6 @@ TODO
 TAGS
 resources/js/restful.js
 .pydevproject
+build
+dist
+.ropeproject

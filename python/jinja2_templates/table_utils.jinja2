@@ -1,0 +1,19 @@
+{%- macro renderCell(cell) %}
+{%- if match("^http://", cell|lower) %}<a href="{{ cell|e }}">{{ cell|e }}</a>
+{%- elif match("^[\w\.]+@[\w\.]+$", cell) %}<a href="mailto:{{ cell|e }}">{{ cell|e }}</a>
+{%- else %}{{ cell|e }}
+{%- endif %}
+{%- endmacro %}
+{%- macro renderTable(name) %}
+{%- set tbl = tables[name] %}
+{%- if isHTML %}
+<table border="0">
+{%- for row in tbl.rawdata %}
+{%- set bold = (loop.index == 1 and tbl.hasHeader) %}
+<tr>{% for cell in row %}<td style="padding-right: 10px;">{% if bold %}<b>{% endif %}{{ renderCell(cell) }}{% if bold %}</b>{% endif %}</td>{% endfor %}</tr>
+{%- endfor %}
+</table>
+{%- else %}
+{{ tbl.textData }}
+{%- endif %}
+{%- endmacro %}

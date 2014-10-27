@@ -7,8 +7,8 @@ import os.path
 import sys
 import uuid
 
-from timezones import GBEireTimeZone
-from timezones import UTC
+from wsrc.utils.timezones import GBEireTimeZone
+from wsrc.utils.timezones import UTC
 
 # installation:
 # pip install --upgrade google-api-python-client
@@ -31,7 +31,7 @@ UK_TZINFO = GBEireTimeZone()
 UTC_TZINFO = UTC()
 LOGGER = logging.getLogger(__name__)
 
-def _getService():
+def _get_Service():
   """Get and authenticated Google API service wrapper based on previously registered and stored credentials"""
   http = httplib2.Http()
   storage = oauth2client.file.Storage(CREDENTIALS_CACHE_FILE)
@@ -47,21 +47,21 @@ def _getService():
 class CalendarWrapper:
   """Simple wrapper for a given calendar service"""
 
-  def __init__(self, calendarId, service=_getService()):
+  def __init__(self, calendarId, service=_get_Service()):
     """Create a new wrapper instance with the given calendar Id"""
     self.service = service
     self.calendarId = calendarId
     self.testing = False
 
-  def addEvent(self, evt, colorId=None):
+  def add_event(self, evt, colorId=None):
     LOGGER.info("Adding new event: {evt.name} [{evt.location}@{evt.time:%Y-%m-%d %H:%M:%S}]".format(**locals()))
     if not self.testing:
-      gevt = evt.toGoogleCalendarEvent()
+      gevt = evt.to_google_cal_event()
       if colorId is not None:
         gevt["colorId"] = colorId
       self.service.events().insert(calendarId=self.calendarId, body=gevt).execute()
 
-  def listEvents(self, cutoff):
+  def list_events(self, cutoff):
     cutoff = datetime.datetime.combine(cutoff, datetime.time(0,0)).isoformat() + "Z"
     page_token = None
     eventList = []
@@ -71,60 +71,17 @@ class CalendarWrapper:
       page_token = events.get('nextPageToken')
       if not page_token:
         break
-    return [Event.fromGoogleCalendarEvent(evt) for evt in eventList]
+    return [Event.from_google_cal_event(evt) for evt in eventList]
 
-  def deleteEvent(self, evt):
+  def delete_event(self, evt):
     LOGGER.info("Deleting event {evt.name} [{evt.location}@{evt.time:%Y-%m-%d %H:%M:%S}]".format(**locals()))
     if not self.testing:
       self.service.events().delete(calendarId=self.calendarId, eventId=evt.id).execute()
 
-  def updateEvent(self, evt):
+  def update_event(self, evt):
     LOGGER.info("Updating event {evt.name} [{evt.location}@{evt.time:%Y-%m-%d %H:%M:%S}]".format(**locals()))
     if not self.testing:
-      self.service.events().update(calendarId=self.calendarId, eventId=evt.id, body=evt.toGoogleCalendarEvent()).execute()
-
-class EventInterceptor:
-  def __init__(self, cal, addCB, updateCB, removeCB):
-    self.calendar = cal
-    self.addEvent = addCB
-    self.updateEvent = updateCB
-    self.deleteEvent = removeCB
-  def addEvent(self, evt):
-    self.calendar.addEvent(evt)
-    self.add(evt)
-  def updateEvent(self, evt):
-    self.calendar.updateEvent(evt)
-    self.updateEvent(evt)
-  def deleteEvent(self, evt):
-    self.calendar.deleteEvent(evt)
-    self.deleteEvent(evt)
-
-class FilteredCalendar:
-  def __init__(self, cal, filter):
-    self.calendar = cal
-    self.filter = filter
-  def addEvent(self, evt):
-    if self.filter(evt):
-      self.calendar.addEvent(evt)
-  def updateEvent(self, evt):
-    if self.filter(evt):
-      self.calendar.updateEvent(evt)
-  def deleteEvent(self, evt):
-    if self.filter(evt):
-      self.calendar.deleteEvent(evt)
-
-class MulticastCalendar:
-  def __init__(self, calendars):
-    self.calendars = calendars
-  def addEvent(self, evt):
-    for c in self.calendars:
-      c.addEvent(evt)
-  def updateEvent(self, evt):
-    for c in self.calendars:
-      c.updateEvent(evt)
-  def deleteEvent(self, evt):
-    for c in self.calendars:
-      c.deleteEvent(evt)
+      self.service.events().update(calendarId=self.calendarId, eventId=evt.id, body=evt.to_google_cal_event()).execute()
 
     
 class Event:
@@ -139,7 +96,7 @@ class Event:
     self.id = (id is None) and uuid.uuid1().hex or id
     self.googleEvent = googleEvent
 
-  def toGoogleCalendarEvent(self):
+  def to_google_cal_event(self):
     gevt = self.googleEvent
     if gevt is None:
       self.googleEvent = gevt = {}
@@ -163,8 +120,8 @@ class Event:
     return gevt
 
   @staticmethod
-  def fromGoogleCalendarEvent(evt):
-    def fromISODateTime(s):
+  def from_google_cal_event(evt):
+    def from_iso_dt(s):
       if not s.endswith("Z"):
         raise Exception("Expected UTC time, unsure how to interpret: " + s)
       s = s[:-1]
@@ -172,7 +129,7 @@ class Event:
       dt = dt.replace(tzinfo=UTC_TZINFO)
       dt = dt.astimezone(UK_TZINFO)
       return dt
-    start, end = [fromISODateTime(s) for s in evt["start"]["dateTime"], evt["end"]["dateTime"]]
+    start, end = [from_iso_dt(s) for s in evt["start"]["dateTime"], evt["end"]["dateTime"]]
     link = evt.get("source")
     if link is not None:
       link = link["url"]
@@ -185,7 +142,7 @@ class Event:
       id=evt["id"],
       googleEvent=evt)
 
-  def mergeFrom(self, evt):
+  def merge_from(self, evt):
     "Copy the details of the given event into this event"
     # update all fields except Id - if this started as a google
     # calendar event don't want to overwrite the id with a random one.
@@ -195,7 +152,7 @@ class Event:
     self.duration = evt.duration
     self.location = evt.location
 
-  def identicalTo(self, other):
+  def identical_to(self, other):
     mine,theirs = [(x.name, x.time, x.duration, x.link, x.location) for x in self, other]
     return mine == theirs
 

@@ -1,0 +1,26 @@
+{% from 'table_utils.jinja2' import renderTable with context %} 
+
+{%- if isHTML %}
+<html>
+<head>
+<title>{{ subject }}</title>
+</head>
+<body>
+{%- endif %}
+{%- if isHTML %}<b>{% endif %}
+*This is an automated email*
+{%- if isHTML %}</b><p>{% endif %}
+
+Dear {{ firstname }},
+{%- if isHTML %}<p>{% endif %}
+
+The following court(s) have recently become available:
+{%- if isHTML %}<p>{% endif %}
+
+{{ renderTable("cancellations") }}
+
+
+{% if isHTML %}
+</body>
+</html>
+{% endif %}
