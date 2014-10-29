@@ -80,8 +80,6 @@ def run_from_command_line():
 
       # For each event in the booking system, insert/update in the Google calendar as necessary:
       for evt in bookingSystemEvents:
-        if evt.name == "Ralph Goldstein":
-          continue
         try:
           existingEvent = existingGCalEvents.get(evt) # lookup is by start time and location only
           if existingEvent is None:

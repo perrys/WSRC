@@ -84,7 +84,9 @@ def process_week_page(soup) :
   slots = []
   first_data_row = first_col_cell.parent
   title_row = first_data_row.previous_sibling
-  for row in tag_generator(first_data_row):
+  def filtfunc(cell):
+    return hasattr(cell, "name") and cell.name == 'tr'
+  for row in tag_generator(first_data_row, filt=filtfunc):
     data = process_week_row(row)
     slots.append(data)
   return slots
