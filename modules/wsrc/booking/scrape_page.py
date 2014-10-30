@@ -1,6 +1,7 @@
 #!/usr/bin/python
 
 import datetime
+import logging
 import sys
 import os.path
 from bs4 import BeautifulSoup
@@ -8,6 +9,7 @@ from cal_events import Event
 from wsrc.utils.timezones import GBEireTimeZone
 
 UK_TZINFO = GBEireTimeZone()
+LOGGER = logging.getLogger(__name__)
 
 def tag_generator(head, next_func=lambda(x): x.next_sibling, filt=lambda(x): hasattr(x, "name")):
   """Generator for tag collections. 
@@ -80,6 +82,8 @@ def process_week_page(soup) :
   content, either an Event object, a string, or None."""
   first_col_cell = soup.find('td', class_='red')
   if first_col_cell is None:
+    html = soup.prettify("utf-8")
+    Logger.error("parse error, soup=\n" + html);
     raise Exception('Unable to parse - could not find first column in table')
   slots = []
   first_data_row = first_col_cell.parent

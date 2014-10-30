@@ -66,7 +66,8 @@ def run_from_command_line():
 
   # Convert the list of Google calendar events to a dictionary. Events are keyed by start date and location.
   existingGCalEvents = dict([(evt,evt) for evt in existingGCalEvents])
-  removedEvents = []
+
+  bookingSystemEvents = []
 
   # Loop over this week and next week:
   for td in (datetime.timedelta(0), datetime.timedelta(days=7)):
@@ -75,35 +76,37 @@ def run_from_command_line():
     for court in range(1,4):
       # Get data from the bookings system for this week and court:
       bookingSystemEventData = get_week_view(date.year, date.month, date.day, court)
-      bookingSystemEvents = scrape_page.scrape_week_events(bookingSystemEventData, date, "Court %d, Woking Squash Rackets Club, Horsell Moor, Woking, Surrey GU21 4NQ" % court)
+      events = scrape_page.scrape_week_events(bookingSystemEventData, date, "Court %d, Woking Squash Rackets Club, Horsell Moor, Woking, Surrey GU21 4NQ" % court)
       LOGGER.info("Found {0} court booking(s) for court {1} week starting {2}".format(len(bookingSystemEvents), court, date.isoformat()))
+      bookingSystemEvents.extend([(event, court) for event in events])
 
-      # For each event in the booking system, insert/update in the Google calendar as necessary:
-      for evt in bookingSystemEvents:
-        try:
-          existingEvent = existingGCalEvents.get(evt) # lookup is by start time and location only
-          if existingEvent is None:
-            # the event does not exist in Google calendar, so add it: 
-            cal.add_event(evt, court) # court number is used for colour ID
-          else:
-            # an event for the time/location exists, check if it needs updating: 
-            if not evt.identical_to(existingEvent): 
-              existingEvent.merge_from(evt)
-              cal.update_event(existingEvent)
-            del existingGCalEvents[evt] # remove this event from the list as we have processed it
-        except Exception:
-          LOGGER.exception("Error processing event %s", evt.__dict__)
+  # For each event in the booking system, insert/update in the Google calendar as necessary:
+  for (evt, court) in bookingSystemEvents:
+    try:
+      existingEvent = existingGCalEvents.get(evt) # lookup is by start time and location only
+      if existingEvent is None:
+        # the event does not exist in Google calendar, so add it: 
+        cal.add_event(evt, court) # court number is used for colour ID
+      else:
+        # an event for the time/location exists, check if it needs updating: 
+        if not evt.identical_to(existingEvent): 
+          existingEvent.merge_from(evt)
+          cal.update_event(existingEvent)
+        del existingGCalEvents[evt] # remove this event from the list as we have processed it
+    except Exception:
+      LOGGER.exception("Error processing event %s", evt.__dict__)
 
-  # remove unprocessed Google calendar events. These must have been removed from the booking system since the last sync
-  for existingEvent in existingGCalEvents:
-#    cal.delete_event(existingEvent)
-    removedEvents.append(existingEvent)
+  # unprocessed Google calendar events must have been removed from the booking system since the last sync
+  removedEvents = existingGCalEvents
 
   for userCfg in notifierConfig.config:
     notifier = actions.Notifier(userCfg, smtpConfig)
     for evt in removedEvents:
       notifier(evt)
     notifier.process_all_events()
+
+  for evt in removedEvents:
+    cal.delete_event(evt)
 
 
 # Local Variables:
