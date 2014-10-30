@@ -37,6 +37,7 @@ INSTALLED_APPS = (
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'wsrc.site.usermodel',
+    'wsrc.site.competitions',
 )
 
 MIDDLEWARE_CLASSES = (
