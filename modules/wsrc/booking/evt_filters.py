@@ -1,7 +1,6 @@
 #!/usr/bin/python
 
 import datetime
-import json
 import unittest
 from wsrc.utils.timezones import GBEireTimeZone
 
@@ -56,17 +55,6 @@ class Or:
       if f(evt):
         return True
     return False
-
-def json_object_hook(dct):
-  className = dct.get("cls")
-  if className is not None:
-    table = globals()
-    for m in className.split("."):
-      clazz = table[m]
-      table = clazz.__dict__
-    args = dct["args"]
-    return clazz(**args)
-  return dct
 
 class Tester(unittest.TestCase):
   class TimeEvt:
