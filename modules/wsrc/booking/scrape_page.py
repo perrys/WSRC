@@ -83,7 +83,7 @@ def process_week_page(soup) :
   first_col_cell = soup.find('td', class_='red')
   if first_col_cell is None:
     html = soup.prettify("utf-8")
-    Logger.error("parse error, soup=\n" + html);
+    LOGGER.error("parse error, soup=\n" + html);
     raise Exception('Unable to parse - could not find first column in table')
   slots = []
   first_data_row = first_col_cell.parent
