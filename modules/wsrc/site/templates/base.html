@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Woking Squash Rackets Club</title>
+
+{% if local_links %}
+  <script src="/static/jquery-1.10.2.js"></script>
+  <link rel="stylesheet" href="/static/jquery.mobile-1.4.5.min.css">
+  <script src="/static/jquery.mobile-1.4.5.min.js"></script>
+{% else %}
+  <!-- use jquery from Google's CDN -->
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+  <link rel="stylesheet" href="//ajax.googleapis.com/ajax/libs/jquerymobile/1.4.3/jquery.mobile.min.css" />
+  <script src="//ajax.googleapis.com/ajax/libs/jquerymobile/1.4.3/jquery.mobile.min.js"></script>
+  <link rel="stylesheet" href="http://fonts.googleapis.com/css?family=Open+Sans:300,400,700">
+{% endif %}
+  <script src="/static/js/main.js"></script>
+
+<!-- do not use @media styles with older IE versions -->
+<!--[if IE]>
+  <link rel="stylesheet" href="/static/css/main_legacy.css">
+<![endif]-->
+<!--[if !IE]><!-->
+  <link rel="stylesheet" href="/static/css/main.css">
+ <!--<![endif]-->
+
+  <script>
+$( document ).on( "pagecreate", ".wsrc-site", function( event ) {
+  var page = $( this );
+  $( ".jqm-navmenu-panel ul" ).listview();
+  $( ".jqm-navmenu-link" ).on( "click", function() {
+    page.find( ".jqm-navmenu-panel:not(.jqm-panel-page-nav)" ).panel( "open" );
+  });
+});
+  </script>
+</head>
+<body>
+<div data-role="page" class="wsrc-site {% block page-classes %}{% endblock %}">
+
+  <div data-role="header" class="jqm-header">
+    <h2><img src="/static/images/WSRC-banner.jpg" alt="Woking Squash Club"></h2>
+    <p>{% block pagetitle %}{% endblock %}</p>
+    <a href="#" class="jqm-navmenu-link ui-btn ui-btn-icon-notext ui-corner-all ui-icon-bars ui-nodisc-icon ui-alt-icon ui-btn-left">Menu</a>
+    <a href="#" class="jqm-search-link ui-btn ui-btn-icon-notext ui-corner-all ui-icon-search ui-nodisc-icon ui-alt-icon ui-btn-right">Search</a>
+  </div>
+
+    {% block content %}{% endblock %}
+
+  <!-- left nav menu: -->
+  <div data-role="panel" class="jqm-navmenu-panel" data-position="left" data-display="overlay" data-theme="a">
+    <ul class="jqm-list ui-alt-icon ui-nodisc-icon">
+      <li data-filtertext="homepage" data-icon="home"><a href="{% url 'homepage' %}">Home</a></li>
+      <li data-filtertext="about contact history"><a href="/about" data-ajax="false">About</a></li>
+      <li data-filtertext="membership join subscriptions"><a href="/membership" data-ajax="false">Membership</a></li>
+      <li data-filtertext="coach"><a href="/coaching" data-ajax="false">Coaching</a></li>
+      <li data-filtertext="junior"><a href="/juniors" data-ajax="false">Juniors</a></li>
+      <li data-role="collapsible" data-enhanced="true" data-collapsed-icon="carat-d" data-expanded-icon="carat-u" data-iconpos="right" data-inset="false" class="ui-collapsible ui-collapsible-themed-content ui-collapsible-collapsed">
+	<h3 class="ui-collapsible-heading ui-collapsible-heading-collapsed">
+	  <a href="#" class="ui-collapsible-heading-toggle ui-btn ui-btn-icon-right ui-btn-inherit ui-icon-carat-d">Club Leagues<span class="ui-collapsible-heading-status"> click to expand contents</span></a>
+	</h3>
+	<div class="ui-collapsible-content ui-body-inherit{% if not league_config %} ui-collapsible-content-collapsed{% endif %}" {% if not league_config %}aria-hidden="true"{% endif %}>
+	  <ul>
+	    <li><a href="{% url 'wsrc.site.competitions.views.boxes_view' %}">Current</a></li>
+	    <li><a href="{% url 'wsrc.site.competitions.views.boxes_view' -1 %}" data-ajax="false">Previous</a></li>
+	    <li data-filtertext="leagues"><a href="/competitions/leagueslist/" data-ajax="false">History&hellip;</a></li>
+	  </ul>
+	</div>
+      </li>
+      <li data-role="collapsible" data-enhanced="true" data-collapsed-icon="carat-d" data-expanded-icon="carat-u" data-iconpos="right" data-inset="false" class="ui-collapsible ui-collapsible-themed-content ui-collapsible-collapsed">
+	<h3 class="ui-collapsible-heading ui-collapsible-heading-collapsed">
+          <a href="#" class="ui-collapsible-heading-toggle ui-btn ui-btn-icon-right ui-btn-inherit ui-icon-carat-d">Annual Tournaments<span class="ui-collapsible-heading-status"> click to expand contents</span></a>
+	</h3>
+	<div class="ui-collapsible-content ui-body-inherit ui-collapsible-content-collapsed" aria-hidden="true">
+	  <ul>
+	    <li data-filtertext="collapsibles content formatting"><a href="/competitions/tournaments" data-ajax="false">2014 Tournaments</a></li>
+	    <li data-filtertext="collapsibles content formatting"><a href="/competitions/tournaments" data-ajax="false">2013 Tournaments</a></li>
+	  </ul>
+	</div>
+      </li>
+      <li data-filtertext="contact"><a href="/contact" data-ajax="false">Contact Us</a></li>
+    </ul>
+  </div>
+
+  <div data-role="footer" data-position="fixed" data-tap-toggle="false" class="jqm-footer">
+    <p>Woking Squash Rackets Club <span class="jqm-version"></span></p>
+  </div>
+  
+</div><!-- /page -->
+
+</body>
+</html>

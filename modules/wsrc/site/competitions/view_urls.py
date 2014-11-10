@@ -12,3 +12,13 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with WSRC.  If not, see <http://www.gnu.org/licenses/>.
+
+from django.conf.urls import patterns, url
+
+import wsrc.site.competitions.views as views
+
+urlpatterns = patterns('',
+    url(r'^leagues/$', views.boxes_view, {"group_id": "0"}),
+    url(r'^leagues/(-?[0-9]+)$', views.boxes_view),
+)
+

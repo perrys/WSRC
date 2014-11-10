@@ -12,3 +12,12 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with WSRC.  If not, see <http://www.gnu.org/licenses/>.
+
+from django.conf.urls import patterns, url
+
+urlpatterns = patterns('wsrc.site.competitions.legacy_views',
+    url(r'^players/$', 'player_list'),
+    url(r'^tournament/$', 'competition_list'),
+    url(r'^competition/$', 'match_list'),
+)
+

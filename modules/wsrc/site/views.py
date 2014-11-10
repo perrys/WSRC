@@ -12,3 +12,8 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with WSRC.  If not, see <http://www.gnu.org/licenses/>.
+
+from django.template.response import TemplateResponse
+
+def index_view(request):
+    return TemplateResponse(request, 'index.html', {})    

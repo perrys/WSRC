@@ -6,8 +6,6 @@ unless window.assert?
       
 window.WSRC =
 
-  BASE_URL: "."
-  
   toggle: (onid, offid) ->
     jQuery("##{ onid }").css("display", "")
     jQuery("##{ offid }").css("display", "none")
@@ -28,11 +26,11 @@ window.WSRC =
   ## 
   bulkAdd: (selector, list) ->
     elt = selector[0] # get the DOM element
-    for i in [(elt.options.length-1)..1] by -1
+    for i in [(elt.options.length-1)..0] by -1
       if elt.options[i].value != ""
         elt.remove(i)
     for item in list
-      selector.append("<option value='#{ item.id }'>#{ item.name }</option>")
+      selector.append("<option value='#{ item.id }'>#{ item.full_name }</option>")
     selector.selectmenu();
     selector.selectmenu('refresh', true);
     return null
@@ -61,7 +59,7 @@ window.WSRC =
       html: ""
     )
     jQuery.ajax(
-      url: this.BASE_URL + url
+      url: url
       type: "GET"
       dataType: "json"
       success: opts.successCB
@@ -76,12 +74,11 @@ window.WSRC =
   ##
   openBoxDetailDialog: (id) ->
     id = id.replace("link-", "")
-    box_config = this.findMatching(this.league_config.boxes, id)
-    results_config = this.findMatching(this.league_results.boxes, id, "box_id")
+    results_config = this.findMatching(this.league_results.competitions_expanded, parseInt(id), "id")
 
     # setup page and inputs
     dialogdiv = jQuery("div#boxDetailDialog")
-    dialogdiv.find("div h2").text(box_config.name) # page title
+    dialogdiv.find("div h2").text(results_config.name) # page title
 
     setupPointsTable = () =>
       tablebody = dialogdiv.find("table#league-table tbody")
@@ -94,7 +91,7 @@ window.WSRC =
       # sum up the totals for each result
       player_totals = {}
       if results_config?
-        for r in results_config.results
+        for r in results_config.matches
           for i in [1..2]
             player_id = r["player#{ i }"]
             totals = player_totals[player_id]
@@ -115,12 +112,12 @@ window.WSRC =
             totals.pts += r.points[mine]
 
       # add in zeros for players without results, and enrich with player name
-      for player in box_config.players
+      for player in results_config.players
         if player.id of player_totals
-          player_totals[player.id].name = player.name
+          player_totals[player.id].name = player.full_name
         else
           totals = newTotals()
-          totals.name = player.name
+          totals.name = player.full_name
           player_totals[player.id] = totals
 
       # vectorize and sort
@@ -130,7 +127,7 @@ window.WSRC =
         if result == 0
           result = (r.f-r.a) - (l.f-l.a)
           if result == 0
-            result = r.name < l.name
+            result = r.full_name < l.full_name
         result
       )
 
@@ -146,14 +143,14 @@ window.WSRC =
       resultsdiv.find("div").remove()
       resultsdiv.find("p").remove()
 
-      if results_config?.results?
-        results = results_config.results
+      if results_config?.matches?
+        results = results_config.matches
         results.sort((l,r) ->
           l.timestamp > r.timestamp
         )
         id2NameMap = {} 
-        for p in box_config.players
-          id2NameMap[p.id] = p.name
+        for p in results_config.players
+          id2NameMap[p.id] = p.full_name
         for r in results
           date = "Sat 4th June 2014" # TODO - convert from results
           gameswon = for i in [0..1]
@@ -183,7 +180,7 @@ window.WSRC =
       form.find("table#score-entry-input th#header-player2").text("Player 2")
   
       # add players from originating box to the player drop-downs 
-      players = (p for p in box_config.players)
+      players = (p for p in results_config.players)
       players.sort()
       this.bulkAdd(form.find("select#player1"), players)
       this.bulkAdd(form.find("select#player2"), players)
@@ -191,8 +188,8 @@ window.WSRC =
     setupPointsTable()
     setupResults()
     setupAddScoreDialog()
-    dialogdiv.find("div#league-table-div").collapsible().collapsible("expand")
-    jQuery.mobile.changePage("#boxDetailDialog")
+    dialogdiv.find("div#add-change-div").collapsible().collapsible("expand")
+#    jQuery.mobile.changePage("#boxDetailDialog")
 
     return null
 
@@ -212,7 +209,7 @@ window.WSRC =
     otherselector = form.find("select##{ otherid }")
     if otherselector.val() == ""
       players = ([p.value, p.textContent] for p in selector.find("option") when (p.value != "" and p.value != selectedId))
-      this.bulkAdd(otherselector, ({id:p[0], name:p[1]} for p in players))
+      this.bulkAdd(otherselector, ({id:p[0], full_name:p[1]} for p in players))
 
     checkBothPlayersSelected = () =>
       selector1 = form.find("select#player1")
@@ -223,72 +220,71 @@ window.WSRC =
         form.find("table td input").textinput("enable")
         # and add players to the walkover result combo
         selects = (form.find("select##{ p }")[0] for p in ['player1', 'player2'])
-        this.bulkAdd(form.find("select#walkover_result"), ({id:e.options[e.selectedIndex].value, name:e.options[e.selectedIndex].text} for e in selects))
+        this.bulkAdd(form.find("select#walkover_result"), ({id:e.options[e.selectedIndex].value, full_name:e.options[e.selectedIndex].text} for e in selects))
 
     checkBothPlayersSelected()
     return null
 
-  ##
-  # Draw the boxes on the main page once the box config is available.
-  ##
-  createBoxes: (league_config) ->
-    maxplayers = (b.players.length for b in league_config.boxes).reduce (x,y) -> Math.max(x,y)
+  # ##
+  # # Draw the boxes on the main page once the box config is available.
+  # ##
+  # createBoxes: (league_config) ->
+  #   maxplayers = (b.players.length for b in league_config.boxes).reduce (x,y) -> Math.max(x,y)
 
-    # helper method to create a table DOM for the box from config
-    createBoxTable = (box_config) ->
-      tbl = jQuery("<table data-role='table' data-mode='' id='table-#{ box_config.id }' class='boxes ui-corner-all ui-table'>")
-      html = "<thead><tr><th colspan='2'></th>" +
-        ("<td class='ui-bar-a'>#{ i }</td>" for i in [1..maxplayers]).join("") +
-        "<td class='ui-bar-a'>&#x3a3;</td>" +
-        "</tr></thead><tbody>"
-      tbl.append(html)
-      rows = []
-      for i in [1..maxplayers]
-        player = box_config.players[i-1]
-        if player?
-          playerId = "id='player-#{ player.id }'"
-        html = "<tr #{ playerId }><th>#{ player.name ? '' }</td><td class='ui-bar-a'>#{ i }</td>"
-        for j in [1..maxplayers]
-          if j == i
-            html += "<td class='ui-bar-a'> </td>"
-          else
-            html += "<td> </td>"
-        html += "<td class='score_total'> </td>"
-        rows.push(html)
-      tbl.append(rows.join("") + "</tbody>")
-      return tbl
+  #   # helper method to create a table DOM for the box from config
+  #   createBoxTable = (box_config) ->
+  #     tbl = jQuery("<table data-role='table' data-mode='' id='table-#{ box_config.id }' class='boxes ui-corner-all ui-table'>")
+  #     html = "<thead><tr><th colspan='2'></th>" +
+  #       ("<td class='ui-bar-a'>#{ i }</td>" for i in [1..maxplayers]).join("") +
+  #       "<td class='ui-bar-a'>&#x3a3;</td>" +
+  #       "</tr></thead><tbody>"
+  #     tbl.append(html)
+  #     rows = []
+  #     for i in [1..maxplayers]
+  #       player = box_config.players[i-1]
+  #       if player?
+  #         playerId = "id='player-#{ player.id }'"
+  #       html = "<tr #{ playerId }><th>#{ player.name ? '' }</td><td class='ui-bar-a'>#{ i }</td>"
+  #       for j in [1..maxplayers]
+  #         if j == i
+  #           html += "<td class='ui-bar-a'> </td>"
+  #         else
+  #           html += "<td> </td>"
+  #       html += "<td class='score_total'> </td>"
+  #       rows.push(html)
+  #     tbl.append(rows.join("") + "</tbody>")
+  #     return tbl
 
-    maindiv = jQuery("body div#boxes div[role='main']")
+  #   maindiv = jQuery("body div#boxes div[role='main']")
 
-    # step through the config and create tables wrapped in
-    # grid-controlling divs. For doublecolumn setups, we cache the
-    # wrapper div until the second iteration and only add it at the end.
-    wrapperdiv = null
-    for box_config in league_config.boxes
-      doublecolumn = box_config.doublecolumn?
-      secondcolumn = doublecolumn and wrapperdiv?
-      unless secondcolumn
-        colspec = doublecolumn and "double" or "single"
-        wrapperdiv = jQuery("<div class='ui-grid-a boxes-wrapper boxes-wrapper-#{ colspec }column'>")
-        wrapperdiv.trigger("create")
-      extraclasses = ""
-      if doublecolumn
-        extraclasses = "boxes-" + (secondcolumn and "second" or "first") + "column ui-block-" + (secondcolumn and "b" or "a")
-      boxdiv = jQuery("<div class='ui-corner-all custom-corners boxes #{ extraclasses }'>")
-      boxdiv.append("<div class='ui-bar ui-bar-a'><h2>#{ box_config.name }</h2><a id='link-#{ box_config.id }' href='#' onclick='WSRC.onBoxActionClicked(this); return false;' class='ui-btn ui-icon-action ui-btn-icon-notext ui-corner-all ui-btn-right'></a></div>")
-      tablediv = jQuery("<div class='ui-body ui-body-a'>")
-      tablediv.append(createBoxTable(box_config))
-      boxdiv.append(tablediv)
-      boxdiv.trigger("create") # ask JQM to do style the new box
-      wrapperdiv.append(boxdiv)
-      if not doublecolumn or secondcolumn
-        maindiv.append(wrapperdiv)
-      unless doublecolumn and not secondcolumn
-        wrapperdiv = null
-    return null
+  #   # step through the config and create tables wrapped in
+  #   # grid-controlling divs. For doublecolumn setups, we cache the
+  #   # wrapper div until the second iteration and only add it at the end.
+  #   wrapperdiv = null
+  #   for box_config in league_config.boxes
+  #     doublecolumn = box_config.doublecolumn?
+  #     secondcolumn = doublecolumn and wrapperdiv?
+  #     unless secondcolumn
+  #       colspec = doublecolumn and "double" or "single"
+  #       wrapperdiv = jQuery("<div class='ui-grid-a boxes-wrapper boxes-wrapper-#{ colspec }column'>")
+  #       wrapperdiv.trigger("create")
+  #     extraclasses = ""
+  #     if doublecolumn
+  #       extraclasses = "boxes-" + (secondcolumn and "second" or "first") + "column ui-block-" + (secondcolumn and "b" or "a")
+  #     boxdiv = jQuery("<div class='ui-corner-all custom-corners boxes #{ extraclasses }'>")
+  #     boxdiv.append("<div class='ui-bar ui-bar-a' data-role='header' data-position='inline'><h2>#{ box_config.name }</h2><div><a id='link-#{ box_config.id }' href='#' onclick='WSRC.onBoxActionClicked(this); return false;' class='ui-btn ui-icon-gear ui-corner-all ui-mini ui-btn-right ui-btn-icon-right'>Edit</a></div></div>")
+  #     tablediv = jQuery("<div class='ui-body ui-body-a'>")
+  #     tablediv.append(createBoxTable(box_config))
+  #     boxdiv.append(tablediv)
+  #     boxdiv.trigger("create") # ask JQM to do style the new box
+  #     wrapperdiv.append(boxdiv)
+  #     if not doublecolumn or secondcolumn
+  #       maindiv.append(wrapperdiv)
+  #     unless doublecolumn and not secondcolumn
+  #       wrapperdiv = null
+  #   return null
 
   refreshScores: (results) ->
-    assert(results.league_id = this.league_config.id)
     getPlayerIndex = (table, playerId) ->
       table.find("tr#player-#{ playerId } :nth-child(2)").text()
     getTableCell = (table, player1Id, player2Id) ->
@@ -296,22 +292,23 @@ window.WSRC =
       offset = parseInt(p2idx) + 2
       table.find("tr#player-#{ player1Id } :nth-child(#{ offset })")
       
-    for box in results.boxes
-      jbox = jQuery("body div#boxes div[role='main'] table#table-#{ box.box_id }")
+    for box in results.competitions_expanded
+      jbox = jQuery("table#table-#{ box.id }")
       totals = {}
       addScore = (player, score) ->
         unless player of totals
           totals[player] = 0
         totals[player] += score
-      for result in box.results
+      for result in box.matches
         getTableCell(jbox, result.player1, result.player2).text(result.points[0])
         getTableCell(jbox, result.player2, result.player1).text(result.points[1])
         addScore(result.player1, result.points[0])
         addScore(result.player2, result.points[1])
       jbox.find("tbody tr").each((idx,elt) ->
         if elt.id?
-          elt.lastChild.textContent = totals[elt.id.replace("player-", "")] ? "0"
+          elt.lastElementChild.textContent = totals[elt.id.replace("player-", "")] ? "0"
       )
+    return true
       
   onBoxActionClicked: (link) ->
     this.openBoxDetailDialog(link.id)
@@ -319,33 +316,17 @@ window.WSRC =
   onPlayerSelected: (selector) ->
     this.playerSelected(selector.id)
 
-  onReady: () ->
-    loadResults = (id) =>
-      url = "/data/results.json?id=#{ id }"
-      this.loadFromServer(url,
-        successCB: (results) =>
-          this.league_results = results
-          this.refreshScores(results)
-          return true
-        failureCB: (xhr, status) => 
-          this.showErrorDialog("ERROR: Failed to load data from #{ url }")
-          return false
-      )
-      return null
-    loadBoxConfig = () =>
-      url = "/data/boxes.json"
-      this.loadFromServer(url,
-        successCB: (config) =>
-          this.league_config = config
-          this.createBoxes(config)
-          loadResults(config.id)
-          return true
-        failureCB: (xhr, status) => 
-          this.showErrorDialog("ERROR: Failed to load data from #{ url }")
-          return false
-      )
-      return null
-    loadBoxConfig()
+  loadBoxResults: (id) ->
+    url = "/comp_data/competitiongroup/#{ id }?expand=1"
+    this.loadFromServer(url,
+      successCB: (results) =>
+        this.league_results = results
+        this.refreshScores(results)
+        return true
+      failureCB: (xhr, status) => 
+        this.showErrorDialog("ERROR: Failed to load data from #{ url }")
+        return false
+    )
 
 
 `if ( 'function' !== typeof Array.prototype.reduce ) {

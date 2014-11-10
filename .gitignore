@@ -1,9 +1,10 @@
 *.pyc
-index.html
 TODO
 TAGS
 resources/js/restful.js
-resources/js/boxes.js
+resources/js/main.js
+resources/css/main.css
+resources/css/main_legacy.css
 .pydevproject
 build
 dist
