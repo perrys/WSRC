@@ -12,7 +12,7 @@ window.WSRC =
 
   league_results: null
 
-  findMatching: (list, id, id_key) ->
+  list_lookup: (list, id, id_key) ->
     unless id_key?
       id_key = "id"
     for l in list
@@ -20,10 +20,14 @@ window.WSRC =
         return l
     return null
 
+  get_competition_for_id: (box_id) ->
+    box_id = parseInt(box_id)
+    this.list_lookup(this.league_results.competitions_expanded, box_id)
+
   ##
   # Remove non-empty items from the selector and replace with the given list
   ## 
-  bulkAdd: (selector, list) ->
+  fill_select: (selector, list) ->
     elt = selector[0] # get the DOM element
     for i in [(elt.options.length-1)..0] by -1
       if elt.options[i].value != ""
@@ -37,10 +41,11 @@ window.WSRC =
   ##
   # Helper function to show a modal click-through dialog
   ##
-  showErrorDialog: (msg) ->
-    jQuery("#errorPopupDialog div[role='main'] h3").html(msg)
-    jQuery("#errorPopupDialog").popup()
-    jQuery("#errorPopupDialog").popup("open")
+  show_error_dialog: (msg) ->
+    popupdiv = jQuery("#errorPopupDialog")
+    popupdiv.find("div[role='main'] h3").html(msg)
+    popupdiv.popup()
+    popupdiv.popup("open")
     return true
 
   ##
@@ -68,12 +73,33 @@ window.WSRC =
     )
     return true
 
+  postToServer: (url, data, opts) ->
+    jQuery.mobile.loading("show", 
+      text: ""
+      textVisible: false
+      textonly: false
+      theme: "a"
+      html: ""
+    )
+    jQuery.ajax(
+      url: url
+      type: "POST"
+      data: data
+      dataType: "json"
+      success: opts.successCB
+      error: opts.failureCB
+      complete: (xhr, status) ->
+        jQuery.mobile.loading("hide") 
+    )
+
+
   ##
   # Transition to the league detail page - needs setup for the league from which it was opened
   ##
-  openBoxDetailDialog: (id) ->
-    id = id.replace("link-", "")
-    this_box_config = this.findMatching(this.league_results.competitions_expanded, parseInt(id), "id")
+  openBoxDetailDialog: (anchor_id) ->
+    box_id = anchor_id.replace("link-", "")
+    jQuery("input#competition_id").val(box_id)
+    this_box_config = this.get_competition_for_id(box_id)
 
     # setup page and inputs
     dialogdiv = jQuery("div#boxDetailDialog")
@@ -181,8 +207,8 @@ window.WSRC =
       # add players from originating box to the player drop-downs 
       players = (p for p in this_box_config.players)
       players.sort((lhs,rhs) -> lhs.full_name - rhs.full_name)
-      this.bulkAdd(form.find("select#player1"), players)
-      this.bulkAdd(form.find("select#player2"), players)
+      this.fill_select(form.find("select#player1"), players)
+      this.fill_select(form.find("select#player2"), players)
 
     setupPointsTable()
     setupResults()
@@ -190,6 +216,32 @@ window.WSRC =
     dialogdiv.find("div#add-change-div").collapsible().collapsible("expand")
     return null
 
+  load_scores_for_match: (cfg, players) ->
+    scores = null
+    p1idx = 0
+    p2idx = 1
+    if players?
+      for match in cfg.matches
+        if players[0] == match.player1 and players[1] == match.player2
+          scores = match.scores
+          break
+        else if players[0] == match.player2 and players[1] == match.player1
+          scores = match.scores
+          p1idx = 1
+          p2idx = 0
+          break
+    form = jQuery("div#boxDetailDialog form#add-change-form")
+    idx = 1
+    if scores?
+      for s in scores
+        form.find("input#team1_score#{ idx }").val(s[p1idx])
+        form.find("input#team2_score#{ idx }").val(s[p2idx])
+        idx += 1
+    while idx <=5
+      form.find("input#team1_score#{ idx }").val("")
+      form.find("input#team2_score#{ idx }").val("")
+      idx += 1
+  
   ##
   # Setup the input form when one of the players is selected in the add score section
   ##
@@ -206,22 +258,44 @@ window.WSRC =
     otherselector = form.find("select##{ otherid }")
     if otherselector.val() == ""
       players = ([p.value, p.textContent] for p in selector.find("option") when (p.value != "" and p.value != selectedId))
-      this.bulkAdd(otherselector, ({id:p[0], full_name:p[1]} for p in players))
+      this.fill_select(otherselector, ({id:p[0], full_name:p[1]} for p in players))
+      # TODO - remove selected player from other selector even if it is not empty
 
     checkBothPlayersSelected = () =>
-      selector1 = form.find("select#player1")
-      selector2 = form.find("select#player2")
-      unless (selector1.val() == "" or selector2.val() == "")
+      selects = (form.find("select##{ p }") for p in ['player1', 'player2'])
+      if (selects[0].val() == "" or selects[1].val() == "")
+        # blank the scores:
+        this.load_scores_for_match(this_box_config, null)
+      else
+        box_id = jQuery("input#competition_id").val()
+        this_box_config = this.get_competition_for_id(box_id)
         # we have names for both players; enable the other inputs:
         form.find("input[type='radio']").checkboxradio('enable')
         form.find("table td input").textinput("enable")
-        # and add players to the walkover result combo
-        selects = (form.find("select##{ p }")[0] for p in ['player1', 'player2'])
-        this.bulkAdd(form.find("select#walkover_result"), ({id:e.options[e.selectedIndex].value, full_name:e.options[e.selectedIndex].text} for e in selects))
+        # load existing points record, if any:
+        player_ids = (parseInt(e.val()) for e in selects)
+        this.load_scores_for_match(this_box_config, player_ids)
+        # and add players to the walkover result combo:
+        dom_selects = (e[0] for e in selects)
+        player_selects = {id:e.options[e.selectedIndex].value, full_name:e.options[e.selectedIndex].text} for e in dom_selects
+        this.fill_select(form.find("select#walkover_result"), player_selects)
 
     checkBothPlayersSelected()
     return null
 
+  submitMatch: () ->
+    box_id = parseInt(jQuery("input#competition_id").val())
+    this_box_config = this.get_competition_for_id(box_id)
+    form = jQuery("div#boxDetailDialog form#add-change-form")
+    scores = 
+      for i in [1..5]
+        [
+          form.find("input#team1_score#{ idx }").val()
+          form.find("input#team2_score#{ idx }").val()
+        ]
+    selects = (form.find("select##{ p }") for p in ['player1', 'player2'])
+    player_ids = (parseInt(e.val()) for e in selects)
+    
 
   refreshScores: (results) ->
     getTableCell = (table, player1Id, player2Id, playerIdToIndexMap) ->
@@ -268,7 +342,7 @@ window.WSRC =
         this.refreshScores(results)
         return true
       failureCB: (xhr, status) => 
-        this.showErrorDialog("ERROR: Failed to load data from #{ url }")
+        this.show_error_dialog("ERROR: Failed to load data from #{ url }")
         return false
     )
 
