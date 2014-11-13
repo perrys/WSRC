@@ -1,0 +1,15 @@
+#!/bin/sh
+
+if [ $# -lt 4 ]; then
+  echo "USAGE: $1 <db_user> <db_password> <src_db> <destination_db>" >&2
+  exit 1
+fi
+
+user=$1 ; shift
+pass=$1 ; shift
+src_db=$1 ; shift
+dst_db=$1 ; shift
+
+#  mysql --user=$user --password=$pass -e 'DROP DATABASE $dst_db;'
+mysql --user=$user --password=$pass -e "CREATE DATABASE $dst_db;"
+mysqldump --user=$user --password=$pass $src_db | mysql --user=$user --password=$pass $dst_db
