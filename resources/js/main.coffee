@@ -7,10 +7,11 @@ unless window.assert?
 window.WSRC =
 
   toggle: (onid, offid) ->
+    # TODO - remove - jQuery provides this already
     jQuery("##{ onid }").css("display", "")
     jQuery("##{ offid }").css("display", "none")
 
-  league_results: null
+  competitiongroup_data: null
 
   list_lookup: (list, id, id_key) ->
     unless id_key?
@@ -22,7 +23,7 @@ window.WSRC =
 
   get_competition_for_id: (box_id) ->
     box_id = parseInt(box_id)
-    this.list_lookup(this.league_results.competitions_expanded, box_id)
+    this.list_lookup(this.competitiongroup_data.competitions_expanded, box_id)
 
   ##
   # Remove non-empty items from the selector and replace with the given list
@@ -50,11 +51,12 @@ window.WSRC =
 
   ##
   # Helper function for Ajax requests back to the server.
+  # URL is the request url, including query params if any
   # OPTS is an object containing:
   #  successCB - function to call back when successful
   #  failureCB - function to call back when there is an error
   ## 
-  loadFromServer: (url, opts) ->
+  ajax_GET: (url, opts) ->
     jQuery.mobile.loading( "show", 
       text: ""
       textVisible: false
@@ -73,7 +75,15 @@ window.WSRC =
     )
     return true
 
-  postToServer: (url, data, opts) ->
+  ##
+  # Helper function for Ajax requests back to the server.
+  # URL is the request url, should not include query params
+  # DATA is an object which will be sent back as JSON
+  # OPTS is an object containing:
+  #  successCB - function to call back when successful
+  #  failureCB - function to call back when there is an error
+  ## 
+  ajax_POST: (url, data, opts) ->
     jQuery.mobile.loading("show", 
       text: ""
       textVisible: false
@@ -94,9 +104,9 @@ window.WSRC =
 
 
   ##
-  # Transition to the league detail page - needs setup for the league from which it was opened
+  # Configure and show the box detail popup for the league from which it was opened
   ##
-  openBoxDetailDialog: (anchor_id) ->
+  open_box_detail_popup: (anchor_id) ->
     box_id = anchor_id.replace("link-", "")
     jQuery("input#competition_id").val(box_id)
     this_box_config = this.get_competition_for_id(box_id)
@@ -245,7 +255,7 @@ window.WSRC =
   ##
   # Setup the input form when one of the players is selected in the add score section
   ##
-  playerSelected: (selector_id) ->
+  on_player_selected: (selector_id) ->
     form = jQuery("div#boxDetailDialog form#add-change-form")
     selector = form.find("select##{ selector_id }")
     element = selector[0]
@@ -283,7 +293,7 @@ window.WSRC =
     checkBothPlayersSelected()
     return null
 
-  submitMatch: () ->
+  submit_match_result: () ->
     box_id = parseInt(jQuery("input#competition_id").val())
     this_box_config = this.get_competition_for_id(box_id)
     form = jQuery("div#boxDetailDialog form#add-change-form")
@@ -297,13 +307,15 @@ window.WSRC =
     player_ids = (parseInt(e.val()) for e in selects)
     
 
-  refreshScores: (results) ->
+  refresh_all_box_data: (competitiongroup_data) ->
+    this.competitiongroup_data = competitiongroup_data
+
     getTableCell = (table, player1Id, player2Id, playerIdToIndexMap) ->
       p2idx = playerIdToIndexMap[player2Id]
       offset = parseInt(p2idx) + 3
       table.find("tr#player-#{ player1Id } :nth-child(#{ offset })")
 
-    for this_box_config in results.competitions_expanded
+    for this_box_config in competitiongroup_data.competitions_expanded
       idx = 0
       playerIdToIndexMap = {}
       players = this_box_config.players
@@ -329,17 +341,16 @@ window.WSRC =
     return true
       
   onBoxActionClicked: (link) ->
-    this.openBoxDetailDialog(link.id)
+    this.open_box_detail_popup(link.id)
 
   onPlayerSelected: (selector) ->
-    this.playerSelected(selector.id)
+    this.on_player_selected(selector.id)
 
-  loadBoxResults: (id) ->
-    url = "/comp_data/competitiongroup/#{ id }?expand=1"
-    this.loadFromServer(url,
-      successCB: (results) =>
-        this.league_results = results
-        this.refreshScores(results)
+  onLeaguePageShow: (competitiongroup_id) ->
+    url = "/comp_data/competitiongroup/#{ competitiongroup_id }?expand=1"
+    this.ajax_GET(url,
+      successCB: (data) =>
+        this.refresh_all_box_data(data)
         return true
       failureCB: (xhr, status) => 
         this.show_error_dialog("ERROR: Failed to load data from #{ url }")
@@ -347,31 +358,3 @@ window.WSRC =
     )
 
 
-`if ( 'function' !== typeof Array.prototype.reduce ) {
-  Array.prototype.reduce = function( callback /*, initialValue*/ ) {
-    'use strict';
-    if ( null === this || 'undefined' === typeof this ) {
-      throw new TypeError(
-         'Array.prototype.reduce called on null or undefined' );
-    }
-    if ( 'function' !== typeof callback ) {
-      throw new TypeError( callback + ' is not a function' );
-    }
-    var t = Object( this ), len = t.length >>> 0, k = 0, value;
-    if ( arguments.length >= 2 ) {
-      value = arguments[1];
-    } else {
-      while ( k < len && ! k in t ) k++; 
-      if ( k >= len )
-        throw new TypeError('Reduce of empty array with no initial value');
-      value = t[ k++ ];
-    }
-    for ( ; k < len ; k++ ) {
-      if ( k in t ) {
-         value = callback( value, t[k], k, t );
-      }
-    }
-    return value;
-  };
-}
-`
