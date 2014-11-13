@@ -9,3 +9,4 @@ resources/css/main_legacy.css
 build
 dist
 .ropeproject
+*.bak
