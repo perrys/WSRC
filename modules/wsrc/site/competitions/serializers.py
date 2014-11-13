@@ -69,9 +69,7 @@ class CompactMatchField(serializers.RelatedField):
         return (s1, s2)
       return None
     scores = [getScore(n) for n in range(1,6)]
-    print scores
     scores = [score for score in scores if score is not None]
-    print scores
     t1wins = reduce(lambda total, val: (val[0] > val[1]) and total+1 or total, scores, 0)
     t2wins = reduce(lambda total, val: (val[1] > val[0]) and total+1 or total, scores, 0)
     points = toPoints(t1wins, t2wins)
