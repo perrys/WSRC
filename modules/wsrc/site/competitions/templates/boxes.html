@@ -58,23 +58,24 @@
     <div data-role="collapsibleset" data-theme="a" data-content-theme="a">
       <div data-role="collapsible" data-collapsed="true" data-iconpos="right" id="add-change-div">
         <h4>Match Result</h4>
-        <form id="add-change-form">
+        <form id="add-change-form" method="POST" action="." onsubmit="WSRC.submit_match_result(); return false" >{% csrf_token %}
           <div style="padding:10px 20px;">
             <label for="player1" class="ui-hidden-accessible">Player 1:</label>
             <input type="hidden" id="competition_id" name="competition_id" value=""></input>
+            <input type="hidden" id="match_id" name="competition_id" value=""></input>
             <select name="player1" id="player1" data-theme="a" data-native-menu="false" onchange="WSRC.onPlayerSelected(this)">
               <option value="">Player 1</option>
             </select>
             <label for="player2" class="ui-hidden-accessible">Player 2:</label>
-            <select name="player2" id="player2" data-theme="a" data-native-menu="false" onchange="WSRC.playerSelected(this.id)">
+            <select name="player2" id="player2" data-theme="a" data-native-menu="false" onchange="WSRC.onPlayerSelected(this)">
               <option value="">Player 2</option>
             </select>
             <p>
               <fieldset data-role="controlgroup" data-type="horizontal" id="match-type">
                 <legend  class="ui-hidden-accessible">Result Type:</legend>
-                <input type="radio" name="result_type" id="result_type_normal" value="normal" checked="checked" onchange="WSRC.toggle('score-entry-input', 'walkover_input')">
+                <input type="radio" name="result_type" id="result_type_normal" value="normal" checked="checked">
                 <label for="result_type_normal">Match</label>
-                <input type="radio" name="result_type" id="result_type_walkover" value="walkover" onchange="WSRC.toggle('walkover_input', 'score-entry-input')">
+                <input type="radio" name="result_type" id="result_type_walkover" value="walkover">
                 <label for="result_type_walkover">Walkover</label>
               </fieldset>
             </p>
@@ -159,7 +160,7 @@
               </tr>
             </table>
             <p>
-              <button type="submit" class="ui-btn ui-corner-all ui-shadow ui-btn-b ui-btn-icon-right ui-icon-check" disabled="disabled">Submit</button>
+              <button id="submit_match" type="submit" class="ui-btn ui-corner-all ui-shadow ui-btn-b ui-btn-icon-right ui-icon-check" disabled="disabled">Submit</button>
           </div>
         </form>
       </div>

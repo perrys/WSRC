@@ -21,7 +21,7 @@ import django.views.generic as view_generics
 from django.template.response import TemplateResponse
 
 from wsrc.site.usermodel.models import Player
-from wsrc.site.competitions.models import Competition, CompetitionGroup
+from wsrc.site.competitions.models import Competition, CompetitionGroup, Match
 from wsrc.site.competitions.serializers import PlayerSerializer, CompetitionSerializer, CompetitionGroupSerializer
 
 # REST data views:
@@ -55,6 +55,9 @@ class CompetitionGroupList(rest_generics.ListAPIView):
 class CompetitionGroupView(rest_generics.RetrieveUpdateDestroyAPIView):
     queryset = CompetitionGroup.objects.all()
     serializer_class = CompetitionGroupSerializer
+
+class MatchDetail(rest_generics.RetrieveUpdateDestroyAPIView):
+    model = Match
 
 
 # HTML template views:
