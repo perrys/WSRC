@@ -73,40 +73,15 @@ window.WSRC =
 
   ##
   # Helper function for Ajax requests back to the server.
-  # URL is the request url, including query params if any
-  # OPTS is an object containing:
-  #  successCB - function to call back when successful
-  #  failureCB - function to call back when there is an error
-  ## 
-  ajax_GET: (url, opts) ->
-    jQuery.mobile.loading( "show", 
-      text: ""
-      textVisible: false
-      textonly: false
-      theme: "a"
-      html: ""
-    )
-    jQuery.ajax(
-      url: url
-      type: "GET"
-      dataType: "json"
-      success: opts.successCB
-      error: opts.failureCB
-      complete: (xhr, status) ->
-        jQuery.mobile.loading( "hide" ) 
-    )
-    return true
-
-  ##
-  # Helper function for Ajax requests back to the server.
   # URL is the request url, should not include query params
   # DATA is an object which will be sent back as JSON
   # OPTS is an object containing:
   #  successCB - function to call back when successful
   #  failureCB - function to call back when there is an error
   #  csrf_token - (optional) CSRF token to be passed back to server
+  # METHOD is the http CRUD type
   ## 
-  ajax_POST: (url, data, opts) ->
+  ajax_helper: (url, data, opts, method) ->
     jQuery.mobile.loading("show", 
       text: ""
       textVisible: false
@@ -119,7 +94,7 @@ window.WSRC =
       headers["X-CSRFToken"] = opts.csrf_token
     jQuery.ajax(
       url: url
-      type: "POST"
+      type: method
       data: data
       dataType: "json"
       headers: headers
@@ -128,6 +103,16 @@ window.WSRC =
       complete: (xhr, status) ->
         jQuery.mobile.loading("hide") 
     )
+    return null
+
+  ajax_GET: (url, opts) ->
+    this.ajax_helper(url, null, opts, "GET")
+
+  ajax_POST: (url, data, opts) ->
+    this.ajax_helper(url, data, opts, "POST")
+    
+  ajax_PUT: (url, data, opts) ->
+    this.ajax_helper(url, data, opts, "PUT")
 
 
   ##
@@ -387,8 +372,20 @@ window.WSRC =
     }
     match_id = match_id_field.val()
     if match_id?
+      # update existing match result:
       data.id = match_id
       url = "/comp_data/match/#{ match_id }"
+      this.ajax_PUT(url, data,
+        successCB: (data) =>
+          return true
+        failureCB: (xhr, status) => 
+          this.show_error_dialog("ERROR: Failed to load data from #{ url }")
+          return false
+        csrf_token: csrf_token
+      )
+    else
+      # new match result:
+      url = "/comp_data/match/"
       this.ajax_POST(url, data,
         successCB: (data) =>
           return true
@@ -397,6 +394,7 @@ window.WSRC =
           return false
         csrf_token: csrf_token
       )
+
     return false
     
 
