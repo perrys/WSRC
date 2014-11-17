@@ -52,11 +52,14 @@ class CompetitionDetail(rest_generics.RetrieveUpdateDestroyAPIView):
 class CompetitionGroupList(rest_generics.ListAPIView):
     model = CompetitionGroup
 
-class CompetitionGroupView(rest_generics.RetrieveUpdateDestroyAPIView):
+class CompetitionGroupDetail(rest_generics.RetrieveUpdateDestroyAPIView):
     queryset = CompetitionGroup.objects.all()
     serializer_class = CompetitionGroupSerializer
 
 class MatchDetail(rest_generics.RetrieveUpdateDestroyAPIView):
+    model = Match
+
+class MatchCreate(rest_generics.CreateAPIView):
     model = Match
 
 
