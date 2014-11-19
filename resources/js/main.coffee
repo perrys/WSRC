@@ -213,7 +213,7 @@ window.WSRC =
             won
           first = if (r.points[0] > r.points[1]) then 0 else 1
           second = 1 - first
-          opponents = [id2NameMap[r.player1], id2NameMap[r.player2]]
+          opponents = [id2NameMap[r.team1_player1], id2NameMap[r.team2_player1]]
           scores = ("(<span #{ if s[first] > s[second]  then 'class=\"winner\"' else '' }>#{ s[first] }</span>, <span #{ if s[second] > s[first]  then 'class=\"winner\"' else '' }>#{ s[second] }</span>)" for s in r.scores).join(" ")
           html = "<div class='date'>#{ date }</div><div class='result'>#{ opponents[first] } <span #{ if r.points[first] > r.points[second]  then 'class=\"winner\"' else '' }>#{ gameswon[first] }</span>-#{ gameswon[second] } #{ opponents[second] }</div><div class='scores'>#{ scores }</div><p></p>"
           resultsdiv.append(html)
