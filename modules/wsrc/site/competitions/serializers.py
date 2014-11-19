@@ -73,12 +73,20 @@ class CompactMatchField(serializers.RelatedField):
     t1wins = reduce(lambda total, val: (val[0] > val[1]) and total+1 or total, scores, 0)
     t2wins = reduce(lambda total, val: (val[1] > val[0]) and total+1 or total, scores, 0)
     points = toPoints(t1wins, t2wins)
+    def safe_get_id(attr):
+        player = getattr(match, attr)
+        if player is not None:
+            return player.id
+        return None
     return {"id": match.id,
-            "timestamp": match.timestamp,
-            "player1": match.team1_player1.id,
-            "player2": match.team2_player1.id,
+            "last_updated": match.last_updated,
+            "team1_player1": safe_get_id("team1_player1"),
+            "team2_player1": safe_get_id("team2_player1"),
+            "team1_player2": safe_get_id("team1_player2"),
+            "team2_player2": safe_get_id("team2_player2"),
             "scores": scores,
             "points": points,
+            "walkover": match.walkover,
             }
 
 

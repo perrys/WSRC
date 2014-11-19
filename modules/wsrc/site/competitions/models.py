@@ -45,8 +45,12 @@ class CompetitionGroup(models.Model):
 
 class Match(models.Model):
   """A match which forms part of a competition. For singles matches, only player1 is populated for each team"""
+  WALKOVER_RESULTS = (
+    (1, "Team 1"),
+    (2, "Team 2"),
+  )
   competition = models.ForeignKey(Competition)
-  competition_match_id = models.CharField(max_length=32, help_text="Unique ID of this match within its competition")
+  competition_match_id = models.CharField(max_length=32, help_text="Unique ID of this match within its competition", blank=True, null=True)
   team1_player1 = models.ForeignKey(user_models.Player, related_name="match_1_1+", blank=True, null=True)
   team1_player2 = models.ForeignKey(user_models.Player, related_name="match_1_2+", blank=True, null=True)
   team2_player1 = models.ForeignKey(user_models.Player, related_name="match_2_1+", blank=True, null=True)
@@ -61,8 +65,8 @@ class Match(models.Model):
   team2_score3 = models.IntegerField(blank=True, null=True)
   team2_score4 = models.IntegerField(blank=True, null=True)
   team2_score5 = models.IntegerField(blank=True, null=True)
-  timestamp = models.DateTimeField(blank=True, null=True)
-  deadline = models.DateField(blank=True, null=True)
+  walkover = models.IntegerField(blank=True, null=True, choices=WALKOVER_RESULTS)
+  last_updated = models.DateTimeField(auto_now=True)
   def __unicode__(self):
     teams = ""
     if self.team1_player1 is not None:
@@ -75,7 +79,7 @@ class Match(models.Model):
       teams += self.team2_player1.get_short_name()
     if self.team2_player2 is not None:
       teams += " & " + self.team2_player2.get_short_name()
-    return "%s [%s] %s" % (self.competition_match_id, self.deadline, teams)
+    return "%s [%s] %s" % (self.competition_match_id, self.last_updated, teams)
 
 
 class CompetitionRound(models.Model):

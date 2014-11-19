@@ -20,6 +20,12 @@ window.WSRC =
         return l
     return null
 
+  is_valid_int: (i) ->
+    if i == ""
+      return false
+    i = parseInt(i)
+    return not isNaN(i)
+
   get_competition_for_id: (box_id) ->
     box_id = parseInt(box_id)
     this.list_lookup(this.competitiongroup_data.competitions_expanded, box_id)
@@ -140,7 +146,7 @@ window.WSRC =
       if this_box_config?
         for r in this_box_config.matches
           for i in [1..2]
-            player_id = r["player#{ i }"]
+            player_id = r["team#{ i }_player1"]
             totals = player_totals[player_id]
             unless totals?
               totals =  player_totals[player_id] = newTotals()
@@ -242,21 +248,30 @@ window.WSRC =
     dialogdiv.find("div#add-change-div").collapsible().collapsible("expand")
     return null
 
+  result_type_changed: () ->
+    form = jQuery("form#add-change-form")
+    result_type = form.find("input[name='result_type']:checked").val()
+    if result_type == "normal"
+      this.set_on_and_off('score-entry-input', 'walkover_input')
+    else
+      this.set_on_and_off('walkover_input', 'score-entry-input')
+    return true
+
   load_scores_for_match: (cfg, players) ->
     existing_match = null
     p1idx = 0
     p2idx = 1
     if players?
       for match in cfg.matches
-        if players[0] == match.player1 and players[1] == match.player2
+        if players[0] == match.team1_player1 and players[1] == match.team2_player1
           existing_match = match
           break
-        else if players[0] == match.player2 and players[1] == match.player1
+        else if players[0] == match.team2_player1 and players[1] == match.team1_player1
           existing_match = match
           p1idx = 1
           p2idx = 0
           break
-    form = jQuery("div#boxDetailDialog form#add-change-form")
+    form = jQuery("form#add-change-form")
     match_id_field = form.find("input#match_id")
     idx = 1
     if not existing_match?
@@ -267,6 +282,22 @@ window.WSRC =
         form.find("input#team1_score#{ idx }").val(s[p1idx])
         form.find("input#team2_score#{ idx }").val(s[p2idx])
         idx += 1
+      radios = form.find("input[name='result_type']")
+      if existing_match.walkover?
+        radios.filter("[value='walkover']").prop("checked", true)
+        radios.checkboxradio("refresh")
+        this.result_type_changed()
+        winner_select = form.find("select#walkover_result")
+        if existing_match.walkover == 1
+          winner_select.val(match.team1_player1)
+        else
+          winner_select.val(match.team2_player1)
+        winner_select.selectmenu("refresh")
+      else
+        radios.filter("[value='normal']").prop("checked", true)
+        radios.checkboxradio("refresh")
+        this.result_type_changed()
+        
     while idx <=5
       form.find("input#team1_score#{ idx }").val("")
       form.find("input#team2_score#{ idx }").val("")
@@ -280,7 +311,7 @@ window.WSRC =
   # Setup the input form when one of the players is selected in the add score section
   ##
   on_player_selected: (selector_id) ->
-    form = jQuery("div#boxDetailDialog form#add-change-form")
+    form = jQuery("form#add-change-form")
     box_id = parseInt(form.find("input#competition_id").val())
     this_box_config = this.get_competition_for_id(box_id)
 
@@ -318,11 +349,11 @@ window.WSRC =
         # we have names for both players; enable the other inputs:
         form.find("input[type='radio']").checkboxradio('enable')
         form.find("table td input").textinput("enable")
-        # load existing points record, if any:
+        # add players to the walkover result combo:
+        this.fill_select(form.find("select#walkover_result"), ([p.id, p.full_name] for p in opponents))
+        # load existing points record/walkover result, if any:
         opponent_ids = (p.id for p in opponents)
         this.load_scores_for_match(this_box_config, opponent_ids)
-        # and add players to the walkover result combo:
-        this.fill_select(form.find("select#walkover_result"), ([p.id, p.full_name] for p in opponents))
       else
         # blank the scores:
         this.load_scores_for_match(this_box_config, null)
@@ -332,7 +363,7 @@ window.WSRC =
     return null
 
   validate_match_result: () ->
-    form = jQuery("div#boxDetailDialog form#add-change-form")
+    form = jQuery("form#add-change-form")
     box_id = parseInt(form.find("input#competition_id").val())
     this_box_config = this.get_competition_for_id(box_id)
     result_type = form.find("input[name='result_type']:checked").val()
@@ -353,27 +384,32 @@ window.WSRC =
   submit_match_result: () ->
     box_id = parseInt(jQuery("input#competition_id").val())
     this_box_config = this.get_competition_for_id(box_id)
-    form = jQuery("div#boxDetailDialog form#add-change-form")
-    scores = 
-      for i in [1..5]
-        [
-          form.find("input#team1_score#{ i }").val()
-          form.find("input#team2_score#{ i }").val()
-        ]
+    form = jQuery("form#add-change-form")
     selects = (form.find("select##{ p }") for p in ['player1', 'player2'])
     player_ids = (parseInt(e.val()) for e in selects)
     match_id_field = form.find("input#match_id")
     csrf_token = form.find("input[name='csrfmiddlewaretoken']").val()
     data = {
-      player1: player_ids[0],
-      player2: player_ids[1]
-      box_id: box_id,
-      scores: scores,
+      competition: box_id,
+      team1_player1: player_ids[0],
+      team2_player1: player_ids[1]
     }
+    for i in [1..5]
+      for j in [1..2]
+        score = form.find("input#team#{ j }_score#{ i }").val()
+        if this.is_valid_int(score)
+          data["team#{ j }_score#{ i }"] = parseInt(score)
     match_id = match_id_field.val()
-    if match_id?
+    result_type = form.find("input[name='result_type']:checked").val()
+    if result_type == "walkover"
+      winner_id = parseInt(form.find("select#walkover_result").val())
+      if winner_id == player_ids[0]
+        data.walkover = 1
+      else
+        data.walkover = 2
+    if this.is_valid_int(match_id) 
       # update existing match result:
-      data.id = match_id
+      data.id = parseInt(match_id)
       url = "/comp_data/match/#{ match_id }"
       this.ajax_PUT(url, data,
         successCB: (data) =>
@@ -421,10 +457,10 @@ window.WSRC =
           totals[player] = 0
         totals[player] += score
       for result in this_box_config.matches
-        getTableCell(jbox, result.player1, result.player2, playerIdToIndexMap).text(result.points[0])
-        getTableCell(jbox, result.player2, result.player1, playerIdToIndexMap).text(result.points[1])
-        addScore(result.player1, result.points[0])
-        addScore(result.player2, result.points[1])
+        getTableCell(jbox, result.team1_player1, result.team2_player1, playerIdToIndexMap).text(result.points[0])
+        getTableCell(jbox, result.team2_player1, result.team1_player1, playerIdToIndexMap).text(result.points[1])
+        addScore(result.team1_player1, result.points[0])
+        addScore(result.team2_player1, result.points[1])
       jbox.find("tbody tr").each((idx,elt) ->
         if elt.id?
           elt.lastElementChild.textContent = totals[elt.id.replace("player-", "")] ? "0"
@@ -432,23 +468,28 @@ window.WSRC =
     return true
 
   setup_events: () ->
-    form = jQuery("div#boxDetailDialog form#add-change-form")
+    form = jQuery("form#add-change-form")
     form.find("input[name^='player']").on("change", () =>
       this.validate_match_result()
+      return true
     )
     form.find("input[name^='team']").on("change", () =>
       this.validate_match_result()
+      return true
     )
     form.find("input#result_type_normal").on("change", () =>
-      this.set_on_and_off('score-entry-input', 'walkover_input')
+      this.result_type_changed()
       this.validate_match_result()
+      return true
     )
     form.find("input#result_type_walkover").on("change", () =>
-      this.set_on_and_off('walkover_input', 'score-entry-input')
+      this.result_type_changed()
       this.validate_match_result()
+      return true
     )
     form.find("select#walkover_result").on("change", () =>
       this.validate_match_result()
+      return true
     )
 
   onBoxActionClicked: (link) ->
