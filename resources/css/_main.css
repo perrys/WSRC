@@ -55,6 +55,37 @@ body {
     filter: Alpha(Opacity=40);
 }
 
+.wsrc-site .jqm-header div.wsrc-login-block {
+    position: absolute;
+    right: 1em;
+    top: 50%;
+    height: 3em;
+    margin-top: -1.5em;
+    background: none;
+    border: 0;
+    text-align: center;
+}
+
+.wsrc-site .jqm-header a.wsrc-login-icon {
+    position: relative;
+    display: block;
+    margin-left:  auto;
+    margin-right: auto;
+    margin-top: -1.5em;
+}
+
+.wsrc-site .jqm-header a.wsrc-login-textlink {
+    color: #333;
+    display: block;
+    margin-top: 1.25em;
+    padding: 0;
+    opacity: .4;
+    filter: Alpha(Opacity=40);
+    text-decoration: none;
+    font-weight: 300;
+    font-size: 0.8em;
+}
+
 /* Footer */
 .wsrc-site .jqm-footer.ui-footer {
     position: absolute;
@@ -205,7 +236,7 @@ body {
 }
 
 /* Lists */
-.wsrc-site .jqm-search .jqm-list {
+.wsrc-site .jqm-list {
     margin: 0 -1em 1em;
 }
 .wsrc-site .jqm-list .ui-btn,
@@ -334,19 +365,22 @@ fieldset#match-type label {
     text-align: center;
 }
 
+/* Custom indentations are needed because the length of custom labels differs from
+   the length of the standard labels */
 .custom-size-flipswitch.ui-flipswitch .ui-btn.ui-flipswitch-on {
-    text-indent: -5.9em;
+    text-indent: -3.9em;
 }
 .custom-size-flipswitch.ui-flipswitch .ui-flipswitch-off {
     text-indent: 0.5em;
 }
-
+/* Custom widths are needed because the length of custom labels differs from
+   the length of the standard labels */
 .custom-size-flipswitch.ui-flipswitch {
-    width: 100%;
+    width: 6.875em;
 }
 .custom-size-flipswitch.ui-flipswitch.ui-flipswitch-active {
-    padding-left: 7em;
-    width: 100%;
+    padding-left: 5em;
+    width: 1.875em;
 }
 
 .winner {
@@ -408,9 +442,6 @@ td.score_total {
     }
     .wsrc-site .jqm-navmenu-link {
 	display: none;
-    }
-    .wsrc-site .jqm-search-link {
-	right: 3%;
     }
     .wsrc-site .jqm-footer p {
 	float: right;
