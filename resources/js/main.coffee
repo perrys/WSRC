@@ -462,7 +462,7 @@ window.WSRC =
         addScore(result.team2_player1, result.points[1])
       jbox.find("tbody tr").each((idx,elt) ->
         if elt.id?
-          elt.lastElementChild.textContent = totals[elt.id.replace("player-", "")] ? "0"
+          $(elt).find("td").last().text(totals[elt.id.replace("player-", "")] ? "0")
       )
       
     for this_box_config in competitiongroup_data.competitions_expanded
