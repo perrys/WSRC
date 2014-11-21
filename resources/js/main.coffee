@@ -133,61 +133,6 @@ window.WSRC =
     dialogdiv = jQuery("div#boxDetailDialog")
     dialogdiv.find("div h2").text(this_box_config.name) # page title
 
-    setupPointsTable = () =>
-      tablebody = dialogdiv.find("table#league-table tbody")
-
-      # remove existing rows
-      tablebody.find("tr").remove()
-  
-      newTotals = () -> {p: 0, w: 0, d: 0, l: 0, f: 0, a: 0, pts: 0}
-      
-      # sum up the totals for each result
-      player_totals = {}
-      if this_box_config?
-        for r in this_box_config.matches
-          for i in [1..2]
-            player_id = r["team#{ i }_player1"]
-            totals = player_totals[player_id]
-            unless totals?
-              totals =  player_totals[player_id] = newTotals()
-            totals.p += 1
-            mine = i-1
-            theirs = (if i == 1 then 1 else 0)
-            for s in r.scores
-              totals.f += s[mine]
-              totals.a += s[theirs]
-            if r.points[mine] > r.points[theirs]
-              totals.w += 1
-            else if r.points[mine] < r.points[theirs]
-              totals.l += 1
-            else
-              totals.d += 1
-            totals.pts += r.points[mine]
-
-      # add in zeros for players without results, and enrich with player name
-      for player in this_box_config.players
-        if player.id of player_totals
-          player_totals[player.id].name = player.full_name
-        else
-          totals = newTotals()
-          totals.name = player.full_name
-          player_totals[player.id] = totals
-
-      # vectorize and sort
-      player_totals = (totals for id,totals of player_totals)
-      player_totals.sort((l,r) ->
-        result = r.pts - l.pts
-        if result == 0
-          result = (r.f-r.a) - (l.f-l.a)
-          if result == 0
-            result = r.full_name < l.full_name
-        result
-      )
-
-      # finally add rows to the table
-      for totals in player_totals
-        tablebody.append("<tr><th>#{ totals.name }</th><td>#{ totals.p }</td><td>#{ totals.w }</td><td>#{ totals.d }</td><td>#{ totals.l }</td><td>#{ totals.f }</td><td>#{ totals.a }</td><td class='score_total'>#{ totals.pts }</td></tr>")
-#      tablebody.closest("table#league-table").table().table("refresh").trigger("create")
 
     setupResults = () =>
       resultsdiv = dialogdiv.find("div#league-results-div>div") # first child of the wrapper div
@@ -242,7 +187,6 @@ window.WSRC =
       this.fill_select(form.find("select#player2"), list, null, true)
       return null
 
-    setupPointsTable()
     setupResults()
     setupAddScoreDialog()
     dialogdiv.find("div#add-change-div").collapsible().collapsible("expand")
@@ -433,6 +377,61 @@ window.WSRC =
 
     return false
     
+  setupPointsTable: (this_box_config) ->
+    tablebody = jQuery("table#leaguetable-#{ this_box_config.id } tbody")
+
+    # remove existing rows
+    tablebody.find("tr").remove()
+
+    newTotals = () -> {p: 0, w: 0, d: 0, l: 0, f: 0, a: 0, pts: 0}
+    
+    # sum up the totals for each result
+    player_totals = {}
+    if this_box_config?
+      for r in this_box_config.matches
+        for i in [1..2]
+          player_id = r["team#{ i }_player1"]
+          totals = player_totals[player_id]
+          unless totals?
+            totals =  player_totals[player_id] = newTotals()
+          totals.p += 1
+          mine = i-1
+          theirs = (if i == 1 then 1 else 0)
+          for s in r.scores
+            totals.f += s[mine]
+            totals.a += s[theirs]
+          if r.points[mine] > r.points[theirs]
+            totals.w += 1
+          else if r.points[mine] < r.points[theirs]
+            totals.l += 1
+          else
+            totals.d += 1
+          totals.pts += r.points[mine]
+
+    # add in zeros for players without results, and enrich with player name
+    for player in this_box_config.players
+      if player.id of player_totals
+        player_totals[player.id].name = player.full_name
+      else
+        totals = newTotals()
+        totals.name = player.full_name
+        player_totals[player.id] = totals
+
+    # vectorize and sort
+    player_totals = (totals for id,totals of player_totals)
+    player_totals.sort((l,r) ->
+      result = r.pts - l.pts
+      if result == 0
+        result = (r.f-r.a) - (l.f-l.a)
+        if result == 0
+          result = r.full_name < l.full_name
+      result
+    )
+
+    # finally add rows to the table
+    for totals in player_totals
+      tablebody.append("<tr><th>#{ totals.name }</th><td>#{ totals.p }</td><td>#{ totals.w }</td><td>#{ totals.d }</td><td>#{ totals.l }</td><td>#{ totals.f }</td><td>#{ totals.a }</td><td class='score_total'>#{ totals.pts }</td></tr>")
+#      tablebody.closest("table#league-table").table().table("refresh").trigger("create")
 
   refresh_all_box_data: (competitiongroup_data) ->
     this.competitiongroup_data = competitiongroup_data
@@ -442,7 +441,7 @@ window.WSRC =
       offset = parseInt(p2idx) + 3
       table.find("tr#player-#{ player1Id } :nth-child(#{ offset })")
 
-    for this_box_config in competitiongroup_data.competitions_expanded
+    setup_box = (this_box_config) ->
       idx = 0
       playerIdToIndexMap = {}
       players = this_box_config.players
@@ -465,9 +464,14 @@ window.WSRC =
         if elt.id?
           elt.lastElementChild.textContent = totals[elt.id.replace("player-", "")] ? "0"
       )
+      
+    for this_box_config in competitiongroup_data.competitions_expanded
+      setup_box(this_box_config)
+      this.setupPointsTable(this_box_config)
+      
     return true
 
-  setup_events: () ->
+  setup_add_change_events: () ->
     form = jQuery("form#add-change-form")
     form.find("input[name^='player']").on("change", () =>
       this.validate_match_result()
@@ -499,15 +503,31 @@ window.WSRC =
     this.on_player_selected(selector.id)
 
   onLeaguePageShow: (competitiongroup_id) ->
-    this.setup_events()
+    this.setup_add_change_events()
+      
     url = "/comp_data/competitiongroup/#{ competitiongroup_id }?expand=1"
-    this.ajax_GET(url,
-      successCB: (data) =>
-        this.refresh_all_box_data(data)
-        return true
-      failureCB: (xhr, status) => 
-        this.show_error_dialog("ERROR: Failed to load data from #{ url }")
-        return false
-    )
+    loadPageData = () =>
+      this.ajax_GET(url,
+        successCB: (data) =>
+          this.refresh_all_box_data(data)
+          return true
+        failureCB: (xhr, status) => 
+          this.show_error_dialog("ERROR: Failed to load data from #{ url }")
+          return false
+      )
+    $("#leagues-refresh-button").click (evt) ->
+      loadPageData()
+    loadPageData()
 
+    $('#flip-display').on("change", (evt) ->
+      target = $(evt.target)
+      if target.prop("checked")
+        $("table.boxtable").hide()
+        $("table.leaguetable").show()
+      else
+        $("table.leaguetable").hide()
+        $("table.boxtable").show()
+    )
+    
+  
 

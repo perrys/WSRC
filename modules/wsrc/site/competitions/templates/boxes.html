@@ -6,7 +6,11 @@
 {% block content %}
 
 <div role="main"  class="ui-content jqm-content">
-
+<form id="page-control-form" method="GET" action="#" onsubmit="return false;" >
+  <label for="flip-display" class="ui-hidden-accessible">Table/Box toggle switch</label>
+  <input type="checkbox" data-role="flipswitch" name="flip-display" id="flip-display" data-on-text="Tables" data-off-text="Boxes" data-wrapper-class="custom-size-flipswitch">
+  <input id="box-refresh-button" type="button" data-inline="true" value="Refresh">
+</form>
 {% for box_config in league_config.boxes %}
 <!-- {{ box_config.colspec }} {{ box_config.nthcol }} -->
 {% if box_config.colspec != 'double' or box_config.nthcol != 'second' %}
@@ -19,7 +23,7 @@
         </a>
       </div>
       <div class="ui-body ui-body-a">
-        <table data-role="table" data-mode="" id="table-{{ box_config.id }}" class="boxes ui-corner-all ui-table">
+        <table data-role="table" data-mode="" id="table-{{ box_config.id }}" class="boxes ui-corner-all ui-table boxtable">
           <thead>
             <tr>
               <th colspan="2"></th>
@@ -41,6 +45,36 @@
 {% endfor %}
           </tbody>
         </table>
+        <table data-role="table" data-mode="" id="leaguetable-{{ box_config.id }}" class="boxes ui-corner-all leaguetable" style="display: none">
+	<thead>
+	  <tr>
+	    <th data-priority="persist" class=""></th>
+	    <td data-priority="2" class="ui-bar-a">P</td>
+	    <td data-priority="3" class="ui-bar-a">W</td>
+	    <td data-priority="4" class="ui-bar-a">D</td>
+	    <td data-priority="5" class="ui-bar-a">L</td>
+	    <td data-priority="4" class="ui-bar-a">F</td>
+	    <td data-priority="5" class="ui-bar-a">A</td>
+	    <td data-priority="5" class="ui-bar-a" style="max-width: 1em;">Pts</td>
+	  </tr>
+	</thead>
+        <tbody>
+{% for i in league_config.maxplayers|as_range %}
+{% resolve box_config.players i as player %}
+          <tr {% if player.id %}id="leaguetable-player-{{ player.id }}"{% endif %}>
+            <th>{{ player.get_full_name }}</th>
+	    <td></td>
+	    <td></td>
+	    <td></td>
+	    <td></td>
+	    <td></td>
+	    <td></td>
+            <td class="score_total"> </td>
+          </tr>
+{% endfor %}
+        </tbody>
+        </table>
+
       </div>
     </div>
 {% if box_config.colspec != 'double' or box_config.nthcol != 'first' %}
@@ -164,27 +198,8 @@
           </div>
         </form>
       </div>
-      <div data-role="collapsible" data-collapsed="true" data-iconpos="right" id="league-table-div">
-        <h4>Table</h4>
-        <table data-role="table" data-mode="" id="league-table" class="boxes ui-corner-all">
-	<thead>
-	  <tr>
-	    <th data-priority="persist" class=""></th>
-	    <td data-priority="2" class="ui-bar-a">P</td>
-	    <td data-priority="3" class="ui-bar-a">W</td>
-	    <td data-priority="4" class="ui-bar-a">D</td>
-	    <td data-priority="5" class="ui-bar-a">L</td>
-	    <td data-priority="4" class="ui-bar-a">F</td>
-	    <td data-priority="5" class="ui-bar-a">A</td>
-	    <td data-priority="5" class="ui-bar-a" style="max-width: 1em;">Pts</td>
-	  </tr>
-	</thead>
-	<tbody>
-        </tbody>
-        </table>
-      </div>
       <div data-role="collapsible" data-collapsed="true" data-iconpos="right" id="league-results-div">
-        <h4>Results</h4>
+        <h4>All Results</h4>
         <div>&nbsp;</div>
         <p></p>
       </div>
