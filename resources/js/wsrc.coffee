@@ -381,7 +381,7 @@ window.WSRC =
     tablebody = jQuery("table#leaguetable-#{ this_box_config.id } tbody")
 
     # remove existing rows
-    tablebody.find("tr").remove()
+    tablerows = tablebody.find("tr")
 
     newTotals = () -> {p: 0, w: 0, d: 0, l: 0, f: 0, a: 0, pts: 0}
     
@@ -429,17 +429,36 @@ window.WSRC =
     )
 
     # finally add rows to the table
+    idx = 0
     for totals in player_totals
-      tablebody.append("<tr><th>#{ totals.name }</th><td>#{ totals.p }</td><td>#{ totals.w }</td><td>#{ totals.d }</td><td>#{ totals.l }</td><td>#{ totals.f }</td><td>#{ totals.a }</td><td class='score_total'>#{ totals.pts }</td></tr>")
-#      tablebody.closest("table#league-table").table().table("refresh").trigger("create")
+      # do this with raw DOM as the jQuery was a little slow
+      row = tablerows[idx]
+      cell = row.firstChild
+      for prop in ["name", "p", "w", "d", "l", "f" , "a", "pts"]
+        while cell.nodeType != document.ELEMENT_NODE
+          cell=cell.nextSibling
+        cell.innerHTML = totals[prop]
+        cell=cell.nextSibling
+      ++idx
 
   refresh_all_box_data: (competitiongroup_data) ->
     this.competitiongroup_data = competitiongroup_data
 
     getTableCell = (table, player1Id, player2Id, playerIdToIndexMap) ->
       p2idx = playerIdToIndexMap[player2Id]
-      offset = parseInt(p2idx) + 3
-      table.find("tr#player-#{ player1Id } :nth-child(#{ offset })")
+      offset = parseInt(p2idx) + 2
+      row = table.find("#player-#{ player1Id }")
+      # drop to DOM for speed:
+      cell = row[0].firstChild
+      idx = 0
+      while true
+        while cell.nodeType != document.ELEMENT_NODE
+          cell=cell.nextSibling
+        if idx == offset
+          return cell
+        cell=cell.nextSibling
+        ++idx
+      return row.find("td").eq(offset)
 
     setup_box = (this_box_config) ->
       idx = 0
@@ -456,13 +475,13 @@ window.WSRC =
           totals[player] = 0
         totals[player] += score
       for result in this_box_config.matches
-        getTableCell(jbox, result.team1_player1, result.team2_player1, playerIdToIndexMap).text(result.points[0])
-        getTableCell(jbox, result.team2_player1, result.team1_player1, playerIdToIndexMap).text(result.points[1])
+        getTableCell(jbox, result.team1_player1, result.team2_player1, playerIdToIndexMap).innerHTML = result.points[0]
+        getTableCell(jbox, result.team2_player1, result.team1_player1, playerIdToIndexMap).innerHTML = result.points[1]
         addScore(result.team1_player1, result.points[0])
         addScore(result.team2_player1, result.points[1])
       jbox.find("tbody tr").each((idx,elt) ->
         if elt.id?
-          $(elt).find("td").last().text(totals[elt.id.replace("player-", "")] ? "0")
+          $(elt).find("td").last().html(totals[elt.id.replace("player-", "")] ? "0")
       )
       
     for this_box_config in competitiongroup_data.competitions_expanded
@@ -515,13 +534,14 @@ window.WSRC =
           this.show_error_dialog("ERROR: Failed to load data from #{ url }")
           return false
       )
-    $("#leagues-refresh-button").click (evt) ->
+    $("#box-refresh-button").click (evt) ->
       loadPageData()
     loadPageData()
 
-    $('#flip-display').on("change", (evt) ->
-      target = $(evt.target)
-      if target.prop("checked")
+    view_radios = $("#page-control-form input[name='view_type']")
+    view_radios.on("change", (evt) ->
+      view_type = view_radios.filter(":checked").val()
+      if view_type == "tables"
         $("table.boxtable").hide()
         $("table.leaguetable").show()
       else
