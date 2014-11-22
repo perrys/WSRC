@@ -3,7 +3,7 @@
 JINJACC = ../../tools/jinjac
 MINIFY = minify --no-comments
 
-CSS_TARGETS = all_html5.min.css all_legacy.min.css
+CSS_TARGETS = all_html5.css all_legacy.css all_html5.min.css all_legacy.min.css
 
 .INTERMEDIATE: _wsrc_html5.css _wsrc_legacy.css
 .SECONDARY: _jquery.mobile.structure.css
