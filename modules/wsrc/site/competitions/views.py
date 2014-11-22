@@ -107,13 +107,7 @@ def boxes_view(request, group_id):
         while len(box["players"]) < ctx["maxplayers"]:
             box["players"].append(nullplayer)
     ctx["boxes"] = boxes
-    return TemplateResponse(request, "boxes.html", {"league_config": ctx, "local_links": False})
+    return TemplateResponse(request, "boxes.html", {"league_config": ctx})
     
     
-class Boxes(view_generics.ListView):
-    filter_backends = [rest_framework.filters.OrderingFilter]
-    ordering = ("-end_date")
-    template_name = "boxes.html"
-    def get_queryset(self):
-        return CompetitionGroup.objects.filter(comp_type__name=self.kwargs.get("comp_type"))
 
