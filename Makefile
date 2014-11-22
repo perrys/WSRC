@@ -1,26 +1,25 @@
 # -*- mode: makefile-gmake; -*-
 
 
-CSS_SRCS = resources/css/main.css resources/css/main_legacy.css
 JS_SRCS  = resources/js/main.js
 
 
-.PHONY: build install dist
+.PHONY: build build_js build_css install dist
 
-build: $(CSS_SRCS) $(JS_SRCS)
+build: build_css build_js
 
-install: build
+build_css:
+	$(MAKE) -C resources/css
+
+build_js:
+	$(MAKE) -C resources/js
+
+install: build 
 	python ./setup.py install
 
 bdist: build
 	python ./setup.py bdist
 
-resources/js/%.js: resources/js/%.coffee
-	coffee -c $<
 
-resources/css/main.css: resources/css/_main.css
-	./tools/jinjac $< ie_mode=0 > $@
 
-resources/css/main_legacy.css: resources/css/_main.css
-	./tools/jinjac $< ie_mode=1 > $@
 
