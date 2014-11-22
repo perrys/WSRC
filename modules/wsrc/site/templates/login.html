@@ -9,13 +9,13 @@
 
 <form method="post" action="{% url 'django.contrib.auth.views.login' %}" data-ajax="false">
 {% csrf_token %}
-<table>
+<table class="wsrc-settings">
 <tr>
-    <td>{{ form.username.label_tag }}</td>
+    <th>{{ form.username.label_tag }}</th>
     <td>{{ form.username }}</td>
 </tr>
 <tr>
-    <td>{{ form.password.label_tag }}</td>
+    <th>{{ form.password.label_tag }}</th>
     <td>{{ form.password }}</td>
 </tr>
 <tr>
