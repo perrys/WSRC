@@ -3,6 +3,11 @@ body {
     font-size: 0.9em;
 }
 
+.ui-corner-all {
+   -webkit-border-radius:.2 !important;
+   border-radius: 2 !important;
+}
+
 /* Header */
 .wsrc-site .jqm-header {
     background: #fff;
@@ -292,9 +297,33 @@ body {
     border-top: none;
 }
 
+table.wsrc-settings th {
+    color: #666;
+    padding-right:1em;
+}
+
 .wsrc-site table.boxes {
     font-family: 'Open Sans', sans-serif;
 }
+
+.clear-all {
+    clear: both;
+}
+
+div.left-control-box {
+    display: inline-block;
+    float: left;
+}
+
+div.right-control-box {
+    display: inline-block;
+    float: right;
+}
+
+div.right-control-box form > * {
+    display: inline;
+}
+
 
 div#boxDetailDialog {
     min-width: 350px;
