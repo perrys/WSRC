@@ -7,24 +7,16 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Woking Squash Rackets Club</title>
 
-{% if local_links %}
-  <script src="/static/jquery-1.10.2.js"></script>
-  <script src="/static/jquery.mobile-1.4.5.min.js"></script>
-{% else %}
-  <!-- use jquery from Google's CDN -->
-  <script src="//ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
-  <script src="//ajax.googleapis.com/ajax/libs/jquerymobile/1.4.3/jquery.mobile.min.js"></script>
-{% endif %}
-  <script src="/static/js/main.js"></script>
-
   <link rel="stylesheet" href="http://fonts.googleapis.com/css?family=Open+Sans:300,400,700" />
+
+  <script src="/static/js/all{% if not debug %}.min{% endif %}.js"></script>
 
 <!-- do not use @media styles with older IE versions -->
 <!--[if IE]>
-  <link rel="stylesheet" href="/static/css/all_legacy.min.css">
+  <link rel="stylesheet" href="/static/css/all_legacy{% if not debug %}.min{% endif %}.css">
 <![endif]-->
 <!--[if !IE]><!-->
-  <link rel="stylesheet" href="/static/css/all_html5.min.css" />
+  <link rel="stylesheet" href="/static/css/all_html5{% if not debug %}.min{% endif %}.css" />
  <!--<![endif]-->
 
   <script>
@@ -38,6 +30,7 @@ $( document ).on( "pagecreate", ".wsrc-site", function( event ) {
   </script>
 </head>
 <body>
+
 <div data-role="page" class="wsrc-site {% block page-classes %}{% endblock %}">
 
   <div data-role="header" class="jqm-header">
