@@ -27,6 +27,11 @@ $( document ).on( "pagecreate", ".wsrc-site", function( event ) {
     page.find( ".jqm-navmenu-panel:not(.jqm-panel-page-nav)" ).panel( "open" );
   });
 });
+
+{% if user.is_authenticated %}
+window.WSRC_user_player_id = {{ user.player.id }};
+{% endif %}
+
   </script>
 </head>
 <body>

@@ -345,6 +345,10 @@ table.boxes td {
     border: #ddd 1px solid; /* Should come from a-bar-border in ui theme */
 }
 
+.wsrc-currentuser {
+    color: #ed3338;
+}
+
 div.boxes {
     max-width:  500px;
     padding: 5px;

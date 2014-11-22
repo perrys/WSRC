@@ -415,9 +415,11 @@ window.WSRC =
       else
         totals = newTotals()
         totals.name = player.full_name
-        player_totals[player.id] = totals
+        totals.id = player.id
 
     # vectorize and sort
+    for id,totals of player_totals
+      totals.id = parseInt(id)
     player_totals = (totals for id,totals of player_totals)
     player_totals.sort((l,r) ->
       result = r.pts - l.pts
@@ -438,6 +440,10 @@ window.WSRC =
         while cell.nodeType != document.ELEMENT_NODE
           cell=cell.nextSibling
         cell.innerHTML = totals[prop]
+        if totals.id == (WSRC_user_player_id ? -1)
+          cell.className = "wsrc-currentuser"
+        else
+          cell.className = ""
         cell=cell.nextSibling
       ++idx
 
