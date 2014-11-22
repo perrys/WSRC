@@ -6,11 +6,22 @@
 {% block content %}
 
 <div role="main"  class="ui-content jqm-content">
-<form id="page-control-form" method="GET" action="#" onsubmit="return false;" >
-  <label for="flip-display" class="ui-hidden-accessible">Table/Box toggle switch</label>
-  <input type="checkbox" data-role="flipswitch" name="flip-display" id="flip-display" data-on-text="Tables" data-off-text="Boxes" data-wrapper-class="custom-size-flipswitch">
-  <input id="box-refresh-button" type="button" data-inline="true" value="Refresh">
-</form>
+    <form id="page-control-form" method="GET" action="#" onsubmit="return false;" >  
+      <div class="left-control-box">
+        <fieldset data-role="controlgroup" data-type="horizontal" data-shadow="true">
+          <input type="radio" name="view_type" id="view_type_boxes" value="boxes" checked="checked" />
+          <label for="view_type_boxes">Boxes</label>
+          <input type="radio" name="view_type" id="view_type_tables" value="tables" />
+          <label for="view_type_tables">Tables</label>
+        </fieldset>
+      </div>
+      <div class="right-control-box">
+        <fieldset data-role="controlgroup" data-type="horizontal" data-shadow="true">
+          <button id="box-refresh-button" data-inline="true" class="ui-btn ui-icon-refresh ui-btn-icon-right">Refresh</button>
+        </fieldset>
+      </div>
+      <div class="clear-all"></div>
+    </form>
 {% for box_config in league_config.boxes %}
 <!-- {{ box_config.colspec }} {{ box_config.nthcol }} -->
 {% if box_config.colspec != 'double' or box_config.nthcol != 'second' %}
@@ -19,7 +30,7 @@
     <div class="ui-corner-all custom-corners boxes {% if box_config.colspec == 'double' %}boxes-{{ box_config.nthcol }}column ui-block-{% if box_config.nthcol == 'first' %}a{% else %}b{% endif %}{% endif %}">
       <div class="ui-bar ui-bar-a" data-role="header" data-position="inline">
         <h2>{{ box_config.name }}</h2>
-        <a id="link-{{ box_config.id }}" href="#boxDetailDialog" data-rel="popup" data-position-to="window" data-transition="pop" class="ui-btn ui-icon-action ui-btn-icon-notext ui-corner-all ui-btn-right" onclick="WSRC.onBoxActionClicked(this); return true;">
+        <a id="link-{{ box_config.id }}" href="#boxDetailDialog" data-rel="popup" data-position-to="window" data-transition="pop" class="ui-btn ui-icon-edit ui-btn-icon-notext ui-corner-all ui-btn-right" onclick="WSRC.onBoxActionClicked(this); return true;">
         </a>
       </div>
       <div class="ui-body ui-body-a">
@@ -83,9 +94,9 @@
 {% endfor %}
 </div>
 
-<div data-role="popup" id="boxDetailDialog" data-overlay-theme="b" data-theme="a" data-dismissible="true"  astyle="width:400px">
+<div data-role="popup" id="boxDetailDialog" data-overlay-theme="b" data-theme="a" data-dismissible="true">
   <div data-role="header" data-theme="a">
-    <h2></h2>
+    <h2> </h2>
     <a href="#" data-rel="back" class="ui-btn ui-corner-all ui-shadow ui-btn-a ui-icon-delete ui-btn-icon-notext ui-btn-right">Close</a>
   </div>
   <div role="main" class="ui-content">
@@ -95,8 +106,8 @@
         <form id="add-change-form" method="POST" action="." onsubmit="WSRC.submit_match_result(); return false" >{% csrf_token %}
           <div style="padding:10px 20px;">
             <label for="player1" class="ui-hidden-accessible">Player 1:</label>
-            <input type="hidden" id="competition_id" name="competition_id" value=""></input>
-            <input type="hidden" id="match_id" name="competition_id" value=""></input>
+            <input type="hidden" id="competition_id" name="competition_id" value="" />
+            <input type="hidden" id="match_id" name="competition_id" value="" />
             <select name="player1" id="player1" data-theme="a" data-native-menu="false" onchange="WSRC.onPlayerSelected(this)">
               <option value="">Player 1</option>
             </select>
@@ -104,7 +115,7 @@
             <select name="player2" id="player2" data-theme="a" data-native-menu="false" onchange="WSRC.onPlayerSelected(this)">
               <option value="">Player 2</option>
             </select>
-            <p>
+
               <fieldset data-role="controlgroup" data-type="horizontal" id="match-type">
                 <legend  class="ui-hidden-accessible">Result Type:</legend>
                 <input type="radio" name="result_type" id="result_type_normal" value="normal" checked="checked">
@@ -112,7 +123,6 @@
                 <input type="radio" name="result_type" id="result_type_walkover" value="walkover">
                 <label for="result_type_walkover">Walkover</label>
               </fieldset>
-            </p>
 
             <p id="walkover_input" style="display: none;">
               <label class="ui-hidden-accessible" for="walkover_result">Winner:</label>
@@ -121,7 +131,7 @@
               </select>
             </p>
 
-            <table id="score-entry-input" class="score_entry" border="0" cellpadding="0" cellspacing="0">
+            <table id="score-entry-input" class="score_entry">
               <tr>
 	        <th></th>
 	        <th class="score_column" id="header-player1">Player 1</th>
@@ -131,12 +141,12 @@
 	        <td class="score_row_label">Set&nbsp;1:</td>
 	        <td class="score_column">
 	          <div>
-	            <input id="team1_score1" name="team1_score1" type="number" data-clear-btn="false" pattern="[0-9][0-9]?"/>
+	            <input id="team1_score1" name="team1_score1" type="number" data-clear-btn="false"/>
 	          </div>
 	        </td>
 	        <td class="score_column">
 	          <div>
-	            <input id="team2_score1" name="team2_score1" type="number" data-clear-btn="false" pattern="[0-9][0-9]?"/>
+	            <input id="team2_score1" name="team2_score1" type="number" data-clear-btn="false"/>
 	          </div>
 	        </td>
               </tr>
@@ -144,12 +154,12 @@
 	        <td class="score_row_label">Set&nbsp;2:</td>
 	        <td class="score_column">
 	          <div>
-	            <input id="team1_score2" name="team1_score2" type="number" data-clear-btn="false" pattern="[0-9][0-9]?"/>
+	            <input id="team1_score2" name="team1_score2" type="number" data-clear-btn="false"/>
 	          </div>
 	        </td>
 	        <td class="score_column">
 	          <div>
-	            <input id="team2_score2" name="team2_score2" type="number" data-clear-btn="false" pattern="[0-9][0-9]?"/>
+	            <input id="team2_score2" name="team2_score2" type="number" data-clear-btn="false"/>
 	          </div>
 	        </td>
               </tr>
@@ -157,12 +167,12 @@
 	        <td class="score_row_label">Set&nbsp;3:</td>
 	        <td class="score_column">
 	          <div>
-	            <input id="team1_score3" name="team1_score3" type="number" data-clear-btn="false" pattern="[0-9][0-9]?"/>
+	            <input id="team1_score3" name="team1_score3" type="number" data-clear-btn="false"/>
 	          </div>
 	        </td>
 	        <td class="score_column">
 	          <div>
-	            <input id="team2_score3" name="team2_score3" type="number" data-clear-btn="false" pattern="[0-9][0-9]?"/>
+	            <input id="team2_score3" name="team2_score3" type="number" data-clear-btn="false"/>
 	          </div>
 	        </td>
               </tr>
@@ -170,12 +180,12 @@
 	        <td class="score_row_label">Set&nbsp;4:</td>
 	        <td class="score_column">
 	          <div>
-	            <input id="team1_score4" name="team1_score4" type="number" data-clear-btn="false" pattern="[0-9][0-9]?"/>
+	            <input id="team1_score4" name="team1_score4" type="number" data-clear-btn="false"/>
 	          </div>
 	        </td>
 	        <td class="score_column">
 	          <div>
-	            <input id="team2_score4" name="team2_score4" type="number" data-clear-btn="false" pattern="[0-9][0-9]?"/>
+	            <input id="team2_score4" name="team2_score4" type="number" data-clear-btn="false"/>
 	          </div>
 	        </td>
               </tr>
@@ -183,12 +193,12 @@
 	        <td class="score_row_label">Set&nbsp;5:</td>
 	        <td class="score_column">
 	          <div>
-	            <input id="team1_score5" name="team1_score5" type="number" data-clear-btn="false" pattern="[0-9][0-9]?"/>
+	            <input id="team1_score5" name="team1_score5" type="number" data-clear-btn="false"/>
 	          </div>
 	        </td>
 	        <td class="score_column">
 	          <div>
-	            <input id="team2_score5" name="team2_score5" type="number" data-clear-btn="false" pattern="[0-9][0-9]?"/>
+	            <input id="team2_score5" name="team2_score5" type="number" data-clear-btn="false"/>
 	          </div>
 	        </td>
               </tr>
