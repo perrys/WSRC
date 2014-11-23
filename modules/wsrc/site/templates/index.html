@@ -106,7 +106,7 @@
 function cycleImages(){
     var $active = $('#cycler .active');
     var $next = ($active.next().length > 0) ? $active.next() : $('#cycler img:first');
-    $next.css('z-index',2).show();//move the next image up the pile
+    $next.css('z-index',2).fadeIn(1500);
     $active.fadeOut(1500,function(){//fade out the top image
       $active.css('z-index',1).removeClass('active').hide();//reset the z-index and unhide the image
       $next.css('z-index',3).addClass('active');//make the next image the top one
