@@ -5,7 +5,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Woking Squash Rackets Club</title>
+  <title>{% block titleprefix %}{% endblock %}Woking Squash Rackets Club</title>
 
   <link rel="stylesheet" href="http://fonts.googleapis.com/css?family=Open+Sans:300,400,700" />
 
@@ -24,7 +24,8 @@ $( document ).on( "pagecreate", ".wsrc-site", function( event ) {
   var page = $( this );
   $( ".jqm-navmenu-panel ul" ).listview();
   $( ".jqm-navmenu-link" ).on( "click", function() {
-    page.find( ".jqm-navmenu-panel:not(.jqm-panel-page-nav)" ).panel( "open" );
+    var panel = page.find( ".jqm-navmenu-panel:not(.jqm-panel-page-nav)" ).panel();
+    panel.panel( "open" );
   });
 });
 

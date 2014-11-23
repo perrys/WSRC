@@ -1,6 +1,7 @@
 {% extends "base.html" %}
+{% block titleprefix %}{{ pagedata.title|capfirst }} - {% endblock %}
 {% block pagetitle %}{{ pagedata.title|capfirst }}{% endblock %}
-{% block page-classes %}wsrc-home{% endblock %}
+{% block page-classes %}{{ pagedata.title|lower }}{% endblock %}
 {% block content %}
 
 <div role="main" class="ui-content jqm-content">
