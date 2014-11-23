@@ -11,6 +11,9 @@ resources/css/*.min.css
 resources/css/all*.css
 resources/css/_*.css
 
+resources/images/sources
+resources/images/icons-png
+
 .pydevproject
 .ropeproject
 *.bak
