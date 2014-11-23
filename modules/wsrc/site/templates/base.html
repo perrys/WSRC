@@ -29,8 +29,18 @@ $( document ).on( "pagecreate", ".wsrc-site", function( event ) {
 });
 
 {% if user.is_authenticated %}
-window.WSRC_user_player_id = {{ user.player.id }};
+window.WSRC_user_player_id = {% if user.player %}{{ user.player.id }}{% else %}-1{% endif %}
 {% endif %}
+
+$(document).on("pagechange", function(){
+  location.search.substr(1).split("&").forEach(function (pair) {
+    if (pair === "") return;
+    var parts = pair.split("=");
+    if (parts[0] === "scrollto") {
+      window.setTimeout(function(){$.mobile.silentScroll($("#" + parts[1])[0].offsetTop)}, 500);
+    }
+  });
+});
 
   </script>
 </head>
@@ -53,20 +63,20 @@ window.WSRC_user_player_id = {{ user.player.id }};
   <!-- left nav menu: -->
   <div data-role="panel" class="jqm-navmenu-panel" data-position="left" data-display="overlay" data-theme="a">
     <ul class="jqm-list ui-alt-icon ui-nodisc-icon">
-      <li data-filtertext="homepage" data-icon="home"><a href="{% url 'homepage' %}">Home</a></li>
-      <li data-filtertext="about contact history"><a href="/about" data-ajax="false">About</a></li>
-      <li data-filtertext="membership join subscriptions"><a href="/membership" data-ajax="false">Membership</a></li>
-      <li data-filtertext="coach"><a href="/coaching" data-ajax="false">Coaching</a></li>
-      <li data-filtertext="junior"><a href="/juniors" data-ajax="false">Juniors</a></li>
+      <li data-icon="home"><a href="{% url 'homepage' %}" {% if disable_ajax_links %}data-ajax="false"{% endif %}>Home</a></li>
+      <li><a href="/about" {% if disable_ajax_links %}data-ajax="false"{% endif %}>About</a></li>
+      <li><a href="/membership" {% if disable_ajax_links %}data-ajax="false"{% endif %}>Membership</a></li>
+      <li><a href="/coaching" {% if disable_ajax_links %}data-ajax="false"{% endif %}>Coaching</a></li>
+      <li><a href="/juniors" {% if disable_ajax_links %}data-ajax="false"{% endif %}>Juniors</a></li>
       <li data-role="collapsible" data-enhanced="true" data-collapsed-icon="carat-d" data-expanded-icon="carat-u" data-iconpos="right" data-inset="false" class="ui-collapsible ui-collapsible-themed-content ui-collapsible-collapsed">
 	<h3 class="ui-collapsible-heading ui-collapsible-heading-collapsed">
 	  <a href="#" class="ui-collapsible-heading-toggle ui-btn ui-btn-icon-right ui-btn-inherit ui-icon-carat-d">Club Leagues<span class="ui-collapsible-heading-status"> click to expand contents</span></a>
 	</h3>
 	<div class="ui-collapsible-content ui-body-inherit{% if not league_config %} ui-collapsible-content-collapsed{% endif %}" {% if not league_config %}aria-hidden="true"{% endif %}>
 	  <ul>
-	    <li><a href="{% url 'wsrc.site.competitions.views.boxes_view' %}">Current</a></li>
-	    <li><a href="{% url 'wsrc.site.competitions.views.boxes_view' -1 %}" data-ajax="false">Previous</a></li>
-	    <li data-filtertext="leagues"><a href="/competitions/leagueslist/" data-ajax="false">History&hellip;</a></li>
+	    <li><a href="{% url 'wsrc.site.competitions.views.boxes_view' %}" {% if disable_ajax_links %}data-ajax="false"{% endif %}>Current</a></li>
+	    <li><a href="{% url 'wsrc.site.competitions.views.boxes_view' -1 %}" {% if disable_ajax_links %}data-ajax="false"{% endif %}>Previous</a></li>
+	    <li data-filtertext="leagues"><a href="/competitions/leagueslist/" >History&hellip;</a></li>
 	  </ul>
 	</div>
       </li>

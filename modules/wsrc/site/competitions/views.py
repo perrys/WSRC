@@ -107,7 +107,7 @@ def boxes_view(request, group_id):
         while len(box["players"]) < ctx["maxplayers"]:
             box["players"].append(nullplayer)
     ctx["boxes"] = boxes
-    return TemplateResponse(request, "boxes.html", {"league_config": ctx})
+    return TemplateResponse(request, "boxes.html", {"league_config": ctx, "disable_ajax_links": True})
     
     
 
