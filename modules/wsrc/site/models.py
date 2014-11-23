@@ -10,3 +10,9 @@ class PageContent(models.Model):
   
   def __unicode__(self):
     return self.page
+
+class SquashLevels(models.Model):
+  name = models.CharField(max_length=64)
+  category = models.CharField(max_length=16)
+  events = models.IntegerField()
+  level = models.IntegerField()
