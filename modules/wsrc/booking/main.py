@@ -19,6 +19,30 @@ WSRC_CALENDAR_ID = "2pa40689s076sldnb8genvsql8@group.calendar.google.com"
 CLEAR_CALENDARS_FIRST = False
 LOGGER = logging.getLogger(__name__)
 
+def get_content(url, params):
+  url +=  "?" + urllib.urlencode(params)
+  LOGGER.debug("Fetching {url}".format(**locals()))
+  h = httplib2.Http()
+  (resp_headers, content) = h.request(url, "GET")
+  return content
+
+def get_squashlevels_rankings():
+  WOKING_SQUASH_CLUB_ID = 60
+  SURREY_COUNTY_ID = 24
+  PARAMS = {
+    "club": WOKING_SQUASH_CLUB_ID,
+    "county": SURREY_COUNTY_ID,
+    "show": "last12m",
+    "matchtype": "all",
+    "playercat": "all",
+    "playertype": "all",
+    "check": 1,
+    "limit_confidence": 1,
+    }
+  URL = 'http://www.squashlevels.com/players.php'
+  return get_content(URL, PARAMS)
+
+
 def get_week_view(year, month, day, court):
   "Retrieve the week view for a given court from the online booking system"
   params = {
@@ -28,11 +52,8 @@ def get_week_view(year, month, day, court):
     'area': '1',
     'room': str(court)
     }
-  url = 'http://www.court-booking.co.uk/WokingSquashClub/week.php?%s' % urllib.urlencode(params)
-  LOGGER.debug("Fetching {url}".format(**locals()))
-  h = httplib2.Http()
-  (resp_headers, content) = h.request(url, "GET")
-  return content
+  URL = 'http://www.court-booking.co.uk/WokingSquashClub/week.php?%s'
+  return get_content(URL, params)
 
 def nearest_last_monday(date=None):
   """Return the Monday previous to DATE, or DATE if it happens to be a Monday. 
@@ -108,6 +129,12 @@ def run_from_command_line():
   for evt in removedEvents:
     cal.delete_event(evt)
 
+
+if __name__ == "__main__":
+  data = get_squashlevels_rankings()
+  data = scrape_page.scrape_squashlevels_table(data)
+  import pprint
+  print pprint.pprint(data)
 
 # Local Variables:
 # mode: python

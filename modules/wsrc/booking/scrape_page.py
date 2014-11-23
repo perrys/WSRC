@@ -22,9 +22,10 @@ def tag_generator(head, next_func=lambda(x): x.next_sibling, filt=lambda(x): has
       yield head
     head = next_func(head)
 
+def cvt_nbsp(s):
+  return s.replace(u'\xa0', ' ')
+
 def get_tag_content(c):
-  def cvt_nbsp(s):
-    return s.replace(u'\xa0', ' ')
   return cvt_nbsp(c.string)
 
 def process_booking(cell):
@@ -132,6 +133,20 @@ def scrape_week_events(eventData, first_date, location):
   soup = BeautifulSoup(eventData, "lxml")
   time_list = process_week_page(soup)
   return extract_events(time_list, first_date, location)
+
+def scrape_squashlevels_table(data):
+  soup = BeautifulSoup(data, "lxml")
+  table = soup.find('table', class_='ranking')
+  headerrow = table.find('tr')
+  headers = [cvt_nbsp(th.get_text()).strip() for th in headerrow.find_all("th")]
+  rows = headerrow.find_next_siblings("tr")
+  def process_row(row):
+    return [cvt_nbsp(td.get_text()).strip() for td in row.find_all("td")]
+  def filtfunc(cell):
+    return hasattr(cell, "name") and cell.name == 'tr'
+  result = [process_row(r) for r in tag_generator(headerrow.next_sibling, filt=filtfunc)]
+  result = [r for r in result if len(r) == len(headers)]
+  return [dict(zip(headers, row)) for row in result]
 
 if __name__ == "__main__":
   infile = sys.stdin
