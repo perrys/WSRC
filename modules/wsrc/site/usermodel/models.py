@@ -16,8 +16,8 @@ class Player(models.Model):
   other_phone = models.CharField(_('other phone'), max_length=30, validators = [phone_validator], blank=True)
   short_name  = models.CharField(_('short name'), max_length=32, blank=True)
 
-  def get_absolute_url(self):
-      return "/users/%s/" % urlquote(self.user.email)
+#  def get_absolute_url(self):
+#      return "/users/%s/" % urlquote(self.user.email)
 
   def get_full_name(self):
       """
