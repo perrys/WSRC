@@ -147,11 +147,11 @@ body {
     margin: 0 0 1em;
 }
 .wsrc-site .jqm-content > p {
-    font-size: 1.2em;
+    font-size: 1em;
     line-height: 1.5;
 }
 .wsrc-site .jqm-content > ul:not(.jqm-list) li {
-    font-size: 1.2em;
+    font-size: 1em;
     line-height: 1.5;
 }
 .wsrc-site .jqm-content > p {
@@ -177,6 +177,33 @@ body {
     font-weight: 400;
 }
 
+div.wsrc-membership {
+    padding-right: 2em;
+    padding-left: 2em;
+    padding-bottom: 1em;
+}
+
+.wsrc-membership table {
+    width: 100%;
+}
+
+.wsrc-footnote {
+    font-size: 0.7em;
+}
+
+.wsrc-membership th, .wsrc-membership td {
+    text-align: left;
+    vertical-align: top;
+    padding-right: 3em;
+    border-bottom: 1px solid;
+    color: #333;
+}
+
+.wsrc-membership th:last-child, .wsrc-membership td:last-child {
+    padding-right: 0;
+}
+
+
 /* Homepage */
 .wsrc-home > .jqm-content > div > img {
     width: 460px;
@@ -191,8 +218,8 @@ body {
     height: 288px;
     margin: 1em 0;
 }
-#cycler img{position:absolute;z-index:1}
-#cycler img.active{z-index:3}
+#cycler img{position:absolute;z-index:1; display:none;}
+#cycler img.active{z-index:3; display:inline;}
 
 /*
   .wsrc-home .ui-grid-a {

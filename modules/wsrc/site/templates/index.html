@@ -3,46 +3,10 @@
 {% block page-classes %}wsrc-home{% endblock %}
 {% block content %}
 
+
 <div role="main" class="ui-content jqm-content">
 
-  <h1>Welcome</h1>
-
-  <p><strong>Welcome to Woking Squash Rackets Club.</strong></p>
-
-  <div id="cycler">
-  <img src="/static/images/james_willstrop_08.jpg" alt="James Wilstrop" class="active"> <!-- width="460" height="288" -->
-  <img src="/static/images/nicol_david.jpg" alt="Nicol David"> <!-- width="460" height="288" -->
-  <img src="/static/images/Chris.jpg" alt="Chris"> <!-- width="460" height="288" -->
-  </div>
-<script>
-function cycleImages(){
-    var $active = $('#cycler .active');
-    var $next = ($active.next().length > 0) ? $active.next() : $('#cycler img:first');
-    $next.css('z-index',2);//move the next image up the pile
-    $active.fadeOut(1500,function(){//fade out the top image
-	  $active.css('z-index',1).show().removeClass('active');//reset the z-index and unhide the image
-        $next.css('z-index',3).addClass('active');//make the next image the top one
-    });
-  }
-$( document ).on( "pageshow", ".wsrc-site", function( event ) {
-  if (! window.cycleimages_id) {
-    window.cycleimages_id = setInterval('cycleImages()', 7000);
-  }
-})
-$( document ).on( "pagebeforehide", ".wsrc-site", function( event ) {
-  if (window.cycleimages_id) {
-    clearInterval(window.cycleimages_id);
-    window.cycleimages_id = null;
-  }
-})
-</script>
-
-  <p>Woking Squash Club is a very active club run by its members for its members. About 200 members of all standards enjoy 3 squash courts, a bar, a weekly club night and special events during the season!</p>
-
-  <p>There are 4 men's teams, 1 ladies' teams, 4 veterans' teams, a vintage team and 1 junior team which all compete in the Surrey Leagues.
-Annual subscriptions work out at around £5 a week for adults and £1 for juniors.</p>
-
-  <p>We are a non-profit making members’ club.</p>
+  {{ pagedata.content|safe }}
 
   <div class="ui-grid-a ui-responsive">
     <div class="ui-block-a">
@@ -137,4 +101,29 @@ Annual subscriptions work out at around £5 a week for adults and £1 for junior
     </div>
   </div>
 </div>
+
+<script>
+function cycleImages(){
+    var $active = $('#cycler .active');
+    var $next = ($active.next().length > 0) ? $active.next() : $('#cycler img:first');
+    $next.css('z-index',2).show();//move the next image up the pile
+    $active.fadeOut(1500,function(){//fade out the top image
+      $active.css('z-index',1).removeClass('active').hide();//reset the z-index and unhide the image
+      $next.css('z-index',3).addClass('active');//make the next image the top one
+    });
+  }
+$( document ).on( "pageshow", ".wsrc-site", function( event ) {
+  if (! window.cycleimages_id) {
+    window.cycleimages_id = setInterval('cycleImages()', 7000);
+  }
+})
+$( document ).on( "pagebeforehide", ".wsrc-site", function( event ) {
+  if (window.cycleimages_id) {
+    clearInterval(window.cycleimages_id);
+    window.cycleimages_id = null;
+  }
+})
+</script>
+
 {% endblock %}
+

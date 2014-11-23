@@ -14,6 +14,16 @@
 # along with WSRC.  If not, see <http://www.gnu.org/licenses/>.
 
 from django.template.response import TemplateResponse
+from django.shortcuts import get_object_or_404
+from wsrc.site.models import PageContent
+import markdown
 
-def index_view(request):
-    return TemplateResponse(request, 'index.html', {})    
+def generic_view(request, page, template='generic_page.html'):
+    data = get_object_or_404(PageContent, page__iexact=page)
+    ctx = {
+        "pagedata": {
+            "title": data.page,
+            "content": markdown.markdown(data.markup),
+            }
+        }
+    return TemplateResponse(request, template, ctx)

@@ -14,9 +14,9 @@ import wsrc.site.competitions.views
 
 urlpatterns = patterns('',
 
-    url(r'^$', wsrc.site.views.index_view, name="homepage"),
-    url(r'^home$', wsrc.site.views.index_view),
-    url(r'^index$', wsrc.site.views.index_view),
+    url(r'^$', wsrc.site.views.generic_view, {"page":"home", "template":"index.html"}, name="homepage"),
+    url(r'^home$', wsrc.site.views.generic_view, {"page":"home", "template":"index.html"}),
+    url(r'^index$', wsrc.site.views.generic_view, {"page":"home", "template":"index.html"}),
 
     url(r'^login$', django.contrib.auth.views.login, {'template_name': 'login.html'}),
     url(r'^logout$', django.contrib.auth.views.logout),
@@ -26,4 +26,6 @@ urlpatterns = patterns('',
     url(r'^tournaments/',  include(wsrc.site.competitions.legacy_urls)),
 
     url(r'^admin/', include(admin.site.urls)),
+
+    url(r'^(?P<page>[a-z_]+)$', wsrc.site.views.generic_view),
 )
