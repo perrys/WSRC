@@ -134,10 +134,7 @@ def scrape_week_events(eventData, first_date, location):
   time_list = process_week_page(soup)
   return extract_events(time_list, first_date, location)
 
-def scrape_squashlevels_table(data):
-  soup = BeautifulSoup(data, "lxml")
-  table = soup.find('table', class_='ranking')
-  headerrow = table.find('tr')
+def scrape_table_generic(headerrow):
   headers = [cvt_nbsp(th.get_text()).strip() for th in headerrow.find_all("th")]
   rows = headerrow.find_next_siblings("tr")
   def process_row(row):
@@ -147,6 +144,19 @@ def scrape_squashlevels_table(data):
   result = [process_row(r) for r in tag_generator(headerrow.next_sibling, filt=filtfunc)]
   result = [r for r in result if len(r) == len(headers)]
   return [dict(zip(headers, row)) for row in result]
+
+def scrape_squashlevels_table(data):
+  soup = BeautifulSoup(data, "lxml")
+  table = soup.find('table', class_='ranking')
+  headerrow = table.find('tr')
+  return scrape_table_generic(headerrow)
+
+def scrape_fixtures_table(data):
+  soup = BeautifulSoup(data, "lxml")
+  toprowheader = soup.find('th', class_='boxtopmain')
+  headerrow = toprowheader.parent
+  return scrape_table_generic(headerrow)
+
 
 if __name__ == "__main__":
   infile = sys.stdin

@@ -7,6 +7,7 @@ import os.path
 import sys
 import traceback
 import urllib
+import re
 
 import cal_events
 import scrape_page
@@ -42,6 +43,15 @@ def get_squashlevels_rankings():
   URL = 'http://www.squashlevels.com/players.php'
   return get_content(URL, PARAMS)
 
+def get_club_fixtures_and_results():
+  WOKING_SQUASH_CLUB_ID=16
+  WOKING_SQUASH_CLUB_NAME="Woking"
+  PARAMS = {
+    "clubid": WOKING_SQUASH_CLUB_ID,
+    "club": WOKING_SQUASH_CLUB_NAME,
+    }
+  URL = 'http://county.leaguemaster.co.uk/cgi-county/icounty.exe/showclubfixtures'
+  return get_content(URL, PARAMS)
 
 def get_week_view(year, month, day, court):
   "Retrieve the week view for a given court from the online booking system"
@@ -62,10 +72,14 @@ def nearest_last_monday(date=None):
     date = datetime.date.today()
   return date - datetime.timedelta(days=date.weekday())
 
-def run_from_command_line():
-
+def setup_logger():
   logging.basicConfig(format='%(asctime)-10s [%(levelname)s] %(message)s',datefmt="%Y-%m-%d %H:%M:%S")
   LOGGER.setLevel(logging.DEBUG)
+
+
+def cmdline_sync_bookings():
+
+  setup_logger()
   cal_events.LOGGER.setLevel(logging.DEBUG)
 
   configDir = os.path.join(os.path.dirname(sys.argv[0]), "..", "etc")
@@ -130,12 +144,103 @@ def run_from_command_line():
     cal.delete_event(evt)
 
 
-if __name__ == "__main__":
+def cmdline_sync_squashlevels():
+
+  setup_logger()
+
+  os.environ.setdefault("DJANGO_SETTINGS_MODULE", "wsrc.site.settings.settings")
+  from wsrc.site.models import SquashLevels, SquashLevelsVersion
+
   data = get_squashlevels_rankings()
   data = scrape_page.scrape_squashlevels_table(data)
-  import pprint
-  print pprint.pprint(data)
 
+  LOGGER.info("Obtained {0} players from SquashLevels".format(len(data)))
+
+  if len(data) > 0:
+    new_version = SquashLevelsVersion(is_current=False)
+    new_version.save()
+    SquashLevelsVersion.objects.exclude(id=new_version.id).update(is_current=False)
+    for row in data:
+      datum = SquashLevels(name=row["Player"], 
+                           category=row["Category"], 
+                           events=row["Events"],
+                           level=row["Level"],
+                           version=new_version) 
+      datum.save()
+    new_version.is_current = True
+    new_version.save()
+  
+    SquashLevels.objects.exclude(version=new_version).delete()
+    SquashLevelsVersion.objects.exclude(id=new_version.id).delete()
+
+def cmdline_sync_leaguemaster(*args):
+
+  setup_logger()
+
+  os.environ.setdefault("DJANGO_SETTINGS_MODULE", "wsrc.site.settings.settings")
+  from wsrc.site.models import LeagueMasterFixtures
+
+  if len(args) > 0:
+    data = open(os.path.expanduser(args[0])).read()
+  else:
+    data = get_club_fixtures_and_results()
+  data = scrape_page.scrape_fixtures_table(data)
+
+  LOGGER.info("Obtained {0} fixtures from LeagueMaster".format(len(data)))
+
+  def swap(tup):
+    t = tup[0]
+    tup[0] = tup[1]
+    tup[1] = t
+
+  if len(data) > 0:
+    LeagueMasterFixtures.objects.all().delete()
+    for row in data:
+      if "Woking" in row["Away Team"]:
+        venue = "a"
+        team = row["Away Team"]
+        opponents = row["Home Team"]
+      else:
+        venue = "h"
+        team = row["Home Team"]
+        opponents = row["Away Team"]
+      date = row["Date"]
+      re_expr = re.compile("\d\d/\d\d/\d\d")
+      m = re_expr.search(row["Date"])
+      if m is None:
+        raise Exception("unable to find date in " + row["Date"])
+      datestr = row["Date"][m.start():m.end()]
+      date = datetime.datetime.strptime(datestr, "%d/%m/%y").date()
+      games = points = [None, None]
+      result = row["Result"].strip()
+      if result.startswith("Won"):
+        result = result.replace("Won", "").strip()
+        if len(result) > 5:
+          raise Exception("unable to parse row: " +result + " " + str(row))
+        points = [int(x) for x in result.split("-")]
+        if points[1] > points[0]:
+          swap(points)
+      elif result.startswith("Lost"):
+        result = result.replace("Lost", "").strip()
+        if len(result) > 5:
+          raise Exception("unable to parse row: " +result + " " + str(row))
+        points = [int(x) for x in result.split("-")]
+        if points[0] > points[1]:
+          swap(points)
+      if points[0] is not None:
+        games = [int(x) for x in row["Games"].split("-")]
+      result = LeagueMasterFixtures(
+        team = team,
+        opponents = opponents,
+        home_or_away = venue,
+        date = date,
+        team1_score = games[0],
+        team2_score = games[1],
+        team1_points = points[0],
+        team2_points = points[1]
+        )
+      result.save()
+        
 # Local Variables:
 # mode: python
 # End:

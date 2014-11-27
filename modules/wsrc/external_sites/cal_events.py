@@ -47,9 +47,11 @@ def _get_Service():
 class CalendarWrapper:
   """Simple wrapper for a given calendar service"""
 
-  def __init__(self, calendarId, service=_get_Service()):
+  def __init__(self, calendarId, service=None):
     """Create a new wrapper instance with the given calendar Id"""
     self.service = service
+    if service is None:
+      self.service = _get_Service()
     self.calendarId = calendarId
     self.testing = False
 
