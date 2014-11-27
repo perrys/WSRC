@@ -11,94 +11,71 @@
   <div class="ui-grid-a ui-responsive">
     <div class="ui-block-a">
       <div class="jqm-block-content">
-        <h3>Events</h3>
-
-        <p>TODO: summary of events calendar, facebook integration</p>
+        <h3>Upcoming Events <span class="link">(<a href="http://county.leaguemaster.co.uk/">Facebook</a>)</span></h3>
+        <div>
+          <p>TODO: upcoming events from Facebook page</p>
+        </div>
+      </div>
+    </div>
+    <div class="ui-block-b">
+      <div class="jqm-block-content">
+        <h3>Courts</h3>
+        <div>
+          <div class="ui-bar ui-bar-a" data-role="header" data-position="inline">
+            <h4>Today</h4>
+            {% if user.is_authenticated %}
+            <a id="link-{{ box_config.id }}" href="#boxDetailDialog" class="ui-btn ui-icon-arrow-l ui-btn-icon-notext ui-corner-all ui-btn-left" onclick="WSRC.onBoxActionClicked(this); return true;">
+            </a>
+            <a id="link-{{ box_config.id }}" href="#boxDetailDialog" class="ui-btn ui-icon-arrow-r ui-btn-icon-notext ui-corner-all ui-btn-right" onclick="WSRC.onBoxActionClicked(this); return true;">
+            </a>
+            {% endif %}
+          </div>
+          <div class="ui-body">
+            <table>
+              <tr><td>19:15</td><td>1</td><td>Stewart Perry</td></tr>
+              <tr><td>19:30</td><td>2</td><td>Jack Ross</td></tr>
+              <tr><td>19:45</td><td>3</td><td>Peter Richardson</td></tr>
+              <tr><td>20:00</td><td>1</td><td>Free <span class="link"><a href="foobar">(book now)</a></span></td></tr>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="ui-block-a">
+      <div class="jqm-block-content">
+        <h3>Winter League <span class="link">(<a href="http://county.leaguemaster.co.uk/">Surrey SRA</a>)</span></h3>
+        <div>
+<table>
+{% for row in leaguemaster %}
+<tr class="{% cycle 'odd' 'even' %}" id="leaguemaster_{{ forloop.counter0 }}">
+<td>{{ row.date|date:"d/m" }} ({{ row.home_or_away }})</td>
+<td>{{ row.team }}</td>
+<td>{{ row.opponents }}</td>
+<td class="{{ row.class }}{% if not row.points %} empty{% endif %}">{% if row.points %}{{ row.scores }} ({{ row.points }}){% endif %}</td></tr>
+{% endfor %}
+</table>
+<script>
+$(document).on("ready", function(){
+  var last = document.getElementById("leaguemaster_{{ leaguemaster_last_result_idx|add:'-5' }}");
+  if (last != null && last.scrollIntoView != undefined)
+    last.scrollIntoView();
+});
+</script>
+        </div>
       </div>
     </div>
     <div class="ui-block-b">
       <div class="jqm-block-content">
         <h3>Rankings <span class="link">(<a href="http://squashlevels.com">SquashLevels.com</a>)</span></h3>
+        <div>
 <table>
-<tr><td>Hayden Rogerlund</td><td>5791</td></tr>
-<tr><td>Paul Reilly</td><td>5379</td></tr>
-<tr><td>Jonathan Simpson</td><td>4406</td></tr>
-<tr><td>Rob Heasman</td><td>2875</td></tr>
-<tr><td>Mike Wardle</td><td>2723</td></tr>
-<tr><td>David Wallond</td><td>2690</td></tr>
-<tr><td>Peter Richardson</td><td>2354</td></tr>
-<tr><td>Mike Herington</td><td>2294</td></tr>
-<tr><td>Paul Garbutt</td><td>2226</td></tr>
-<tr><td>Jack Ross</td><td>2039</td></tr>
-<tr><td>Herman Van Den Berg</td><td>1985</td></tr>
-<tr><td>Pablo Fernandez</td><td>1981</td></tr>
-<tr><td>Chris Burton</td><td>1887</td></tr>
-<tr><td>Chris Bartlett</td><td>1812</td></tr>
-<tr><td>Spencer Harris</td><td>1809</td></tr>
-<tr><td>Stuart Bicknell</td><td>1787</td></tr>
-<tr><td>Kieron Harwood</td><td>1699</td></tr>
-<tr><td>Rob Kemp</td><td>1569</td></tr>
-<tr><td>Adrian Hayward</td><td>1529</td></tr>
-<tr><td>Noel Laycock</td><td>1499</td></tr>
-<tr><td>Paddy Bascombe</td><td>1440</td></tr>
-<tr><td>Ian Salmond</td><td>1427</td></tr>
-<tr><td>Sarena Harwood</td><td>1416</td></tr>
-<tr><td>John Hughes</td><td>1409</td></tr>
-<tr><td>Stewart Perry</td><td>1351</td></tr>
-<tr><td>Mike McElhatton</td><td>1327</td></tr>
-<tr><td>Usman Hussain</td><td>1285</td></tr>
-<tr><td>Freddie Lawson</td><td>1263</td></tr>
-<tr><td>Graham Norton</td><td>1235</td></tr>
-<tr><td>David Lyscom</td><td>1181</td></tr>
-<tr><td>Paul Perry</td><td>1141</td></tr>
-<tr><td>Elliot Lee</td><td>1097</td></tr>
-<tr><td>Ivor Simpson</td><td>1092</td></tr>
-<tr><td>Sarah Verdin</td><td>1066</td></tr>
-<tr><td>Leroy Valentine</td><td>1034</td></tr>
-<tr><td>Martin Shelley</td><td>979</td></tr>
-<tr><td>Jez Foulsham</td><td>964</td></tr>
-<tr><td>Mike Neale</td><td>955</td></tr>
-<tr><td>Shahid Azeem</td><td>950</td></tr>
-<tr><td>Keith Holdaway</td><td>943</td></tr>
-<tr><td>Simon Denny</td><td>856</td></tr>
-<tr><td>Tito Nath</td><td>841</td></tr>
-<tr><td>Simon Browne</td><td>832</td></tr>
-<tr><td>Toby Fenton</td><td>826</td></tr>
-<tr><td>Danny Jones</td><td>809</td></tr>
-<tr><td>John Bryant</td><td>799</td></tr>
-<tr><td>Karl Loynton</td><td>781</td></tr>
-<tr><td>Kerryn Bartlett</td><td>733</td></tr>
-<tr><td>David Dommett</td><td>732</td></tr>
-<tr><td>Warren Jones</td><td>711</td></tr>
-<tr><td>Mike Thacker</td><td>708</td></tr>
-<tr><td>Brian Greatorex</td><td>679</td></tr>
-<tr><td>Mike Calvert</td><td>677</td></tr>
-<tr><td>Phil Peakin</td><td>674</td></tr>
-<tr><td>Ian Dermody</td><td>630</td></tr>
-<tr><td>Sukhy Bains</td><td>617</td></tr>
-<tr><td>Loiuse Bacon</td><td>607</td></tr>
-<tr><td>Eric Butterworth</td><td>594</td></tr>
-<tr><td>David Guy</td><td>565</td></tr>
-<tr><td>Rob Ready</td><td>559</td></tr>
-<tr><td>Nicola Hayden</td><td>503</td></tr>
-<tr><td>Annie Lane</td><td>314</td></tr>
-<tr><td>Diane Benford</td><td>242</td></tr>
+{% for row in squashlevels %}
+<tr class="{% cycle 'odd' 'even' %}"><td>{{ row.name }}</td><td>{{ row.level }}</td></tr>
+{% endfor %}
 </table>
+        </div>
       </div>
     </div>        	
-    <div class="ui-block-a">
-      <div class="jqm-block-content">
-        <h3>Teams <span class="link">(<a href="http://county.leaguemaster.co.uk/">Surrey SRA</a>)</span></h3>
-        <p>TODO: Surrey Leagues summary</p>
-      </div>
-    </div>
-    <div class="ui-block-b">
-      <div class="jqm-block-content">
-        <h3>Matches</h3>
-
-        <p>TODO: Recent results</p>
-      </div>
-    </div>
   </div>
 </div>
 

@@ -14,9 +14,9 @@ import wsrc.site.competitions.views
 
 urlpatterns = patterns('',
 
-    url(r'^$', wsrc.site.views.generic_view, {"page":"home", "template":"index.html"}, name="homepage"),
-    url(r'^home$', wsrc.site.views.generic_view, {"page":"home", "template":"index.html"}),
-    url(r'^index$', wsrc.site.views.generic_view, {"page":"home", "template":"index.html"}),
+    url(r'^$', wsrc.site.views.index_view, name="homepage"),
+    url(r'^home$', wsrc.site.views.index_view),
+    url(r'^index$', wsrc.site.views.index_view),
 
     url(r'^login$', django.contrib.auth.views.login, {'template_name': 'login.html'}),
     url(r'^logout$', django.contrib.auth.views.logout),

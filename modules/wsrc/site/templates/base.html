@@ -50,7 +50,7 @@ $(document).on("pagechange", function(){
 <div data-role="page" class="wsrc-site {% block page-classes %}{% endblock %}">
 
   <div data-role="header" class="jqm-header">
-    <h2><img src="/static/images/WSRC-banner.jpg" alt="Woking Squash Club"></h2>
+    <h2><a href="/home"><img src="/static/images/WSRC-banner.jpg" alt="Woking Squash Club"></a></h2>
     <p>{% block pagetitle %}{% endblock %}</p>
     <a href="#" class="jqm-navmenu-link ui-btn ui-btn-icon-notext ui-corner-all ui-icon-bars ui-nodisc-icon ui-alt-icon ui-btn-left">Menu</a>
     <div class="wsrc-login-block">
@@ -97,7 +97,9 @@ $(document).on("pagechange", function(){
   </div>
 
   <div data-role="footer" data-position="fixed" data-tap-toggle="false" class="jqm-footer">
-    <p>Woking Squash Rackets Club <span class="jqm-version"></span></p>
+    <p>Woking Squash Rackets Club 
+      <div class="last_updated">{% block last_updated %}{% endblock %}</div>
+    </p>
   </div>
 
   <div data-role="popup" id="logout_dialog" data-dismissible="false" style="max-width:400px;">

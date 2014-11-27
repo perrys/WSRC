@@ -11,46 +11,7 @@
 </div>
 {% endblock %}
 
+{% block last_updated %}
+last updated: {{ pagedata.last_updated|date:"d M Y" }}
+{% endblock %}
 
-<table>
-  <tbody>
-    <tr>
-      <th>Membership</th>
-      <th>Entrance</th>
-      <th>Annual</th>
-    </tr>
-    <tr>
-      <td>Full</td>
-      <td>£50</td>
-      <td>£275</td>
-    </tr>
-    <tr>
-      <td>Family</td>
-      <td>£75</td>
-      <td>£275 (1st member)
-        <br>25% discount (2nd member&#8224;)
-        <br>50% discount (3rd & 4th members&#8225;)
-      </td>
-    </tr>
-    <tr>
-      <td>Young Adult (under24)</td>
-      <td>£50</td>
-      <td>£110</td>
-    </tr>
-    <tr>
-      <td>Junior (under 19)</td>
-      <td>£5</td>
-      <td>£90</td>
-    </tr>
-    <tr>
-      <td>Off-Peak <sup>(!)</sup></td>
-      <td>£25</td>
-      <td>£140</td>
-    </tr>
-    <tr>
-      <td>Non-playing</td>
-      <td>Nil</td>
-      <td>£20</td>
-    </tr>
-  </tbody>
-</table>

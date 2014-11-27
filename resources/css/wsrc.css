@@ -101,6 +101,7 @@ body {
     border-top: 1px solid #ed3338;
 }
 
+
 .wsrc-site .jqm-footer p {
     font-size: .8em;
     color: #999;
@@ -114,6 +115,14 @@ body {
     font-weight: 400;
     margin: 1em 1em .75em;
 }
+.wsrc-site .jqm-footer .last_updated {
+    font-size: 0.8em;
+    color: #666;
+    font-weight: 400;
+    margin: 1.5em 3% .25em 1.25em;
+    float: right;
+}
+
 
 /* Content */
 .wsrc-site .jqm-content {
@@ -178,13 +187,17 @@ body {
 }
 
 div.wsrc-membership {
-    padding-right: 2em;
-    padding-left: 2em;
+    padding-right: 1em;
+    padding-left: 1em;
     padding-bottom: 1em;
 }
 
 .wsrc-membership table {
     width: 100%;
+}
+
+tr.odd > td {
+    background-color: #f9f9f9;
 }
 
 .wsrc-footnote {
@@ -244,6 +257,31 @@ div.wsrc-membership {
     padding-bottom: .25em;
     margin: 0 0 .5em;
 }
+
+.jqm-block-content div.ui-bar {
+    line-height:34px;
+    padding: 0;
+}
+
+.jqm-block-content a.ui-btn-icon-notext.ui-btn-left {
+    top: 2px;
+    left: 2px;
+}
+
+.jqm-block-content a.ui-btn-icon-notext.ui-btn-right {
+    top: 2px;
+    right: 2px;
+}
+
+.jqm-block-content h4.ui-title {
+    font-size: 1em;
+    font-weight: 200;
+    color: #3eb249;
+    vertical-align: middle;
+    padding: 0;
+    margin: 0;
+}
+
 .jqm-block-content p {
     font-size: 1.1em;
     font-weight: 300;
@@ -253,6 +291,23 @@ div.wsrc-membership {
 
 .jqm-block-content table {
     width: 100%;
+}
+
+.jqm-block-content td {
+    vertical-align: top;
+}
+
+.jqm-block-content td.won {
+    color: #3eb249;
+}
+
+.jqm-block-content td.lost {
+    color: #ed3338;
+}
+
+.jqm-block-content td:last-child {
+    text-align:right;
+    padding-right: 0.5em;
 }
 
 .jqm-block-content h3 .link {
@@ -335,6 +390,15 @@ table.wsrc-settings th {
 
 .clear-all {
     clear: both;
+}
+
+div.coaching img.left-picture-block {
+    float: none;
+    padding-bottom: 1em;
+}
+
+div.coaching  ul {
+    margin-left: 0;
 }
 
 div.left-control-box {
@@ -587,11 +651,26 @@ td.score_total {
 {% if not ie_mode %}
 @media (min-width: 35em) {
 {% endif %}
-    .jqm-block-content {
-	min-height: 18em;
-	max-height: 18em;
+    .jqm-block-content > div{
+	min-height: 16em;
+	max-height: 16em;
         overflow: auto;
     }
+{% if not ie_mode %}
+}
+{% endif %}
+
+{% if not ie_mode %}
+@media (min-width: 500px) {
+{% endif %}
+div.coaching img.left-picture-block {
+    float: left;
+}
+
+div.coaching ul {
+    margin-left: 210px;
+    padding-bottom: 0;
+}
 {% if not ie_mode %}
 }
 {% endif %}
