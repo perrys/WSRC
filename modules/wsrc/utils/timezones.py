@@ -73,3 +73,4 @@ def parse_iso_datetime_to_naive(s):
 def naive_utc_to_local(dt, tz):
   dt = dt.replace(tzinfo=UTC_TZINFO)
   dt = dt.astimezone(tz)
+  return dt

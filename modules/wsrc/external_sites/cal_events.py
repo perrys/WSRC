@@ -126,8 +126,8 @@ class Event:
       if not s.endswith("Z"):
         raise Exception("Expected UTC time, unsure how to interpret: " + s)
       s = s[:-1]
-      dt = parse_iso_datetime_to_naive(s, "%Y-%m-%dT%H:%M:%S")
-      dt = naive_utc_to_local(UK_TZINFO)
+      dt = parse_iso_datetime_to_naive(s)
+      dt = naive_utc_to_local(dt, UK_TZINFO)
       return dt
     start, end = [from_iso_dt(s) for s in evt["start"]["dateTime"], evt["end"]["dateTime"]]
     link = evt.get("source")
