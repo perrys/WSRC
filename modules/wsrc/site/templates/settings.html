@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block pagetitle %}Settings{% endblock %}
+{% block content %}
+<div role="main" class="ui-content jqm-content">
+
+{% if form.errors %}
+<p>Your username and password didn't match. Please try again.</p>
+{% endif %}
+
+<fieldset label="Basic">
+  <form method="post" action="{% url 'django.contrib.auth.views.settings' %}" data-ajax="false">
+    {% csrf_token %}
+
+<table class="wsrc-settings">
+
+<tr> <th>{{ form.username.label_tag }}</th><td>{{ form.username }}</td></tr>
+<tr> <th>{{ form.first_name.label_tag }}</th><td>{{ form.first_name }}</td></tr>
+<tr> <th>{{ form.last_name.label_tag }}</th><td>{{ form.last_name }}</td></tr>
+<tr> <th>{{ form.email.label_tag }}</th><td>{{ form.email }}</td></tr>
+<tr> <td></td>    <td><input type="submit" value="update"></input></td></tr>
+
+</table>
+
+
+<input type="hidden" name="next" value="{{ next }}" />
+</form>
+
+</div>
+{% endblock %}

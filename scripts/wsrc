@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 
 import getopt
+import logging
+import os
 import sys
 
 if __name__ == "__main__":
@@ -8,10 +10,22 @@ if __name__ == "__main__":
     sys.stderr.write("USAGE: wsrc <command> [arguments]\n")
     sys.exit(1)
 
+  os.environ.setdefault("DJANGO_SETTINGS_MODULE", "wsrc.site.settings.settings")
+  logging.basicConfig(format='%(asctime)-10s [%(levelname)s] %(message)s',datefmt="%Y-%m-%d %H:%M:%S")
+
   command = sys.argv[1]
-  if command in ("sync"):
-    import wsrc.booking.main
-    wsrc.booking.main.run_from_command_line()
+  args = sys.argv[2:]
+  if command in ("sync", "sync-bookings"):
+    import wsrc.external_sites.main
+    wsrc.external_sites.main.cmdline_sync_bookings()
+
+  elif command in ("sync-squashlevels"):
+    import wsrc.external_sites.main
+    wsrc.external_sites.main.cmdline_sync_squashlevels()
+
+  elif command in ("sync-leaguemaster"):
+    import wsrc.external_sites.main
+    wsrc.external_sites.main.cmdline_sync_leaguemaster(*args)
 
 # Local Variables:
 # mode: python
