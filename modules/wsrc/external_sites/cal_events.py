@@ -7,8 +7,10 @@ import os.path
 import sys
 import uuid
 
-from wsrc.utils.timezones import GBEireTimeZone
-from wsrc.utils.timezones import UTC
+from wsrc.utils.timezones import parse_iso_datetime_to_naive, naive_utc_to_local
+from wsrc.utils.timezones import UK_TIMEZONE
+from wsrc.utils.timezones import UK_TZINFO
+
 
 # installation:
 # pip install --upgrade google-api-python-client
@@ -26,9 +28,6 @@ PRIVATE_KEY_FILE=os.path.expanduser("~/etc/WSRC_Calendar-0d05fd27ef4c.p12")
 CREDENTIALS_CACHE_FILE=os.path.expanduser('~/etc/.credentials')
 CALENDAR_RW_SCOPE="https://www.googleapis.com/auth/calendar"
 
-UK_TIMEZONE = "Europe/London"
-UK_TZINFO = GBEireTimeZone()
-UTC_TZINFO = UTC()
 LOGGER = logging.getLogger(__name__)
 
 def _get_Service():
@@ -127,9 +126,8 @@ class Event:
       if not s.endswith("Z"):
         raise Exception("Expected UTC time, unsure how to interpret: " + s)
       s = s[:-1]
-      dt = datetime.datetime.strptime(s, "%Y-%m-%dT%H:%M:%S")
-      dt = dt.replace(tzinfo=UTC_TZINFO)
-      dt = dt.astimezone(UK_TZINFO)
+      dt = parse_iso_datetime_to_naive(s, "%Y-%m-%dT%H:%M:%S")
+      dt = naive_utc_to_local(UK_TZINFO)
       return dt
     start, end = [from_iso_dt(s) for s in evt["start"]["dateTime"], evt["end"]["dateTime"]]
     link = evt.get("source")

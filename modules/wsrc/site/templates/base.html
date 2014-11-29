@@ -33,21 +33,12 @@ $( document ).on( "pagecreate", ".wsrc-site", function( event ) {
 window.WSRC_user_player_id = {% if user.player %}{{ user.player.id }}{% else %}-1{% endif %}
 {% endif %}
 
-$(document).on("pagechange", function(){
-  location.search.substr(1).split("&").forEach(function (pair) {
-    if (pair === "") return;
-    var parts = pair.split("=");
-    if (parts[0] === "scrollto") {
-      window.setTimeout(function(){$.mobile.silentScroll($("#" + parts[1])[0].offsetTop)}, 500);
-    }
-  });
-});
 
   </script>
 </head>
 <body>
 
-<div data-role="page" class="wsrc-site {% block page-classes %}{% endblock %}">
+<div data-role="page" data-wsrc-page="{% block pagename %}{% endblock %}" class="wsrc-site">
 
   <div data-role="header" class="jqm-header">
     <h2><a href="/home"><img src="/static/images/WSRC-banner.jpg" alt="Woking Squash Club"></a></h2>
@@ -106,13 +97,23 @@ $(document).on("pagechange", function(){
     <div data-role="header" data-theme="a">
       <h1>Logout</h1>
     </div>
-    <div role="main" class="ui-content">
+    <div class="ui-content">
       <h3 class="ui-title">Are you sure you want to log out?</h3> <!-- to be replaced be real error message -->
       <a href="/logout?next=/home" class="ui-btn ui-corner-all ui-shadow ui-btn-inline ui-btn-b" data-ajax="false">Ok</a>
       <a href="#" class="ui-btn ui-corner-all ui-shadow ui-btn-inline ui-btn-b" data-rel="back" data-transition="flow">Cancel</a>
     </div>
   </div>
   
+  <div data-role="popup" id="errorPopupDialog" data-overlay-theme="b" data-theme="b" data-dismissible="false" style="max-width:400px;">
+    <div data-role="header" data-theme="a">
+      <h1>Error</h1>
+    </div>
+    <div class="ui-content">
+      <h3 class="ui-title">__ERROR__</h3> <!-- to be replaced be real error message -->
+      <a href="#" class="ui-btn ui-corner-all ui-shadow ui-btn-inline ui-btn-b" data-rel="back" data-transition="flow">Ok</a>
+    </div>
+  </div>
+
 </div><!-- /page -->
 
 </body>

@@ -17,6 +17,7 @@ urlpatterns = patterns('',
     url(r'^$', wsrc.site.views.index_view, name="homepage"),
     url(r'^home$', wsrc.site.views.index_view),
     url(r'^index$', wsrc.site.views.index_view),
+    url(r'^data/facebook$', wsrc.site.views.facebook_view),
 
     url(r'^login$', django.contrib.auth.views.login, {'template_name': 'login.html'}),
     url(r'^logout$', django.contrib.auth.views.logout),

@@ -11,16 +11,17 @@ class PageContent(models.Model):
   def __unicode__(self):
     return self.page
 
-class SquashLevelsVersion(models.Model):
-  is_current = models.BooleanField()
-  asof_date = models.DateTimeField(auto_now_add=True)
+class BookingSystemEvent(models.Model):
+  start_time = models.DateTimeField()
+  end_time = models.DateTimeField()
+  court = models.SmallIntegerField()
+  description = models.CharField(max_length=64, blank=True, null=True)
 
 class SquashLevels(models.Model):
   name = models.CharField(max_length=64)
   category = models.CharField(max_length=16)
-  events = models.IntegerField()
+  num_events = models.IntegerField()
   level = models.IntegerField()
-  version = models.ForeignKey(SquashLevelsVersion, related_name="version+")
 
 class LeagueMasterFixtures(models.Model):
   VENUE_TYPES = (

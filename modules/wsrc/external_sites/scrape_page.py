@@ -96,7 +96,7 @@ def process_week_page(soup) :
     slots.append(data)
   return slots
 
-def extract_events(time_list, first_date, location):
+def extract_events(time_list, first_date, court_number):
   """Process all of the information scraped from the page to produce a list of Event objects.
   TIME_LIST is the list of 15-minute slots representing the court bookings for a week at that time.
   FIRST_DATE is the date of the first column (which should be a Monday)
@@ -114,7 +114,7 @@ def extract_events(time_list, first_date, location):
         if isinstance(booking, Event):
           booking.time = datetime.datetime.combine(today, row.time)
           booking.duration = quarterHour
-          booking.location = location
+          booking.location = "Court %d, Woking Squash Rackets Club, Horsell Moor, Woking, Surrey GU21 4NQ" % court_number
           day_bookings.append(booking)
         elif isinstance(booking, unicode) and booking.strip() == '"': # Process dittos
           if len(day_bookings) == 0:
@@ -129,10 +129,10 @@ def extract_events(time_list, first_date, location):
 
   return flatten(result)
 
-def scrape_week_events(eventData, first_date, location):
+def scrape_week_events(eventData, first_date, court_number):
   soup = BeautifulSoup(eventData, "lxml")
   time_list = process_week_page(soup)
-  return extract_events(time_list, first_date, location)
+  return extract_events(time_list, first_date, court_number)
 
 def scrape_table_generic(headerrow):
   headers = [cvt_nbsp(th.get_text()).strip() for th in headerrow.find_all("th")]

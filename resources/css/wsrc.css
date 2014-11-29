@@ -295,6 +295,7 @@ tr.odd > td {
 
 .jqm-block-content td {
     vertical-align: top;
+    font-size: 0.8em;
 }
 
 .jqm-block-content td.won {
@@ -545,6 +546,32 @@ td.score_total {
 }
 
 {% if not ie_mode %}
+/* larger than a small phone screen in portrait mode 
+   - switch to front page square boxes with scrolling */
+@media (min-width: 35em) {
+{% endif %}
+    .jqm-block-content > div{
+	min-height: 16em;
+	max-height: 16em;
+        overflow: auto;
+    }
+
+    .jqm-block-content > div.headed-box{
+        overflow: inherit;
+    }
+    .jqm-block-content > div.headed-box > div.ui-body{
+        overflow: auto;
+	min-height: 13em;
+	max-height: 13em;
+    }
+
+{% if not ie_mode %}
+}
+{% endif %}
+
+{% if not ie_mode %}
+/* larger than a small tablet in portrait mode - switch to larger
+   header, remove hamburger icon and bring in side menu */
 @media (min-width: 60em) {
 {% endif %}
     .wsrc-site .jqm-header h2 {
@@ -648,17 +675,6 @@ td.score_total {
 }
 {% endif %}
 
-{% if not ie_mode %}
-@media (min-width: 35em) {
-{% endif %}
-    .jqm-block-content > div{
-	min-height: 16em;
-	max-height: 16em;
-        overflow: auto;
-    }
-{% if not ie_mode %}
-}
-{% endif %}
 
 {% if not ie_mode %}
 @media (min-width: 500px) {
@@ -704,6 +720,16 @@ div.coaching ul {
     div.boxes-wrapper>div.boxes-secondcolumn {
         float: right;
     } 
+{% if not ie_mode %}
+}
+{% endif %}
+
+{% if not ie_mode %}
+@media ( min-width: 1200px ) {
+{% endif %}
+.jqm-block-content td {
+    font-size: 0.9em;
+}
 {% if not ie_mode %}
 }
 {% endif %}

@@ -1,13 +1,14 @@
 {% extends "base.html" %}
 
 {% block pagetitle %}{{ league_config.name }}{% endblock %}
-
+{% block pagename %}boxes{% endblock %}
 {% load competitions_extras %}
 {% block content %}
 
 
-<div role="main"  class="ui-content jqm-content">
+<div role="main" class="ui-content jqm-content">
     <form id="page-control-form" method="GET" action="#" onsubmit="return false;" >  
+      <input type="hidden" name="competitiongroup_id" value="{{ league_config.id }}"> 
       <div class="left-control-box">
         <fieldset data-role="controlgroup" data-type="horizontal" data-shadow="true">
           <input type="radio" name="view_type" id="view_type_boxes" value="boxes" checked="checked" />
@@ -102,7 +103,7 @@
     <h2> </h2>
     <a href="#" data-rel="back" class="ui-btn ui-corner-all ui-shadow ui-btn-a ui-icon-delete ui-btn-icon-notext ui-btn-right">Close</a>
   </div>
-  <div role="main" class="ui-content">
+  <div class="ui-content">
     <div data-role="collapsibleset" data-theme="a" data-content-theme="a">
       <div data-role="collapsible" data-collapsed="true" data-iconpos="right" id="add-change-div">
         <h4>Match Result</h4>
@@ -219,21 +220,6 @@
 
     </div>
   </div>
-  <div data-role="popup" id="errorPopupDialog" data-overlay-theme="b" data-theme="b" data-dismissible="false" style="max-width:400px;">
-    <div data-role="header" data-theme="a">
-      <h1>Error</h1>
-    </div>
-    <div role="main" class="ui-content">
-      <h3 class="ui-title">__ERROR__</h3> <!-- to be replaced be real error message -->
-      <a href="#" class="ui-btn ui-corner-all ui-shadow ui-btn-inline ui-btn-b" data-rel="back" data-transition="flow">Ok</a>
-    </div>
-  </div>
 </div>
-
-<script>
-$( document ).on( "pageshow", ".wsrc-site", function( event ) {
-  window.WSRC.onLeaguePageShow({{ league_config.id }});
-})
-</script>
 
 {% endblock %}

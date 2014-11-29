@@ -521,13 +521,31 @@ window.WSRC =
       return true
     )
 
+  refresh_facebook: (data) ->
+    table = $("#facebook_news tbody")    
+    if table.length > 0
+      table.find("tr").remove()
+      odd = true
+      for e in data.entries[0..9]
+        dt = e.published
+        dt = dt.substring(8,10) + "/" + dt.substring(5,7)
+        row = $("<tr><td>#{ dt }</td><td>#{ e.title }</td><td><a href='" + e.alternate + "'>read</a></td></tr>")
+        if odd
+          row.addClass("odd")
+          odd = false
+        else
+          row.addClass("even")
+          odd = true
+        table.append(row)
+  
   onBoxActionClicked: (link) ->
     this.open_box_detail_popup(link.id)
 
   onPlayerSelected: (selector) ->
     this.on_player_selected(selector.id)
 
-  onLeaguePageShow: (competitiongroup_id) ->
+  onLeaguePageShow: (page) ->
+    competitiongroup_id = page.find("input[name='competitiongroup_id']").val()
     this.setup_add_change_events()
       
     url = "/comp_data/competitiongroup/#{ competitiongroup_id }?expand=1"
@@ -555,5 +573,31 @@ window.WSRC =
         $("table.boxtable").show()
     )
     
-  
+  onHomePageShow: (page) ->
+    url = "/data/facebook"
+    this.ajax_GET(url,
+      successCB: (data) =>
+        this.refresh_facebook(data)
+        return true
+      failureCB: (xhr, status) => 
+        this.show_error_dialog("ERROR: Failed to load data from #{ url }")
+        return false
+    )
 
+  onPageContainerShow: (evt, ui) ->
+    newpage = ui.toPage
+    pagetype = newpage.attr("data-wsrc-page")
+    if pagetype == "boxes"
+      this.onLeaguePageShow(newpage)
+    else if pagetype == "home"
+      this.onHomePageShow(newpage)
+
+    location.search.substr(1).split("&").forEach( (pair) ->
+      return if (pair === "")
+      parts = pair.split("=")
+      if parts[0] === "scrollto"
+        callback = () -> $.mobile.silentScroll($("#" + parts[1])[0].offsetTop)
+        window.setTimeout(callback, 500)
+    )
+
+  

@@ -79,10 +79,10 @@ DATABASES = {
 
 LANGUAGE_CODE = 'en-GB'
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = 'Europe/London'
 USE_I18N = True
 USE_L10N = True
-USE_TZ = False
+USE_TZ = True
 
 AUTH_USER_MODEL = 'auth.User'
 AUTH_PROFILE_MODULE = 'wsrc.site.usermodel.Player'

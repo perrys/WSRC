@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {% block pagetitle %}Home{% endblock %}
-{% block page-classes %}wsrc-home{% endblock %}
+{% block pagename %}home{% endblock %}
 {% block content %}
 
 
@@ -11,31 +11,33 @@
   <div class="ui-grid-a ui-responsive">
     <div class="ui-block-a">
       <div class="jqm-block-content">
-        <h3>Upcoming Events <span class="link">(<a href="http://county.leaguemaster.co.uk/">Facebook</a>)</span></h3>
+        <h3>News <span class="link">(<a href="https://www.facebook.com/WokingSquash">Facebook&nbsp;Wall</a>)</span></h3>
         <div>
-          <p>TODO: upcoming events from Facebook page</p>
+<table id="facebook_news">
+<tbody>
+</tbody>
+</table>
         </div>
       </div>
     </div>
     <div class="ui-block-b">
       <div class="jqm-block-content">
-        <h3>Courts</h3>
-        <div>
+        <h3>Evening Courts</h3>
+        <div class="headed-box">
           <div class="ui-bar ui-bar-a" data-role="header" data-position="inline">
             <h4>Today</h4>
             {% if user.is_authenticated %}
-            <a id="link-{{ box_config.id }}" href="#boxDetailDialog" class="ui-btn ui-icon-arrow-l ui-btn-icon-notext ui-corner-all ui-btn-left" onclick="WSRC.onBoxActionClicked(this); return true;">
+            <a id="link-{{ box_config.id }}" href="#boxDetailDialog" class="ui-btn ui-icon-arrow-l ui-btn-icon-notext ui-corner-all ui-btn-left" style="display:none;" onclick="">
             </a>
-            <a id="link-{{ box_config.id }}" href="#boxDetailDialog" class="ui-btn ui-icon-arrow-r ui-btn-icon-notext ui-corner-all ui-btn-right" onclick="WSRC.onBoxActionClicked(this); return true;">
+            <a id="link-{{ box_config.id }}" href="#boxDetailDialog" class="ui-btn ui-icon-arrow-r ui-btn-icon-notext ui-corner-all ui-btn-right" onclick="">
             </a>
             {% endif %}
           </div>
           <div class="ui-body">
             <table>
-              <tr><td>19:15</td><td>1</td><td>Stewart Perry</td></tr>
-              <tr><td>19:30</td><td>2</td><td>Jack Ross</td></tr>
-              <tr><td>19:45</td><td>3</td><td>Peter Richardson</td></tr>
-              <tr><td>20:00</td><td>1</td><td>Free <span class="link"><a href="foobar">(book now)</a></span></td></tr>
+{% for row in bookings %}
+<tr class="{% cycle 'odd' 'even' %}"><td>{{ row.start_time|date:"H:i" }}&ndash;{{ row.end_time|date:"H:i" }}</td><td>{{ row.description }}</td><td>ct.&nbsp;{{ row.court }}</td></tr>
+{% endfor %}
             </table>
           </div>
         </div>
@@ -43,7 +45,7 @@
     </div>
     <div class="ui-block-a">
       <div class="jqm-block-content">
-        <h3>Winter League <span class="link">(<a href="http://county.leaguemaster.co.uk/">Surrey SRA</a>)</span></h3>
+        <h3>Winter&nbsp;League <span class="link">(<a href="http://county.leaguemaster.co.uk/">Surrey SRA</a>)</span></h3>
         <div>
 <table>
 {% for row in leaguemaster %}
@@ -51,7 +53,7 @@
 <td>{{ row.date|date:"d/m" }} ({{ row.home_or_away }})</td>
 <td>{{ row.team }}</td>
 <td>{{ row.opponents }}</td>
-<td class="{{ row.class }}{% if not row.points %} empty{% endif %}">{% if row.points %}{{ row.scores }} ({{ row.points }}){% endif %}</td></tr>
+<td class="{{ row.class }}{% if not row.points %} empty{% endif %}">{% if row.points %}{{ row.scores|safe }} ({{ row.points|safe }}){% endif %}</td></tr>
 {% endfor %}
 </table>
 <script>
@@ -89,10 +91,11 @@ function cycleImages(){
       $next.css('z-index',3).addClass('active');//make the next image the top one
     });
   }
-$( document ).on( "pageshow", ".wsrc-site", function( event ) {
+$( document ).on( "pagecontainershow", ".wsrc-site", function( event ) {
   if (! window.cycleimages_id) {
     window.cycleimages_id = setInterval('cycleImages()', 7000);
   }
+  WSRC.onIndexPageShow();
 })
 $( document ).on( "pagebeforehide", ".wsrc-site", function( event ) {
   if (window.cycleimages_id) {

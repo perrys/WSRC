@@ -2,6 +2,7 @@
 
 import datetime
 
+UK_TIMEZONE = "Europe/London"
 
 class GBEireTimeZone(datetime.tzinfo):
 
@@ -50,6 +51,7 @@ class GBEireTimeZone(datetime.tzinfo):
         dt += datetime.timedelta(days_to_go)
     return dt
 
+UK_TZINFO = GBEireTimeZone()
 
 class UTC(datetime.tzinfo):
   """UTC"""
@@ -62,3 +64,12 @@ class UTC(datetime.tzinfo):
 
   def dst(self, dt):
     return datetime.timedelta(0)
+
+UTC_TZINFO = UTC()
+
+def parse_iso_datetime_to_naive(s):
+  return datetime.datetime.strptime(s, "%Y-%m-%dT%H:%M:%S")
+
+def naive_utc_to_local(dt, tz):
+  dt = dt.replace(tzinfo=UTC_TZINFO)
+  dt = dt.astimezone(tz)

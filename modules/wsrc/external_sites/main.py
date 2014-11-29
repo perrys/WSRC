@@ -16,9 +16,11 @@ import actions
 
 from wsrc.utils import jsonutils
 
+from django.db import transaction
+
 WSRC_CALENDAR_ID = "2pa40689s076sldnb8genvsql8@group.calendar.google.com"
-CLEAR_CALENDARS_FIRST = False
 LOGGER = logging.getLogger(__name__)
+LOGGER.setLevel(logging.INFO)
 
 def get_content(url, params):
   url +=  "?" + urllib.urlencode(params)
@@ -72,14 +74,8 @@ def nearest_last_monday(date=None):
     date = datetime.date.today()
   return date - datetime.timedelta(days=date.weekday())
 
-def setup_logger():
-  logging.basicConfig(format='%(asctime)-10s [%(levelname)s] %(message)s',datefmt="%Y-%m-%d %H:%M:%S")
-  LOGGER.setLevel(logging.DEBUG)
+def update_google_calendar(bookingSystemEvents, clearExistingCalendarEvents=False):
 
-
-def cmdline_sync_bookings():
-
-  setup_logger()
   cal_events.LOGGER.setLevel(logging.DEBUG)
 
   configDir = os.path.join(os.path.dirname(sys.argv[0]), "..", "etc")
@@ -94,26 +90,13 @@ def cmdline_sync_bookings():
   existingGCalEvents = cal.list_events(date)
   LOGGER.info("Found {0} event(s) in Google calendar".format(len(existingGCalEvents)))
 
-  if CLEAR_CALENDARS_FIRST:
+  if clearExistingCalendarEvents:
     for evt in existingGCalEvents:
       cal.delete_event(evt)
     existingGCalEvents = []
 
   # Convert the list of Google calendar events to a dictionary. Events are keyed by start date and location.
   existingGCalEvents = dict([(evt,evt) for evt in existingGCalEvents])
-
-  bookingSystemEvents = []
-
-  # Loop over this week and next week:
-  for td in (datetime.timedelta(0), datetime.timedelta(days=7)):
-    date = date + td
-    # Loop over courts 1..3
-    for court in range(1,4):
-      # Get data from the bookings system for this week and court:
-      bookingSystemEventData = get_week_view(date.year, date.month, date.day, court)
-      events = scrape_page.scrape_week_events(bookingSystemEventData, date, "Court %d, Woking Squash Rackets Club, Horsell Moor, Woking, Surrey GU21 4NQ" % court)
-      LOGGER.info("Found {0} court booking(s) for court {1} week starting {2}".format(len(bookingSystemEvents), court, date.isoformat()))
-      bookingSystemEvents.extend([(event, court) for event in events])
 
   # For each event in the booking system, insert/update in the Google calendar as necessary:
   for (evt, court) in bookingSystemEvents:
@@ -134,6 +117,7 @@ def cmdline_sync_bookings():
   # unprocessed Google calendar events must have been removed from the booking system since the last sync
   removedEvents = existingGCalEvents
 
+  # process removed events through the cancelled event notifier:
   for userCfg in notifierConfig.config:
     notifier = actions.Notifier(userCfg, smtpConfig)
     for evt in removedEvents:
@@ -143,13 +127,118 @@ def cmdline_sync_bookings():
   for evt in removedEvents:
     cal.delete_event(evt)
 
+@transaction.atomic
+def update_booking_events(events):
+  from wsrc.site.models import BookingSystemEvent
+  BookingSystemEvent.objects.all().delete()
+  for (evt, court) in events:
+    entry = BookingSystemEvent(
+      start_time = evt.time,
+      end_time   = evt.time + evt.duration,
+      description = evt.name,
+      court = court,
+      )
+    entry.save()
+  
+@transaction.atomic
+def update_squash_levels_data(data):
+  from wsrc.site.models import SquashLevels
+
+  SquashLevels.objects.all().delete()
+  for row in data:
+    datum = SquashLevels(name=row["Player"], 
+                         category=row["Category"], 
+                         num_events=row["Events"],
+                         level=row["Level"]) 
+    datum.save()
+
+@transaction.atomic
+def update_leaguemaster_data(data):
+
+  def swap(tup):
+    t = tup[0]
+    tup[0] = tup[1]
+    tup[1] = t
+
+  # remove all leaguemaster data
+  from wsrc.site.models import LeagueMasterFixtures
+  LeagueMasterFixtures.objects.all().delete()
+
+  # process and update. Our team is always the first and we record
+  # separately if it was a home or away match.
+  for row in data:
+    if "Woking" in row["Away Team"]:
+      venue = "a"
+      team = row["Away Team"]
+      opponents = row["Home Team"]
+    else:
+      venue = "h"
+      team = row["Home Team"]
+      opponents = row["Away Team"]
+    date = row["Date"]
+    re_expr = re.compile("\d\d/\d\d/\d\d")
+    m = re_expr.search(row["Date"])
+    if m is None:
+      raise Exception("unable to find date in " + row["Date"])
+    datestr = row["Date"][m.start():m.end()]
+    date = datetime.datetime.strptime(datestr, "%d/%m/%y").date()
+
+    games = points = [None, None]
+
+    # The leaguemaster page seems to order points inconsistently. We
+    # will scrape the Won/Lost field to figure out the correct order.
+    result = row["Result"].strip()
+    if result.startswith("Won"):
+      result = result.replace("Won", "").strip()
+      if len(result) > 5:
+        raise Exception("unable to parse row: " +result + " " + str(row))
+      points = [int(x) for x in result.split("-")]
+      if points[1] > points[0]: # We won so need highest points first
+        swap(points)
+    elif result.startswith("Lost"):
+      result = result.replace("Lost", "").strip()
+      if len(result) > 5:
+        raise Exception("unable to parse row: " +result + " " + str(row))
+      points = [int(x) for x in result.split("-")]
+      if points[0] > points[1]: # We lost so need lowest points first
+        swap(points)
+
+    # games, on the other hand, are always presented from our perspective
+    if points[0] is not None:
+      games = [int(x) for x in row["Games"].split("-")]
+
+    result = LeagueMasterFixtures(
+      team = team,
+      opponents = opponents,
+      home_or_away = venue,
+      date = date,
+      team1_score = games[0],
+      team2_score = games[1],
+      team1_points = points[0],
+      team2_points = points[1]
+      )
+    result.save()
+
+def cmdline_sync_bookings():
+
+  bookingSystemEvents = []
+  date = nearest_last_monday()
+
+  # Loop over this week and next week:
+  for td in (datetime.timedelta(0), datetime.timedelta(days=7)):
+    date = date + td
+    # Loop over courts 1..3
+    for court in range(1,4):
+      # Get data from the bookings system for this week and court:
+      bookingSystemEventData = get_week_view(date.year, date.month, date.day, court)
+      events = scrape_page.scrape_week_events(bookingSystemEventData, date, court)
+      LOGGER.info("Found {0} court booking(s) for court {1} week starting {2}".format(len(bookingSystemEvents), court, date.isoformat()))
+      bookingSystemEvents.extend([(event, court) for event in events])
+
+  update_booking_events(bookingSystemEvents)
+  update_google_calendar(bookingSystemEvents)
 
 def cmdline_sync_squashlevels():
-
-  setup_logger()
-
-  os.environ.setdefault("DJANGO_SETTINGS_MODULE", "wsrc.site.settings.settings")
-  from wsrc.site.models import SquashLevels, SquashLevelsVersion
 
   data = get_squashlevels_rankings()
   data = scrape_page.scrape_squashlevels_table(data)
@@ -157,28 +246,9 @@ def cmdline_sync_squashlevels():
   LOGGER.info("Obtained {0} players from SquashLevels".format(len(data)))
 
   if len(data) > 0:
-    new_version = SquashLevelsVersion(is_current=False)
-    new_version.save()
-    SquashLevelsVersion.objects.exclude(id=new_version.id).update(is_current=False)
-    for row in data:
-      datum = SquashLevels(name=row["Player"], 
-                           category=row["Category"], 
-                           events=row["Events"],
-                           level=row["Level"],
-                           version=new_version) 
-      datum.save()
-    new_version.is_current = True
-    new_version.save()
-  
-    SquashLevels.objects.exclude(version=new_version).delete()
-    SquashLevelsVersion.objects.exclude(id=new_version.id).delete()
+    update_squash_levels_data(data)
 
 def cmdline_sync_leaguemaster(*args):
-
-  setup_logger()
-
-  os.environ.setdefault("DJANGO_SETTINGS_MODULE", "wsrc.site.settings.settings")
-  from wsrc.site.models import LeagueMasterFixtures
 
   if len(args) > 0:
     data = open(os.path.expanduser(args[0])).read()
@@ -188,58 +258,9 @@ def cmdline_sync_leaguemaster(*args):
 
   LOGGER.info("Obtained {0} fixtures from LeagueMaster".format(len(data)))
 
-  def swap(tup):
-    t = tup[0]
-    tup[0] = tup[1]
-    tup[1] = t
-
   if len(data) > 0:
-    LeagueMasterFixtures.objects.all().delete()
-    for row in data:
-      if "Woking" in row["Away Team"]:
-        venue = "a"
-        team = row["Away Team"]
-        opponents = row["Home Team"]
-      else:
-        venue = "h"
-        team = row["Home Team"]
-        opponents = row["Away Team"]
-      date = row["Date"]
-      re_expr = re.compile("\d\d/\d\d/\d\d")
-      m = re_expr.search(row["Date"])
-      if m is None:
-        raise Exception("unable to find date in " + row["Date"])
-      datestr = row["Date"][m.start():m.end()]
-      date = datetime.datetime.strptime(datestr, "%d/%m/%y").date()
-      games = points = [None, None]
-      result = row["Result"].strip()
-      if result.startswith("Won"):
-        result = result.replace("Won", "").strip()
-        if len(result) > 5:
-          raise Exception("unable to parse row: " +result + " " + str(row))
-        points = [int(x) for x in result.split("-")]
-        if points[1] > points[0]:
-          swap(points)
-      elif result.startswith("Lost"):
-        result = result.replace("Lost", "").strip()
-        if len(result) > 5:
-          raise Exception("unable to parse row: " +result + " " + str(row))
-        points = [int(x) for x in result.split("-")]
-        if points[0] > points[1]:
-          swap(points)
-      if points[0] is not None:
-        games = [int(x) for x in row["Games"].split("-")]
-      result = LeagueMasterFixtures(
-        team = team,
-        opponents = opponents,
-        home_or_away = venue,
-        date = date,
-        team1_score = games[0],
-        team2_score = games[1],
-        team1_points = points[0],
-        team2_points = points[1]
-        )
-      result.save()
+    update_leaguemaster_data(data)
+
         
 # Local Variables:
 # mode: python
