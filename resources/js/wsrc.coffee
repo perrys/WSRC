@@ -68,7 +68,7 @@ window.WSRC =
         apopup.popup("close")
       idx += 1
     popupdiv = jQuery("#errorPopupDialog")
-    popupdiv.find("div[role='main'] h3").html(msg)
+    popupdiv.find("div.ui-content h3").html(msg)
     popupdiv.popup(
       afterclose: (event, ui) =>
         for apopup in openpopups
@@ -522,11 +522,12 @@ window.WSRC =
     )
 
   refresh_facebook: (data) ->
-    table = $("#facebook_news tbody")    
-    if table.length > 0
+    table = $("#facebook_news tbody").show()
+    table.parents(".jqm-block-content").find("p").hide()
+    if data? and data.entries.length > 0
       table.find("tr").remove()
       odd = true
-      for e in data.entries[0..9]
+      for e in data.entries[0..7]
         dt = e.published
         dt = dt.substring(8,10) + "/" + dt.substring(5,7)
         row = $("<tr><td>#{ dt }</td><td>#{ e.title }</td><td><a href='" + e.alternate + "'>read</a></td></tr>")
@@ -574,15 +575,34 @@ window.WSRC =
     )
     
   onHomePageShow: (page) ->
+    last = $("#leaguemaster_last_result_idx").val()
+    if last != ""
+      idx = parseInt(last) - 5
+      last = $("#leaguemaster_#{ idx }")
+      if last.length == 1 and last[0].scrollIntoView?
+        last[0].scrollIntoView();
+
     url = "/data/facebook"
     this.ajax_GET(url,
       successCB: (data) =>
         this.refresh_facebook(data)
         return true
-      failureCB: (xhr, status) => 
-        this.show_error_dialog("ERROR: Failed to load data from #{ url }")
+      failureCB: (xhr, status) =>
+        table = $("#facebook_news tbody").hide()
+        err_container = table.parents(".jqm-block-content").find("p").show()
+        err_container.html(xhr.responseText)    
         return false
     )
+    $('.bxslider').bxSlider(
+      mode: 'horizontal',
+      slideWidth: 460,
+      captions: false,
+      randomStart: true,
+      controls: false,
+      auto: true,
+      pause: 7000,
+    );
+
 
   onPageContainerShow: (evt, ui) ->
     newpage = ui.toPage
@@ -592,10 +612,15 @@ window.WSRC =
     else if pagetype == "home"
       this.onHomePageShow(newpage)
 
+    $("#box_link").click(() ->
+      document.location.pathname="/competitions/leagues"
+    )
+
     location.search.substr(1).split("&").forEach( (pair) ->
-      return if (pair === "")
+      if (pair == "")
+        return
       parts = pair.split("=")
-      if parts[0] === "scrollto"
+      if parts[0] == "scrollto"
         callback = () -> $.mobile.silentScroll($("#" + parts[1])[0].offsetTop)
         window.setTimeout(callback, 500)
     )
