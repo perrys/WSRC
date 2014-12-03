@@ -16,6 +16,7 @@
 import markdown
 import datetime
 import urllib
+import httplib
 import httplib2
 
 from django.http import HttpResponse
@@ -28,6 +29,7 @@ from wsrc.site.models import PageContent, SquashLevels, LeagueMasterFixtures, Bo
 
 FACEBOOK_URL="https://www.facebook.com/feeds/page.php"
 WSRC_FACEBOOK_PAGE_ID = 576441019131008
+COURT_SLOT_LENGTH = datetime.timedelta(minutes=45)
 
 def get_pagecontent_ctx(page):
     data = get_object_or_404(PageContent, page__iexact=page)
@@ -36,9 +38,40 @@ def get_pagecontent_ctx(page):
             "title": data.page,
             "content": markdown.markdown(data.markup),
             "last_updated": data.last_updated,
-            }
+            },
+        "debug": True,
         }
 
+def add_empty_slots(bookings):
+    court_to_bookings_map = {1: [], 2: [], 3: []}
+    result = []
+    def slot_available(last_end, start):
+        return last_end is not None and (start-last_end) >= COURT_SLOT_LENGTH
+    for b in bookings:
+        court_to_bookings_map[b.court].append(b)
+    for court,booking_list in court_to_bookings_map.iteritems():
+        newlist = []
+        last_end_time = None
+        idx = 0
+        while idx < len(booking_list):
+            if slot_available(last_end_time, booking_list[idx].start_time):
+                end_time = last_end_time + COURT_SLOT_LENGTH
+                newlist.append(BookingSystemEvent(
+                        start_time = last_end_time,
+                        end_time = end_time,
+                        court = court,
+                        description = "_"))
+                last_end_time = end_time
+            else:
+                booking = booking_list[idx]
+                newlist.append(booking)
+                last_end_time = booking.end_time
+                idx += 1
+        result.extend(newlist)
+    result.sort(key=lambda x: x.start_time)
+    return result
+            
+            
 @require_safe
 def generic_view(request, page):
     ctx = get_pagecontent_ctx(page)
@@ -100,6 +133,7 @@ def index_view(request):
     cutoff_today = midnight_today + datetime.timedelta(hours=17)
     midnight_tomorrow = midnight_today + datetime.timedelta(days=1)
     bookings = BookingSystemEvent.objects.filter(start_time__gte=cutoff_today, start_time__lt=midnight_tomorrow).order_by('start_time')
+    bookings = add_empty_slots(bookings)
     ctx["bookings"] = bookings
     return TemplateResponse(request, 'index.html', ctx)
         
@@ -112,6 +146,15 @@ def facebook_view(request):
         }
     url = FACEBOOK_URL +  "?" + urllib.urlencode(params)
     h = httplib2.Http()
-    (resp_headers, content) = h.request(url, "GET")
+    try:
+        (resp_headers, content) = h.request(url, "GET")
+        if resp_headers.status != httplib.OK:
+            return HttpResponse(content="ERROR: Unable to fetch Facebook page - status %(status)s, reason: %(reason)s" % resp_headers, 
+                                content_type="application/json", 
+                                status=httplib.SERVICE_UNAVAILABLE)            
+    except Exception, e:
+        return HttpResponse(content="ERROR: Unable to fetch Facebook page - " + e.message, 
+                            content_type="text/plain", 
+                            status=httplib.SERVICE_UNAVAILABLE)
     return HttpResponse(content, content_type="application/json")
     
