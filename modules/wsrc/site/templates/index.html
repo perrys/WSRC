@@ -5,24 +5,26 @@
 
 
 <div role="main" class="ui-content jqm-content">
+  <div id="main_div"> 
 
   {{ pagedata.content|safe }}
 
   <div class="ui-grid-a ui-responsive">
     <div class="ui-block-a">
       <div class="jqm-block-content">
-        <h3>News <span class="link">(<a href="https://www.facebook.com/WokingSquash">Facebook&nbsp;Wall</a>)</span></h3>
+        <h3>News <span class="link">(<a href="https://www.facebook.com/WokingSquash">facebook.com</a>)</span></h3>
         <div>
-<table id="facebook_news">
-<tbody>
-</tbody>
-</table>
+          <table id="facebook_news">
+            <tbody>
+            </tbody>
+          </table>
+          <p style="display:None;"> </p>
         </div>
       </div>
     </div>
     <div class="ui-block-b">
       <div class="jqm-block-content">
-        <h3>Evening Courts</h3>
+        <h3>Evening&nbsp;Courts <span class="link">(<a href="http://court-booking.co.uk/WokingSquashClub/">court&#8209;booking.co.uk</a>)</span></h3>
         <div class="headed-box">
           <div class="ui-bar ui-bar-a" data-role="header" data-position="inline">
             <h4>Today</h4>
@@ -36,7 +38,7 @@
           <div class="ui-body">
             <table>
 {% for row in bookings %}
-<tr class="{% cycle 'odd' 'even' %}"><td>{{ row.start_time|date:"H:i" }}&ndash;{{ row.end_time|date:"H:i" }}</td><td>{{ row.description }}</td><td>ct.&nbsp;{{ row.court }}</td></tr>
+<tr class="{% cycle 'odd' 'even' %}"><td>{{ row.start_time|date:"H:i" }}&ndash;{{ row.end_time|date:"H:i" }}</td><td>{% if row.description = "_" %}<a href="">(available)</a>{% else %}{{ row.description }}{% endif %}</td><td>ct.&nbsp;{{ row.court }}</td></tr>
 {% endfor %}
             </table>
           </div>
@@ -45,7 +47,7 @@
     </div>
     <div class="ui-block-a">
       <div class="jqm-block-content">
-        <h3>Winter&nbsp;League <span class="link">(<a href="http://county.leaguemaster.co.uk/">Surrey SRA</a>)</span></h3>
+        <h3>Surrey&nbsp;Leagues <span class="link">(<a href="http://county.leaguemaster.co.uk/">leaguemaster.com</a>)</span></h3>
         <div>
 <table>
 {% for row in leaguemaster %}
@@ -56,19 +58,15 @@
 <td class="{{ row.class }}{% if not row.points %} empty{% endif %}">{% if row.points %}{{ row.scores|safe }} ({{ row.points|safe }}){% endif %}</td></tr>
 {% endfor %}
 </table>
-<script>
-$(document).on("ready", function(){
-  var last = document.getElementById("leaguemaster_{{ leaguemaster_last_result_idx|add:'-5' }}");
-  if (last != null && last.scrollIntoView != undefined)
-    last.scrollIntoView();
-});
-</script>
+<form style="display:None;">
+<input type="hidden" name="leaguemaster_last_result_idx", id="leaguemaster_last_result_idx" value="{{ leaguemaster_last_result_idx }}">
+</form>
         </div>
       </div>
     </div>
     <div class="ui-block-b">
       <div class="jqm-block-content">
-        <h3>Rankings <span class="link">(<a href="http://squashlevels.com">SquashLevels.com</a>)</span></h3>
+        <h3>Rankings <span class="link">(<a href="http://squashlevels.com">squashlevels.com</a>)</span></h3>
         <div>
 <table>
 {% for row in squashlevels %}
@@ -79,29 +77,15 @@ $(document).on("ready", function(){
       </div>
     </div>        	
   </div>
+  </div>
 </div>
 
 <script>
-function cycleImages(){
-    var $active = $('#cycler .active');
-    var $next = ($active.next().length > 0) ? $active.next() : $('#cycler img:first');
-    $next.css('z-index',2).fadeIn(1500);
-    $active.fadeOut(1500,function(){//fade out the top image
-      $active.css('z-index',1).removeClass('active').hide();//reset the z-index and unhide the image
-      $next.css('z-index',3).addClass('active');//make the next image the top one
-    });
-  }
 $( document ).on( "pagecontainershow", ".wsrc-site", function( event ) {
-  if (! window.cycleimages_id) {
-    window.cycleimages_id = setInterval('cycleImages()', 7000);
-  }
+  var last = document.getElementById("leaguemaster_{{ leaguemaster_last_result_idx|add:'-5' }}");
+  if (last != null && last.scrollIntoView != undefined)
+    last.scrollIntoView();
   WSRC.onIndexPageShow();
-})
-$( document ).on( "pagebeforehide", ".wsrc-site", function( event ) {
-  if (window.cycleimages_id) {
-    clearInterval(window.cycleimages_id);
-    window.cycleimages_id = null;
-  }
 })
 </script>
 

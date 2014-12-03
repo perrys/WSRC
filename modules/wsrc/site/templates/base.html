@@ -38,7 +38,7 @@ window.WSRC_user_player_id = {% if user.player %}{{ user.player.id }}{% else %}-
 </head>
 <body>
 
-<div data-role="page" data-wsrc-page="{% block pagename %}{% endblock %}" class="wsrc-site">
+<div id="outer_page_div" data-role="page" data-wsrc-page="{% block pagename %}{% endblock %}" class="wsrc-site">
 
   <div data-role="header" class="jqm-header">
     <h2><a href="/home"><img src="/static/images/WSRC-banner.jpg" alt="Woking Squash Club"></a></h2>
@@ -46,7 +46,7 @@ window.WSRC_user_player_id = {% if user.player %}{{ user.player.id }}{% else %}-
     <a href="#" class="jqm-navmenu-link ui-btn ui-btn-icon-notext ui-corner-all ui-icon-bars ui-nodisc-icon ui-alt-icon ui-btn-left">Menu</a>
     <div class="wsrc-login-block">
     <a href="{% if user.is_authenticated %}#logout_dialog{% else %}/login?next={{ request.get_full_path }}{% endif %}" class="wsrc-login-icon ui-btn ui-btn-icon-notext ui-corner-all ui-icon-user ui-nodisc-icon ui-alt-icon" {% if user.is_authenticated %}data-rel="popup" data-position-to="window"{% else %}data-ajax="false"{% endif %}>Login</a>
-    <a href="{% if user.is_authenticated %}/#logout_dialog{% else %}/login?next={{ request.get_full_path }}{% endif %}" class="wsrc-login-textlink" {% if user.is_authenticated %}data-rel="popup" data-position-to="window"{% else %}data-ajax="false"{% endif %}>{% if user.is_authenticated %}{{ user.first_name }}{% else %}Guest{% endif %}</a>
+    <a href="{% if user.is_authenticated %}/#logout_dialog{% else %}/login?next={{ request.get_full_path }}{% endif %}" class="wsrc-login-textlink" {% if user.is_authenticated %}data-rel="popup" data-position-to="window"{% else %}data-ajax="false"{% endif %}>{% if user.is_authenticated %}{{ user.first_name }}{% else %}Login{% endif %}</a>
     </div>
   </div>
 
@@ -62,7 +62,7 @@ window.WSRC_user_player_id = {% if user.player %}{{ user.player.id }}{% else %}-
       <li><a href="/juniors" {% if disable_ajax_links %}data-ajax="false"{% endif %}>Juniors</a></li>
       <li data-role="collapsible" data-enhanced="true" data-collapsed-icon="carat-d" data-expanded-icon="carat-u" data-iconpos="right" data-inset="false" class="ui-collapsible ui-collapsible-themed-content ui-collapsible-collapsed">
 	<h3 class="ui-collapsible-heading ui-collapsible-heading-collapsed">
-	  <a href="#" class="ui-collapsible-heading-toggle ui-btn ui-btn-icon-right ui-btn-inherit ui-icon-carat-d">Club Leagues<span class="ui-collapsible-heading-status"> click to expand contents</span></a>
+	  <a id="box_link" href="{% url 'wsrc.site.competitions.views.boxes_view' %}" class="ui-btn ui-btn-icon-right ui-btn-inherit ui-icon-carat-d">Club Leagues<span class="ui-collapsible-heading-status"> click to expand contents</span></a>
 	</h3>
 	<div class="ui-collapsible-content ui-body-inherit{% if not league_config %} ui-collapsible-content-collapsed{% endif %}" {% if not league_config %}aria-hidden="true"{% endif %}>
 	  <ul>
