@@ -36,6 +36,6 @@ setup(name='WSRC',
       data_files = [('etc', ['etc/notifier.json', 'etc/smtp.json']),
                     ('www/css', glob.glob(os.path.join('resources', 'css', 'all_*.css'))),
                     ('www/js', glob.glob(os.path.join('resources', 'js', 'all*.js'))),
-                    ('www/images', glob.glob(os.path.join('resources', 'images', '*.png'))),
+                    ('www/images', glob.glob(os.path.join('resources', 'images', '*.jpg'))),
                     ]
      )
