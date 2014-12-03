@@ -15,6 +15,10 @@ body {
     border-bottom-color: #eee;
 }
 
+#main_div {
+    max-width: 1000px;
+}
+
 .wsrc-site .jqm-header h2 {
     padding: .4em 0 .1em;
     margin: 0 3em;
@@ -128,20 +132,20 @@ body {
 .wsrc-site .jqm-content {
     padding-top: 3em;
 }
-.wsrc-site .jqm-content > h1,
-.wsrc-site .jqm-content > h2,
-.wsrc-site .jqm-content > h3,
-.wsrc-site .jqm-content > p,
-.wsrc-site .jqm-content > ul li,
+.wsrc-site .jqm-content h1,
+.wsrc-site .jqm-content h2,
+.wsrc-site .jqm-content h3,
+.wsrc-site .jqm-content p,
+.wsrc-site .jqm-content ul li,
 .wsrc-site .jqm-content > a {
     font-family: 'Open Sans', sans-serif;
     font-weight: 300;
 }
-.wsrc-site .jqm-content > h1 {
+.wsrc-site .jqm-content h1 {
     font-size: 2.4em;
     margin: 0 0 .625em;
 }
-.wsrc-site .jqm-content > h2 {
+.wsrc-site .jqm-content > div > h2 {
     color: #3eb249;
     background-color: transparent;
     border-bottom: 1px solid #ddd;
@@ -149,13 +153,13 @@ body {
     padding-bottom: .2em;
     margin: 0 0 .7375em;
 }
-.wsrc-site .jqm-content > h3 {
+.wsrc-site .jqm-content h3 {
     color: #3eb249;
     background-color: transparent;
     font-size: 1.4em;
     margin: 0 0 1em;
 }
-.wsrc-site .jqm-content > p {
+.wsrc-site .jqm-content p {
     font-size: 1em;
     line-height: 1.5;
 }
@@ -163,26 +167,26 @@ body {
     font-size: 1em;
     line-height: 1.5;
 }
-.wsrc-site .jqm-content > p {
+.wsrc-site .jqm-content p {
     margin: 0 0 1.25em;
 }
-.wsrc-site .jqm-content > ul,
-.wsrc-site .jqm-content > ol {
+.wsrc-site .jqm-content ul,
+.wsrc-site .jqm-content ol {
     padding-left: 1.3em;
 }
-.wsrc-site .jqm-content > .ui-listview {
+.wsrc-site .jqm-content .ui-listview {
     padding-left: 0;
 }
-.wsrc-site .jqm-content > a,
-.wsrc-site .jqm-content > p a,
-.wsrc-site .jqm-content > ul:not(.jqm-list) li a {
+.wsrc-site .jqm-content a,
+.wsrc-site .jqm-content p a,
+.wsrc-site .jqm-content ul:not(.jqm-list) li a {
     font-weight: 400;
     text-decoration: none;
 }
 .wsrc-site .jqm-content strong {
     font-weight: 700;
 }
-.wsrc-site .jqm-content > p strong {
+.wsrc-site .jqm-content p strong {
     font-weight: 400;
 }
 
@@ -218,12 +222,14 @@ tr.odd > td {
 
 
 /* Homepage */
+/*
 .wsrc-home > .jqm-content > div > img {
     width: 460px;
     height: 288px;
     max-width: 100%;
     display: block;
 }
+*/
 
 #cycler {
     position:relative;

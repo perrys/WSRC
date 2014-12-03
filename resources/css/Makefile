@@ -13,8 +13,8 @@ all: $(CSS_TARGETS)
 %.min.css: %.css
 	$(MINIFY) $<
 
-all_%.css: _wsrc_%.css jqm_theme.css _jquery.mobile.structure.css
-	cat jqm_theme.css _jquery.mobile.structure.css $< > $@
+all_%.css: _wsrc_%.css jqm_theme.css _jquery.mobile.structure.css jquery.bxslider.css
+	cat jqm_theme.css _jquery.mobile.structure.css jquery.bxslider.css $< > $@
 
 _jquery.mobile.structure.css:
 	wget http://ajax.googleapis.com/ajax/libs/jquerymobile/1.4.3/jquery.mobile.structure.css -O $@
