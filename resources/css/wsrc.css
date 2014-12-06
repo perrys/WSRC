@@ -514,6 +514,8 @@ fieldset#match-type label {
     width: 1.875em;
 }
 
+/* leagues */
+
 .winner {
     font-weight: bold;
 }
@@ -549,6 +551,98 @@ td.score_row_label {
 
 td.score_total {
     font-weight: bold;
+}
+
+/* tournaments */
+table.bracket {
+  font-size: 90%; 
+  margin: 0;
+  padding: 0;
+  border: 0;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  -khtml-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+
+tbody.bracket {
+  padding: 0px;
+}
+
+table.bracket td {
+  margin: 0px;
+}
+
+th.leftspacer {
+  width: 6px;
+}
+
+th.rightspacer {
+  width: 5px;
+}
+
+td.verticalspacer {
+	height: 7px;
+}
+
+td.toplink {
+  border-style: solid; 
+  border-color: black; 
+  border-width: 0 0 2px 0;
+}
+
+td.bottomlink {
+  border-style: solid; 
+  border-color: black; 
+  border-width: 2px 0 0 0;
+}
+
+td.stretchlink {
+  border-style: solid; 
+  border-color: black; 
+  border-width: 2px 2px 2px 0;
+}
+
+td.seed {
+  text-align: center;
+  border: 1px solid #aaa;
+  background-color: #F8F8F8;
+  padding: 2px 2px 2px 2px;
+  white-space: nowrap;
+}
+
+td.score {
+  text-align: center;
+  border: 1px solid #aaa;
+  border-left: 0px;
+  background-color: #F8F8F8;
+  padding: 2px 2px 2px 2px;
+}
+
+td.player {
+  border: 1px solid #aaa;
+  border-left: 0px;
+  padding: 2px 6px 2px 4px;
+  white-space: nowrap;
+  max-width: 150px;
+  min-width: 80px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 0.9em;
+}
+
+td.wsrc-highlight {
+ background-color: #dadada;
+}
+
+td.bye {
+  border: 1px solid #eee;	
+}
+
+td.winningscore, td.winner {
+  font-weight: bold; 
 }
 
 {% if not ie_mode %}
