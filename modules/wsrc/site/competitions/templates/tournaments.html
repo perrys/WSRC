@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+
+{% block titleprefix %}{{ competition.name }} - {% endblock %}
+{% block pagetitle %}{{ competition.name }}{% endblock %}
+{% block pagetype %}tournament{% endblock %}
+{% block pageattrs %}data-competitionid="{{ competition.id }}"{% endblock %}
+{% load competitions_extras %}
+{% block content %}
+
+
+<div role="main" class="ui-content jqm-content">
+  <div class="tournament-wrapper">
+  {{ bracket|safe }}
+  </div>
+</div>
+
+{% endblock %}
