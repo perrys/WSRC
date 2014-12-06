@@ -79,6 +79,7 @@ class CompactMatchField(serializers.RelatedField):
             return player.id
         return None
     return {"id": match.id,
+            "competition_match_id": match.competition_match_id,
             "last_updated": match.last_updated,
             "team1_player1": safe_get_id("team1_player1"),
             "team2_player1": safe_get_id("team2_player1"),
