@@ -20,6 +20,5 @@ import wsrc.site.competitions.views as views
 urlpatterns = patterns('',
     url(r'^leagues/$', views.boxes_view, {"group_id": "0"}),
     url(r'^leagues/(-?[0-9]+)$', views.boxes_view),
-    url(r'^tournament/(-?[0-9]+)$', views.bracket_view),
 )
 

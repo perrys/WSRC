@@ -26,6 +26,7 @@ from django.utils import timezone
 from django.views.decorators.http import require_safe
 
 from wsrc.site.models import PageContent, SquashLevels, LeagueMasterFixtures, BookingSystemEvent
+from wsrc.site.competitions.models import CompetitionGroup
 
 FACEBOOK_URL="https://www.facebook.com/feeds/page.php"
 WSRC_FACEBOOK_PAGE_ID = 576441019131008
@@ -33,12 +34,17 @@ COURT_SLOT_LENGTH = datetime.timedelta(minutes=45)
 
 def get_pagecontent_ctx(page):
     data = get_object_or_404(PageContent, page__iexact=page)
+    tournaments = []
+    for group in CompetitionGroup.objects.filter(comp_type="wsrc_tournaments"):
+        print group.competitions.all()
+        tournaments.append({"year": group.end_date.year, "competitions": group.competitions.all()})
     return {
         "pagedata": {
             "title": data.page,
             "content": markdown.markdown(data.markup),
             "last_updated": data.last_updated,
             },
+        "tournaments": tournaments,
         "debug": True,
         }
 

@@ -22,6 +22,8 @@ urlpatterns = patterns('',
     url(r'^login$', django.contrib.auth.views.login, {'template_name': 'login.html'}),
     url(r'^logout$', django.contrib.auth.views.logout),
 
+    url(r'^tournament/(\d{4})/(\w+)$', wsrc.site.competitions.views.bracket_view),
+
     url(r'^comp_data/',    include(wsrc.site.competitions.data_urls)),
     url(r'^competitions/', include(wsrc.site.competitions.view_urls)),
     url(r'^tournaments/',  include(wsrc.site.competitions.legacy_urls)),
