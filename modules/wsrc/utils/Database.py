@@ -12,7 +12,7 @@ def batchCursor(store, batchsize=512):
 class DataBase:
 
   def __init__(self):
-    self.dbh = MySQLdb.connect(user="root", db="squash", passwd="squash")
+    self.dbh = MySQLdb.connect(user="user", db="legacy_squash", passwd="tLeWvrDRK3CeX4Kq")
 
   def queryAndStore(self, sql, params=None, wantFields = False):
     c = self.dbh.cursor()
