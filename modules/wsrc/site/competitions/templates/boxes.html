@@ -1,14 +1,14 @@
 {% extends "base.html" %}
 
 {% block pagetitle %}{{ league_config.name }}{% endblock %}
-{% block pagename %}boxes{% endblock %}
+{% block pagetype %}boxes{% endblock %}
 {% load competitions_extras %}
+{% block pageattrs %}data-competitiongroupid="{{ league_config.id }}"{% endblock %}
 {% block content %}
 
 
 <div role="main" class="ui-content jqm-content">
     <form id="page-control-form" method="GET" action="#" onsubmit="return false;" >  
-      <input type="hidden" name="competitiongroup_id" value="{{ league_config.id }}"> 
       <div class="left-control-box">
         <fieldset data-role="controlgroup" data-type="horizontal" data-shadow="true">
           <input type="radio" name="view_type" id="view_type_boxes" value="boxes" checked="checked" />

@@ -38,7 +38,7 @@ window.WSRC_user_player_id = {% if user.player %}{{ user.player.id }}{% else %}-
 </head>
 <body>
 
-<div id="outer_page_div" data-role="page" data-wsrc-page="{% block pagename %}{% endblock %}" class="wsrc-site">
+<div id="outer_page_div" data-role="page" data-pagetype="{% block pagetype %}{% endblock %}" {% block pageattrs %}{% endblock %} class="wsrc-site">
 
   <div data-role="header" class="jqm-header">
     <h2><a href="/home"><img src="/static/images/WSRC-banner.jpg" alt="Woking Squash Club"></a></h2>

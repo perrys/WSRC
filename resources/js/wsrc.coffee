@@ -545,8 +545,12 @@ window.WSRC =
   onPlayerSelected: (selector) ->
     this.on_player_selected(selector.id)
 
+  onTournamentPageShow: (page) ->
+    competition_id = page.data().competitionid
+    this.setup_add_change_events()
+
   onLeaguePageShow: (page) ->
-    competitiongroup_id = page.find("input[name='competitiongroup_id']").val()
+    competitiongroup_id = page.data().competitiongroupid
     this.setup_add_change_events()
       
     url = "/comp_data/competitiongroup/#{ competitiongroup_id }?expand=1"
@@ -606,9 +610,11 @@ window.WSRC =
 
   onPageContainerShow: (evt, ui) ->
     newpage = ui.toPage
-    pagetype = newpage.attr("data-wsrc-page")
+    pagetype = newpage.data().pagetype
     if pagetype == "boxes"
       this.onLeaguePageShow(newpage)
+    else if pagetype == "tournament"
+      this.onTournamentPageShow(newpage)
     else if pagetype == "home"
       this.onHomePageShow(newpage)
 
