@@ -13,6 +13,10 @@ if __name__ == "__main__":
   os.environ.setdefault("DJANGO_SETTINGS_MODULE", "wsrc.site.settings.settings")
   logging.basicConfig(format='%(asctime)-10s [%(levelname)s] %(message)s',datefmt="%Y-%m-%d %H:%M:%S")
 
+  import django
+  if hasattr(django, "setup"):
+    django.setup()
+
   command = sys.argv[1]
   args = sys.argv[2:]
   if command in ("sync", "sync-bookings"):
@@ -26,6 +30,22 @@ if __name__ == "__main__":
   elif command in ("sync-leaguemaster"):
     import wsrc.external_sites.main
     wsrc.external_sites.main.cmdline_sync_leaguemaster(*args)
+
+  elif command in ("add-players-for-comp"):
+    import wsrc.site.competitions.models as comp_models
+    for comp in comp_models.Competition.objects.all():
+      if comp.id < 44:
+        matches = comp.match_set.all()
+        players = set()
+        for m in matches:
+          for i in [1,2]:
+            for j in [1,2]:
+              p = getattr(m, "team%d_player%d" % (i,j))
+              if p is not None:
+                players.add(p)
+        for p in players:
+          comp.players.add(p)
+            
 
 # Local Variables:
 # mode: python
