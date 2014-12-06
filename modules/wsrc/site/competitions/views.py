@@ -62,6 +62,7 @@ class MatchDetail(rest_generics.RetrieveUpdateDestroyAPIView):
 class MatchCreate(rest_generics.CreateAPIView):
     model = Match
 
+NON_BRK_SPACE = u'\xa0'
 
 # HTML template views:
 
@@ -111,3 +112,169 @@ def boxes_view(request, group_id):
     
     
 
+def render_tournament(nbrackets, ngames, tournamentId, compressFirstRound):
+
+    from wsrc.utils.html_table import Table, Cell, SpanningCell
+
+    colsPerBracket = (4 + ngames)
+    ncols = nbrackets * colsPerBracket - 1
+    if compressFirstRound:
+        nrows = 3 + (1 << nbrackets-2) * 6
+    else:
+        nrows = 3 + (1 << nbrackets-1) * 6
+    table = Table(ncols, nrows, {"class": "bracket", "cellspacing": "0px"})
+
+    topLink        = Cell('', {"class": "toplink"})
+    bottomLink = Cell('', {"class": "bottomlink"})
+
+    # first row; nbsp in the top row
+    table.addCell(Cell("", None, True), 0, 0)
+    for i in range(nbrackets, 0, -1):
+        if i == 1:
+            content = "Final"
+        elif i == 2:
+            content = "Semi Finals"
+        elif i == 3:
+            content = "Quarter Finals"
+        else:
+            content = "Round %(i)d" % locals()
+        table.addCell(SpanningCell(colsPerBracket-2, 1, content, {"class": "roundtitle"}, True),    1+0+(nbrackets-i)*colsPerBracket, 0)
+        if i > 1:
+            table.addCell(SpanningCell(1, 1, NON_BRK_SPACE, {"class": "leftspacer"}, True),    1 + colsPerBracket-2 + (nbrackets-i)*colsPerBracket, 0)
+            table.addCell(SpanningCell(1, 1, NON_BRK_SPACE, {"class": "rightspacer"}, True), 1 + colsPerBracket-1 + (nbrackets-i)*colsPerBracket, 0)
+
+    # first column; nbsp in the top row
+    for i in range(1, nrows):
+        content = NON_BRK_SPACE
+        if (i > 0): 
+            content = ""
+        attribs = {'class': "verticalspacer"}
+        if i == (nrows-1):
+            attribs["class"] += " spacercalc"        
+        table.addCell(Cell(content, attribs), 0, i)
+
+    def renderMatch(col, row, bracketIndex, matchIndex, idPrefix):
+    
+        binomialId = (1<<bracketIndex) + matchIndex    
+        class Position:
+            def __init__(self, col, row):
+                self.row = row
+                self.col = col
+
+        p = Position(col, row)
+
+        def addToRow(cls, content="", id=None):
+            attrs = {"class": cls}
+            if id is not None: attrs["id"] = id
+            c = SpanningCell(1, 2, unicode(content), attrs)
+            table.addCell(c, p.col, p.row)
+            p.col += c.ncols
+            return c
+        addToRow("seed ui-corner-tl", NON_BRK_SPACE)
+        addToRow("player", NON_BRK_SPACE, "match_%(idPrefix)s_%(binomialId)d_t" % locals())
+        for ii in range(0, ngames):
+            last = addToRow("score", NON_BRK_SPACE)
+        last.attrs["class"] += " ui-corner-tr"
+
+        p.col = col
+        p.row += 2
+        addToRow("seed ui-corner-bl", NON_BRK_SPACE)
+        addToRow("player", NON_BRK_SPACE, "match_%(idPrefix)s_%(binomialId)d_b" % locals())
+        for ii in range(0, ngames):
+            last = addToRow("score", NON_BRK_SPACE)
+        last.attrs["class"] += " ui-corner-br"
+
+    def renderBracket(bracketNumber, idPrefix, previousRowIndices = None):
+        isCompressedFirstRound = compressFirstRound and bracketNumber == nbrackets
+        if isCompressedFirstRound:
+            nmatches = 1 << (bracketNumber - 2)
+        else:
+            nmatches = 1 << (bracketNumber - 1)
+        column = 1+(nbrackets-bracketNumber)*colsPerBracket
+        
+        firstRound = (previousRowIndices is None)
+        if firstRound:
+            previousRowIndices = []
+            for j in range(0, nmatches):
+                pos = 3 + j * 6
+                previousRowIndices.append(pos)
+                previousRowIndices.append(pos)
+
+        rowIndices = []                    
+
+        for i in range(0, 2*nmatches, 2):
+            diff = previousRowIndices[i+1] - previousRowIndices[i]
+            avg    = previousRowIndices[i] + diff / 2
+            rowIndices.append(avg)
+            if isCompressedFirstRound: 
+                matchIndex = i+1
+            else:
+                matchIndex = i/2
+            renderMatch(column, avg, bracketNumber-1, matchIndex, idPrefix)
+            if firstRound:
+                if compressFirstRound and not isCompressedFirstRound:
+                    table.addCell(bottomLink, column-2, avg+2)
+                    table.addCell(bottomLink, column-1, avg+2)
+            else:
+                table.addCell(topLink, column-2, previousRowIndices[i]+1)
+                table.addCell(bottomLink, column-2, previousRowIndices[i+1]+2)
+                link = SpanningCell(1, diff, '', {"class": "stretchlink"})
+                table.addCell(link, column-2, previousRowIndices[i]+2)
+                table.addCell(topLink,        column-1, avg+1)
+                table.addCell(bottomLink, column-1, avg+2)
+
+        return rowIndices
+
+    previousRowIndices = None
+    for i in range(nbrackets, 0, -1):
+        previousRowIndices = renderBracket(i, tournamentId, previousRowIndices)
+        if compressFirstRound and i == nbrackets:
+            previousRowIndices = None
+
+    # spacer calculation on last row:
+    col = 1
+    for i in range(nbrackets, 0, -1):
+        if col > 1:
+            table.addCell(SpanningCell(2, 1, '', {"class": "spacercalc"}), col, nrows-1) # links
+            col += 2
+        table.addCell(Cell('', {"class": "spacercalc"}), col, nrows-1) # seed
+        col += 2
+        table.addCell(SpanningCell(ngames, 1, '', {"class": "spacercalc"}), col, nrows-1) # links
+        col += ngames    
+
+    return table
+
+def bracket_view(request, competition_id):
+    import xml.etree.ElementTree as etree
+    competition = get_object_or_404(Competition.objects, pk=competition_id)
+
+    SETS_PER_MATCH=5
+
+    def analyse(comp):
+        # get the maximum match id
+        try:
+            maxId = reduce(max, [int(x.competition_match_id) for x in competition.match_set.all()], 0)
+        except Exception, e:
+            print 
+            for c in competition.match_set.all().order_by("competition_match_id"):
+                    print c.__dict__
+            raise e
+        nRounds = 1
+        while (maxId>>1) > 0:
+            nRounds += 1
+            maxId = (maxId>>1)
+        # figure out the number of matches in the first round. If it is equal or less than half of the possible slots 
+        # then show the first round parallel with the second round
+        maxSecondRoundId = (1<<(nRounds-1))-1
+        firstRoundMatches = competition.match_set.filter(competition_match_id__gt=maxSecondRoundId)
+        print firstRoundMatches
+        nFirstMatches = len(firstRoundMatches)
+        nSecondRoundMatches = (1 << (nRounds-2))
+        return [nRounds, (nFirstMatches <= nSecondRoundMatches)]
+
+    [nRounds, compressFirst] = analyse(competition)
+    table = render_tournament(nRounds, SETS_PER_MATCH, competition.id, compressFirst)
+    html = etree.tostring(table.toHtml(), encoding='UTF-8', method='html')
+    
+    return TemplateResponse(request, "tournaments.html", {"competition": competition, "bracket": html})
+    
