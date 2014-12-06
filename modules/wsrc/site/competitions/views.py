@@ -112,11 +112,35 @@ def boxes_view(request, group_id):
     
     
 
-def render_tournament(nbrackets, ngames, tournamentId, compressFirstRound):
+def render_tournament(competition):
 
+    SETS_PER_MATCH=5
+    tournamentId = competition.id
+
+    # get the maximum match id
+    try:
+        maxId = reduce(max, [int(x.competition_match_id) for x in competition.match_set.all()], 0)
+    except Exception, e:
+        print 
+        for c in competition.match_set.all().order_by("competition_match_id"):
+            print c.__dict__
+        raise e
+    nbrackets = 1
+    while (maxId>>1) > 0:
+        nbrackets += 1
+        maxId = (maxId>>1)
+    # figure out the number of matches in the first round. If it is equal or less than half of the possible slots 
+    # then show the first round parallel with the second round
+    maxSecondRoundId = (1<<(nbrackets-1))-1
+    firstRoundMatches = competition.match_set.filter(competition_match_id__gt=maxSecondRoundId)
+    nFirstMatches = len(firstRoundMatches)
+    nSecondRoundMatches = (1 << (nbrackets-2))
+    compressFirstRound = (nFirstMatches <= nSecondRoundMatches)
+
+    rounds = dict([(r.round, r) for r in competition.rounds.all()])
     from wsrc.utils.html_table import Table, Cell, SpanningCell
 
-    colsPerBracket = (4 + ngames)
+    colsPerBracket = (4 + SETS_PER_MATCH)
     ncols = nbrackets * colsPerBracket - 1
     if compressFirstRound:
         nrows = 3 + (1 << nbrackets-2) * 6
@@ -138,6 +162,9 @@ def render_tournament(nbrackets, ngames, tournamentId, compressFirstRound):
             content = "Quarter Finals"
         else:
             content = "Round %(i)d" % locals()
+        roundData = rounds.get(nbrackets-i+1)
+        if roundData is not None:
+            content += "\n[%s]" % roundData.end_date.strftime("%a %d %b")
         table.addCell(SpanningCell(colsPerBracket-2, 1, content, {"class": "roundtitle"}, True),    1+0+(nbrackets-i)*colsPerBracket, 0)
         if i > 1:
             table.addCell(SpanningCell(1, 1, NON_BRK_SPACE, {"class": "leftspacer"}, True),    1 + colsPerBracket-2 + (nbrackets-i)*colsPerBracket, 0)
@@ -172,7 +199,7 @@ def render_tournament(nbrackets, ngames, tournamentId, compressFirstRound):
             return c
         addToRow("seed ui-corner-tl", NON_BRK_SPACE)
         addToRow("player", NON_BRK_SPACE, "match_%(idPrefix)s_%(binomialId)d_t" % locals())
-        for ii in range(0, ngames):
+        for ii in range(0, SETS_PER_MATCH):
             last = addToRow("score", NON_BRK_SPACE)
         last.attrs["class"] += " ui-corner-tr"
 
@@ -180,7 +207,7 @@ def render_tournament(nbrackets, ngames, tournamentId, compressFirstRound):
         p.row += 2
         addToRow("seed ui-corner-bl", NON_BRK_SPACE)
         addToRow("player", NON_BRK_SPACE, "match_%(idPrefix)s_%(binomialId)d_b" % locals())
-        for ii in range(0, ngames):
+        for ii in range(0, SETS_PER_MATCH):
             last = addToRow("score", NON_BRK_SPACE)
         last.attrs["class"] += " ui-corner-br"
 
@@ -239,41 +266,17 @@ def render_tournament(nbrackets, ngames, tournamentId, compressFirstRound):
             col += 2
         table.addCell(Cell('', {"class": "spacercalc"}), col, nrows-1) # seed
         col += 2
-        table.addCell(SpanningCell(ngames, 1, '', {"class": "spacercalc"}), col, nrows-1) # links
-        col += ngames    
+        table.addCell(SpanningCell(SETS_PER_MATCH, 1, '', {"class": "spacercalc"}), col, nrows-1) # links
+        col += SETS_PER_MATCH    
 
     return table
 
-def bracket_view(request, competition_id):
+def bracket_view(request, year, name):
     import xml.etree.ElementTree as etree
-    competition = get_object_or_404(Competition.objects, pk=competition_id)
+    group = get_object_or_404(CompetitionGroup.objects, end_date__year=year, comp_type='wsrc_tournaments')
+    competition = get_object_or_404(group.competitions, name__iexact=name)
 
-    SETS_PER_MATCH=5
-
-    def analyse(comp):
-        # get the maximum match id
-        try:
-            maxId = reduce(max, [int(x.competition_match_id) for x in competition.match_set.all()], 0)
-        except Exception, e:
-            print 
-            for c in competition.match_set.all().order_by("competition_match_id"):
-                    print c.__dict__
-            raise e
-        nRounds = 1
-        while (maxId>>1) > 0:
-            nRounds += 1
-            maxId = (maxId>>1)
-        # figure out the number of matches in the first round. If it is equal or less than half of the possible slots 
-        # then show the first round parallel with the second round
-        maxSecondRoundId = (1<<(nRounds-1))-1
-        firstRoundMatches = competition.match_set.filter(competition_match_id__gt=maxSecondRoundId)
-        print firstRoundMatches
-        nFirstMatches = len(firstRoundMatches)
-        nSecondRoundMatches = (1 << (nRounds-2))
-        return [nRounds, (nFirstMatches <= nSecondRoundMatches)]
-
-    [nRounds, compressFirst] = analyse(competition)
-    table = render_tournament(nRounds, SETS_PER_MATCH, competition.id, compressFirst)
+    table = render_tournament(competition)
     html = etree.tostring(table.toHtml(), encoding='UTF-8', method='html')
     
     return TemplateResponse(request, "tournaments.html", {"competition": competition, "bracket": html})
