@@ -50,7 +50,7 @@ class Match(models.Model):
     (2, "Team 2"),
   )
   competition = models.ForeignKey(Competition)
-  competition_match_id = models.CharField(max_length=32, help_text="Unique ID of this match within its competition", blank=True, null=True)
+  competition_match_id = models.IntegerField(help_text="Unique ID of this match within its competition", blank=True, null=True)
   team1_player1 = models.ForeignKey(user_models.Player, related_name="match_1_1+", blank=True, null=True)
   team1_player2 = models.ForeignKey(user_models.Player, related_name="match_1_2+", blank=True, null=True)
   team2_player1 = models.ForeignKey(user_models.Player, related_name="match_2_1+", blank=True, null=True)
