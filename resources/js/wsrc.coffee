@@ -35,6 +35,7 @@ window.WSRC =
     player_id = parseInt(player_id)
     return this.list_lookup(players, player_id)
 
+
   ##
   # Remove non-empty items from the selector and replace with the given list
   ## 
@@ -377,7 +378,7 @@ window.WSRC =
 
     return false
     
-  setupPointsTable: (this_box_config) ->
+  setup_points_table: (this_box_config) ->
     tablebody = jQuery("table#leaguetable-#{ this_box_config.id } tbody")
 
     # remove existing rows
@@ -492,7 +493,7 @@ window.WSRC =
       
     for this_box_config in competitiongroup_data.competitions_expanded
       setup_box(this_box_config)
-      this.setupPointsTable(this_box_config)
+      this.setup_points_table(this_box_config)
       
     return true
 
@@ -538,7 +539,87 @@ window.WSRC =
           row.addClass("even")
           odd = true
         table.append(row)
+
+
+  refresh_tournament_data: (data) ->
+
+    players = {}
+    for p in data.players
+      players[p.id] = p
+    seedings = {}
+    for s in data.seedings
+      seedings[s.player] = s.seeding
+    
+    populateMatch = (match) ->
   
+      # start with the html cells for the player names
+      baseSelector = "td#match_#{ data.id  }_#{ match.competition_match_id }"
+      team1Elt = jQuery(baseSelector + "_t")  # top cell
+      team2Elt = jQuery(baseSelector + "_b")  # bottom cell
+  
+      makeTeamName = (id1, id2) =>
+        selector = (user) ->
+          if id2
+            return user.short_name 
+          return user.full_name
+        unless id1?
+          return " "
+        result = selector(players[id1])
+        if id2
+          result += " & " + selector(players[id2]) 
+        return result.replace(" ", "&nbsp;")
+        
+      team1Name = makeTeamName(match.team1_player1, match.team1_player2) 
+      team2Name = makeTeamName(match.team2_player1, match.team2_player2) 
+      team1Elt.html(team1Name)
+      team2Elt.html(team2Name)
+  
+      # now the seeds:
+      addSeed = (id, elt) =>
+        if id?
+          seed = seedings[id]
+          if seed?
+            elt.prev().html(seed)
+      addSeed(match.team1_player1, team1Elt)
+      addSeed(match.team2_player1, team2Elt)
+  
+      # if we have two players, add any scores avaialble:
+      if match.team1_player1? and match.team2_player1?
+        team1ScoreElt = team1Elt.next()
+        team2ScoreElt = team2Elt.next()
+        scores = match.scores
+        if match.walkover?
+          if match.walkover == 1
+            team1Elt.addClass("winner")
+            team2Elt.css("text-decoration", "line-through")
+          else if match.walkover == 2
+            team2Elt.addClass("winner")
+            team1Elt.css("text-decoration", "line-through")
+        else
+          wins = [0,0]
+          for [team1Score, team2Score] in scores
+            if team1Score? and team2Score?
+              team1ScoreElt.html(team1Score)
+              team2ScoreElt.html(team2Score)
+            else
+              team1ScoreElt[0].innerHTML = "&nbsp;"
+              team2ScoreElt[0].innerHTML = "&nbsp;"
+            if team1Score > team2Score
+              team1ScoreElt.addClass("winningscore")
+              wins[0]++
+            else if team1Score < team2Score
+              team2ScoreElt.addClass("winningscore")
+              wins[1]++
+            team1ScoreElt = team1ScoreElt.next()
+            team2ScoreElt = team2ScoreElt.next()
+          if wins[0] > wins[1]
+            team1Elt.addClass("winner")
+          else if wins[0] < wins[1]
+            team2Elt.addClass("winner")
+      return true
+    populateMatch(m) for m in data.matches
+    return true
+      
   onBoxActionClicked: (link) ->
     this.open_box_detail_popup(link.id)
 
@@ -548,6 +629,18 @@ window.WSRC =
   onTournamentPageShow: (page) ->
     competition_id = page.data().competitionid
     this.setup_add_change_events()
+
+    url = "/comp_data/competition/#{ competition_id }?expand=1"
+    loadPageData = () =>
+      this.ajax_GET(url,
+        successCB: (data) =>
+          this.refresh_tournament_data(data)
+          return true
+        failureCB: (xhr, status) => 
+          this.show_error_dialog("ERROR: Failed to load tournament data from #{ url }")
+          return false
+      )
+    loadPageData()
 
   onLeaguePageShow: (page) ->
     competitiongroup_id = page.data().competitiongroupid
@@ -611,12 +704,12 @@ window.WSRC =
   onPageContainerShow: (evt, ui) ->
     newpage = ui.toPage
     pagetype = newpage.data().pagetype
-    if pagetype == "boxes"
+    if pagetype == "home"
+      this.onHomePageShow(newpage)
+    else if pagetype == "boxes"
       this.onLeaguePageShow(newpage)
     else if pagetype == "tournament"
       this.onTournamentPageShow(newpage)
-    else if pagetype == "home"
-      this.onHomePageShow(newpage)
 
     $("#box_link").click(() ->
       document.location.pathname="/competitions/leagues"
