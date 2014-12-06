@@ -22,7 +22,14 @@ class Cell:
   def toHtml(self, builder):
     tag = self.isHeader and "th" or "td"
     builder.start(tag, self.attrs)
-    builder.data(self.content)
+    first = True
+    for line in self.content.split("\n"):
+      if first:
+        first = False
+      else:
+        builder.start("br", {})
+        builder.end("br")
+      builder.data(line)
     builder.end(tag)
     
 class SpanningCell(Cell):
