@@ -72,16 +72,21 @@ window.WSRC_user_player_id = {% if user.player %}{{ user.player.id }}{% else %}-
 	  </ul>
 	</div>
       </li>
-      <li data-role="collapsible" data-enhanced="true" data-collapsed-icon="carat-d" data-expanded-icon="carat-u" data-iconpos="right" data-inset="false" class="ui-collapsible ui-collapsible-themed-content ui-collapsible-collapsed">
-	<h3 class="ui-collapsible-heading ui-collapsible-heading-collapsed">
-          <a href="#" class="ui-collapsible-heading-toggle ui-btn ui-btn-icon-right ui-btn-inherit ui-icon-carat-d">Annual Tournaments<span class="ui-collapsible-heading-status"> click to expand contents</span></a>
-	</h3>
-	<div class="ui-collapsible-content ui-body-inherit ui-collapsible-content-collapsed" aria-hidden="true">
-	  <ul>
-	    <li data-filtertext="collapsibles content formatting"><a href="/competitions/tournaments" data-ajax="false">2014 Tournaments</a></li>
-	    <li data-filtertext="collapsibles content formatting"><a href="/competitions/tournaments" data-ajax="false">2013 Tournaments</a></li>
-	  </ul>
-	</div>
+
+      <li data-role="collapsible" data-collapsed-icon="carat-d" data-expanded-icon="carat-u" data-iconpos="right" data-inset="false" >
+	<h3>Club Tournaments</h3>
+	<ul>
+{% for yearly_tournaments in tournaments|dictsortreversed:'year' %}
+          <li data-role="collapsible" data-collapsed-icon="carat-d" data-expanded-icon="carat-u" data-iconpos="right" data-inset="false">
+	    <h3 class="">{{ yearly_tournaments.year }}</h3>
+	    <ul>
+{% for tournament in yearly_tournaments.competitions %}
+	      <li><a href="/tournament/{{ yearly_tournaments.year }}/{{ tournament.name }}" data-ajax="false">{{ tournament.name }}</a></li>
+{% endfor %}
+            </ul>
+          </li>
+{% endfor %}
+	</ul>
       </li>
       <li data-filtertext="contact"><a href="/contact" data-ajax="false">Contact Us</a></li>
     </ul>
