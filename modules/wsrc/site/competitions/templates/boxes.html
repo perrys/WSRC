@@ -1,9 +1,9 @@
 {% extends "base.html" %}
 
-{% block pagetitle %}{{ league_config.name }}{% endblock %}
+{% block pagetitle %}{{ competition.name }}{% endblock %}
 {% block pagetype %}boxes{% endblock %}
 {% load competitions_extras %}
-{% block pageattrs %}data-competitiongroupid="{{ league_config.id }}"{% endblock %}
+{% block pageattrs %}data-competitiongroupid="{{ competition.id }}"{% endblock %}
 {% block content %}
 
 
@@ -24,7 +24,7 @@
       </div>
       <div class="clear-all"></div>
     </form>
-{% for box_config in league_config.boxes %}
+{% for box_config in boxes %}
 <!-- {{ box_config.colspec }} {{ box_config.nthcol }} -->
 {% if box_config.colspec != 'double' or box_config.nthcol != 'second' %}
   <div class="ui-grid-a boxes-wrapper boxes-wrapper-{{ box_config.colspec }}column">
@@ -42,17 +42,17 @@
           <thead>
             <tr>
               <th colspan="2"></th>
-{% for i in league_config.maxplayers|as_range %}<td class="ui-bar-a">{{ i|add:"1" }}</td>{% endfor %}
+{% for i in competition.maxplayers|as_range %}<td class="ui-bar-a">{{ i|add:"1" }}</td>{% endfor %}
               <td class="ui-bar-a">Σ</td>
             </tr>
           </thead>
           <tbody>
-{% for i in league_config.maxplayers|as_range %}
+{% for i in competition.maxplayers|as_range %}
 {% resolve box_config.players i as player %}
             <tr {% if player.id %}id="player-{{ player.id }}"{% endif %}>
               <th {% if user.is_authenticated and user.player.id == player.id %}class="wsrc-currentuser"{% endif %}>{{ player.get_full_name }}</th>
               <td class="ui-bar-a">{{ i|add:"1" }}</td>
-{% for j in league_config.maxplayers|as_range %}
+{% for j in competition.maxplayers|as_range %}
               <td {% if i == j %}class="ui-bar-a"{% endif %}> </td>
 {% endfor %}
               <td class="score_total"> </td>
@@ -74,7 +74,7 @@
 	  </tr>
 	</thead>
         <tbody>
-{% for i in league_config.maxplayers|as_range %}
+{% for i in competition.maxplayers|as_range %}
 {% resolve box_config.players i as player %}
           <tr {% if player.id %}id="leaguetable-player-{{ player.id }}"{% endif %}>
             <th>{{ player.get_full_name }}</th>
