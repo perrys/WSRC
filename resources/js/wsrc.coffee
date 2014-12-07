@@ -355,7 +355,7 @@ window.WSRC =
     if this.is_valid_int(match_id) 
       # update existing match result:
       data.id = parseInt(match_id)
-      url = "/comp_data/match/#{ match_id }"
+      url = "/data/match/#{ match_id }"
       this.ajax_PUT(url, data,
         successCB: (data) =>
           return true
@@ -366,7 +366,7 @@ window.WSRC =
       )
     else
       # new match result:
-      url = "/comp_data/match/"
+      url = "/data/match/"
       this.ajax_POST(url, data,
         successCB: (data) =>
           return true
@@ -541,21 +541,25 @@ window.WSRC =
         table.append(row)
 
 
-  refresh_tournament_data: (data) ->
+  refresh_tournament_data: (competition_data) ->
 
     players = {}
-    for p in data.players
+    for p in competition_data.players
       players[p.id] = p
     seedings = {}
-    for s in data.seedings
+    for s in competition_data.seedings
       seedings[s.player] = s.seeding
     
     populateMatch = (match) ->
   
       # start with the html cells for the player names
-      baseSelector = "td#match_#{ data.id  }_#{ match.competition_match_id }"
+      baseSelector = "td#match_#{ competition_data.id  }_#{ match.competition_match_id }"
       team1Elt = jQuery(baseSelector + "_t")  # top cell
       team2Elt = jQuery(baseSelector + "_b")  # bottom cell
+      for elt in [team1Elt, team2Elt]
+        elt.removeClass("empty-match")
+        elt.nextUntil(".seed", ".score").removeClass("empty-match")
+        elt.prev(".seed").removeClass("empty-match")
   
       makeTeamName = (id1, id2) =>
         selector = (user) ->
@@ -617,7 +621,10 @@ window.WSRC =
           else if wins[0] < wins[1]
             team2Elt.addClass("winner")
       return true
-    populateMatch(m) for m in data.matches
+
+    populateMatch(m) for m in competition_data.matches
+    # TODO: add events for highlighting and score dialog
+    
     return true
       
   onBoxActionClicked: (link) ->
@@ -630,7 +637,7 @@ window.WSRC =
     competition_id = page.data().competitionid
     this.setup_add_change_events()
 
-    url = "/comp_data/competition/#{ competition_id }?expand=1"
+    url = "/data/competition/#{ competition_id }?expand=1"
     loadPageData = () =>
       this.ajax_GET(url,
         successCB: (data) =>
@@ -646,7 +653,7 @@ window.WSRC =
     competitiongroup_id = page.data().competitiongroupid
     this.setup_add_change_events()
       
-    url = "/comp_data/competitiongroup/#{ competitiongroup_id }?expand=1"
+    url = "/data/competitiongroup/#{ competitiongroup_id }?expand=1"
     loadPageData = () =>
       this.ajax_GET(url,
         successCB: (data) =>
