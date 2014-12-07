@@ -364,10 +364,19 @@ tr.odd > td {
 .jqm-navmenu-panel .ui-panel-inner > .ui-listview > li.ui-first-child .ui-btn {
     border-top: none !important;
 }
+
 .jqm-navmenu-panel .ui-listview .ui-listview .ui-btn {
     padding-left: 1.5em;
+    color: #666;
+}
+
+.jqm-navmenu-panel .ui-listview .ui-listview .ui-listview .ui-btn {
+    padding-left: 2em;
     color: #999;
 }
+
+
+
 .jqm-navmenu-panel .ui-listview .ui-listview .ui-btn.ui-btn-active {
     color: #fff;
 }
@@ -593,25 +602,25 @@ td.verticalspacer {
 
 td.toplink {
   border-style: solid; 
-  border-color: black; 
+  border-color: #aaa;
   border-width: 0 0 2px 0;
 }
 
 td.bottomlink {
   border-style: solid; 
-  border-color: black; 
+  border-color: #aaa; 
   border-width: 2px 0 0 0;
 }
 
 td.stretchlink {
   border-style: solid; 
-  border-color: black; 
+  border-color: #aaa; 
   border-width: 2px 2px 2px 0;
 }
 
 td.seed {
   text-align: center;
-  border: 1px solid #aaa;
+  border: 1px solid #999;
   background-color: #F8F8F8;
   padding: 2px 2px 2px 2px;
   white-space: nowrap;
@@ -619,14 +628,14 @@ td.seed {
 
 td.score {
   text-align: center;
-  border: 1px solid #aaa;
+  border: 1px solid #999;
   border-left: 0px;
   background-color: #F8F8F8;
   padding: 2px 2px 2px 2px;
 }
 
 td.player {
-  border: 1px solid #aaa;
+  border: 1px solid #999;
   border-left: 0px;
   padding: 2px 6px 2px 4px;
   white-space: nowrap;
@@ -641,8 +650,8 @@ td.wsrc-highlight {
  background-color: #dadada;
 }
 
-td.bye {
-  border: 1px solid #eee;	
+td.empty-match {
+  border: 1px solid #ddd;	
 }
 
 td.winningscore, td.winner {
@@ -779,6 +788,10 @@ td.winningscore, td.winner {
     .jqm-navmenu-panel .ui-listview .ui-listview .ui-btn {
 	padding-left: 15%;
     }
+    .jqm-navmenu-panel .ui-listview .ui-listview .ui-listview .ui-btn {
+        padding-left: 17.5%;
+    }
+
     .jqm-navmenu-panel .ui-collapsible,
     .jqm-navmenu-panel .ui-collapsible-content,
     .jqm-navmenu-panel .ui-btn {
