@@ -60,17 +60,12 @@ window.WSRC_user_player_id = {% if user.player %}{{ user.player.id }}{% else %}-
       <li><a href="/membership" {% if disable_ajax_links %}data-ajax="false"{% endif %}>Membership</a></li>
       <li><a href="/coaching" {% if disable_ajax_links %}data-ajax="false"{% endif %}>Coaching</a></li>
       <li><a href="/juniors" {% if disable_ajax_links %}data-ajax="false"{% endif %}>Juniors</a></li>
-      <li data-role="collapsible" data-enhanced="true" data-collapsed-icon="carat-d" data-expanded-icon="carat-u" data-iconpos="right" data-inset="false" class="ui-collapsible ui-collapsible-themed-content ui-collapsible-collapsed">
-	<h3 class="ui-collapsible-heading ui-collapsible-heading-collapsed">
-	  <a id="box_link" href="{% url 'wsrc.site.competitions.views.boxes_view' %}" class="ui-btn ui-btn-icon-right ui-btn-inherit ui-icon-carat-d">Club Leagues<span class="ui-collapsible-heading-status"> click to expand contents</span></a>
-	</h3>
-	<div class="ui-collapsible-content ui-body-inherit{% if not league_config %} ui-collapsible-content-collapsed{% endif %}" {% if not league_config %}aria-hidden="true"{% endif %}>
-	  <ul>
-	    <li><a href="{% url 'wsrc.site.competitions.views.boxes_view' %}" {% if disable_ajax_links %}data-ajax="false"{% endif %}>Current</a></li>
-	    <li><a href="{% url 'wsrc.site.competitions.views.boxes_view' -1 %}" {% if disable_ajax_links %}data-ajax="false"{% endif %}>Previous</a></li>
-	    <li data-filtertext="leagues"><a href="/competitions/leagueslist/" >History&hellip;</a></li>
-	  </ul>
-	</div>
+
+      <li data-role="collapsible" data-collapsed-icon="carat-d" data-expanded-icon="carat-u" data-iconpos="right" data-inset="false">
+	<h3>Club Leagues</h3>
+	<ul>
+	  <li><a href="{% url 'wsrc.site.competitions.views.boxes_view' %}">Current</a></li>
+	</ul>
       </li>
 
       <li data-role="collapsible" data-collapsed-icon="carat-d" data-expanded-icon="carat-u" data-iconpos="right" data-inset="false" >
@@ -78,7 +73,7 @@ window.WSRC_user_player_id = {% if user.player %}{{ user.player.id }}{% else %}-
 	<ul>
 {% for yearly_tournaments in tournaments|dictsortreversed:'year' %}
           <li data-role="collapsible" data-collapsed-icon="carat-d" data-expanded-icon="carat-u" data-iconpos="right" data-inset="false">
-	    <h3 class="">{{ yearly_tournaments.year }}</h3>
+	    <h3>{{ yearly_tournaments.year }}</h3>
 	    <ul>
 {% for tournament in yearly_tournaments.competitions %}
 	      <li><a href="/tournament/{{ yearly_tournaments.year }}/{{ tournament.name }}" data-ajax="false">{{ tournament.name }}</a></li>
