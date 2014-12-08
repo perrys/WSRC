@@ -1,45 +1,67 @@
 
-body {
+
+/* Small screen default font size is 14px */
+body,
+.ui-btn,
+.ui-mobile label,
+div.ui-controlgroup-label {
     font-size: 0.9em;
 }
-
-.ui-corner-all {
-   -webkit-border-radius:.2 !important;
-   border-radius: 2 !important;
+.clear-all {
+    clear: both;
 }
-
-/* Header */
-.wsrc-site .jqm-header {
-    background: #fff;
-    border-top: 4px solid #ed3338;
-    border-bottom-color: #eee;
+/* add support for individual corner radii */
+.ui-corner-all,
+.ui-corner-top,
+.ui-corner-left,
+.ui-corner-tl {
+	border-top-left-radius: .3125em /*{global-radii-blocks}*/;
 }
-
+.ui-corner-all,
+.ui-corner-top,
+.ui-corner-right,
+.ui-corner-tr {
+	border-top-right-radius: .3125em /*{global-radii-blocks}*/;
+}
+.ui-corner-all,
+.ui-corner-bottom,
+.ui-corner-left,
+.ui-corner-bl {
+	border-bottom-left-radius: .3125em /*{global-radii-blocks}*/;
+}
+.ui-corner-all,
+.ui-corner-bottom,
+.ui-corner-right,
+.ui-corner-br {
+	border-bottom-right-radius: .3125em /*{global-radii-blocks}*/;
+}
 #main_div {
     max-width: 1000px;
 }
 
+/******************************************************************************** 
+  Header - note some of these rules are overriden for larger screens
+********************************************************************************/
+
+.wsrc-site .jqm-header {
+    background: white;
+    border-top: 4px solid #ed3338;
+    border-bottom-color: #eee;
+}
 .wsrc-site .jqm-header h2 {
     padding: .4em 0 .1em;
     margin: 0 3em;
 }
-
 .wsrc-site .jqm-header h2 a {
     display: inline-block;
     text-decoration: none;
     min-height: 40px;
 }
-
 .wsrc-site .jqm-header h2 img {
     display: block;
     width: 140px;
     height: auto;
 }
-
-.wsrc-site .jqm-header h2 > img {
-    display: inline-block;
-}
-
 .wsrc-site .jqm-header p {
     position: absolute;
     bottom: -2em;
@@ -50,7 +72,6 @@ body {
     font-weight: 300;
     text-transform: uppercase;
 }
-
 .wsrc-site .jqm-header .ui-btn {
     width: 2em;
     height: 2em;
@@ -63,7 +84,6 @@ body {
     opacity: .4;
     filter: Alpha(Opacity=40);
 }
-
 .wsrc-site .jqm-header div.wsrc-login-block {
     position: absolute;
     right: 1em;
@@ -74,7 +94,6 @@ body {
     border: 0;
     text-align: center;
 }
-
 .wsrc-site .jqm-header a.wsrc-login-icon {
     position: relative;
     display: block;
@@ -82,7 +101,6 @@ body {
     margin-right: auto;
     margin-top: -1.5em;
 }
-
 .wsrc-site .jqm-header a.wsrc-login-textlink {
     color: #333;
     display: block;
@@ -95,7 +113,10 @@ body {
     font-size: 0.8em;
 }
 
-/* Footer */
+/******************************************************************************** 
+   Footer 
+********************************************************************************/
+
 .wsrc-site .jqm-footer.ui-footer {
     position: absolute;
     bottom: 0;
@@ -104,8 +125,6 @@ body {
 .wsrc-site .jqm-footer {
     border-top: 1px solid #ed3338;
 }
-
-
 .wsrc-site .jqm-footer p {
     font-size: .8em;
     color: #999;
@@ -128,7 +147,10 @@ body {
 }
 
 
-/* Content */
+/******************************************************************************** 
+  Content
+********************************************************************************/
+
 .wsrc-site .jqm-content {
     padding-top: 3em;
 }
@@ -190,55 +212,10 @@ body {
     font-weight: 400;
 }
 
-div.wsrc-membership {
-    padding-right: 1em;
-    padding-left: 1em;
-    padding-bottom: 1em;
-}
 
-.wsrc-membership table {
-    width: 100%;
-}
-
-tr.odd > td {
-    background-color: #f9f9f9;
-}
-
-.wsrc-footnote {
-    font-size: 0.7em;
-}
-
-.wsrc-membership th, .wsrc-membership td {
-    text-align: left;
-    vertical-align: top;
-    padding-right: 3em;
-    border-bottom: 1px solid;
-    color: #333;
-}
-
-.wsrc-membership th:last-child, .wsrc-membership td:last-child {
-    padding-right: 0;
-}
-
-
-/* Homepage */
-/*
-.wsrc-home > .jqm-content > div > img {
-    width: 460px;
-    height: 288px;
-    max-width: 100%;
-    display: block;
-}
-*/
-
-#cycler {
-    position:relative;
-    /*    width: 460px; */
-    height: 288px;
-    margin: 1em 0;
-}
-#cycler img{position:absolute;z-index:1; display:none;}
-#cycler img.active{z-index:3; display:inline;}
+/******************************************************************************** 
+  Blocks
+********************************************************************************/
 
 /*
   .wsrc-home .ui-grid-a {
@@ -263,22 +240,18 @@ tr.odd > td {
     padding-bottom: .25em;
     margin: 0 0 .5em;
 }
-
 .jqm-block-content div.ui-bar {
     line-height:34px;
     padding: 0;
 }
-
 .jqm-block-content a.ui-btn-icon-notext.ui-btn-left {
     top: 2px;
     left: 2px;
 }
-
 .jqm-block-content a.ui-btn-icon-notext.ui-btn-right {
     top: 2px;
     right: 2px;
 }
-
 .jqm-block-content h4.ui-title {
     font-size: 1em;
     font-weight: 200;
@@ -287,40 +260,32 @@ tr.odd > td {
     padding: 0;
     margin: 0;
 }
-
 .jqm-block-content p {
     font-size: 1.1em;
     font-weight: 300;
     line-height: 1.4;
     margin: .7em 0;
 }
-
 .jqm-block-content table {
     width: 100%;
 }
-
 .jqm-block-content td {
     vertical-align: top;
     font-size: 0.8em;
 }
-
 .jqm-block-content td.won {
     color: #3eb249;
 }
-
 .jqm-block-content td.lost {
     color: #ed3338;
 }
-
 .jqm-block-content td:last-child {
     text-align:right;
     padding-right: 0.5em;
 }
-
 .jqm-block-content h3 .link {
     font-size: 0.8em;
 }
-
 .jqm-block-content p:last-child {
     margin-bottom: 0;
 }
@@ -329,7 +294,10 @@ tr.odd > td {
     text-decoration: none;
 }
 
-/* Lists */
+/******************************************************************************** 
+  Side Navigation Menu
+********************************************************************************/
+
 .wsrc-site .jqm-list {
     margin: 0 -1em 1em;
 }
@@ -350,8 +318,6 @@ tr.odd > td {
 .wsrc-site .jqm-list .ui-li-divider {
     color: #ed3338;
 }
-
-/* Navmenu */
 .jqm-navmenu-panel .ui-listview > li .ui-collapsible-heading {
     margin: 0;
 }
@@ -364,19 +330,14 @@ tr.odd > td {
 .jqm-navmenu-panel .ui-panel-inner > .ui-listview > li.ui-first-child .ui-btn {
     border-top: none !important;
 }
-
 .jqm-navmenu-panel .ui-listview .ui-listview .ui-btn {
     padding-left: 1.5em;
     color: #666;
 }
-
 .jqm-navmenu-panel .ui-listview .ui-listview .ui-listview .ui-btn {
     padding-left: 2em;
     color: #999;
 }
-
-
-
 .jqm-navmenu-panel .ui-listview .ui-listview .ui-btn.ui-btn-active {
     color: #fff;
 }
@@ -384,7 +345,6 @@ tr.odd > td {
     opacity: .4;
     filter: Alpha(Opacity=40);
 }
-
 .wsrc-site .jqm-navmenu-panel.jqm-panel-page-nav {
     display: none;
     position: absolute;
@@ -395,47 +355,65 @@ tr.odd > td {
     border-top: none;
 }
 
+/******************************************************************************** 
+  Page specifics
+********************************************************************************/
+
+/* data tables */
+div.wsrc-member-list, div.wsrc-membership {
+    padding-right: 1em;
+    padding-left: 1em;
+    padding-top: 1em;
+    padding-bottom: 1em;
+    background-color: white;
+}
+.wsrc-membership table {
+    width: 100%;
+}
+.wsrc-member-list th, .wsrc-member-list td,
+.wsrc-membership th, .wsrc-membership td {
+    text-align: left;
+    vertical-align: top;
+    padding-right: 1em;
+    border-bottom: 1px solid;
+    color: #333;
+}
+.wsrc-membership th, .wsrc-membership td {
+    border-bottom: 1px solid;
+}
+.wsrc-member-list th:last-child, .wsrc-member-list td:last-child {
+    border-bottom: 1px solid;
+}
+tr.odd > td {
+    background-color: #f9f9f9;
+    background-color: #eeeeee;
+}
+/* admin dialogs */
 table.wsrc-settings th {
     color: #666;
     padding-right:1em;
 }
-
+/* leagues */
 .wsrc-site table.boxes {
     font-family: 'Open Sans', sans-serif;
 }
-
-.clear-all {
-    clear: both;
-}
-
-div.coaching img.left-picture-block {
-    float: none;
-    padding-bottom: 1em;
-}
-
-div.coaching  ul {
-    margin-left: 0;
-}
-
 div.left-control-box {
     display: inline-block;
     float: left;
 }
-
 div.right-control-box {
     display: inline-block;
     float: right;
 }
-
+.right-control-box fieldset {
+    display: inline; 
+}
 div.right-control-box form > * {
     display: inline;
 }
-
-
 div#boxDetailDialog {
     min-width: 350px;
 }
-
 table.boxes th {
     font-weight:bold;
     overflow: hidden;
@@ -445,128 +423,62 @@ table.boxes th {
     text-align: left;
     padding-left: 0px;
 }
-
 table.boxes td {
     max-width: 6px;
     text-align: center;
     border: #ddd 1px solid; /* Should come from a-bar-border in ui theme */
 }
-
-.wsrc-currentuser {
-    color: #ed3338;
-}
-
 div.boxes {
     max-width:  500px;
     padding: 5px;
 }
-
 div.boxes>div.ui-bar {
     padding-bottom: 0;
     padding-top: 0;
 }
-
 div.boxes>div.ui-body {
     padding:  .5em .5em;
 }
-
 div.boxes-wrapper>div.boxes-firstcolumn {
     width: inherit;
     float: none;
 }
-
 div.boxes-wrapper>div.boxes-secondcolumn {
     width: inherit;
     float: none;
 }
-
 div.boxes-wrapper {
     margin-left: auto; 
     margin-right: auto; 
 }
-
 div.boxes-wrapper-singlecolumn {
     max-width: 500px; 
 }
-
 div.boxes-wrapper-doublecolumn {
     max-width: 500px; 
 }
-
 fieldset#match-type div.ui-controlgroup-controls {
     width: 100%;
 }
-
 fieldset#match-type div.ui-radio {
     width: 50%;
 }
-
 fieldset#match-type label {
     text-align: center;
 }
-
-/* Custom indentations are needed because the length of custom labels differs from
-   the length of the standard labels */
-.custom-size-flipswitch.ui-flipswitch .ui-btn.ui-flipswitch-on {
-    text-indent: -3.9em;
+.wsrc-currentuser {
+    color: #ed3338;
 }
-.custom-size-flipswitch.ui-flipswitch .ui-flipswitch-off {
-    text-indent: 0.5em;
-}
-/* Custom widths are needed because the length of custom labels differs from
-   the length of the standard labels */
-.custom-size-flipswitch.ui-flipswitch {
-    width: 6.875em;
-}
-.custom-size-flipswitch.ui-flipswitch.ui-flipswitch-active {
-    padding-left: 5em;
-    width: 1.875em;
-}
-
-/* leagues */
-
 .winner {
     font-weight: bold;
 }
-
 div#league-results-div div.date {
     float: right;
 }
-
-table.score_entry {
-    padding-top: 5px;
-    text-align:center;
-    max-width: 200px;
-    margin-left: auto;
-    margin-right: auto;
-}
-
-table.score_entry th {
-    padding:0 10px 5px 0px;
-}
-
-table.score_entry div.ui-input-text {
-    padding:0px 2px;
-    margin:0;
-}
-
-table.score_entry input {
-    text-align: center;
-}
-
-td.score_row_label {
-    padding-right: 5px;
-}
-
-td.score_total {
-    font-weight: bold;
-}
-
 /* tournaments */
 div.tournament-wrapper {
   overflow-x: auto;
 }
-
 table.bracket {
   font-size: 90%; 
   margin: 0;
@@ -579,45 +491,36 @@ table.bracket {
   -ms-user-select: none;
   user-select: none;
 }
-
 tbody.bracket {
   padding: 0px;
 }
-
 table.bracket td {
   margin: 0px;
 }
-
 th.leftspacer {
   width: 6px;
 }
-
 th.rightspacer {
   width: 5px;
 }
-
 td.verticalspacer {
 	height: 7px;
 }
-
 td.toplink {
   border-style: solid; 
   border-color: #aaa;
   border-width: 0 0 2px 0;
 }
-
 td.bottomlink {
   border-style: solid; 
   border-color: #aaa; 
   border-width: 2px 0 0 0;
 }
-
 td.stretchlink {
   border-style: solid; 
   border-color: #aaa; 
   border-width: 2px 2px 2px 0;
 }
-
 td.seed {
   text-align: center;
   border: 1px solid #999;
@@ -625,7 +528,6 @@ td.seed {
   padding: 2px 2px 2px 2px;
   white-space: nowrap;
 }
-
 td.score {
   text-align: center;
   border: 1px solid #999;
@@ -633,7 +535,6 @@ td.score {
   background-color: #F8F8F8;
   padding: 2px 2px 2px 2px;
 }
-
 td.player {
   border: 1px solid #999;
   border-left: 0px;
@@ -645,56 +546,82 @@ td.player {
   text-overflow: ellipsis;
   font-size: 0.9em;
 }
-
 td.wsrc-highlight {
  background-color: #dadada;
 }
-
 td.empty-match {
   border: 1px solid #ddd;	
 }
-
 td.winningscore, td.winner {
   font-weight: bold; 
 }
+/* score entry dialog */
+table.score_entry {
+    padding-top: 5px;
+    text-align:center;
+    max-width: 200px;
+    margin-left: auto;
+    margin-right: auto;
+}
+table.score_entry th {
+    padding:0 10px 5px 0px;
+}
+table.score_entry div.ui-input-text {
+    padding:0px 2px;
+    margin:0;
+}
+table.score_entry input {
+    text-align: center;
+}
+td.score_row_label {
+    padding-right: 5px;
+}
+td.score_total {
+    font-weight: bold;
+}
+/* misc */
+div.coaching img.left-picture-block {
+    float: none;
+    padding-bottom: 1em;
+}
+div.coaching  ul {
+    margin-left: 0;
+}
+.wsrc-footnote {
+    font-size: 0.7em;
+}
 
-/* add support for individual corner radii */
-.ui-corner-all,
-.ui-corner-top,
-.ui-corner-left,
-.ui-corner-tl {
-	border-top-left-radius: .3125em /*{global-radii-blocks}*/;
+
+/******************************************************************************** 
+  Larger Screen Media Conditionals
+********************************************************************************/
+
+/* Display coaching bullet points next to picture if large enough screen */
+{% if not ie_mode %}
+@media (min-width: 500px) {
+{% endif %}
+div.coaching img.left-picture-block {
+    float: left;
 }
-.ui-corner-all,
-.ui-corner-top,
-.ui-corner-right,
-.ui-corner-tr {
-	border-top-right-radius: .3125em /*{global-radii-blocks}*/;
+div.coaching ul {
+    margin-left: 210px;
+    padding-bottom: 0;
 }
-.ui-corner-all,
-.ui-corner-bottom,
-.ui-corner-left,
-.ui-corner-bl {
-	border-bottom-left-radius: .3125em /*{global-radii-blocks}*/;
+{% if not ie_mode %}
 }
-.ui-corner-all,
-.ui-corner-bottom,
-.ui-corner-right,
-.ui-corner-br {
-	border-bottom-right-radius: .3125em /*{global-radii-blocks}*/;
-}
+{% endif %}
+
 
 {% if not ie_mode %}
 /* larger than a small phone screen in portrait mode 
    - switch to front page square boxes with scrolling */
-@media (min-width: 35em) {
+@media (min-width: 35em) { /* default 560px */
 {% endif %}
     .jqm-block-content > div{
 	min-height: 16em;
 	max-height: 16em;
         overflow: auto;
     }
-
     .jqm-block-content > div.headed-box{
         overflow: inherit;
     }
@@ -703,6 +630,35 @@ td.winningscore, td.winner {
 	min-height: 13em;
 	max-height: 13em;
     }
+{% if not ie_mode %}
+}
+{% endif %}
+
+
+{% if not ie_mode %}
+@media ( min-width: 40em ) { /* reflow table when larger than about 640px */
+{% endif %}
+	table.wsrc-member-list {
+            padding-top: 0em;
+        }
+	/* Show the table header rows and set all cells to display: table-cell */
+	.wsrc-member-list td,
+	.wsrc-member-list th,
+	.wsrc-member-list tbody th,
+	.wsrc-member-list tbody td,
+	.wsrc-member-list thead td,
+	.wsrc-member-list thead th {
+		display: table-cell;
+		margin: 0;
+	}
+	/* Hide the labels in each cell */
+	.wsrc-member-list td .ui-table-cell-label,
+	.wsrc-member-list th .ui-table-cell-label {
+		display: none;
+	}
+        .wsrc-member-list th, .wsrc-member-list td {
+            border-bottom: 1px solid;
+        }
 
 {% if not ie_mode %}
 }
@@ -711,7 +667,7 @@ td.winningscore, td.winner {
 {% if not ie_mode %}
 /* larger than a small tablet in portrait mode - switch to larger
    header, remove hamburger icon and bring in side menu */
-@media (min-width: 60em) {
+@media (min-width: 60em) { /* about 960 px */
 {% endif %}
     .wsrc-site .jqm-header h2 {
 	padding: 1em 0 .7em;
@@ -819,21 +775,6 @@ td.winningscore, td.winner {
 {% endif %}
 
 
-{% if not ie_mode %}
-@media (min-width: 500px) {
-{% endif %}
-div.coaching img.left-picture-block {
-    float: left;
-}
-
-div.coaching ul {
-    margin-left: 210px;
-    padding-bottom: 0;
-}
-{% if not ie_mode %}
-}
-{% endif %}
-
 
 {% if not ie_mode %}
 @media ( min-width: 1000px ) {
@@ -841,7 +782,9 @@ div.coaching ul {
     body {
         font-size: 1em;
     }
-
+    .jqm-block-content td {
+        font-size: 0.9em;
+    }
     .ui-content {
         padding-left: 1em;
         padding-right: 1em;
@@ -867,12 +810,3 @@ div.coaching ul {
 }
 {% endif %}
 
-{% if not ie_mode %}
-@media ( min-width: 1200px ) {
-{% endif %}
-.jqm-block-content td {
-    font-size: 0.9em;
-}
-{% if not ie_mode %}
-}
-{% endif %}
