@@ -6,6 +6,10 @@ register = Library()
 def as_range( value ):
   return range( value )
 
+@register.filter
+def escape_url( value ):
+  return value.replace(" ", "_")
+
 @register.assignment_tag()
 def resolve(lookup, target):
     try:

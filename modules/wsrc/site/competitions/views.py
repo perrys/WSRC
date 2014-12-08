@@ -120,6 +120,7 @@ def boxes_view(request, end_date=None):
 
 def bracket_view(request, year, name):
     group = get_object_or_404(CompetitionGroup.objects, end_date__year=year, comp_type='wsrc_tournaments')
+    name = name.replace("_", " ")
     competition = get_object_or_404(group.competitions, name__iexact=name)
 
     html_table = tournament.render_tournament(competition)

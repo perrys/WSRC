@@ -1,4 +1,7 @@
 <!DOCTYPE html>
+
+{% load competitions_extras %}
+
 <html>
 <head>
   <meta charset="utf-8">
@@ -76,7 +79,7 @@ window.WSRC_user_player_id = {% if user.player %}{{ user.player.id }}{% else %}-
 	    <h3>{{ yearly_tournaments.year }}</h3>
 	    <ul>
 {% for tournament in yearly_tournaments.competitions %}
-	      <li><a href="/tournament/{{ yearly_tournaments.year }}/{{ tournament.name }}" data-ajax="false">{{ tournament.name }}</a></li>
+	      <li><a href="/tournament/{{ yearly_tournaments.year }}/{{ tournament.name|escape_url }}" data-ajax="false">{{ tournament.name }}</a></li>
 {% endfor %}
             </ul>
           </li>
