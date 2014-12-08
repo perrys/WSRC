@@ -86,6 +86,10 @@ window.WSRC_user_player_id = {% if user.player %}{{ user.player.id }}{% else %}-
 {% endfor %}
 	</ul>
       </li>
+      <li><a href="http://court-booking.co.uk/WokingSquashClub/" data-ajax="false">Court Booking</a></li>
+{% if user.is_authenticated %}
+      <li><a href="/memberlist">Members' Details</a></li>
+{% endif %}
       <li data-filtertext="contact"><a href="/contact" data-ajax="false">Contact Us</a></li>
     </ul>
   </div>
