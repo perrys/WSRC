@@ -226,7 +226,7 @@ div.ui-controlgroup-label {
 .jqm-block-content {
     margin: .5em;
     padding: 1em;
-    background: #fff;
+    background: white;
     border: 1px solid #eee;
     -webkit-border-radius: .3125em;
     border-radius: .3125em;
@@ -361,21 +361,26 @@ div.ui-controlgroup-label {
 
 /* data tables */
 div.wsrc-member-list, div.wsrc-membership {
-    padding-right: 1em;
-    padding-left: 1em;
-    padding-top: 1em;
-    padding-bottom: 1em;
-    background-color: white;
+    margin: .5em;
+    padding: 1em;
+    background: white;
+    border: 1px solid #eee;
+    -webkit-border-radius: .3125em;
+    border-radius: .3125em;
+    font-family: 'Open Sans', sans-serif;
+}
+div.wsrc-membership {
+    margin: .5em;
 }
 .wsrc-membership table {
     width: 100%;
 }
+
 .wsrc-member-list th, .wsrc-member-list td,
 .wsrc-membership th, .wsrc-membership td {
     text-align: left;
     vertical-align: top;
     padding-right: 1em;
-    border-bottom: 1px solid;
     color: #333;
 }
 .wsrc-membership th, .wsrc-membership td {
@@ -386,7 +391,6 @@ div.wsrc-member-list, div.wsrc-membership {
 }
 tr.odd > td {
     background-color: #f9f9f9;
-    background-color: #eeeeee;
 }
 /* admin dialogs */
 table.wsrc-settings th {

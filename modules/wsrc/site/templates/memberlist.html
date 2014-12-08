@@ -7,13 +7,16 @@
 <div role="main" class="ui-content jqm-content">
   <div id="main_div"> 
     <div class="wsrc-member-list">
-      <table class="wsrc-member-list" data-role="table">
+      <form>
+        <input id="filterTable-input" data-type="search" placeholder="Search . . .">
+      </form>
+      <table class="wsrc-member-list" data-role="table" data-filter="true" data-input="#filterTable-input">
         <thead>
-          <tr><th>Name</th><th>Email</th><th>Telephone</th><th>Mobile</th></tr>
+          <tr><th>Name</th><th>EMail</th><th>Telephone</th><th>Mobile</th></tr>
         </thead>
         <tbody>
 {% for member in object_list %}
-<tr class="{% cycle 'odd' 'even' %}"><td>{{ member.get_full_name }}</td><td><a href="mailto:{{ member.user.email }}">{{ member.user.email }}</a></td><td><a href="tel:{{ member.other_phone }}">{{ member.other_phone }}</a></td><td><a href="tel:{{ member.cell_phone }}">{{ member.cell_phone }}</a></td></tr>
+<tr class=""><td>{{ member.get_full_name }}</td><td><a href="mailto:{{ member.user.email }}">{{ member.user.email }}</a></td><td><a href="tel:{{ member.other_phone }}">{{ member.other_phone }}</a></td><td><a href="tel:{{ member.cell_phone }}">{{ member.cell_phone }}</a></td></tr>
 {% endfor %}
         </tbody>
       </table>
