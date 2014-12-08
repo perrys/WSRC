@@ -4,7 +4,7 @@
 {% block pagetype %}{{ pagedata.title|lower }}{% endblock %}
 {% block content %}
 
-<div role="main" class="ui-content jqm-content">
+<div role="main" class="ui-content jqm-content {{ pagedata.title|lower }}">
   <div id="main_div"> 
 
 {{ pagedata.content|safe }}
