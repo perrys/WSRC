@@ -64,32 +64,16 @@ window.WSRC_user_player_id = {% if user.player %}{{ user.player.id }}{% else %}-
       <li><a href="/coaching" {% if disable_ajax_links %}data-ajax="false"{% endif %}>Coaching</a></li>
       <li><a href="/juniors" {% if disable_ajax_links %}data-ajax="false"{% endif %}>Juniors</a></li>
 
-      <li data-role="collapsible" data-collapsed-icon="carat-d" data-expanded-icon="carat-u" data-iconpos="right" data-inset="false">
-	<h3>Club Leagues</h3>
-	<ul>
-	  <li><a href="{% url 'wsrc.site.competitions.views.boxes_view' %}">Current</a></li>
-	</ul>
-      </li>
+      <li><a href="{% url 'wsrc.site.competitions.views.boxes_view' %}" {% if disable_ajax_links %}data-ajax="false"{% endif %}>Club Leagues</a></li>
 
-      <li data-role="collapsible" data-collapsed-icon="carat-d" data-expanded-icon="carat-u" data-iconpos="right" data-inset="false" >
-	<h3>Club Tournaments</h3>
-	<ul>
-{% for yearly_tournaments in tournaments|dictsortreversed:'year' %}
-          <li data-role="collapsible" data-collapsed-icon="carat-d" data-expanded-icon="carat-u" data-iconpos="right" data-inset="false">
-	    <h3>{{ yearly_tournaments.year }}</h3>
-	    <ul>
-{% for tournament in yearly_tournaments.competitions %}
-	      <li><a href="/tournament/{{ yearly_tournaments.year }}/{{ tournament.name|escape_url }}" data-ajax="false">{{ tournament.name }}</a></li>
-{% endfor %}
-            </ul>
-          </li>
-{% endfor %}
-	</ul>
-      </li>
+      <li><a href="{% url 'wsrc.site.competitions.views.bracket_view' %}" {% if disable_ajax_links %}data-ajax="false"{% endif %}>Club Tournaments</a></li>
+
       <li><a href="http://court-booking.co.uk/WokingSquashClub/" data-ajax="false">Court Booking</a></li>
+
 {% if user.is_authenticated %}
       <li><a href="/memberlist">Members' Details</a></li>
 {% endif %}
+
       <li data-filtertext="contact"><a href="/contact" data-ajax="false">Contact Us</a></li>
     </ul>
   </div>

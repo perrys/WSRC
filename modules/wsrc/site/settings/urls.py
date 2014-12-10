@@ -27,6 +27,7 @@ urlpatterns = patterns('',
     url(r'^boxes/?$',                    wsrc.site.competitions.views.boxes_view), # most recent
 
     url(r'^tournament/(\d{4})/(\w+)/?$', wsrc.site.competitions.views.bracket_view),
+    url(r'^tournament/?', wsrc.site.competitions.views.bracket_view, {"year":None, "name":"Open"}),
 
     url(r'^data/facebook$', wsrc.site.views.facebook_view),
     url(r'^data/',    include(wsrc.site.competitions.data_urls)),

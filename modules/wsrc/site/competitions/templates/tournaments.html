@@ -9,7 +9,31 @@
 
 
 <div role="main" class="ui-content jqm-content">
-  <div class="tournament-wrapper">
+    <form id="page-control-form" method="GET" action="#" onsubmit="return false;" >  
+      <div class="left-control-box">
+        <select name="league_end_date" id="league_end_date" onchange="WSRC.onTournamentSelected(this)">
+          <option value="" enabled="false">Select Tournament . . .</option>
+{% for yearly_tournaments in tournaments|dictsortreversed:'year' %}
+          <optgroup label="{{ yearly_tournaments.year }}">
+{% for tournament in yearly_tournaments.competitions %}
+            <option value="{{ yearly_tournaments.year }}/{{ tournament.name|escape_url }}">{{ tournament.name }}</option>
+{% endfor %}
+          </optgroup>
+{% endfor %}
+        </select>
+      </div>
+      <div class="right-control-box">
+        <fieldset data-role="controlgroup" data-type="horizontal" data-shadow="true">
+          <button id="edit-button" data-inline="true" class="ui-btn ui-icon-edit ui-btn-icon-right">Edit</button>
+        </fieldset>
+        <fieldset data-role="controlgroup" data-type="horizontal" data-shadow="true">
+          <button id="box-refresh-button" data-inline="true" class="ui-btn ui-icon-refresh ui-btn-icon-right">Refresh</button>
+        </fieldset>
+      </div>
+      <div class="clear-all"></div>
+    </form>
+
+  <div class="competition-wrapper">
   {{ bracket|safe }}
   </div>
 </div>

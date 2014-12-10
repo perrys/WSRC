@@ -381,7 +381,7 @@ window.WSRC =
   setup_points_table: (this_box_config) ->
     tablebody = jQuery("table#leaguetable-#{ this_box_config.id } tbody")
 
-    # remove existing rows
+
     tablerows = tablebody.find("tr")
 
     newTotals = () -> {p: 0, w: 0, d: 0, l: 0, f: 0, a: 0, pts: 0}
@@ -442,9 +442,9 @@ window.WSRC =
           cell=cell.nextSibling
         cell.innerHTML = totals[prop]
         if totals.id == (WSRC_user_player_id ? -1)
-          cell.className = "wsrc-currentuser"
+          cell.className = "points wsrc-currentuser"
         else
-          cell.className = ""
+          cell.className = "points"
         cell=cell.nextSibling
       ++idx
 
@@ -632,6 +632,10 @@ window.WSRC =
 
   onPlayerSelected: (selector) ->
     this.on_player_selected(selector.id)
+
+  onTournamentSelected: (selector) ->
+    link = "/tournament/" + $(selector).val()
+    document.location = link
 
   onTournamentPageShow: (page) ->
     competition_id = page.data().competitionid

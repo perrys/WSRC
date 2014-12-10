@@ -10,6 +10,20 @@
 <div role="main" class="ui-content jqm-content">
     <form id="page-control-form" method="GET" action="#" onsubmit="return false;" >  
       <div class="left-control-box">
+        <select name="league_end_date" id="league_end_date" data-theme="a" data-native-menu="false" onchange="WSRC.onPlayerSelected(this)">
+          <option value="" enabled="false">Leagues Ending . . .</option>
+          <optgroup label="2014">
+            <option value="1">The 1st Option</option>
+            <option value="2">The 2nd Option</option>
+            <option value="3">The 3rd Option</option>
+            <option value="4">The 4th Option</option>
+          </optgroup>
+          <optgroup label="2013">
+            <option value="5">The 5th Option</option>
+            <option value="6">The 6th Option</option>
+            <option value="7">The 7th Option</option>
+          </optgroup>
+        </select>
       </div>
       <div class="right-control-box">
         <fieldset data-role="controlgroup" data-type="horizontal" data-shadow="true">
@@ -24,6 +38,7 @@
       </div>
       <div class="clear-all"></div>
     </form>
+<div class="competition-wrapper">
 {% for box_config in boxes %}
 <!-- {{ box_config.colspec }} {{ box_config.nthcol }} -->
 {% if box_config.colspec != 'double' or box_config.nthcol != 'second' %}
@@ -53,9 +68,9 @@
               <th {% if user.is_authenticated and user.player.id == player.id %}class="wsrc-currentuser"{% endif %}>{{ player.get_full_name }}</th>
               <td class="ui-bar-a">{{ i|add:"1" }}</td>
 {% for j in competition.maxplayers|as_range %}
-              <td {% if i == j %}class="ui-bar-a"{% endif %}> </td>
+              <td class="{% if i == j %}ui-bar-a{% else %}points{% endif %}"> </td>
 {% endfor %}
-              <td class="score_total"> </td>
+              <td class="points score_total"> </td>
             </tr>
 {% endfor %}
           </tbody>
@@ -78,13 +93,13 @@
 {% resolve box_config.players i as player %}
           <tr {% if player.id %}id="leaguetable-player-{{ player.id }}"{% endif %}>
             <th>{{ player.get_full_name }}</th>
-	    <td></td>
-	    <td></td>
-	    <td></td>
-	    <td></td>
-	    <td></td>
-	    <td></td>
-            <td class="score_total"> </td>
+	    <td class="points"></td>
+	    <td class="points"></td>
+	    <td class="points"></td>
+	    <td class="points"></td>
+	    <td class="points"></td>
+	    <td class="points"></td>
+            <td class="points score_total"> </td>
           </tr>
 {% endfor %}
         </tbody>
@@ -96,6 +111,7 @@
   </div>
 {% endif %}
 {% endfor %}
+  </div>
 </div>
 
 <div data-role="popup" id="boxDetailDialog" data-overlay-theme="b" data-theme="a" data-dismissible="true">

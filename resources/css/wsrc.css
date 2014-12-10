@@ -432,6 +432,9 @@ table.boxes td {
     text-align: center;
     border: #ddd 1px solid; /* Should come from a-bar-border in ui theme */
 }
+table.boxes td.points {
+    background: white;
+}
 div.boxes {
     max-width:  500px;
     padding: 5px;
@@ -442,6 +445,7 @@ div.boxes>div.ui-bar {
 }
 div.boxes>div.ui-body {
     padding:  .5em .5em;
+    background-color: #f9f9f9;
 }
 div.boxes-wrapper>div.boxes-firstcolumn {
     width: inherit;
@@ -480,8 +484,14 @@ div#league-results-div div.date {
     float: right;
 }
 /* tournaments */
-div.tournament-wrapper {
-  overflow-x: auto;
+div.competition-wrapper {
+    padding: 1em .5em 1em .5em;
+    background: white;
+    border: 1px solid #eee;
+    -webkit-border-radius: .3125em;
+    border-radius: .3125em;
+    overflow-x: auto;
+    font-family: 'Open Sans', sans-serif;
 }
 table.bracket {
   font-size: 90%; 
@@ -527,20 +537,20 @@ td.stretchlink {
 }
 td.seed {
   text-align: center;
-  border: 1px solid #999;
+  border: 1px solid #aaa;
   background-color: #F8F8F8;
   padding: 2px 2px 2px 2px;
   white-space: nowrap;
 }
 td.score {
   text-align: center;
-  border: 1px solid #999;
+  border: 1px solid #aaa;
   border-left: 0px;
   background-color: #F8F8F8;
   padding: 2px 2px 2px 2px;
 }
 td.player {
-  border: 1px solid #999;
+  border: 1px solid #aaa;
   border-left: 0px;
   padding: 2px 6px 2px 4px;
   white-space: nowrap;
@@ -554,7 +564,7 @@ td.wsrc-highlight {
  background-color: #dadada;
 }
 td.empty-match {
-  border: 1px solid #ddd;	
+  border: 1px solid #eee;	
 }
 td.winningscore, td.winner {
   font-weight: bold; 
