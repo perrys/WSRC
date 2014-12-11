@@ -124,26 +124,18 @@ div.ui-controlgroup-label {
 }
 .wsrc-site .jqm-footer {
     border-top: 1px solid #ed3338;
-}
-.wsrc-site .jqm-footer p {
-    font-size: .8em;
-    color: #999;
     font-family: 'Open Sans', sans-serif;
-    font-weight: 300;
-    margin: 0 1.25em 1.25em;
-}
-.wsrc-site .jqm-footer p:first-child {
-    font-size: 1em;
-    color: #666;
     font-weight: 400;
-    margin: 1em 1em .75em;
+    color: #666;
+}
+.wsrc-site .jqm-footer div {
+    margin: 1em;
+    float: left;
 }
 .wsrc-site .jqm-footer .last_updated {
-    font-size: 0.8em;
-    color: #666;
-    font-weight: 400;
-    margin: 1.5em 3% .25em 1.25em;
     float: right;
+    font-size: 0.8em;
+    margin-top: 1.4em;
 }
 
 
@@ -702,14 +694,6 @@ div.coaching ul {
     }
     .wsrc-site .jqm-navmenu-link {
 	display: none;
-    }
-    .wsrc-site .jqm-footer p {
-	float: right;
-	margin: 1.5em 3% 1.5em 1.5em;
-    }
-    .wsrc-site .jqm-footer p:first-child {
-	float: left;
-	margin: 1.25em 1.25em 1.25em 3%;
     }
     .wsrc-site .jqm-navmenu-panel {
 	visibility: visible;
