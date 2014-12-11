@@ -145,7 +145,7 @@ def render_tournament(competition):
     # Use our html table helper class to build up the html - allows us
     # to just fill in the (row,colum) cells we want and it will take
     # care of the blanks.
-    table = Table(ncols, nrows, {"class": "bracket", "cellspacing": "0px"})
+    table = Table(ncols, nrows, {"class": "bracket"})
 
     # first row; nbsp in the top row
     table.addCell(Cell("", None, True), 0, 0)

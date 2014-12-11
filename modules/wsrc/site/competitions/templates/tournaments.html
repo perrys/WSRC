@@ -12,7 +12,7 @@
     <form id="page-control-form" method="GET" action="#" onsubmit="return false;" >  
       <div class="left-control-box">
         <select name="league_end_date" id="league_end_date" onchange="WSRC.onTournamentSelected(this)">
-          <option value="" enabled="false">Select Tournament . . .</option>
+          <option value="">Select Tournament . . .</option>
 {% for yearly_tournaments in tournaments|dictsortreversed:'year' %}
           <optgroup label="{{ yearly_tournaments.year }}">
 {% for tournament in yearly_tournaments.competitions %}
