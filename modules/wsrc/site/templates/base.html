@@ -10,6 +10,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{% block titleprefix %}{% endblock %}Woking Squash Rackets Club</title>
 
+  <link rel="shortcut icon" type="image/x-icon" href="/static/images/favicon.ico" />
+
+  <link rel="apple-touch-icon" href="/static/images/apple-touch-icon-57x57.png">
+  <link rel="apple-touch-icon" sizes="114x114" href="/static/images/apple-touch-icon-114x114.png">
+
   <link rel="stylesheet" href="http://fonts.googleapis.com/css?family=Open+Sans:300,400,700" />
 
   <script src="/static/js/all{% if not debug %}.min{% endif %}.js"></script>
@@ -68,11 +73,15 @@ window.WSRC_user_player_id = {% if user.player %}{{ user.player.id }}{% else %}-
 
       <li><a href="{% url 'wsrc.site.competitions.views.bracket_view' %}" {% if disable_ajax_links %}data-ajax="false"{% endif %}>Club Tournaments</a></li>
 
+{% if user.is_authenticated %}
       <li><a href="http://court-booking.co.uk/WokingSquashClub/" data-ajax="false">Court Booking</a></li>
 
-{% if user.is_authenticated %}
       <li><a href="/memberlist">Members' Details</a></li>
 {% endif %}
+
+      <li><a href="/credits" data-ajax="false">Credits and Links</a></li>
+
+      <li><a href="/help" data-ajax="false">Help</a></li>
 
       <li data-filtertext="contact"><a href="/contact" data-ajax="false">Contact Us</a></li>
     </ul>
@@ -80,8 +89,8 @@ window.WSRC_user_player_id = {% if user.player %}{{ user.player.id }}{% else %}-
 
   <div data-role="footer" data-position="fixed" data-tap-toggle="false" class="jqm-footer">
     <p>Woking Squash Rackets Club 
-      <div class="last_updated">{% block last_updated %}{% endblock %}</div>
     </p>
+    <div class="last_updated">{% block last_updated %}{% endblock %}</div>
   </div>
 
   <div data-role="popup" id="logout_dialog" data-dismissible="false" style="max-width:400px;">
