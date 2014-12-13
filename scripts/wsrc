@@ -5,6 +5,79 @@ import logging
 import os
 import sys
 
+
+def sync_membership_records(csv_filename):
+
+  from wsrc.site.usermodel.models import Player, User
+  from wsrc.utils import sync_utils
+  import wsrc.site.settings.settings as settings
+
+  # TODO - invalididate members in DB when set invalid in CSV file
+
+  def is_valid_member_predicate(record):
+    return (len(record["surname"].strip()) > 0) and \
+        not "2099" in record["joiningdate"] and \
+        record["active"].lower()[0] == "y" 
+
+  csv_records = sync_utils.parse_csv(csv_filename)
+  csv_records = [r for r in csv_records if is_valid_member_predicate(r)]
+  csv_records = sync_utils.FieldJoiningWrapper.wrap_records(csv_records, "name", ["firstname", "surname"], " ")
+  csv_records = sync_utils.BooleanFieldWrapper.wrap_records(csv_records, "active")
+
+  db_records = sync_utils.ModelRecordWrapper.wrap_queryset(Player.objects.all())
+  db_records = sync_utils.FieldMappingWrapper.wrap_records(db_records, 
+                                                           name="get_full_name", 
+                                                           email="user.email", 
+                                                           mobile_phone="cell_phone",
+                                                           home_phone="other_phone",
+                                                           active="user.is_active")
+
+  comparison_fields = ["email", "mobile_phone", "home_phone", "active"]
+  lhsonly, rhsonly, diffs = sync_utils.report_differences(db_records, csv_records, "name", comparison_fields)
+
+  print "\n*** Members only in db:"
+  for record in lhsonly:
+    print record["name"]
+
+  print "\n*** Members only in CSV file:"
+  for record in rhsonly:
+    print record["name"]
+    possibles = Player.objects.filter(user__last_name__iexact=record["surname"])
+    if len(possibles) > 0:
+      print " possibles: " + str(possibles)
+
+    # update the DB with new members if necessary:
+    if settings._WSRC_SETTINGS["sync_updates"]:
+      username="_".join([record["firstname"].lower(), record["surname"].lower()])
+      matches = User.objects.filter(username=username)
+      if len(matches) == 0:
+        user = User(first_name=record["firstname"],
+                    last_name=record["surname"],
+                    email=record["email"],
+                    username=username)
+        user.save()
+        user.set_password(settings["default_pw"])
+        user.save()
+        user.player.cell_phone=record["mobile_phone"]
+        user.player.other_phone=record["home_phone"]
+        user.player.save()
+        
+  print "\n*** Record differences:"
+  for name,v in diffs.iteritems():
+    diff, record, csv_record = v
+    player = record.target.record
+    print player, diff
+    if settings._WSRC_SETTINGS["sync_updates"]:
+      for field,vals in diff.iteritems():
+        if field == "mobile_phone":
+          player.cell_phone = vals[1]
+        elif field == "home_phone":
+          player.other_phone = vals[1]
+        elif field == "email":
+          player.user.email = vals[1]
+      player.save()
+      player.user.save()
+
 if __name__ == "__main__":
   if len(sys.argv) < 2:
     sys.stderr.write("USAGE: wsrc <command> [arguments]\n")
@@ -30,6 +103,9 @@ if __name__ == "__main__":
   elif command in ("sync-leaguemaster"):
     import wsrc.external_sites.main
     wsrc.external_sites.main.cmdline_sync_leaguemaster(*args)
+
+  elif command in ("sync-membership"):
+    sync_membership_records(args[0])
 
   elif command in ("add-players-for-comp"):
     import wsrc.site.competitions.models as comp_models
