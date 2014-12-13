@@ -63,27 +63,25 @@ window.WSRC_user_player_id = {% if user.player %}{{ user.player.id }}{% else %}-
   <!-- left nav menu: -->
   <div data-role="panel" class="jqm-navmenu-panel" data-position="left" data-display="overlay" data-theme="a">
     <ul class="jqm-list ui-alt-icon ui-nodisc-icon">
-      <li data-icon="home"><a href="{% url 'homepage' %}" {% if disable_ajax_links %}data-ajax="false"{% endif %}>Home</a></li>
-      <li><a href="/about" {% if disable_ajax_links %}data-ajax="false"{% endif %}>About</a></li>
-      <li><a href="/membership" {% if disable_ajax_links %}data-ajax="false"{% endif %}>Membership</a></li>
-      <li><a href="/coaching" {% if disable_ajax_links %}data-ajax="false"{% endif %}>Coaching</a></li>
-      <li><a href="/juniors" {% if disable_ajax_links %}data-ajax="false"{% endif %}>Juniors</a></li>
 
-      <li><a href="{% url 'wsrc.site.competitions.views.boxes_view' %}" {% if disable_ajax_links %}data-ajax="false"{% endif %}>Club Leagues</a></li>
+      <li data-icon="home"><a href="{% url 'homepage' %}" data-ajax="false">Home</a></li>
 
-      <li><a href="{% url 'wsrc.site.competitions.views.bracket_view' %}" {% if disable_ajax_links %}data-ajax="false"{% endif %}>Club Tournaments</a></li>
+      <li><a href="/about">About</a></li>
+      <li><a href="/membership">Membership</a></li>
+      <li><a href="/coaching">Coaching</a></li>
+      <li><a href="/juniors">Juniors</a></li>
+
+      <li><a href="{% url 'wsrc.site.competitions.views.boxes_view' %}"   data-ajax="false">Club Leagues</a></li>
+      <li><a href="{% url 'wsrc.site.competitions.views.bracket_view' %}" data-ajax="false">Club Tournaments</a></li>
 
 {% if user.is_authenticated %}
       <li><a href="http://court-booking.co.uk/WokingSquashClub/" data-ajax="false">Court Booking</a></li>
-
       <li><a href="/memberlist">Members' Details</a></li>
 {% endif %}
 
-      <li><a href="/credits" data-ajax="false">Credits and Links</a></li>
-
-      <li><a href="/help" data-ajax="false">Help</a></li>
-
-      <li data-filtertext="contact"><a href="/contact" data-ajax="false">Contact Us</a></li>
+      <li><a href="/credits">Credits and Links</a></li>
+      <li><a href="/help">Help</a></li>
+      <li><a href="/contact">Contact Us</a></li>
     </ul>
   </div>
 
