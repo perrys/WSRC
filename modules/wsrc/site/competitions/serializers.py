@@ -21,8 +21,8 @@ from wsrc.site.usermodel.models import Player
 from wsrc.site.competitions.models import CompetitionGroup, Competition, Match, Seeding
 
 SCORE_TO_POINTS_MAPPING = {3 : {0: (7,2), 1: (6,3), 2: (5,4)},
-                           2 : {0: (6,2), 1: (4,3), 2: (4,4)},
-                           1 : {0: (4,2), 1: (3,3)},
+                           2 : {0: (4,2), 1: (4,3), 2: (4,4)},
+                           1 : {0: (3,2), 1: (3,3)},
                            0 : {0: (2,2)}}
 
 def toPoints(x, y):
