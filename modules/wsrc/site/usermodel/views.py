@@ -6,7 +6,7 @@ from wsrc.site.competitions.views import get_competition_lists
 class MemberListView(ListView):
 
     def get_queryset(self):
-      return Player.objects.all().order_by('user__first_name', 'user__last_name')
+      return Player.objects.filter(user__is_active=True).order_by('user__first_name', 'user__last_name')
 
     def get_template_names(self):
       return ["memberlist.html"]
