@@ -10,21 +10,12 @@ https://docs.djangoproject.com/en/1.6/ref/settings/
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 import os
+
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
 
+# Import sensitive settings not stored in this file
+execfile(os.path.expanduser("~/etc/.wsrc-settings"))
 
-# Quick-start development settings - unsuitable for production
-# See https://docs.djangoproject.com/en/1.6/howto/deployment/checklist/
-
-# SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = '6!4tl^xuvj06ku**gk9swpe0fso*ipn1n*-%j@%hpy4^if6w0+'
-
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
-
-TEMPLATE_DEBUG = True
-
-ALLOWED_HOSTS = []
 
 from django.conf.global_settings import TEMPLATE_CONTEXT_PROCESSORS as TCP
 
@@ -65,13 +56,7 @@ WSGI_APPLICATION = 'wsrc.site.settings.wsgi.application'
 # https://docs.djangoproject.com/en/1.6/ref/settings/#databases
 
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.mysql',
-        'HOST': '/var/run/mysqld/mysqld.sock',
-        'NAME': 'WSRC',
-        'USER': 'user',
-        'PASSWORD': 'tLeWvrDRK3CeX4Kq'
-    }
+    'default': _WSRC_SETTINGS["default_db"]
 }
 
 # Internationalization
