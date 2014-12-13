@@ -70,8 +70,12 @@ def get_competition_lists():
     tournaments = []
     for group in CompetitionGroup.objects.filter(comp_type="wsrc_tournaments"):
         tournaments.append({"year": group.end_date.year, "competitions": group.competitions.all()})
+    leagues = []
+    for group in CompetitionGroup.objects.filter(comp_type="wsrc_boxes"):
+        leagues.append({"year": group.end_date.year, "end_date": group.end_date, "name": group.name})
     return {
         "tournaments": tournaments,
+        "leagues": leagues,
         }
 
 def boxes_view(request, end_date=None):

@@ -637,6 +637,10 @@ window.WSRC =
     link = "/tournament/" + $(selector).val()
     document.location = link
 
+  onLeagueSelected: (selector) ->
+    link = "/boxes/" + $(selector).val()
+    document.location = link
+
   onTournamentPageShow: (page) ->
     competition_id = page.data().competitionid
     this.setup_add_change_events()
