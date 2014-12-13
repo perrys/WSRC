@@ -5,12 +5,46 @@ import logging
 import os
 import sys
 
+from wsrc.utils import sync_utils
 
+import wsrc.site.settings.settings as settings  
+import wsrc.external_sites.main
+
+def make_username(csv_record):
+  return "_".join([csv_record["firstname"].lower(), csv_record["surname"].lower()])
+
+def persist_member_details(csv_record):
+  from wsrc.site.usermodel.models import User
+  user = User(first_name=csv_record["firstname"],
+              last_name=csv_record["surname"],
+              email=csv_record["email"],
+              is_active=csv_record["active"],
+              username=make_username(csv_record)
+              )
+  user.save()
+  user.set_password(settings._WSRC_SETTINGS["default_pw"])
+  user.save()
+  user.player.cell_phone=csv_record["mobile_phone"]
+  user.player.other_phone=csv_record["home_phone"]
+  user.player.save()
+
+def add_former_member(csv_filename, first, last):
+
+  csv_records = sync_utils.parse_csv(csv_filename)
+  csv_records = sync_utils.BooleanFieldWrapper.wrap_records(csv_records, "active")
+
+  records = [r for r in csv_records if r["firstname"] == first and r["surname"] == last]
+  if len(records) == 0:
+    raise Exception("Could not find record of %(first)s %(last)s" % locals())
+  if len(records) > 1:
+    nrecords = len(records)
+    raise Exception("Expected one record of %(first)s %(last)s, got %(nrecords)d" % locals())
+
+  persist_member_details(records[0])
+  
 def sync_membership_records(csv_filename):
 
   from wsrc.site.usermodel.models import Player, User
-  from wsrc.utils import sync_utils
-  import wsrc.site.settings.settings as settings
 
   # TODO - invalididate members in DB when set invalid in CSV file
 
@@ -49,18 +83,10 @@ def sync_membership_records(csv_filename):
     # update the DB with new members if necessary:
     if settings._WSRC_SETTINGS["sync_updates"]:
       username="_".join([record["firstname"].lower(), record["surname"].lower()])
-      matches = User.objects.filter(username=username)
+      # skip usernames in DB already - can arise when translating unicode names to ascii usernames 
+      matches = User.objects.filter(username=username) 
       if len(matches) == 0:
-        user = User(first_name=record["firstname"],
-                    last_name=record["surname"],
-                    email=record["email"],
-                    username=username)
-        user.save()
-        user.set_password(settings["default_pw"])
-        user.save()
-        user.player.cell_phone=record["mobile_phone"]
-        user.player.other_phone=record["home_phone"]
-        user.player.save()
+        persist_member_details(record)
         
   print "\n*** Record differences:"
   for name,v in diffs.iteritems():
@@ -93,19 +119,22 @@ if __name__ == "__main__":
   command = sys.argv[1]
   args = sys.argv[2:]
   if command in ("sync", "sync-bookings"):
-    import wsrc.external_sites.main
     wsrc.external_sites.main.cmdline_sync_bookings()
 
   elif command in ("sync-squashlevels"):
-    import wsrc.external_sites.main
     wsrc.external_sites.main.cmdline_sync_squashlevels()
 
   elif command in ("sync-leaguemaster"):
-    import wsrc.external_sites.main
     wsrc.external_sites.main.cmdline_sync_leaguemaster(*args)
 
   elif command in ("sync-membership"):
     sync_membership_records(args[0])
+
+  elif command in ("add-old-league"):
+    wsrc.external_sites.main.cmdline_add_old_league(args[0])
+
+  elif command in ("add-former-member"):
+    add_former_member(args[0], args[1], args[2])
 
   elif command in ("add-players-for-comp"):
     import wsrc.site.competitions.models as comp_models

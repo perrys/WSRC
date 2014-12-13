@@ -4,12 +4,20 @@ import datetime
 import logging
 import sys
 import os.path
+import re
+
 from bs4 import BeautifulSoup
 from cal_events import Event
 from wsrc.utils.timezones import GBEireTimeZone
 
 UK_TZINFO = GBEireTimeZone()
 LOGGER = logging.getLogger(__name__)
+
+class CellPredicate:
+  def __init__(self, tag):
+    self.tag = tag
+  def __call__(self, x):
+    return hasattr(x, "name") and x.name == self.tag
 
 def tag_generator(head, next_func=lambda(x): x.next_sibling, filt=lambda(x): hasattr(x, "name")):
   """Generator for tag collections. 
@@ -27,6 +35,10 @@ def cvt_nbsp(s):
 
 def get_tag_content(c):
   return cvt_nbsp(c.string)
+
+def count_backwards_tds(tag):
+  return len([x for x in tag_generator(tag, next_func=lambda(x): x.previous_sibling, filt=CellPredicate('td'))])
+  
 
 def process_booking(cell):
   """Parse the cell contents into a either a string (in the case of
@@ -89,9 +101,7 @@ def process_week_page(soup) :
   slots = []
   first_data_row = first_col_cell.parent
   title_row = first_data_row.previous_sibling
-  def filtfunc(cell):
-    return hasattr(cell, "name") and cell.name == 'tr'
-  for row in tag_generator(first_data_row, filt=filtfunc):
+  for row in tag_generator(first_data_row, filt=CellPredicate('tr')):
     data = process_week_row(row)
     slots.append(data)
   return slots
@@ -129,10 +139,42 @@ def extract_events(time_list, first_date, court_number):
 
   return flatten(result)
 
+def process_box_header(tag):
+  """Parse a box from the old site's league table page"""
+  tg = tag_generator(tag, filt=CellPredicate('td'))
+  tg.next()
+  nexttag = tg.next()
+  league_name = tag.text + " " + nexttag.text
+
+  xposition = count_backwards_tds(tag)
+  if xposition > 10:
+    xposition -= 2
+  row_iter = tag_generator(tag.parent, filt=CellPredicate('tr'))
+  row_iter.next()
+  data_rows = []
+  for i in range(0,6):
+    row = row_iter.next()
+    first = row.find('td')
+    col_iter = tag_generator(first, filt=CellPredicate('td'))
+    for j in range(0, xposition):
+      col_iter.next()
+    data_cols = []
+    data_rows.append(data_cols)
+    for j in range(0,8):
+      text = cvt_nbsp(col_iter.next().text).strip()
+      data_cols.append(text)
+  return (league_name, data_rows)
+
 def scrape_week_events(eventData, first_date, court_number):
   soup = BeautifulSoup(eventData, "lxml")
   time_list = process_week_page(soup)
   return extract_events(time_list, first_date, court_number)
+
+def scrape_old_league_table(data):
+  soup = BeautifulSoup(data, "lxml")
+  headers = soup.find_all('td', text=re.compile("^League\s+No"))
+  return [process_box_header(h) for h in headers]
+  
 
 def scrape_table_generic(headerrow):
   headers = [cvt_nbsp(th.get_text()).strip() for th in headerrow.find_all("th")]
