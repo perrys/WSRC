@@ -129,6 +129,8 @@ def index_view(request):
         elif not found_empty:
             found_empty = True
             ctx["leaguemaster_last_result_idx"] = idx
+            ctx["leaguemaster_recent_min_idx"] = idx-5
+            ctx["leaguemaster_recent_max_idx"] = idx+4
         rich_fixtures.append(d)
     ctx["leaguemaster"] = rich_fixtures
 

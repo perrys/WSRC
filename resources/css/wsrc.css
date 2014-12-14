@@ -38,7 +38,9 @@ div.ui-controlgroup-label {
 #main_div {
     max-width: 1000px;
 }
-
+.toggled {
+    display: none;
+}
 /******************************************************************************** 
   Header - note some of these rules are overriden for larger screens
 ********************************************************************************/
@@ -252,11 +254,11 @@ div.ui-controlgroup-label {
     padding: 0;
     margin: 0;
 }
-.jqm-block-content p {
-    font-size: 1.1em;
-    font-weight: 300;
-    line-height: 1.4;
-    margin: .7em 0;
+.jqm-block-content div.footnote {
+    height: 1em;
+    padding-top: 0.5em;
+    text-align:right;
+    font-size: 0.8em;
 }
 .jqm-block-content table {
     width: 100%;
@@ -274,12 +276,6 @@ div.ui-controlgroup-label {
 .jqm-block-content td:last-child {
     text-align:right;
     padding-right: 0.5em;
-}
-.jqm-block-content h3 .link {
-    font-size: 0.8em;
-}
-.jqm-block-content p:last-child {
-    margin-bottom: 0;
 }
 .jqm-block-content a:link {
     font-weight: 300;
@@ -624,9 +620,14 @@ div.coaching ul {
    - switch to front page square boxes with scrolling */
 @media (min-width: 35em) { /* default 560px */
 {% endif %}
-    .jqm-block-content > div{
+    .jqm-block-content > div.restricted{
 	min-height: 16em;
 	max-height: 16em;
+        overflow: auto;
+    }
+    .jqm-block-content > div.restricted-with-footnote{
+	min-height: 14.5em;
+	max-height: 14.5em;
         overflow: auto;
     }
     .jqm-block-content > div.headed-box{

@@ -13,19 +13,18 @@
     <div class="ui-block-a">
       <div class="jqm-block-content">
         <h3>Facebook&nbsp;News</h3>
-        <div>
+        <div class="restricted">
           <table id="facebook_news">
             <tbody>
             </tbody>
           </table>
-          <p style="display:None;"> </p>
         </div>
       </div>
     </div>
     <div class="ui-block-b">
       <div class="jqm-block-content">
         <h3>Evening&nbsp;Courts</h3>
-        <div class="headed-box">
+        <div class="headed-box restricted">
           <div class="ui-bar ui-bar-a" data-role="header" data-position="inline">
             <h4>Today</h4>
             {% if user.is_authenticated %}
@@ -38,7 +37,7 @@
           <div class="ui-body">
             <table>
 {% for row in bookings %}
-<tr class="{% cycle 'odd' 'even' %}"><td>{{ row.start_time|date:"H:i" }}&ndash;{{ row.end_time|date:"H:i" }}</td><td>{% if row.description = "_" %}<a href="">(available)</a>{% else %}{{ row.description }}{% endif %}</td><td>ct.&nbsp;{{ row.court }}</td></tr>
+<tr class="{% cycle 'odd' 'even' %}"><td>{{ row.start_time|date:"H:i" }}&ndash;{{ row.end_time|date:"H:i" }}</td><td>{% if row.description == "_" %}{% if user.is_authenticated %}<a href="http://www.court-booking.co.uk/WokingSquashClub/edit_entry_fixed.php?room={{ row.court }}&area=1&hour={{ row.start_time|date:'H' }}&minute={{ row.start_time|date:'i' }}&year={{ row.start_time|date:'Y' }}&month={{ row.start_time|date:'m' }}&day={{ row.start_time|date:'d' }}">(available)</a>{% endif %}{% else %}{{ row.description }}{% endif %}</td><td>ct.&nbsp;{{ row.court }}</td></tr>
 {% endfor %}
             </table>
           </div>
@@ -46,34 +45,35 @@
       </div>
     </div>
     <div class="ui-block-a">
-      <div class="jqm-block-content">
-        <h3>Surrey&nbsp;Leagues</h3>
-        <div>
-<table>
+      <div class="jqm-block-content toggle-root">
+        <h3>Team Results</h3>
+        <div class="restricted-with-footnote">
+          <table>
 {% for row in leaguemaster %}
-<tr class="{% cycle 'odd' 'even' %}" id="leaguemaster_{{ forloop.counter0 }}">
+<tr class="{% cycle 'odd' 'even' %} {% if forloop.counter0 < leaguemaster_recent_min_idx or forloop.counter0 > leaguemaster_recent_max_idx %}toggled{% endif %}">
 <td>{{ row.date|date:"d/m" }} ({{ row.home_or_away }})</td>
 <td>{{ row.team }}</td>
 <td>{{ row.opponents }}</td>
 <td class="{{ row.class }}{% if not row.points %} empty{% endif %}">{% if row.points %}{{ row.scores|safe }} ({{ row.points|safe }}){% endif %}</td></tr>
 {% endfor %}
-</table>
-<form style="display:None;">
-<input type="hidden" name="leaguemaster_last_result_idx", id="leaguemaster_last_result_idx" value="{{ leaguemaster_last_result_idx }}">
-</form>
+          </table>
         </div>
+        <div class="footnote togglable toggle-link"><a href="#">(see all)</a></div>
+        <div class="footnote toggled toggle-link"><a href="#">(recent)</a></div>
       </div>
     </div>
     <div class="ui-block-b">
-      <div class="jqm-block-content">
+      <div class="jqm-block-content toggle-root">
         <h3>SquashLevels</h3>
-        <div>
-<table>
+        <div class="restricted-with-footnote">
+          <table>
 {% for row in squashlevels %}
-<tr class="{% cycle 'odd' 'even' %}"><td>{{ row.name }}</td><td>{{ row.level }}</td></tr>
+<tr class="{% cycle 'odd' 'even' %} {% if forloop.counter > 10 %}toggled{% endif %}"><td>{{ row.name }}</td><td>{{ row.level }}</td></tr>
 {% endfor %}
-</table>
+          </table>
         </div>
+        <div class="footnote togglable toggle-link"><a href="#">(see all)</a></div>
+        <div class="footnote toggled toggle-link"><a href="#">(top 10)</a></div>
       </div>
     </div>        	
   </div>
