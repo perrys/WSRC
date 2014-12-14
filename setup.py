@@ -4,6 +4,13 @@ from distutils.core import setup
 import glob
 import os.path
 
+def get_images():
+  images = []
+  for ext in [".jpg", ".ico", ".png"]:
+    pattern = os.path.join('resources', 'images', '*'+ext)
+    images.extend(glob.glob(pattern))
+  return images
+
 setup(name='WSRC',
       version='1.0',
       description='Woking Squash Club',
@@ -36,6 +43,6 @@ setup(name='WSRC',
       data_files = [('etc', ['etc/notifier.json', 'etc/smtp.json']),
                     ('www/css', glob.glob(os.path.join('resources', 'css', 'all_*.css'))),
                     ('www/js', glob.glob(os.path.join('resources', 'js', 'all*.js'))),
-                    ('www/images', glob.glob(os.path.join('resources', 'images', '*.jpg'))),
+                    ('www/images', get_images()),
                     ]
      )
