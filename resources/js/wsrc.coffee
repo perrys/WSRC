@@ -35,6 +35,12 @@ window.WSRC =
     player_id = parseInt(player_id)
     return this.list_lookup(players, player_id)
 
+  toggle: (evt) ->
+    root = $(evt.target).parents(".toggle-root")
+    hiders = root.find(".togglable")
+    showers = root.find(".toggled")
+    hiders.removeClass("togglable").addClass("toggled")
+    showers.removeClass("toggled").addClass("togglable")
 
   ##
   # Remove non-empty items from the selector and replace with the given list
@@ -188,7 +194,10 @@ window.WSRC =
       list[0][1] = "Player 2"
       this.fill_select(form.find("select#player2"), list, null, true)
       if selected_val?
-        this.on_player_selected("player1")
+        for p in this_box_config.players
+          if p.id == selected_val
+            this.on_player_selected("player1")
+            break
       return null
 
     setupResults()
@@ -690,14 +699,10 @@ window.WSRC =
     )
     
   onHomePageShow: (page) ->
-    last = $("#leaguemaster_last_result_idx").val()
-    if last != ""
-      idx = parseInt(last) - 5
-      last = $("#leaguemaster_#{ idx }")
-      if last.length == 1 and last[0].scrollIntoView?
-        last[0].scrollIntoView();
 
-    url = "/data/facebook"
+    $(".toggle-link a").on("click", this.toggle)
+
+    url = "/data/facebook"    
     this.ajax_GET(url,
       successCB: (data) =>
         this.refresh_facebook(data)
