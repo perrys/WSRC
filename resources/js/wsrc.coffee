@@ -183,9 +183,12 @@ window.WSRC =
       players.sort((lhs,rhs) -> lhs.full_name > rhs.full_name)
       list = ([p.id, p.full_name] for p in players)
       list.unshift(["", "Player 1"])
-      this.fill_select(form.find("select#player1"), list, null, true)
+      selected_val = WSRC_user_player_id ? null
+      this.fill_select(form.find("select#player1"), list, selected_val, true)
       list[0][1] = "Player 2"
       this.fill_select(form.find("select#player2"), list, null, true)
+      if selected_val?
+        this.on_player_selected("player1")
       return null
 
     setupResults()
