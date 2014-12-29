@@ -97,7 +97,7 @@ class SeedingSerializer(serializers.ModelSerializer):
     fields = ["player", "seeding"]
 
 class CompetitionSerializer(serializers.ModelSerializer):
-  matches = CompactMatchField(source="match_set", many=True)
+  matches = CompactMatchField(source="match_set", many=True, read_only=True)
   seedings = SeedingSerializer(source="seeding_set", many=True)
   players = PlayerSerializer(many=True)
   class Meta:
@@ -122,7 +122,7 @@ class CompetitionSerializer(serializers.ModelSerializer):
       self.fields.pop("seedings")
 
 class CompetitionGroupSerializer(serializers.ModelSerializer):
-  matches = CompactMatchField(source="match_set", many=True)
+  matches = CompactMatchField(source="match_set", many=True, read_only=True)
   seedings = SeedingSerializer(source="seeding_set", many=True)
   players = PlayerSerializer(many=True)
   competitions_expanded = CompetitionSerializer(source="competitions", many=True, expand=True)
