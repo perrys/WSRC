@@ -381,14 +381,18 @@ tr.odd > td {
     background-color: #f9f9f9;
 }
 /* admin dialogs */
-table.wsrc-settings th {
-    color: #666;
-    padding-right:1em;
+form.settings-form fieldset div.ui-field-contain {
+    border-bottom-width:0px;
 }
 /* leagues */
 .wsrc-site table.boxes {
     font-family: 'Open Sans', sans-serif;
 }
+
+.wsrc-site .boxes h2.ui-title {
+    font-weight: 500;
+}
+
 div.left-control-box {
     display: inline-block;
     float: left;
@@ -407,7 +411,7 @@ div#boxDetailDialog {
     min-width: 350px;
 }
 table.boxes th {
-    font-weight:bold;
+    font-weight:300;
     overflow: hidden;
     max-width: 100px;
     text-overflow: ellipsis;
@@ -675,7 +679,7 @@ div.coaching ul {
 {% if not ie_mode %}
 /* larger than a small tablet in portrait mode - switch to larger
    header, remove hamburger icon and bring in side menu */
-@media (min-width: 60em) { /* about 960 px */
+@media (min-width: 55em) { /* about 880 px */
 {% endif %}
     .wsrc-site .jqm-header h2 {
 	padding: 1em 0 .7em;
@@ -777,7 +781,7 @@ div.coaching ul {
 
 
 {% if not ie_mode %}
-@media ( min-width: 1000px ) {
+@media ( min-width: 70em ) {
 {% endif %}
     body {
         font-size: 1em;
