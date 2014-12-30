@@ -19,13 +19,21 @@ import urllib
 import httplib
 import httplib2
 
+from django.contrib.auth.forms import PasswordChangeForm
+from django.contrib.auth.models import User
+from django.core.urlresolvers import reverse as reverse_url
+from django.db import transaction
+from django.forms import ModelForm
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
+from django.shortcuts import redirect
+from django.shortcuts import render
 from django.template.response import TemplateResponse
 from django.utils import timezone
 from django.views.decorators.http import require_safe
 
 from wsrc.site.models import PageContent, SquashLevels, LeagueMasterFixtures, BookingSystemEvent
+from wsrc.site.usermodel.models import Player
 from wsrc.site.competitions.views import get_competition_lists
 
 FACEBOOK_URL="https://www.facebook.com/feeds/page.php"
@@ -163,4 +171,57 @@ def facebook_view(request):
                             content_type="text/plain", 
                             status=httplib.SERVICE_UNAVAILABLE)
     return HttpResponse(content, content_type="application/json")
+    
+def change_password_view(request):
+    if not request.user.is_authenticated():
+        return redirect('/login/?next=%s' % request.path)
+
+    success = False
+    if request.method == 'POST':
+        form = PasswordChangeForm(user=request.user, data=request.POST)
+        if form.is_valid():
+            form.save()
+            update_session_auth_hash(request, form.user)
+            success = True
+        return redirect(reverse_url(settings_view))
+    else:
+        form = PasswordChangeForm(user=request.user)
+
+    ctx = {"set_password_form": form}
+    return TemplateResponse(request, 'change_password.html', ctx)
+
+class UserForm(ModelForm):
+    class Meta:
+        model = User
+        fields = ["first_name", "last_name", "username",  "email"]
+
+class PlayerForm(ModelForm):
+    class Meta:
+        model = Player
+        exclude = ('user',)
+
+
+def settings_view(request):
+    if not request.user.is_authenticated():
+        return redirect(reverse_url(django.contrib.auth.views.login) + '?next=%s' % request.path)
+
+    success = False
+    if request.method == 'POST': 
+        pform = PlayerForm(request.POST, instance=request.user.player)
+        uform = UserForm(request.POST, instance=request.user)
+        if pform.is_valid() and uform.is_valid(): 
+            with transaction.atomic():
+                pform.save()
+                uform.save()
+            success = True
+    else:
+        
+        pform = PlayerForm(instance=request.user.player)
+        uform = UserForm(instance=request.user)
+
+    return render(request, 'settings.html', {
+        'player_form': pform,
+        'user_form':   uform,
+        'form_saved': success,
+    })
     

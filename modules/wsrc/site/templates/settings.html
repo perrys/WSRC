@@ -1,29 +1,57 @@
 {% extends "base.html" %}
 {% block pagetitle %}Settings{% endblock %}
+{% load kwacros %}
 {% block content %}
 <div role="main" class="ui-content jqm-content">
 
-{% if form.errors %}
-<p>Your username and password didn't match. Please try again.</p>
+<form method="post" action="{% url 'wsrc.site.views.settings_view' %}" data-ajax="false" class="settings-form">
+{% csrf_token %}
+
+{% if form_saved %}
+<span class="form_success_message">Settings saved.</span>
 {% endif %}
 
-<fieldset label="Basic">
-  <form method="post" action="{% url 'django.contrib.auth.views.settings' %}" data-ajax="false">
-    {% csrf_token %}
+{% if user_form.errors or player_form.errors %}
+<span class="form_error_message">Please correct the errors below and resubmit.</span>
 
-<table class="wsrc-settings">
+{% for err in user_form.non_field_errors %}
+  <div class="form_error_message">{{ err }}</div>
+{% endfor %}
 
-<tr> <th>{{ form.username.label_tag }}</th><td>{{ form.username }}</td></tr>
-<tr> <th>{{ form.first_name.label_tag }}</th><td>{{ form.first_name }}</td></tr>
-<tr> <th>{{ form.last_name.label_tag }}</th><td>{{ form.last_name }}</td></tr>
-<tr> <th>{{ form.email.label_tag }}</th><td>{{ form.email }}</td></tr>
-<tr> <td></td>    <td><input type="submit" value="update"></input></td></tr>
+{% for err in player_form.non_field_errors %}
+  <div class="form_error_message">{{ err }}</div>
+{% endfor %}
 
-</table>
+{% endif %}
 
+{% kwacro createfield field %}
+<div class="ui-field-contain {% if field.errors %}field-error{% endif %}"
+{% if field.errors %}title="{% for err in field.errors %}{{ err }}. {% endfor %}"{% endif %}
+>{{ field.label_tag }}{{ field }}</div>
+{% endkwacro %}
 
-<input type="hidden" name="next" value="{{ next }}" />
+<input type="hidden" name="next" value="{% url 'wsrc.site.views.settings_view' %}" />
+<fieldset name="login_details">
+{% usekwacro createfield user_form.username %}
+</fieldset>
+
+<fieldset name="personal_details">
+{% usekwacro createfield user_form.first_name %}
+{% usekwacro createfield user_form.last_name %}
+{% usekwacro createfield player_form.short_name %}
+</fieldset>
+
+<fieldset name="contact_details">
+{% usekwacro createfield user_form.email %}
+{% usekwacro createfield player_form.cell_phone %}
+{% usekwacro createfield player_form.other_phone %}
+</fieldset>
+
+<input id="submit_button" type="submit" value="update"></input>
+
 </form>
 
 </div>
+
+
 {% endblock %}

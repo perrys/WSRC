@@ -10,6 +10,7 @@ div.ui-controlgroup-label {
 .clear-all {
     clear: both;
 }
+
 /* add support for individual corner radii */
 .ui-corner-all,
 .ui-corner-top,
@@ -380,10 +381,26 @@ div.wsrc-membership {
 tr.odd > td {
     background-color: #f9f9f9;
 }
+
 /* admin dialogs */
+form.settings-form {
+    max-width: 40em;
+}
 form.settings-form fieldset div.ui-field-contain {
     border-bottom-width:0px;
 }
+div.field-error input {
+    -webkit-box-shadow: 0px 0px 2px 2px #ed3338;
+    -moz-box-shadow: 0px 0px 2px 2px #ed3338;
+    box-shadow: 0px 0px 2px 2px #ed3338;
+}
+.form_success_message {
+    color: #3eb249;
+}
+.form_error_message {
+    color: #ed3338
+}
+
 /* leagues */
 .wsrc-site table.boxes {
     font-family: 'Open Sans', sans-serif;
@@ -602,6 +619,7 @@ div.coaching  ul {
 /******************************************************************************** 
   Larger Screen Media Conditionals
 ********************************************************************************/
+
 
 /* Display coaching bullet points next to picture if large enough screen */
 {% if not ie_mode %}
