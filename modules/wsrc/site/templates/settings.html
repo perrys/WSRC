@@ -12,7 +12,7 @@
 {% endif %}
 
 {% if user_form.errors or player_form.errors %}
-<span class="form_error_message">Please correct the errors below and resubmit.</span>
+<span class="form_error_message ui-btn-icon ui-btn-icon-left ui-icon-alert">Validation Error. Please correct the problem(s) below and resubmit.</span>
 
 {% for err in user_form.non_field_errors %}
   <div class="form_error_message">{{ err }}</div>
@@ -27,7 +27,9 @@
 {% kwacro createfield field %}
 <div class="ui-field-contain {% if field.errors %}field-error{% endif %}"
 {% if field.errors %}title="{% for err in field.errors %}{{ err }}. {% endfor %}"{% endif %}
->{{ field.label_tag }}{{ field }}</div>
+>{{ field.label_tag }}{{ field }}
+{% if field.errors %}<label> </label><span class="field-error">{% for err in field.errors %}{{ err }}. {% endfor %}</span>{% endif %}
+</div>
 {% endkwacro %}
 
 <input type="hidden" name="next" value="{% url 'wsrc.site.views.settings_view' %}" />
@@ -54,7 +56,7 @@
 {% usekwacro createfield player_form.other_phone %}
 </fieldset>
 
-<input id="submit_button" type="submit" value="update"></input>
+<input id="submit_button" type="submit" value="Update" class="ui-btn-b"></input>
 
 </form>
 
