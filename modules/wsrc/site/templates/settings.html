@@ -32,16 +32,23 @@
 
 <input type="hidden" name="next" value="{% url 'wsrc.site.views.settings_view' %}" />
 <fieldset name="login_details">
+<legend>Login</legend>
 {% usekwacro createfield user_form.username %}
+<div class="ui-field-contain">
+ <label>Password:</label>
+ <label><input id="id_password" type="checkbox" checked="checked" onclick="alert('foo'); return true;"> Set (click to change)</label>
+</div>
 </fieldset>
 
 <fieldset name="personal_details">
+<legend>Personal Details</legend>
 {% usekwacro createfield user_form.first_name %}
 {% usekwacro createfield user_form.last_name %}
 {% usekwacro createfield player_form.short_name %}
 </fieldset>
 
 <fieldset name="contact_details">
+<legend>Contact Details</legend>
 {% usekwacro createfield user_form.email %}
 {% usekwacro createfield player_form.cell_phone %}
 {% usekwacro createfield player_form.other_phone %}

@@ -1,7 +1,10 @@
 
 
 /* Small screen default font size is 14px */
-body,
+body {
+    font-size: 1em;
+}
+
 .ui-btn,
 .ui-mobile label,
 div.ui-controlgroup-label {
@@ -385,6 +388,12 @@ tr.odd > td {
 /* admin dialogs */
 form.settings-form {
     max-width: 40em;
+}
+form.settings-form legend {
+    color: #ed3338;
+    padding-top: 20px;
+    -webkit-padding-start: 0px;
+    -moz-padding-start: 0px;
 }
 form.settings-form fieldset div.ui-field-contain {
     border-bottom-width:0px;
@@ -801,9 +810,6 @@ div.coaching ul {
 {% if not ie_mode %}
 @media ( min-width: 70em ) {
 {% endif %}
-    body {
-        font-size: 1em;
-    }
     .jqm-block-content td {
         font-size: 0.9em;
     }
