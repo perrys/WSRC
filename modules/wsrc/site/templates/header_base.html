@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+
+<html>
+<head>
+  {% block header %}
+  <meta charset="utf-8">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block titleprefix %}{% endblock %}Woking Squash Rackets Club</title>
+
+  <link rel="shortcut icon" type="image/x-icon" href="/static/images/favicon.ico" />
+
+  <link rel="apple-touch-icon" href="/static/images/apple-touch-icon-57x57.png">
+  <link rel="apple-touch-icon" sizes="114x114" href="/static/images/apple-touch-icon-114x114.png">
+
+  <link rel="stylesheet" href="http://fonts.googleapis.com/css?family=Open+Sans:300,400,700" />
+
+  <script src="/static/js/all{% if not debug %}.min{% endif %}.js"></script>
+
+<!-- do not use @media styles with older IE versions -->
+<!--[if IE]>
+  <link rel="stylesheet" href="/static/css/all_legacy{% if not debug %}.min{% endif %}.css">
+<![endif]-->
+<!--[if !IE]><!-->
+  <link rel="stylesheet" href="/static/css/all_html5{% if not debug %}.min{% endif %}.css" />
+ <!--<![endif]-->
+
+  {% block header_extra %}{% endblock %}
+
+  {% endblock %}
+
+{% if user.is_authenticated %}
+<script>
+window.WSRC_user_player_id = {% if user.player %}{{ user.player.id }}{% else %}-1{% endif %}
+</script>
+{% endif %}
+
+</head>
+<body>
+{% block body %}
+{% endblock %}
+</body>
+</html>
