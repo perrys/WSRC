@@ -1,33 +1,7 @@
-<!DOCTYPE html>
+{% extends "header_base.html" %}
 
-{% load competitions_extras %}
-
-<html>
-<head>
-  <meta charset="utf-8">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>{% block titleprefix %}{% endblock %}Woking Squash Rackets Club</title>
-
-  <link rel="shortcut icon" type="image/x-icon" href="/static/images/favicon.ico" />
-
-  <link rel="apple-touch-icon" href="/static/images/apple-touch-icon-57x57.png">
-  <link rel="apple-touch-icon" sizes="114x114" href="/static/images/apple-touch-icon-114x114.png">
-
-  <link rel="stylesheet" href="http://fonts.googleapis.com/css?family=Open+Sans:300,400,700" />
-
-  <script src="/static/js/all{% if not debug %}.min{% endif %}.js"></script>
-
-<!-- do not use @media styles with older IE versions -->
-<!--[if IE]>
-  <link rel="stylesheet" href="/static/css/all_legacy{% if not debug %}.min{% endif %}.css">
-<![endif]-->
-<!--[if !IE]><!-->
-  <link rel="stylesheet" href="/static/css/all_html5{% if not debug %}.min{% endif %}.css" />
- <!--<![endif]-->
-
-  <script>
+{% block header_extra %}
+<script>
 $( document ).on( "pagecreate", ".wsrc-site", function( event ) {
   var page = $( this );
   $( ".jqm-navmenu-panel ul" ).listview();
@@ -36,17 +10,10 @@ $( document ).on( "pagecreate", ".wsrc-site", function( event ) {
     panel.panel( "open" );
   });
 });
+</script>
+{% endblock %}
 
-{% if user.is_authenticated %}
-window.WSRC_user_player_id = {% if user.player %}{{ user.player.id }}{% else %}-1{% endif %}
-{% endif %}
-
-
-  </script>
-</head>
-<body>
-
-
+{% block body %}
 <div id="outer_page_div" data-role="page" data-pagetype="{% block pagetype %}{% endblock %}" {% block pageattrs %}{% endblock %} class="wsrc-site">
 
   <div data-role="header" class="jqm-header">
@@ -67,23 +34,23 @@ window.WSRC_user_player_id = {% if user.player %}{{ user.player.id }}{% else %}-
 
       <li data-icon="home"><a href="{% url 'homepage' %}" data-ajax="false">Home</a></li>
 
-      <li><a href="/about">About</a></li>
+      <li data-icon="info"><a href="/about">About</a></li>
       <li><a href="/membership">Membership</a></li>
       <li><a href="/coaching">Coaching</a></li>
       <li><a href="/juniors">Juniors</a></li>
 
-      <li><a href="{% url 'wsrc.site.competitions.views.boxes_view' %}"   data-ajax="false">Club Leagues</a></li>
-      <li><a href="{% url 'wsrc.site.competitions.views.bracket_view' %}" data-ajax="false">Club Tournaments</a></li>
-      <li><a href="/links">Links and Credits</a></li>
+      <li><a href="{% url 'boxes' %}"   data-ajax="false">Club Leagues</a></li>
+      <li><a href="{% url 'tournaments' %}" data-ajax="false">Club Tournaments</a></li>
 
 {% if user.is_authenticated %}
-      <li><a href="http://court-booking.co.uk/WokingSquashClub/" data-ajax="false">Court Booking</a></li>
-      <li><a href="/memberlist">Members' Details</a></li>
-      <li data-icon="gear"><a href="/settings">Settings</a></li>
+      <li data-icon="calendar"><a href="http://court-booking.co.uk/WokingSquashClub/" data-ajax="false">Court Booking</a></li>
+      <li data-icon="phone"><a href="{% url 'member_list' %}">Members' Details</a></li>
+      <li data-icon="gear"><a href="{% url 'settings' %}">Settings</a></li>
+      <li data-icon="qmark"><a href="/help">Help</a></li>
 {% endif %}
 
-      <li><a href="/help">Help</a></li>
-      <li><a href="/contact">Contact Us</a></li>
+      <li data-icon="star"><a href="/links">Links and Credits</a></li>
+      <li data-icon="mail"><a href="/contact">Contact Us</a></li>
     </ul>
   </div>
 
@@ -104,17 +71,18 @@ window.WSRC_user_player_id = {% if user.player %}{{ user.player.id }}{% else %}-
 
 </div><!-- /page -->
 
+{% if user.is_authenticated %}
 <div data-role="page" data-dialog="true" data-position-to="window" id="logout_dialog" data-dismissible="false">
   <div data-role="header" data-theme="a">
-    <h1>Logout</h1>
+    <h1>{{ user.first_name }} {{ user.last_name }}</h1>
   </div>
   <div class="ui-content">
-    <h3 class="ui-title">Are you sure you want to log out?</h3> <!-- to be replaced be real error message -->
-    <a href="/logout?next=/home" class="ui-btn ui-corner-all ui-shadow ui-btn-inline ui-btn-b" data-ajax="false">Ok</a>
-    <a href="#" class="ui-btn ui-corner-all ui-shadow ui-btn-inline ui-btn-b" data-rel="back" data-transition="flow">Cancel</a>
+    <h3 class="ui-title">What would you like to do?</h3>
+    <a href="{% url 'settings' %}" class="ui-btn ui-corner-all ui-shadow ui-btn-inline ui-btn-b" data-ajax="false">Settings</a>
+    <a href="{% url 'logout' %}?next=/home" class="ui-btn ui-corner-all ui-shadow ui-btn-inline ui-btn-b" data-ajax="false">Logout</a>
+    <a style="float: right;" href="#" class="ui-btn ui-corner-all ui-shadow ui-btn-inline ui-btn-b" data-rel="back" data-transition="flow">Cancel</a>
   </div>
 </div>
+{% endif %}
   
-
-</body>
-</html>
+{% endblock %}
