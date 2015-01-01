@@ -12,6 +12,8 @@ window.WSRC =
 
   competitiongroup_data: null
 
+  bxslider_inited: false
+
   list_lookup: (list, id, id_key) ->
     unless id_key?
       id_key = "id"
@@ -713,16 +715,18 @@ window.WSRC =
         err_container.html(xhr.responseText)    
         return false
     )
-    $('.bxslider').bxSlider(
-      mode: 'horizontal',
-      slideWidth: 460,
-      captions: false,
-      randomStart: true,
-      controls: false,
-      auto: true,
-      pause: 7000,
-    );
-
+    unless this.bxslider_inited
+      $('.bxslider').bxSlider(
+        mode: 'horizontal',
+        slideWidth: 460,
+        captions: false,
+        randomStart: true,
+        controls: false,
+        auto: true,
+        pause: 7000,
+      );
+      this.bxslider_inited = true
+  
 
   onPageContainerShow: (evt, ui) ->
     newpage = ui.toPage
