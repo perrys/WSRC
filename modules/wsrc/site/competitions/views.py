@@ -19,7 +19,11 @@ from wsrc.site.competitions.serializers import PlayerSerializer, CompetitionSeri
 from wsrc.utils.timezones import parse_iso_date_to_naive
 
 from django.shortcuts import get_object_or_404
+from django.shortcuts import redirect
+from django.shortcuts import render
 from django.template.response import TemplateResponse
+from django.forms import ModelForm
+from django.http import HttpResponseBadRequest
 
 import rest_framework.filters
 import rest_framework.generics as rest_generics
@@ -69,7 +73,7 @@ class MatchCreate(rest_generics.CreateAPIView):
 def get_competition_lists():
     tournaments = []
     for group in CompetitionGroup.objects.filter(comp_type="wsrc_tournaments"):
-        tournaments.append({"year": group.end_date.year, "competitions": group.competitions.all()})
+        tournaments.append({"year": group.end_date.year, "competitions": group.competition_set.all()})
     leagues = []
     for group in CompetitionGroup.objects.filter(comp_type="wsrc_boxes"):
         leagues.append({"year": group.end_date.year, "end_date": group.end_date, "name": group.name})
@@ -109,7 +113,7 @@ def boxes_view(request, end_date=None):
     boxes = []
     comp_meta = {"maxplayers": 0, "name": group.name, "id": group.id}
     ctx = {"competition": comp_meta}
-    for league in group.competitions.all():
+    for league in group.competition_set.all():
         cfg = create_box_config(last, league, comp_meta)
         boxes.append(cfg)
         last = cfg
@@ -129,7 +133,7 @@ def bracket_view(request, year, name):
         group = get_object_or_404(CompetitionGroup.objects, end_date__year=year, comp_type='wsrc_tournaments')
 
     name = name.replace("_", " ")        
-    competition = get_object_or_404(group.competitions, name__iexact=name)
+    competition = get_object_or_404(group.competition_set, name__iexact=name)
 
     html_table = tournament.render_tournament(competition)
 
@@ -137,4 +141,38 @@ def bracket_view(request, year, name):
     ctx.update(get_competition_lists())
     
     return TemplateResponse(request, "tournaments.html", ctx)
+
+class CompetitionGroupForm(ModelForm):
+    class Meta:
+        model = CompetitionGroup
+        fields = ["name", "comp_type", "end_date"]
+
+class CompetitionForm(ModelForm):
+    class Meta:
+        model = Competition
+        fields = ["name", "end_date", "players"]
     
+def bracket_admin_view(request):
+    if not request.user.is_authenticated():
+        return redirect(reverse_url(django.contrib.auth.views.login) + '?next=%s' % request.path)
+
+    if request.method == 'POST': 
+        form      = CompetitionForm(request.POST)
+        groupform = CompetitionGroupForm(request.POST)
+
+        queryDict = request.POST
+        if queryDict["action"] == "new_comp_group":
+            groupform.save()
+        elif queryDict["action"] == "edit_tournament":
+            pass
+        else:
+            return HttpResponseBadRequest("<h1>invalid form data</h1>")
+
+    else:        
+        form      = CompetitionForm()
+        groupform = CompetitionGroupForm()
+        
+    return render(request, 'tournaments_admin.html', {
+        'form':      form,
+        'groupform': groupform,
+    })

@@ -125,11 +125,11 @@ class CompetitionGroupSerializer(serializers.ModelSerializer):
   matches = CompactMatchField(source="match_set", many=True, read_only=True)
   seedings = SeedingSerializer(source="seeding_set", many=True)
   players = PlayerSerializer(many=True)
-  competitions_expanded = CompetitionSerializer(source="competitions", many=True, expand=True)
+  competitions_expanded = CompetitionSerializer(source="competition_set", many=True, expand=True)
   class Meta:
     model = CompetitionGroup
     depth = 0
-    fields = ('id', 'name', 'comp_type', 'end_date', 'active', 'competitions', 'competitions_expanded')
+    fields = ('id', 'name', 'comp_type', 'end_date', 'active', 'competition_set', 'competitions_expanded')
 
   def __init__(self, *args, **kwargs):
     # Instantiate the superclass normally
@@ -138,7 +138,7 @@ class CompetitionGroupSerializer(serializers.ModelSerializer):
     if "expand" not in queryParams:
       self.fields.pop("competitions_expanded")
     else:
-      self.fields.pop("competitions")
+      self.fields.pop("competition_set")
 
       
     

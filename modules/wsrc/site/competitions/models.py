@@ -19,16 +19,6 @@ import wsrc.site.usermodel.models as user_models
 
 # Create your models here.
 
-class Competition(models.Model):
-  """An individual competition, with an end date. For example this could be a knockout tournament or a league."""
-  name = models.CharField(max_length=128)
-  end_date = models.DateField()
-  url = models.CharField(max_length=128, blank=True)
-  # players may not be populated for all types of competitions, as some are inferred from matches:
-  players = models.ManyToManyField(user_models.Player, related_name="competitions+") 
-  def __unicode__(self):
-    return "%s [%s]" % (self.name, self.end_date)
-
 class CompetitionGroup(models.Model):
   """A grouping of competitions, e.g. a set of league boxes"""
   GROUP_TYPES = (
@@ -39,7 +29,17 @@ class CompetitionGroup(models.Model):
   comp_type = models.CharField(max_length=32, choices=GROUP_TYPES)
   end_date = models.DateField()
   active = models.BooleanField()
-  competitions = models.ManyToManyField(Competition, related_name="leagues+")
+  def __unicode__(self):
+    return "%s [%s]" % (self.name, self.end_date)
+
+class Competition(models.Model):
+  """An individual competition, with an end date. For example this could be a knockout tournament or a league."""
+  name = models.CharField(max_length=128)
+  end_date = models.DateField()
+  group = models.ForeignKey(CompetitionGroup, blank=True, null=True) 
+  url = models.CharField(max_length=128, blank=True)
+  # players may not be populated for all types of competitions, as some are inferred from matches:
+  players = models.ManyToManyField(user_models.Player, related_name="competitions+") 
   def __unicode__(self):
     return "%s [%s]" % (self.name, self.end_date)
 
