@@ -782,14 +782,14 @@ html .ui-panel-page-container-b {
 html .ui-bar-b a,
 html .ui-body-b a,
 html body .ui-group-theme-b a {
-	color: #22aadd /*{b-link-color}*/;
+	color: #3eb249 /*{b-link-color}*/;
 	font-weight: bold;
 }
 .ui-page-theme-b a:visited,
 html .ui-bar-b a:visited,
 html .ui-body-b a:visited,
 html body .ui-group-theme-b a:visited {
-    color: #22aadd /*{b-link-visited}*/;
+    color: #3eb249 /*{b-link-visited}*/;
 }
 .ui-page-theme-b a:hover,
 html .ui-bar-b a:hover,
@@ -866,10 +866,10 @@ html .ui-bar-b .ui-slider-track .ui-btn-active,
 html .ui-body-b .ui-slider-track .ui-btn-active,
 html body .ui-group-theme-b .ui-slider-track .ui-btn-active,
 html body div.ui-slider-track.ui-body-b .ui-btn-active {
-	background-color: 		#22aadd /*{b-active-background-color}*/;
-	border-color:	 		#22aadd /*{b-active-border}*/;
+	background-color: 		#3eb249 /*{b-active-background-color}*/;
+	border-color:	 		#3eb249 /*{b-active-border}*/;
 	color: 					#fff /*{b-active-color}*/;
-	text-shadow: 0 /*{b-active-shadow-x}*/ 1px /*{b-active-shadow-y}*/ 0 /*{b-active-shadow-radius}*/ #0088bb /*{b-active-shadow-color}*/;
+	text-shadow: 0 /*{b-active-shadow-x}*/ 1px /*{b-active-shadow-y}*/ 0 /*{b-active-shadow-radius}*/ #00bb88 /*{b-active-shadow-color}*/;
 }
 /* Active radio button icon */
 .ui-page-theme-b .ui-radio-on:after,
@@ -877,7 +877,7 @@ html .ui-bar-b .ui-radio-on:after,
 html .ui-body-b .ui-radio-on:after,
 html body .ui-group-theme-b .ui-radio-on:after,
 .ui-btn.ui-radio-on.ui-btn-b:after {
-	border-color:			#22aadd /*{b-active-background-color}*/;
+	border-color:			#3eb249 /*{b-active-background-color}*/;
 }
 /* Focus */
 .ui-page-theme-b .ui-btn:focus,
@@ -892,9 +892,9 @@ html .ui-body-b .ui-focus,
 html body .ui-group-theme-b .ui-focus,
 html head + body .ui-btn-b.ui-focus,
 html head + body .ui-body-b.ui-focus {
-	-webkit-box-shadow: 0 0 12px 	#22aadd /*{b-active-background-color}*/;
-	-moz-box-shadow: 0 0 12px 		#22aadd /*{b-active-background-color}*/;
-	box-shadow: 0 0 12px 			#22aadd /*{b-active-background-color}*/;
+	-webkit-box-shadow: 0 0 12px 	#3eb249 /*{b-active-background-color}*/;
+	-moz-box-shadow: 0 0 12px 		#3eb249 /*{b-active-background-color}*/;
+	box-shadow: 0 0 12px 			#3eb249 /*{b-active-background-color}*/;
 }
 /* Structure */
 /* Disabled
