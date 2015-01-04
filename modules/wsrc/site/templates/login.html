@@ -1,32 +1,35 @@
-{% extends "base.html" %}
-{% block pagetitle %}Login{% endblock %}
-{% block content %}
-<div role="main" class="ui-content jqm-content">
+{% extends "header_base.html" %}
+
+{% load kwacros %}
+{% loadkwacros 'form_macros.html' %}
+
+{% block titleprefix %}Login - {% endblock %}
+
+{% block body %}
+<div data-role="page" data-dialog="true" data-position-to="window">
+  <div data-role="header" data-theme="a">
+    <h1>Login</h1>
+  </div>
+  <div class="ui-content">
 
 {% if form.errors %}
-<p>Your username and password didn't match. Please try again.</p>
+    <span class="form_error_message ui-btn-icon ui-btn-icon-left ui-icon-alert">
+Invalid username/password. Please try again.
+    </span>
 {% endif %}
 
-<form method="post" action="{% url 'django.contrib.auth.views.login' %}" data-ajax="false">
-{% csrf_token %}
-<table class="wsrc-settings">
-<tr>
-    <th>{{ form.username.label_tag }}</th>
-    <td>{{ form.username }}</td>
-</tr>
-<tr>
-    <th>{{ form.password.label_tag }}</th>
-    <td>{{ form.password }}</td>
-</tr>
-<tr>
-    <td></td>
-    <td><input type="submit" value="login"></input></td>
-</tr>
-</table>
+<form method="post" action="" data-ajax="false">{% csrf_token %}
 
+<fieldset name="password_details">
+{% usekwacro createfield form.username %}
+{% usekwacro createfield form.password %}
+</fieldset>
 
-<input type="hidden" name="next" value="{{ next }}" />
+<input type="submit" value="Log in" data-theme="b"></input>
+<input type="hidden" name="next" value="{% if next %}{{ next }}{% else %}{% url 'homepage' %}{% endif %}" />
+<script type="text/javascript">document.getElementById("id_username").focus();</script>
 </form>
 
+  </div>
 </div>
 {% endblock %}
