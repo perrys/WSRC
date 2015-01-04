@@ -32,8 +32,8 @@ urlpatterns = patterns('',
     url(r'^password/reset/done/$',auth_views.password_reset_done,name='password_reset_done'),
     url(r'^password/reset/confirm/(?P<uidb64>[-\w]+)/(?P<token>[-\w]+)/$', auth_views.password_reset_confirm, name='password_reset_confirm'),
     url(r'^password/reset/complete/$',auth_views.password_reset_complete, name='password_reset_complete'),
-    url(r'^password/change/$', auth_views.password_change, name='password_change'),
-    url(r'^password/change/done/$', auth_views.password_change_done, name='password_change_done'),
+    url(r'^password/change/$', auth_views.password_change, {'template_name': 'password_change_form.html'}, name='password_change'),
+    url(r'^password/change/done/$', auth_views.password_change_done, {'template_name': 'password_change_done.html'}, name='password_change_done'),
     url(r'^change_password/?$', wsrc.site.views.change_password_view),
 
     url(r'^memberlist/?$', wsrc.site.usermodel.views.MemberListView.as_view(), name="member_list"),
@@ -41,8 +41,8 @@ urlpatterns = patterns('',
     url(r'^boxes/(\d{4}-\d{2}-\d{2})/?$', wsrc.site.competitions.views.boxes_view), # end-date based
     url(r'^boxes/?$',                     wsrc.site.competitions.views.boxes_view, name="boxes"), # most recent
 
-    url(r'^tournament/(\d{4})/(\w+)/?$', wsrc.site.competitions.views.bracket_view),
-    url(r'^tournament/?',                wsrc.site.competitions.views.bracket_view, {"year":None, "name":"Open"} , name="tournaments"),
+    url(r'^tournaments/(\d{4})/(\w+)/?$', wsrc.site.competitions.views.bracket_view),
+    url(r'^tournaments/?',                wsrc.site.competitions.views.bracket_view, {"year":None, "name":"Open"} , name="tournaments"),
 
     url(r'^settings/?$', wsrc.site.views.settings_view, name="settings"),
 
