@@ -34,7 +34,6 @@ from django.views.decorators.http import require_safe
 
 from wsrc.site.models import PageContent, SquashLevels, LeagueMasterFixtures, BookingSystemEvent
 from wsrc.site.usermodel.models import Player
-from wsrc.site.competitions.views import get_competition_lists
 
 FACEBOOK_URL="https://www.facebook.com/feeds/page.php"
 WSRC_FACEBOOK_PAGE_ID = 576441019131008
@@ -50,8 +49,6 @@ def get_pagecontent_ctx(page):
             },
         "debug": True,
         }
-    comp_lists = get_competition_lists()
-    result.update(comp_lists)
     return result
 
 def add_empty_slots(bookings):
