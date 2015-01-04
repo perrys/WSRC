@@ -403,7 +403,7 @@ div.field-error input {
     -moz-box-shadow: 0px 0px 2px 2px #ed3338;
     box-shadow: 0px 0px 2px 2px #ed3338;
 }
-form.settings-form span.field-error {
+span.field-error {
     color: #ed3338;
     font-size: 0.8em;
 }
