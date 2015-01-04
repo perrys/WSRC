@@ -1,0 +1,9 @@
+{% load kwacros %}
+
+{% kwacro createfield field %}
+<div class="ui-field-contain {% if field.errors %}field-error{% endif %}"
+{% if field.errors %}title="{% for err in field.errors %}{{ err }}. {% endfor %}"{% endif %}
+>{{ field.label_tag }}{{ field }}
+{% if field.errors %}<div class="clear-all"></div><label>&nbsp;</label><span class="field-error">{% for err in field.errors %}{{ err }}. {% endfor %}</span>{% endif %}
+</div>
+{% endkwacro %}
