@@ -648,7 +648,7 @@ window.WSRC =
     this.on_player_selected(selector.id)
 
   onTournamentSelected: (selector) ->
-    link = "/tournament/" + $(selector).val()
+    link = $(selector).val()
     document.location = link
 
   onLeagueSelected: (selector) ->
