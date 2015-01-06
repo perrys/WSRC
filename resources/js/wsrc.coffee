@@ -726,7 +726,6 @@ window.WSRC =
         pause: 7000,
       );
       this.bxslider_inited = true
-  
 
   onPageContainerShow: (evt, ui) ->
     newpage = ui.toPage
@@ -737,7 +736,12 @@ window.WSRC =
       this.onLeaguePageShow(newpage)
     else if pagetype == "tournament"
       this.onTournamentPageShow(newpage)
+    else if pagetype == "memberlist"
+      document.getElementById("filterTable-input").focus()
+    else if pagetype == "login"
+      document.getElementById("id_username").focus()
 
+    # TODO - check why this is here ??
     $("#box_link").click(() ->
       document.location.pathname="/competitions/leagues"
     )
