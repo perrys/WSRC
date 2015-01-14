@@ -677,6 +677,8 @@ div.coaching ul {
         overflow: auto;
 	min-height: 13em;
 	max-height: 13em;
+        padding-left: 0;
+        padding-right: 0;
     }
 {% if not ie_mode %}
 }
