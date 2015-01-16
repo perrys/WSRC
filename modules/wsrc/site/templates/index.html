@@ -1,8 +1,18 @@
 {% extends "base.html" %}
 {% block pagetitle %}Home{% endblock %}
 {% block pagetype %}home{% endblock %}
+{% block header_extra %}
+{{ block.super }}
+<script>
+window.WSRC_today_bookings = [
+{% for row in bookings %}
+{% if forloop.counter0 > 0 %},{% endif %}
+{ start_time: "{{ row.start_time|date:'c' }}", end_time: "{{ row.end_time|date:'c' }}", description: "{{ row.description }}", court: {{ row.court }} }
+{% endfor %}
+]
+</script>
+{% endblock %}
 {% block content %}
-
 
 <div role="main" class="ui-content jqm-content">
   <div id="main_div"> 
@@ -28,17 +38,16 @@
           <div class="ui-bar ui-bar-a" data-role="header" data-position="inline">
             <h4>Today</h4>
             {% if user.is_authenticated %}
-            <a id="link-{{ box_config.id }}" href="#boxDetailDialog" class="ui-btn ui-icon-arrow-l ui-btn-icon-notext ui-corner-all ui-btn-left" style="display:none;" onclick="">
+            <a id="link-{{ box_config.id }}" href="javascript:WSRC.booking_advance(-1);" class="ui-btn ui-icon-arrow-l ui-btn-icon-notext ui-corner-all ui-btn-left">
             </a>
-            <a id="link-{{ box_config.id }}" href="#boxDetailDialog" class="ui-btn ui-icon-arrow-r ui-btn-icon-notext ui-corner-all ui-btn-right" onclick="">
+            <a id="link-{{ box_config.id }}" href="javascript:WSRC.booking_advance(1);" class="ui-btn ui-icon-arrow-r ui-btn-icon-notext ui-corner-all ui-btn-right">
             </a>
             {% endif %}
           </div>
           <div class="ui-body">
-            <table>
-{% for row in bookings %}
-<tr class="{% cycle 'odd' 'even' %}"><td>{{ row.start_time|date:"H:i" }}&ndash;{{ row.end_time|date:"H:i" }}</td><td>{% if row.description == "_" %}{% if user.is_authenticated %}<a href="http://www.court-booking.co.uk/WokingSquashClub/edit_entry_fixed.php?room={{ row.court }}&area=1&hour={{ row.start_time|date:'H' }}&minute={{ row.start_time|date:'i' }}&year={{ row.start_time|date:'Y' }}&month={{ row.start_time|date:'m' }}&day={{ row.start_time|date:'d' }}">(available)</a>{% endif %}{% else %}{{ row.description }}{% endif %}</td><td>ct.&nbsp;{{ row.court }}</td></tr>
-{% endfor %}
+            <table id="evening_bookings" data-basedate="{{ today }}" data-dayoffset="0">
+              <tbody>
+              </tbody>
             </table>
           </div>
         </div>

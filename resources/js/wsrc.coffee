@@ -6,6 +6,8 @@ unless window.assert?
       
 window.WSRC =
 
+  days_of_week: ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]
+
   set_on_and_off: (onid, offid) ->
     jQuery("##{ onid }").show()
     jQuery("##{ offid }").hide()
@@ -28,6 +30,70 @@ window.WSRC =
     i = parseInt(i)
     return not isNaN(i)
 
+  get_ordinal_suffix: (i) ->
+    if i in [11, 12, 13]
+      return "th"
+    r = i % 10    
+    switch r
+      when 1 then return "st"
+      when 2 then return "nd"
+      when 3 then return "rd"
+      else return "th"
+
+  iso_to_js_date: (str) ->
+    toint = (start, len) -> parseInt(str.substr(start, start+len))
+    new Date(toint(0,4), toint(5,2)-1, toint(8,2)) # gotcha - JS dates use 0-offset months...
+
+  get_day_humanized: (basedate, offset) ->
+    switch offset
+      when 0 then return "Today"
+      when 1 then return "Tomorrow"
+      when -1 then return "Yesterday"
+    dt = this.iso_to_js_date(basedate)
+    dt.setDate(dt.getDate() + offset)
+    dow = this.days_of_week[dt.getDay()]
+    dom = dt.getDate()
+    suffix = this.get_ordinal_suffix(dom)
+    return "#{ dow } #{ dom }#{ suffix }"
+
+  add_empty_slots: (bookings) ->
+    COURT_SLOT_LENGTH = 45 * 60
+    abs_minutes = (tstr) ->
+      60 * parseInt(booking.start_time.substr(11,13)) + parseInt(booking.start_time.substr(14,16))
+    doubleint = (i) -> if i < 10 then "0" + i else "" + i
+    totimestr = (i) ->
+      hours = Math.floor(i / 60)
+      mins = i % 60
+      return "#{ doubleint(hours) }:#{ doubleint(mins) }"
+    result = []
+    court_to_bookings_map = {1: [], 2: [], 3: []}
+    for b in bookings
+      court_to_bookings_map[b.court].push(b)
+    for court,booking_list of court_to_bookings_map
+      last_end_mins = null
+      slot_available = (b) ->
+        end_mins = abs_minutes(b.end_time)
+        return ((end_mins-last_end_mins) >= COURT_SLOT_LENGTH)
+      newlist = []
+      idx = 0
+      while idx < booking_list.length
+        if last_end_mins and slot_available(booking_list[idx])
+          prefix = booking_list[idx].substr(0,11)
+          end_mins = last_end_mins + COURT_SLOT_LENGTH
+          newlist.push
+            start_time:  prefix + totimestr last_end_mins
+            end_time:    prefix + totimestr end_mins
+            court:       court
+            description: "_"
+          last_end_mins = end_mins
+        else
+          booking = booking_list[idx]
+          newlist.push(booking)
+          last_end_mins = abs_minutes(booking.end_time)
+          idx += 1
+      result = result.concat(newlist)  
+    return result    
+        
   get_competition_for_id: (box_id) ->
     box_id = parseInt(box_id)
     this.list_lookup(this.competitiongroup_data.competitions_expanded, box_id)
@@ -538,7 +604,6 @@ window.WSRC =
 
   refresh_facebook: (data) ->
     table = $("#facebook_news tbody").show()
-    table.parents(".jqm-block-content").find("p").hide()
     if data? and data.entries.length > 0
       table.find("tr").remove()
       odd = true
@@ -554,6 +619,52 @@ window.WSRC =
           odd = true
         table.append(row)
 
+  display_court_bookings: (data, day_offset, addLinks) ->
+    table = $("#evening_bookings tbody").show()
+    if data
+      table.find("tr").remove()
+      slots = if day_offset >= 0 then this.add_empty_slots(data) else data
+      odd = true
+      for booking in slots
+        t1 = booking.start_time
+        t2 = booking.end_time
+        getTimeElt = (start, len, t) ->
+          unless t?
+            t = t1
+          t.substring(start, start+len)
+        getTime = (t) ->
+          getTimeElt(11, 5, t)
+        description = booking.description
+        if booking.description == "_"
+          if addLinks
+            description = "<a href='http://www.court-booking.co.uk/WokingSquashClub/edit_entry_fixed.php?room=#{ booking.court }&area=1&hour=#{ getTimeElt(11,2) }&minute=#{ getTimeElt(14,2) }&year=#{ getTimeElt(0,4) }&month=#{ getTimeElt(5,2) }&day=#{ getTimeElt(8,2) }'>(available)</a>"
+        else
+          description = booking.description
+        row = $("<tr><td>#{ getTime(t1) }&ndash;#{ getTime(t2) }</td><td>#{ description }</td><td>ct.&nbsp;#{ booking.court }</td></tr>")
+        row.addClass(if odd then "odd" else "even")
+        odd = not odd
+        table.append(row)
+
+  booking_advance: (days) ->
+    table = $("#evening_bookings")
+    container = table.parents(".jqm-block-content")
+    basedate = table.data("basedate")
+    dayoffset = table.data("dayoffset")
+    dayoffset += days
+    url = "/data/bookings?date=#{ basedate }&day_offset=#{ dayoffset }"    
+    this.ajax_GET(url,
+      successCB: (data) =>
+        table.data("dayoffset", dayoffset)
+        container.find("h4").html(this.get_day_humanized(basedate, dayoffset))
+        this.display_court_bookings(data, dayoffset)
+        return true
+      failureCB: (xhr, status) =>
+        table.find("tbody").hide()
+        err_container = container.find("p").show()
+        err_container.html(xhr.responseText)    
+        return false
+    )
+    
 
   refresh_tournament_data: (competition_data) ->
 
@@ -726,6 +837,7 @@ window.WSRC =
         pause: 7000,
       );
       this.bxslider_inited = true
+    this.display_court_bookings(WSRC_today_bookings, 0, WSRC_user_player_id?)
 
   onPageContainerShow: (evt, ui) ->
     newpage = ui.toPage

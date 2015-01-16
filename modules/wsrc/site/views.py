@@ -13,11 +13,9 @@
 # You should have received a copy of the GNU General Public License
 # along with WSRC.  If not, see <http://www.gnu.org/licenses/>.
 
-import markdown
-import datetime
-import urllib
-import httplib
-import httplib2
+from wsrc.site.models import PageContent, SquashLevels, LeagueMasterFixtures, BookingSystemEvent
+from wsrc.site.usermodel.models import Player
+from wsrc.utils import timezones
 
 from django.contrib.auth.forms import PasswordChangeForm
 from django.contrib.auth.models import User
@@ -32,8 +30,13 @@ from django.template.response import TemplateResponse
 from django.utils import timezone
 from django.views.decorators.http import require_safe
 
-from wsrc.site.models import PageContent, SquashLevels, LeagueMasterFixtures, BookingSystemEvent
-from wsrc.site.usermodel.models import Player
+import rest_framework.generics as rest_generics
+
+import markdown
+import datetime
+import urllib
+import httplib
+import httplib2
 
 FACEBOOK_URL="https://www.facebook.com/feeds/page.php"
 WSRC_FACEBOOK_PAGE_ID = 576441019131008
@@ -146,6 +149,7 @@ def index_view(request):
     bookings = BookingSystemEvent.objects.filter(start_time__gte=cutoff_today, start_time__lt=midnight_tomorrow).order_by('start_time')
     bookings = add_empty_slots(bookings)
     ctx["bookings"] = bookings
+    ctx["today"] = timezones.as_iso_date(now)
     return TemplateResponse(request, 'index.html', ctx)
         
     
@@ -221,4 +225,19 @@ def settings_view(request):
         'user_form':   uform,
         'form_saved': success,
     })
+
+
+class BookingList(rest_generics.ListAPIView):
+    model = BookingSystemEvent
+    def get_queryset(self):
+        queryset = BookingSystemEvent.objects.order_by("start_time")
+        date = self.request.QUERY_PARAMS.get('date', None)
+        if date is not None:
+            date = timezones.parse_iso_date_to_naive(date)
+            delta = self.request.QUERY_PARAMS.get('day_offset', None)
+            if delta is not None:
+              date = date + datetime.timedelta(days=int(delta))
+            tplus1 = date + datetime.timedelta(days=1)
+            queryset = queryset.filter(start_time__gte=date, start_time__lt=tplus1)
+        return queryset
     
