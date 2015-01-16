@@ -41,12 +41,15 @@ urlpatterns = patterns('',
     url(r'^boxes/(\d{4}-\d{2}-\d{2})/?$', wsrc.site.competitions.views.boxes_view), # end-date based
     url(r'^boxes/?$',                     wsrc.site.competitions.views.boxes_view, name="boxes"), # most recent
 
-    url(r'^tournaments/(\d{4})/(\w+)/?$', wsrc.site.competitions.views.bracket_view),
-    url(r'^tournaments/?',                wsrc.site.competitions.views.bracket_view, {"year":None, "name":"Open"} , name="tournaments"),
+    url(r'^tournaments/admin/(\d{4})/(\w+)/?', wsrc.site.competitions.views.bracket_admin_view),
+    url(r'^tournaments/admin/?',               wsrc.site.competitions.views.bracket_admin_view),
+    url(r'^tournaments/(\d{4})/(\w+)/?$',      wsrc.site.competitions.views.bracket_view),
+    url(r'^tournaments/?',                     wsrc.site.competitions.views.bracket_view, {"year":None, "name":"Open"} , name="tournaments"),
 
     url(r'^settings/?$', wsrc.site.views.settings_view, name="settings"),
 
     url(r'^data/facebook$', wsrc.site.views.facebook_view),
+    url(r'^data/bookings$', wsrc.site.views.BookingList.as_view()),
     url(r'^data/',    include(wsrc.site.competitions.data_urls)),
 
     url(r'^admin/', include(admin.site.urls)),
