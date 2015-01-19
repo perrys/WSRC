@@ -675,8 +675,8 @@ div.coaching ul {
     }
     .jqm-block-content > div.headed-box > div.ui-body{
         overflow: auto;
-	min-height: 13em;
-	max-height: 13em;
+	min-height: 11em;
+	max-height: 11em;
         padding-left: 0;
         padding-right: 0;
     }

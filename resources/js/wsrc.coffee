@@ -624,7 +624,11 @@ window.WSRC =
     if data
       table.find("tr").remove()
       slots = if day_offset >= 0 then this.add_empty_slots(data) else data
+      slots.sort (lhs, rhs) ->
+        (lhs.start_time > rhs.start_time) - (lhs.start_time < rhs.start_time)
       odd = true
+      alinkdiv = $('#booking_seeall_toggle')
+      toggleclass = if alinkdiv.hasClass("toggled") then "togglable" else "toggled"
       for booking in slots
         t1 = booking.start_time
         t2 = booking.end_time
@@ -640,7 +644,8 @@ window.WSRC =
             description = "<a href='http://www.court-booking.co.uk/WokingSquashClub/edit_entry_fixed.php?room=#{ booking.court }&area=1&hour=#{ getTimeElt(11,2) }&minute=#{ getTimeElt(14,2) }&year=#{ getTimeElt(0,4) }&month=#{ getTimeElt(5,2) }&day=#{ getTimeElt(8,2) }'>(available)</a>"
         else
           description = booking.description
-        row = $("<tr><td>#{ getTime(t1) }&ndash;#{ getTime(t2) }</td><td>#{ description }</td><td>ct.&nbsp;#{ booking.court }</td></tr>")
+        cls = if parseInt(getTimeElt(11,2)) < 17 then toggleclass else ""
+        row = $("<tr class='#{ cls }'><td>#{ getTime(t1) }&ndash;#{ getTime(t2) }</td><td>#{ description }</td><td>ct.&nbsp;#{ booking.court }</td></tr>")
         row.addClass(if odd then "odd" else "even")
         odd = not odd
         table.append(row)
