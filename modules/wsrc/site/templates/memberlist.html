@@ -16,7 +16,7 @@
         </thead>
         <tbody>
 {% for member in object_list %}
-<tr class=""><td>{{ member.get_full_name }}</td><td><a href="mailto:{{ member.user.email }}">{{ member.user.email }}</a></td><td><a href="tel:{{ member.other_phone }}">{{ member.other_phone }}</a></td><td><a href="tel:{{ member.cell_phone }}">{{ member.cell_phone }}</a></td></tr>
+<tr class=""><td>{{ member.get_full_name }}</td><td><a href="mailto:{{ member.user.email }}">{{ member.user.email }}</a></td><td><a href="tel:{{ member.other_phone }}">{{ member.other_phone }}</a></td><td><a href="sms:{{ member.cell_phone }}">{{ member.cell_phone }}</a></td></tr>
 {% endfor %}
         </tbody>
       </table>
