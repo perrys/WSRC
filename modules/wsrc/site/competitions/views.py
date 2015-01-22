@@ -22,13 +22,21 @@ from django.shortcuts import get_object_or_404
 from django.shortcuts import redirect
 from django.shortcuts import render
 from django.template.response import TemplateResponse
-from django.forms import ModelForm
+from django.forms import ModelForm, ModelChoiceField
 from django.http import HttpResponseBadRequest
 
 import rest_framework.filters
 import rest_framework.generics as rest_generics
+from rest_framework.renderers import JSONRenderer
 
 import tournament
+
+class FakeRequestContext:
+    def __init__(self):
+        self.GET = {"expand":True}
+
+FAKE_REQUEST_CONTEXT = FakeRequestContext()
+JSON_RENDERER = JSONRenderer()
 
 # REST data views:
 
@@ -93,9 +101,11 @@ def boxes_view(request, end_date=None):
         end_date = parse_iso_date_to_naive(end_date)
         group = get_object_or_404(queryset, end_date=end_date)
 
+    box_data = JSON_RENDERER.render(CompetitionGroupSerializer(group, context={"request": FAKE_REQUEST_CONTEXT}).data)
+
     def create_box_config(previous_comp, competition, ctx):
         is_second = False
-        ctx["maxplayers"] = max(ctx["maxplayers"], len(competition.players.all()))
+        ctx["maxplayers"] = max(ctx["maxplayers"], len(competition.entrant_set.all()))
         if previous_comp is not None:
             if previous_comp["name"][:-1] == competition.name[:-1]: # e.g. "League 1A" vs "League 1B"
                 is_second = True
@@ -105,7 +115,7 @@ def boxes_view(request, end_date=None):
                 "nthcol": is_second and 'second' or 'first',
                 "name": competition.name,
                 "id": competition.id,
-                "players": [p for p in competition.players.all()]
+                "players": [p.player for p in competition.entrant_set.all().order_by("ordering")]
                 }
 
     nullplayer = {"name": "", "id": ""}
@@ -122,6 +132,7 @@ def boxes_view(request, end_date=None):
             box["players"].append(nullplayer)
     ctx["boxes"] = boxes
     ctx.update(get_competition_lists())
+    ctx["box_data"] = box_data
     return TemplateResponse(request, "boxes.html", ctx)
     
     
@@ -135,44 +146,97 @@ def bracket_view(request, year, name):
     name = name.replace("_", " ")        
     competition = get_object_or_404(group.competition_set, name__iexact=name)
 
+    bracket_data = JSON_RENDERER.render(CompetitionSerializer(competition, context={"request": FAKE_REQUEST_CONTEXT}).data)
     html_table = tournament.render_tournament(competition)
 
-    ctx = {"competition": competition, "bracket": html_table}
+    ctx = {"competition": competition, "bracket": html_table, "bracket_data": bracket_data}
     ctx.update(get_competition_lists())
     
     return TemplateResponse(request, "tournaments.html", ctx)
 
-class CompetitionGroupForm(ModelForm):
+class NewCompetitionGroupForm(ModelForm):
     class Meta:
         model = CompetitionGroup
         fields = ["name", "comp_type", "end_date"]
 
-class CompetitionForm(ModelForm):
+class NewTournamentForm(ModelForm):
+    group = ModelChoiceField(queryset=CompetitionGroup.objects.filter(comp_type = "wsrc_tournaments"),
+                             initial=CompetitionGroup.objects.filter(comp_type = "wsrc_tournaments").order_by('-end_date')[0])
     class Meta:
         model = Competition
-        fields = ["name", "end_date", "players"]
-    
-def bracket_admin_view(request):
+        fields = ["name", "end_date", "group"]
+
+class EditTournamentForm(ModelForm):
+    class Meta:
+        model = Competition
+        fields = ["name"]
+
+def bracket_admin_view(request, year=None, name=None):
     if not request.user.is_authenticated():
         return redirect(reverse_url(django.contrib.auth.views.login) + '?next=%s' % request.path)
 
+    competition = None
+    if name is not None:
+        group = get_object_or_404(CompetitionGroup.objects, end_date__year=year, comp_type='wsrc_tournaments')
+        name = name.replace("_", " ")        
+        competition = get_object_or_404(group.competition_set, name__iexact=name)
+        seeding_set = competition.seeding_set
+
+    new_group_form        = None
+    new_tournament_form   = None
+    edit_tournament_form  = None
+    success_message = None
+
     if request.method == 'POST': 
-        form      = CompetitionForm(request.POST)
-        groupform = CompetitionGroupForm(request.POST)
 
         queryDict = request.POST
-        if queryDict["action"] == "new_comp_group":
-            groupform.save()
-        elif queryDict["action"] == "edit_tournament":
-            pass
+        action = request.POST.get("action", None)
+        if action == "new_comp_group":
+            new_group_form = NewCompetitionGroupForm(request.POST, auto_id='id_groupform_%s')
+            if new_group_form.is_valid(): 
+                new_group_form.save()            
+                new_group_form.success_message = "created group " + str(new_group_form.instance)
+        elif action == "new_tournament":
+            new_tournament_form = NewTournamentForm(request.POST, auto_id='id_compform_%s')
+            if new_tournament_form.is_valid(): 
+                new_tournament_form.save()            
+                new_tournament_form.success_message = "created tournament " + str(new_tournament_form.instance)
+        elif action == "edit_tournament":
+            edit_tournament_form = EditTournamentForm(request.POST, auto_id='id_editform_%s', instance=competition)
+            if edit_tournament_form.is_valid(): 
+                edit_tournament_form.save()            
+                edit_tournament_form.success_message = "updated entrants for " + str(edit_tournament_form.instance)
         else:
             return HttpResponseBadRequest("<h1>invalid form data</h1>")
 
-    else:        
-        form      = CompetitionForm()
-        groupform = CompetitionGroupForm()
+    if new_tournament_form is None:
+        new_tournament_form   = NewTournamentForm(auto_id='id_compform_%s')
+    if new_group_form is None:
+        new_group_form        = NewCompetitionGroupForm(auto_id='id_groupform_%s')
+    if edit_tournament_form is None:
+        edit_tournament_form  = EditTournamentForm(auto_id='id_editform_%s', instance=competition)
+
+    tournaments = []
+    for group in CompetitionGroup.objects.filter(comp_type="wsrc_tournaments"):
+        tournaments.append({"year": group.end_date.year, "competitions": group.competition_set.all()})
+    entrants = []
+    if competition is not None:
+        seedings = dict([(c.player.id, c.seeding) for c in competition.seeding_set.all()])
+        entrants = [e for e in competition.players.all()]
+        def comparer(lhs, rhs):
+            lhsseed, rhsseed = [(seedings.get(x.id) or 1e7) for x in (lhs, rhs)]
+            return cmp(lhsseed, rhsseed)
+        entrants.sort(cmp=comparer)
+        entrants = [{"id": e.id, "user": e.user, "seeding": seedings.get(e.id) or "null"} for e in entrants]
+#        for e in entrants:
+#            if e.id in seedings:
+#                e["seeded"] = True
         
     return render(request, 'tournaments_admin.html', {
-        'form':      form,
-        'groupform': groupform,
+        'edit_tournament_form': edit_tournament_form,
+        'new_tournament_form':  new_tournament_form,
+        'new_group_form':       new_group_form,
+        'players':              Player.objects.all(),
+        'entrants':             entrants,
+        'tournaments':          tournaments,
     })

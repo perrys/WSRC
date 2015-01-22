@@ -4,6 +4,12 @@
 {% block pagetype %}boxes{% endblock %}
 {% load competitions_extras %}
 {% block pageattrs %}data-competitiongroupid="{{ competition.id }}"{% endblock %}
+{% block header_extra %}
+{{ block.super }}
+<script>
+window.WSRC_box_data = {{ box_data|safe }};
+</script>
+{% endblock %}
 {% block content %}
 
 

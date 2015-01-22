@@ -18,7 +18,7 @@ from rest_framework import serializers
 from django.contrib.auth.models import User
 
 from wsrc.site.usermodel.models import Player
-from wsrc.site.competitions.models import CompetitionGroup, Competition, Match, Seeding
+from wsrc.site.competitions.models import CompetitionGroup, Competition, Match, Entrant
 
 SCORE_TO_POINTS_MAPPING = {3 : {0: (7,2), 1: (6,3), 2: (5,4)},
                            2 : {0: (4,2), 1: (4,3), 2: (4,4)},
@@ -53,6 +53,13 @@ class PlayerSerializer(serializers.ModelSerializer):
   class Meta:
     model = Player
     fields = ('id', 'full_name', 'short_name')
+
+class EntrantSerializer(serializers.ModelSerializer):
+  player = PlayerSerializer(read_only="True")
+  class Meta:
+    model = Entrant
+    fields = ('player', 'ordering', "seeded", "handicap", "hcap_suffix")
+
 
 class MatchSerializer(serializers.ModelSerializer):
   team1_player1 = team1_player2 = team2_player1 = team2_player2 = PlayerSerializer()
@@ -91,19 +98,13 @@ class CompactMatchField(serializers.RelatedField):
             }
 
 
-class SeedingSerializer(serializers.ModelSerializer):
-  class Meta:
-    model = Seeding
-    fields = ["player", "seeding"]
-
 class CompetitionSerializer(serializers.ModelSerializer):
   matches = CompactMatchField(source="match_set", many=True, read_only=True)
-  seedings = SeedingSerializer(source="seeding_set", many=True)
-  players = PlayerSerializer(many=True)
+  entrants = EntrantSerializer(source="entrant_set", many=True)
   class Meta:
     model = Competition
     depth = 0
-    fields = ('id', 'name', 'end_date', 'url', 'players', 'seedings', 'matches')
+    fields = ('id', 'name', 'end_date', 'url', 'entrants', 'matches')
 
   def __init__(self, *args, **kwargs):
     expanded = False
@@ -119,11 +120,9 @@ class CompetitionSerializer(serializers.ModelSerializer):
 
     if not expanded:
       self.fields.pop("matches")
-      self.fields.pop("seedings")
 
 class CompetitionGroupSerializer(serializers.ModelSerializer):
   matches = CompactMatchField(source="match_set", many=True, read_only=True)
-  seedings = SeedingSerializer(source="seeding_set", many=True)
   players = PlayerSerializer(many=True)
   competitions_expanded = CompetitionSerializer(source="competition_set", many=True, expand=True)
   class Meta:

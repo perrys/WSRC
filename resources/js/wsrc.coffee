@@ -222,8 +222,8 @@ window.WSRC =
           l.timestamp > r.timestamp
         )
         id2NameMap = {} 
-        for p in this_box_config.players
-          id2NameMap[p.id] = p.full_name
+        for p in this_box_config.entrants
+          id2NameMap[p.player.id] = p.player.full_name
         for r in results
           date = "Sat 4th June 2014" # TODO - convert from results
           gameswon = for i in [0..1]
@@ -253,7 +253,7 @@ window.WSRC =
       form.find("table#score-entry-input th#header-player2").text("Player 2")
   
       # add players from originating box to the player drop-downs 
-      players = (p for p in this_box_config.players)
+      players = (p.player for p in this_box_config.entrants)
       players.sort((lhs,rhs) -> lhs.full_name > rhs.full_name)
       list = ([p.id, p.full_name] for p in players)
       list.unshift(["", "Player 1"])
@@ -262,8 +262,8 @@ window.WSRC =
       list[0][1] = "Player 2"
       this.fill_select(form.find("select#player2"), list, null, true)
       if selected_val?
-        for p in this_box_config.players
-          if p.id == selected_val
+        for e in this_box_config.entrants
+          if e.player.id == selected_val
             this.on_player_selected("player1")
             break
       return null
@@ -340,7 +340,7 @@ window.WSRC =
     box_id = parseInt(form.find("input#competition_id").val())
     this_box_config = this.get_competition_for_id(box_id)
 
-    players = (p for p in this_box_config.players)
+    players = (p.player for p in this_box_config.entrants)
     players.sort((lhs,rhs) -> lhs.full_name > rhs.full_name)
         
     selector = form.find("select##{ selector_id }")
@@ -490,7 +490,8 @@ window.WSRC =
           totals.pts += r.points[mine]
 
     # add in zeros for players without results, and enrich with player name
-    for player in this_box_config.players
+    for entrant in this_box_config.entrants
+      player = entrant.player
       if player.id of player_totals
         player_totals[player.id].name = player.full_name
       else
@@ -550,9 +551,11 @@ window.WSRC =
     setup_box = (this_box_config) ->
       idx = 0
       playerIdToIndexMap = {}
-      players = this_box_config.players
-      while idx < players.length
-        playerIdToIndexMap[players[idx].id] = idx
+      entrants = this_box_config.entrants
+      entrants.sort (lhs, rhs) ->
+        lhs.ordering - rhs.ordering
+      while idx < entrants.length
+        playerIdToIndexMap[entrants[idx].player.id] = idx
         idx += 1
       
       jbox = jQuery("table#table-#{ this_box_config.id }")
@@ -673,12 +676,9 @@ window.WSRC =
 
   refresh_tournament_data: (competition_data) ->
 
-    players = {}
-    for p in competition_data.players
-      players[p.id] = p
-    seedings = {}
-    for s in competition_data.seedings
-      seedings[s.player] = s.seeding
+    entrants = {}
+    for p in competition_data.entrants
+      entrants[p.player.id] = p
     
     populateMatch = (match) ->
   
@@ -692,15 +692,15 @@ window.WSRC =
         elt.prev(".seed").removeClass("empty-match")
   
       makeTeamName = (id1, id2) =>
-        selector = (user) ->
+        selector = (entrant) ->
           if id2
-            return user.short_name 
-          return user.full_name
+            return entrant.player.short_name 
+          return entrant.player.full_name
         unless id1?
           return " "
-        result = selector(players[id1])
+        result = selector(entrants[id1])
         if id2
-          result += " & " + selector(players[id2]) 
+          result += " & " + selector(entrants[id2]) 
         return result.replace(" ", "&nbsp;")
         
       team1Name = makeTeamName(match.team1_player1, match.team1_player2) 
@@ -711,9 +711,11 @@ window.WSRC =
       # now the seeds:
       addSeed = (id, elt) =>
         if id?
-          seed = seedings[id]
-          if seed?
-            elt.prev().html(seed)
+          entrant = entrants[id]
+          if entrant.seeded
+            elt.prev().html(entrant.ordering)
+          else if entrant.handicap
+            elt.prev().html(entrant.handicap + entrant.hcap_suffix)
       addSeed(match.team1_player1, team1Elt)
       addSeed(match.team2_player1, team2Elt)
   
@@ -764,10 +766,12 @@ window.WSRC =
     this.on_player_selected(selector.id)
 
   onTournamentSelected: (selector) ->
+    $.mobile.loading("show")
     link = $(selector).val()
     document.location = link
 
   onLeagueSelected: (selector) ->
+    $.mobile.loading("show")
     link = "/boxes/" + $(selector).val()
     document.location = link
 
@@ -785,7 +789,9 @@ window.WSRC =
           this.show_error_dialog("ERROR: Failed to load tournament data from #{ url }")
           return false
       )
-    loadPageData()
+    $("#bracket-refresh-button").click (evt) ->
+      loadPageData()
+    this.refresh_tournament_data(WSRC_bracket_data)
 
   onLeaguePageShow: (page) ->
     competitiongroup_id = page.data().competitiongroupid
@@ -795,7 +801,6 @@ window.WSRC =
     loadPageData = () =>
       this.ajax_GET(url,
         successCB: (data) =>
-          this.refresh_all_box_data(data)
           return true
         failureCB: (xhr, status) => 
           this.show_error_dialog("ERROR: Failed to load data from #{ url }")
@@ -803,7 +808,7 @@ window.WSRC =
       )
     $("#box-refresh-button").click (evt) ->
       loadPageData()
-    loadPageData()
+    this.refresh_all_box_data(WSRC_box_data)
 
     view_radios = $("#page-control-form input[name='view_type']")
     view_radios.on("change", (evt) ->

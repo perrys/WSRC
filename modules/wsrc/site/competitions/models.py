@@ -30,7 +30,7 @@ class CompetitionGroup(models.Model):
   end_date = models.DateField()
   active = models.BooleanField(default=False)
   def __unicode__(self):
-    return "%s [%s]" % (self.name, self.end_date)
+    return u"%s [%s]" % (self.name, self.end_date)
 
 class Competition(models.Model):
   """An individual competition, with an end date. For example this could be a knockout tournament or a league."""
@@ -38,10 +38,8 @@ class Competition(models.Model):
   end_date = models.DateField()
   group = models.ForeignKey(CompetitionGroup, blank=True, null=True) 
   url = models.CharField(max_length=128, blank=True)
-  # players may not be populated for all types of competitions, as some are inferred from matches:
-  players = models.ManyToManyField(user_models.Player, related_name="competitions+") 
   def __unicode__(self):
-    return "%s [%s]" % (self.name, self.end_date)
+    return u"%s [%s]" % (self.name, self.end_date)
 
 class Match(models.Model):
   """A match which forms part of a competition. For singles matches, only player1 is populated for each team"""
@@ -79,7 +77,7 @@ class Match(models.Model):
       teams += self.team2_player1.get_short_name()
     if self.team2_player2 is not None:
       teams += " & " + self.team2_player2.get_short_name()
-    return "%s [%s] %s" % (self.competition_match_id, self.last_updated, teams)
+    return u"%s [%s] %s" % (self.competition_match_id, self.last_updated, teams)
 
 
 class CompetitionRound(models.Model):
@@ -88,13 +86,17 @@ class CompetitionRound(models.Model):
   round = models.IntegerField()
   end_date = models.DateField()
   def __unicode__(self):
-    return "%d [%s]" % (self.round, self.end_date)
+    return u"%d [%s]" % (self.round, self.end_date)
 
-class Seeding(models.Model):
-  """Seeding (highest=1) in tournaments, except for handicap tournmanets where the seeding is the actual handicap value"""
+class Entrant(models.Model):
+  # players may not be populated for all types of competitions, as some are inferred from matches:
   competition = models.ForeignKey(Competition)
   player = models.ForeignKey(user_models.Player)
-  seeding = models.IntegerField()
-  suffix = models.CharField(max_length=4)
+  ordering = models.IntegerField()
+  handicap = models.IntegerField(null=True, blank=True)
+  hcap_suffix = models.CharField(max_length=4, blank=True)
+  seeded = models.BooleanField(default=False)
   def __unicode__(self):
-    return "%s (%d%s) [%s]" % (self.player, self.seeding, self.suffix, self.competition)
+    return u"%s [%d] hcap:(%s%s) <%s>" % (self.player, self.ordering, self.handicap, self.hcap_suffix, self.competition)
+  class Meta:
+    unique_together = (("competition", "ordering"), ("competition", "player"),)

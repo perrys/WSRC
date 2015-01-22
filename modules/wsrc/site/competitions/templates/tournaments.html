@@ -5,6 +5,12 @@
 {% block pagetype %}tournament{% endblock %}
 {% block pageattrs %}data-competitionid="{{ competition.id }}"{% endblock %}
 {% load competitions_extras %}
+{% block header_extra %}
+{{ block.super }}
+<script>
+window.WSRC_bracket_data = {{ bracket_data|safe }};
+</script>
+{% endblock %}
 {% block content %}
 
 
@@ -24,10 +30,10 @@
       </div>
       <div class="right-control-box">
         <fieldset data-role="controlgroup" data-type="horizontal" data-shadow="true">
-          <button id="edit-button" data-inline="true" class="ui-btn ui-icon-edit ui-btn-icon-right">Edit</button>
+          <button id="edit-button" data-inline="true" class="ui-btn ui-icon-edit ui-btn-icon-right ui-state-disabled">Edit</button>
         </fieldset>
         <fieldset data-role="controlgroup" data-type="horizontal" data-shadow="true">
-          <button id="box-refresh-button" data-inline="true" class="ui-btn ui-icon-refresh ui-btn-icon-right">Refresh</button>
+          <button id="bracket-refresh-button" data-inline="true" class="ui-btn ui-icon-refresh ui-btn-icon-right">Refresh</button>
         </fieldset>
       </div>
       <div class="clear-all"></div>
