@@ -15,12 +15,21 @@ import evt_filters
 import actions
 
 from wsrc.utils import jsonutils, timezones
+from wsrc.site.usermodel.models import Player
 
 from django.db import transaction
 
 WSRC_CALENDAR_ID = "2pa40689s076sldnb8genvsql8@group.calendar.google.com"
 LOGGER = logging.getLogger(__name__)
 LOGGER.setLevel(logging.INFO)
+
+NAME_PAIRS = [
+  ("David", "Dave"),
+  ("Michael", "Mike"),
+  ("Nicholas", "Nick"),
+  ("Philip", "Phil"),
+  ("Patrick", "Paddy"),
+]
 
 def get_content(url, params):
   url +=  "?" + urllib.urlencode(params)
@@ -128,6 +137,36 @@ def analyse_box(name, data):
                           })
   return name, matches, players
 
+def match_player_name(name):
+  toks = name.split()
+  first = toks[0]
+  last = " ".join(toks[1:])
+  def trial(first, last):
+    return None
+  trial_first = first
+  idx = 0
+  forwards = True
+  last_trial = None
+  while True:
+    if trial_first != last_trial:
+      matches = Player.objects.filter(user__first_name__iexact=trial_first, user__last_name__iexact=last)
+      if len(matches) == 1:
+        return matches[0]
+    if idx == len(NAME_PAIRS):
+      break 
+    pair = NAME_PAIRS[idx]
+    last_trial = trial_first
+    if forwards:
+      trial_first = first.replace(pair[0], pair[1])
+      forwards = False
+    else:
+      trial_first = first.replace(pair[1], pair[0])
+      forwards = True
+      idx += 1
+
+  LOGGER.error("Unable to find a player matching %(name)s" % locals())
+  return None
+
 def nearest_last_monday(date=None):
   """Return the Monday previous to DATE, or DATE if it happens to be a Monday. 
   DATE defaults to today if not supplied"""
@@ -206,11 +245,37 @@ def update_squash_levels_data(data):
   from wsrc.site.models import SquashLevels
 
   SquashLevels.objects.all().delete()
+  last_match_expr = re.compile("match=(\d+)")
+  player_expr = re.compile("player=(\d+)")
   for row in data:
-    datum = SquashLevels(name=row["Player"], 
-                         category=row["Category"], 
-                         num_events=row["Events"],
-                         level=row["Level"]) 
+    last_match = row["Last match"]
+    last_match_date = datetime.datetime.strptime(last_match.text, "%d %b %Y").date()
+    m = last_match_expr.search(last_match.link)
+    if m is None:
+      raise Exception("unable to find match id in " + last_match.link)
+    last_match_id = m.groups()[0]
+
+    player_cell = row["Player"]
+    m = player_expr.search(player_cell.link)
+    if m is None:
+      raise Exception("unable to find player id in " + player_cell.link)
+    player_id = m.groups()[0]
+    try:
+      player = Player.objects.get(squashlevels_id=player_id)
+    except Player.MultipleObjectsReturned:
+      raise Exception("more than one player with same squashlevels id: %d" % player_id)
+    except Player.DoesNotExist:
+      player = match_player_name(player_cell.text)
+      if player is not None:
+        player.squashlevels_id = player_id
+        player.save()
+
+    datum = SquashLevels(player          = player,
+                         name            = player_cell.text, 
+                         num_events      = row["Events"].text,
+                         last_match_date = last_match_date, 
+                         last_match_id   = last_match_id,
+                         level           = row["Level"].text) 
     datum.save()
 
 @transaction.atomic
@@ -227,28 +292,28 @@ def update_leaguemaster_data(data):
 
   # process and update. Our team is always the first and we record
   # separately if it was a home or away match.
+  date_expr = re.compile("\d\d/\d\d/\d\d")
   for row in data:
-    if "Woking" in row["Away Team"]:
+    if "Woking" in row["Away Team"].text:
       venue = "a"
-      team = row["Away Team"]
-      opponents = row["Home Team"]
+      team = row["Away Team"].text
+      opponents = row["Home Team"].text
     else:
       venue = "h"
-      team = row["Home Team"]
-      opponents = row["Away Team"]
-    date = row["Date"]
-    re_expr = re.compile("\d\d/\d\d/\d\d")
-    m = re_expr.search(row["Date"])
+      team = row["Home Team"].text
+      opponents = row["Away Team"].text
+    datestr = row["Date"].text
+    m = date_expr.search(datestr)
     if m is None:
-      raise Exception("unable to find date in " + row["Date"])
-    datestr = row["Date"][m.start():m.end()]
+      raise Exception("unable to find date in " + datestr)
+    datestr = datestr[m.start():m.end()]
     date = datetime.datetime.strptime(datestr, "%d/%m/%y").date()
 
     games = points = [None, None]
 
     # The leaguemaster page seems to order points inconsistently. We
     # will scrape the Won/Lost field to figure out the correct order.
-    result = row["Result"].strip()
+    result = row["Result"].text
     if result.startswith("Won"):
       result = result.replace("Won", "").strip()
       if len(result) > 5:
@@ -266,7 +331,7 @@ def update_leaguemaster_data(data):
 
     # games, on the other hand, are always presented from our perspective
     if points[0] is not None:
-      games = [int(x) for x in row["Games"].split("-")]
+      games = [int(x) for x in row["Games"].text.split("-")]
 
     result = LeagueMasterFixtures(
       team = team,
@@ -276,7 +341,8 @@ def update_leaguemaster_data(data):
       team1_score = games[0],
       team2_score = games[1],
       team1_points = points[0],
-      team2_points = points[1]
+      team2_points = points[1],
+      url = row["Match"].link
       )
     result.save()
 
@@ -378,9 +444,13 @@ def cmdline_sync_bookings():
   update_booking_events(bookingSystemEvents)
   update_google_calendar(bookingSystemEvents)
 
-def cmdline_sync_squashlevels():
+def cmdline_sync_squashlevels(*args):
 
-  data = get_squashlevels_rankings()
+  if len(args) > 0:
+    data = open(os.path.expanduser(args[0])).read()
+  else:
+    data = get_squashlevels_rankings()
+
   data = scrape_page.scrape_squashlevels_table(data)
 
   LOGGER.info("Obtained {0} players from SquashLevels".format(len(data)))

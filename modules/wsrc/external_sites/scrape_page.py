@@ -30,6 +30,16 @@ def tag_generator(head, next_func=lambda(x): x.next_sibling, filt=lambda(x): has
       yield head
     head = next_func(head)
 
+class CellContent:
+  def __init__(self, tag):
+    self.text = cvt_nbsp(tag.get_text(strip=True)).strip()
+    self.link = None
+    link = tag.find('a')
+    if link is not None:
+      self.link = link['href']
+  def __str__(self):
+    return self.text
+      
 def cvt_nbsp(s):
   return s.replace(u'\xa0', ' ')
 
@@ -180,7 +190,7 @@ def scrape_table_generic(headerrow):
   headers = [cvt_nbsp(th.get_text()).strip() for th in headerrow.find_all("th")]
   rows = headerrow.find_next_siblings("tr")
   def process_row(row):
-    return [cvt_nbsp(td.get_text()).strip() for td in row.find_all("td")]
+    return [CellContent(td) for td in row.find_all("td")]
   def filtfunc(cell):
     return hasattr(cell, "name") and cell.name == 'tr'
   result = [process_row(r) for r in tag_generator(headerrow.next_sibling, filt=filtfunc)]

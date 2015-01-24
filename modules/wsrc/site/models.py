@@ -1,3 +1,6 @@
+
+import wsrc.site.usermodel.models as user_models
+
 from django.db import models
 from django.contrib.auth.models import User
 
@@ -18,9 +21,11 @@ class BookingSystemEvent(models.Model):
   description = models.CharField(max_length=64, blank=True, null=True)
 
 class SquashLevels(models.Model):
+  player = models.ForeignKey(user_models.Player, blank=True, null=True)
   name = models.CharField(max_length=64)
-  category = models.CharField(max_length=16)
   num_events = models.IntegerField()
+  last_match_date = models.DateField()
+  last_match_id = models.IntegerField()
   level = models.IntegerField()
 
 class LeagueMasterFixtures(models.Model):
@@ -36,3 +41,4 @@ class LeagueMasterFixtures(models.Model):
   team2_score = models.IntegerField(blank=True, null=True)
   team1_points = models.IntegerField(blank=True, null=True)
   team2_points = models.IntegerField(blank=True, null=True)
+  url = models.CharField(max_length=128, blank=True, null=True)

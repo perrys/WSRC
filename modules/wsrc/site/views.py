@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 # This file is part of WSRC.
 #
 # WSRC is free software: you can redistribute it and/or modify
@@ -126,6 +127,7 @@ def index_view(request):
             "home_or_away": f.home_or_away,
             "scores": None,
             "points": None,
+            "url": f.url,
             }
         if f.team1_score is not None:
             d["scores"] = "%d&#8209;%d" % (f.team1_score, f.team2_score)
@@ -197,8 +199,16 @@ class UserForm(ModelForm):
         fields = ["first_name", "last_name", "username",  "email"]
 
 class PlayerForm(ModelForm):
+    def __init__(self, *args, **kwargs):
+        super(PlayerForm, self).__init__(*args, **kwargs)
+        self.fields["squashlevels_id"].label = "SquashLevels ID"
+        instance = getattr(self, 'instance', None)
+        if instance and instance.pk:
+          self.fields['squashlevels_id'].widget.attrs['readonly'] = True
+          self.fields['squashlevels_id'].widget.attrs['disabled'] = "disabled"
     class Meta:
         model = Player
+        fields = ["cell_phone", "other_phone", "short_name",  "squashlevels_id"]
         exclude = ('user',)
 
 

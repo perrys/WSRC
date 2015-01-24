@@ -15,6 +15,7 @@ class Player(models.Model):
   cell_phone  = models.CharField(_('mobile phone'), max_length=30, validators = [phone_validator], blank=True)
   other_phone = models.CharField(_('other phone'), max_length=30, validators = [phone_validator], blank=True)
   short_name  = models.CharField(_('short name'), max_length=32, blank=True)
+  squashlevels_id  = models.IntegerField(db_index=True, blank=True, null=True)
 
 #  def get_absolute_url(self):
 #      return "/users/%s/" % urlquote(self.user.email)

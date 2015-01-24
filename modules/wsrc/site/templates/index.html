@@ -62,7 +62,7 @@ window.WSRC_today_bookings = [
           <table>
 {% for row in leaguemaster %}
 <tr class="{% cycle 'odd' 'even' %} {% if forloop.counter0 < leaguemaster_recent_min_idx or forloop.counter0 > leaguemaster_recent_max_idx %}toggled{% endif %}">
-<td>{{ row.date|date:"d/m" }} ({{ row.home_or_away }})</td>
+<td>{% if row.url %}<a href='http://county.leaguemaster.co.uk/{{ row.url }}'>{% endif %}{{ row.date|date:"d M" }} ({{ row.home_or_away }}){% if row.url %}</a>{% endif %}</td>
 <td>{{ row.team }}</td>
 <td>{{ row.opponents }}</td>
 <td class="{{ row.class }}{% if not row.points %} empty{% endif %}">{% if row.points %}{{ row.scores|safe }} ({{ row.points|safe }}){% endif %}</td></tr>
@@ -79,7 +79,7 @@ window.WSRC_today_bookings = [
         <div class="restricted-with-footnote">
           <table>
 {% for row in squashlevels %}
-<tr class="{% cycle 'odd' 'even' %} {% if forloop.counter > 10 %}toggled{% endif %}"><td>{{ row.name }}</td><td>{{ row.level }}</td></tr>
+<tr class="{% cycle 'odd' 'even' %} {% if forloop.counter > 10 %}toggled{% endif %}"><td>{% if row.player.squashlevels_id %}<a href='http://www.squashlevels.com/player_detail.php?player={{ row.player.squashlevels_id }}&show=last12m'>{{ row.name }}</a>{% else %}{{ row.name }}{% endif %}</td><td>{{ row.last_match_date|date:'d M Y' }}</td><td>{{ row.level }}</td></tr>
 {% endfor %}
           </table>
         </div>
