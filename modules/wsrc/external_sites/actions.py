@@ -3,7 +3,7 @@
 from jinja2 import Environment, PackageLoader
 import re
 
-import wsrc.utils.email
+import wsrc.utils.email_utils
 import wsrc.utils.text
 
 class Notifier:
