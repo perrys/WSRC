@@ -13,6 +13,10 @@ div.ui-controlgroup-label {
 .clear-all {
     clear: both;
 }
+.error-handler-message {
+    margin: 1em;
+    font-size: 1.1em;
+}
 
 /* add support for individual corner radii */
 .ui-corner-all,

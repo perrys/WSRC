@@ -1,0 +1,8 @@
+{% extends "error_handler.html" %}
+
+{% block titleprefix %}404 Not Found - {% endblock %}
+
+{% block error_title %}404 - Not Found{% endblock %}
+
+{% block error_message %}The requested resource "{{ request_path }}" was not found on this server.{% endblock %}
+
