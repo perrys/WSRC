@@ -86,3 +86,6 @@ TEMPLATE_DIRS = (
 )
 
 INTERNAL_IPS = "127.0.0.1"
+
+DEFAULT_FROM_EMAIL = "webmaster@wokingsquashclub.org"
+SERVER_EMAIL       = "admin@wokingsquashclub.org"
