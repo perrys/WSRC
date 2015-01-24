@@ -8,7 +8,6 @@ import sys
 from wsrc.utils import sync_utils
 
 import wsrc.site.settings.settings as settings  
-import wsrc.external_sites.main
 
 def make_username(csv_record):
   return "_".join([csv_record["firstname"].lower(), csv_record["surname"].lower()])
@@ -116,13 +115,15 @@ if __name__ == "__main__":
   if hasattr(django, "setup"):
     django.setup()
 
+  import wsrc.external_sites.main
+
   command = sys.argv[1]
   args = sys.argv[2:]
   if command in ("sync", "sync-bookings"):
     wsrc.external_sites.main.cmdline_sync_bookings()
 
   elif command in ("sync-squashlevels"):
-    wsrc.external_sites.main.cmdline_sync_squashlevels()
+    wsrc.external_sites.main.cmdline_sync_squashlevels(*args)
 
   elif command in ("sync-leaguemaster"):
     wsrc.external_sites.main.cmdline_sync_leaguemaster(*args)
