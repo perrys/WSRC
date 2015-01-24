@@ -7,8 +7,6 @@ from django.contrib.auth import views as auth_views
 from django.shortcuts import redirect
 
 import wsrc.site.competitions.data_urls
-import wsrc.site.competitions.view_urls
-import wsrc.site.competitions.legacy_urls
 
 import wsrc.site.views
 import wsrc.site.competitions.views
