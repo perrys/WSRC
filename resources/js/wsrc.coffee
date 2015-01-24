@@ -8,6 +8,8 @@ window.WSRC =
 
   days_of_week: ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]
 
+  months_of_year: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+
   set_on_and_off: (onid, offid) ->
     jQuery("##{ onid }").show()
     jQuery("##{ offid }").hide()
@@ -612,8 +614,8 @@ window.WSRC =
       odd = true
       for e in data.entries[0..7]
         dt = e.published
-        dt = dt.substring(8,10) + "/" + dt.substring(5,7)
-        row = $("<tr><td>#{ dt }</td><td>#{ e.title }</td><td><a href='" + e.alternate + "'>read</a></td></tr>")
+        dt = dt.substring(8,10) + "&nbsp;" + this.months_of_year[parseInt(dt.substring(5,7))-1]
+        row = $("<tr><td><a href='#{ e.alternate }'>#{ dt }</td><td>#{ e.title }</td></tr>")
         if odd
           row.addClass("odd")
           odd = false
