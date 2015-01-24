@@ -14,7 +14,7 @@ div.ui-controlgroup-label {
     clear: both;
 }
 .error-handler-message {
-    margin: 1em;
+    margin: 3em 1em 3em 1em;
     font-size: 1.1em;
 }
 
