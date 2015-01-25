@@ -44,6 +44,7 @@ setup(name='WSRC',
                     ('www/css', glob.glob(os.path.join('resources', 'css', 'all_*.css'))),
                     ('www/js', glob.glob(os.path.join('resources', 'js', 'all*.js'))),
                     ('www/images', get_images()),
+                    ('www/css/images', glob.glob(os.path.join('resources', 'css', 'images', '*.gif'))),
                     ('www/css/images/icons-png', glob.glob(os.path.join('resources', 'images', 'icons-png', '*.png'))),
                     ]
      )
