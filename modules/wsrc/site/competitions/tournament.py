@@ -15,7 +15,7 @@
 
 from wsrc.utils.html_table import Table, Cell, SpanningCell
 
-import xml.etree.ElementTree as etree
+import lxml.etree as etree
 
 NON_BRK_SPACE     = u'\xa0'
 

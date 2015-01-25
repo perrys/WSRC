@@ -1,4 +1,4 @@
-import xml.etree.ElementTree as etree
+import lxml.etree as etree
 
 class NullCell:
   "Represents a table cell which has not been initialized"
