@@ -59,9 +59,9 @@ window.WSRC =
     return "#{ dow } #{ dom }#{ suffix }"
 
   add_empty_slots: (bookings) ->
-    COURT_SLOT_LENGTH = 45 * 60
+    COURT_SLOT_LENGTH = 45
     abs_minutes = (tstr) ->
-      60 * parseInt(booking.start_time.substr(11,13)) + parseInt(booking.start_time.substr(14,16))
+      60 * parseInt(tstr.substr(11,13)) + parseInt(tstr.substr(14,16))
     doubleint = (i) -> if i < 10 then "0" + i else "" + i
     totimestr = (i) ->
       hours = Math.floor(i / 60)
@@ -74,13 +74,13 @@ window.WSRC =
     for court,booking_list of court_to_bookings_map
       last_end_mins = null
       slot_available = (b) ->
-        end_mins = abs_minutes(b.end_time)
-        return ((end_mins-last_end_mins) >= COURT_SLOT_LENGTH)
+        start_mins = abs_minutes(b.start_time)
+        return ((start_mins-last_end_mins) >= COURT_SLOT_LENGTH)
       newlist = []
       idx = 0
       while idx < booking_list.length
         if last_end_mins and slot_available(booking_list[idx])
-          prefix = booking_list[idx].substr(0,11)
+          prefix = booking_list[idx].start_time.substr(0,11)
           end_mins = last_end_mins + COURT_SLOT_LENGTH
           newlist.push
             start_time:  prefix + totimestr last_end_mins
@@ -628,6 +628,7 @@ window.WSRC =
     table = $("#evening_bookings tbody").show()
     if data
       table.find("tr").remove()
+      day_offset = if day_offset then parseInt(day_offset) else 0
       slots = if day_offset >= 0 then this.add_empty_slots(data) else data
       slots.sort (lhs, rhs) ->
         (lhs.start_time > rhs.start_time) - (lhs.start_time < rhs.start_time)
@@ -659,14 +660,14 @@ window.WSRC =
     table = $("#evening_bookings")
     container = table.parents(".jqm-block-content")
     basedate = table.data("basedate")
-    dayoffset = table.data("dayoffset")
+    dayoffset = parseInt(table.data("dayoffset"))
     dayoffset += days
     url = "/data/bookings?date=#{ basedate }&day_offset=#{ dayoffset }"    
     this.ajax_GET(url,
       successCB: (data) =>
         table.data("dayoffset", dayoffset)
         container.find("h4").html(this.get_day_humanized(basedate, dayoffset))
-        this.display_court_bookings(data, dayoffset)
+        this.display_court_bookings(data, dayoffset, WSRC_user_player_id?)
         return true
       failureCB: (xhr, status) =>
         table.find("tbody").hide()
