@@ -67,7 +67,7 @@ class MatchSerializer(serializers.ModelSerializer):
     model = Match
 
 class CompactMatchField(serializers.RelatedField):
-  def to_native(self, match):
+  def to_representation(self, match):
     scores = []
     def getScore(n):
       s1 = getattr(match, "team1_score%d" % n)
@@ -122,8 +122,6 @@ class CompetitionSerializer(serializers.ModelSerializer):
       self.fields.pop("matches")
 
 class CompetitionGroupSerializer(serializers.ModelSerializer):
-  matches = CompactMatchField(source="match_set", many=True, read_only=True)
-  players = PlayerSerializer(many=True)
   competitions_expanded = CompetitionSerializer(source="competition_set", many=True, expand=True)
   class Meta:
     model = CompetitionGroup

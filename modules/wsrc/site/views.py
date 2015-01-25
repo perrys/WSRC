@@ -32,6 +32,7 @@ from django.utils import timezone
 from django.views.decorators.http import require_safe
 
 import rest_framework.generics as rest_generics
+from rest_framework import serializers
 
 import markdown
 import datetime
@@ -237,8 +238,12 @@ def settings_view(request):
     })
 
 
+class BookingSerializer(serializers.ModelSerializer):
+    class Meta:
+      model = BookingSystemEvent
+
 class BookingList(rest_generics.ListAPIView):
-    model = BookingSystemEvent
+    serializer_class = BookingSerializer
     def get_queryset(self):
         queryset = BookingSystemEvent.objects.order_by("start_time")
         date = self.request.QUERY_PARAMS.get('date', None)
