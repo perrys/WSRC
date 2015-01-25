@@ -62,8 +62,8 @@ window.WSRC_today_bookings = [
           <table>
 {% for row in leaguemaster %}
 <tr class="{% cycle 'odd' 'even' %} {% if forloop.counter0 < leaguemaster_recent_min_idx or forloop.counter0 > leaguemaster_recent_max_idx %}toggled{% endif %}">
-<td>{% if row.url %}<a href='http://county.leaguemaster.co.uk/{{ row.url }}'>{% endif %}{{ row.date|date:"d M" }} ({{ row.home_or_away }}){% if row.url %}</a>{% endif %}</td>
-<td>{{ row.team }}</td>
+<td>{% if row.url %}<a href='http://county.leaguemaster.co.uk/{{ row.url }}'>{% endif %}{{ row.date|date:"d M" }}{% if row.url %}</a>{% endif %}</td>
+<td>{{ row.team }} ({{ row.home_or_away }})</td>
 <td>{{ row.opponents }}</td>
 <td class="{{ row.class }}{% if not row.points %} empty{% endif %}">{% if row.points %}{{ row.scores|safe }} ({{ row.points|safe }}){% endif %}</td></tr>
 {% endfor %}
