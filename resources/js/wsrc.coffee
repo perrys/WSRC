@@ -648,10 +648,26 @@ window.WSRC =
         table.append(row)
 
   display_court_bookings: (data, day_offset, addLinks) ->
+    
+    day_offset = if day_offset then parseInt(day_offset) else 0
+      
+    if Math.abs(day_offset) > 7
+      return
+      
+    if day_offset == 7
+      $("#btn_booking_next").hide()
+      $("#btn_booking_previous").show()
+    else if day_offset == -7
+      $("#btn_booking_next").show()
+      $("#btn_booking_previous").hide()
+    else
+      $("#btn_booking_next").show()
+      $("#btn_booking_previous").show()
+    
     table = $("#evening_bookings tbody").show()
+    
     if data
       table.find("tr").remove()
-      day_offset = if day_offset then parseInt(day_offset) else 0
       slots = if day_offset >= 0 then this.add_empty_slots(data) else data
       slots.sort (lhs, rhs) ->
         (lhs.start_time > rhs.start_time) - (lhs.start_time < rhs.start_time)
@@ -678,6 +694,7 @@ window.WSRC =
         row.addClass(if odd then "odd" else "even")
         odd = not odd
         table.append(row)
+    return null
 
   booking_advance: (days) ->
     table = $("#evening_bookings")
@@ -874,6 +891,7 @@ window.WSRC =
       );
       this.bxslider_inited = true
     this.display_court_bookings(WSRC_today_bookings, 0, WSRC_user_player_id?)
+    return true
 
   onPageContainerShow: (evt, ui) ->
     newpage = ui.toPage
