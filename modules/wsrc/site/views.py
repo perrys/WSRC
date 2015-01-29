@@ -16,6 +16,7 @@
 
 from wsrc.site.models import PageContent, SquashLevels, LeagueMasterFixtures, BookingSystemEvent
 from wsrc.site.usermodel.models import Player
+import wsrc.site.settings.settings as settings
 from wsrc.utils import timezones
 
 from django.contrib.auth.forms import PasswordChangeForm
@@ -39,10 +40,16 @@ import datetime
 import urllib
 import httplib
 import httplib2
+import logging
 
-FACEBOOK_URL="https://www.facebook.com/feeds/page.php"
+FACEBOOK_GRAPH_URL              = "https://graph.facebook.com/"
+FACEBOOK_GRAPH_ACCESS_TOKEN_URL = FACEBOOK_GRAPH_URL + "oauth/access_token"
+
 WSRC_FACEBOOK_PAGE_ID = 576441019131008
 COURT_SLOT_LENGTH = datetime.timedelta(minutes=45)
+
+LOGGER = logging.getLogger(__name__)
+LOGGER.setLevel(logging.WARNING)
 
 def get_pagecontent_ctx(page):
     data = get_object_or_404(PageContent, page__iexact=page)
@@ -158,23 +165,49 @@ def index_view(request):
     
 @require_safe
 def facebook_view(request):
-    params = {
-        "format": "json",
-        "id": WSRC_FACEBOOK_PAGE_ID,
-        }
-    url = FACEBOOK_URL +  "?" + urllib.urlencode(params)
-    h = httplib2.Http()
+
+    def FBException(Exception):
+        def __init__(self, message, errortype, statuscode):
+            super(FBException, self).__init__(message)
+            self.statuscode = statuscode
+            self.errortype = type
+
+    def fb_get(url):
+      h = httplib2.Http()
+      (resp_headers, content) = h.request(url, "GET")
+      if resp_headers.status != httplib.OK:
+          LOGGER.error("unable to fetch FB data, status = " + str(resp_headers.status) + ", response: " +  content)
+          if len(content) > 0:
+              try:
+                  response = json.loads(content)
+                  error = response.get("error")
+                  if error is not None:
+                      raise FBException(error["message"], error["errortype"], error["code"])
+              except:
+                  pass
+          raise FBException(content, resp_headers.reason, resp_headers.status)
+      return content
+    
+    def refresh_auth_token():
+      LOGGER.info("Refreshing Facebook access token...")
+      params = {
+          "grant_type":    "client_credentials",
+          "client_id" :    settings.FB_APP_ID,
+          "client_secret": settings.FB_APP_SECRET,
+          }
+      url = FACEBOOK_GRAPH_ACCESS_TOKEN_URL +  "?" + urllib.urlencode(params)
+      return fb_get(url)
+
+    token = refresh_auth_token()
+
+    url = FACEBOOK_GRAPH_URL + str(WSRC_FACEBOOK_PAGE_ID) + "/feed?" + token
     try:
-        (resp_headers, content) = h.request(url, "GET")
-        if resp_headers.status != httplib.OK:
-            return HttpResponse(content="ERROR: Unable to fetch Facebook page - status %(status)s, reason: %(reason)s" % resp_headers, 
-                                content_type="application/json", 
-                                status=httplib.SERVICE_UNAVAILABLE)            
-    except Exception, e:
-        return HttpResponse(content="ERROR: Unable to fetch Facebook page - " + e.message, 
+        return HttpResponse(fb_get(url), content_type="application/json")
+    except FBException, e:
+        msg = "ERROR: Unable to fetch Facebook page: %s [%d] - %s" % [e.reason, e.statuscode, e.message]
+        return HttpResponse(content=msg,
                             content_type="text/plain", 
                             status=httplib.SERVICE_UNAVAILABLE)
-    return HttpResponse(content, content_type="application/json")
     
 def change_password_view(request):
     if not request.user.is_authenticated():

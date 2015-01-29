@@ -632,13 +632,19 @@ window.WSRC =
 
   refresh_facebook: (data) ->
     table = $("#facebook_news tbody").show()
-    if data? and data.entries.length > 0
+    if data? and data.data.length > 0
+      trim_words = (text) ->
+        return text.split(/\s+/).slice(0,10).join(" ") + "&hellip;"
       table.find("tr").remove()
       odd = true
-      for e in data.entries[0..7]
-        dt = e.published
+      for e in data.data[0..10]
+        dt = e.updated_time
         dt = dt.substring(8,10) + "&nbsp;" + this.months_of_year[parseInt(dt.substring(5,7))-1]
-        row = $("<tr><td><a href='#{ e.alternate }'>#{ dt }</td><td>#{ e.title }</td></tr>")
+        title = if e.message? then e.message else e.description
+        unless title
+          continue
+        title = trim_words(title)
+        row = $("<tr><td><a href='#{ e.link }'>#{ dt }</td><td>#{ title }</td></tr>")
         if odd
           row.addClass("odd")
           odd = false
