@@ -639,12 +639,13 @@ window.WSRC =
       odd = true
       for e in data.data[0..10]
         dt = e.updated_time
-        dt = dt.substring(8,10) + "&nbsp;" + this.months_of_year[parseInt(dt.substring(5,7))-1]
+        dt = dt.substring(8,10) + " " + this.months_of_year[parseInt(dt.substring(5,7))-1]
         title = if e.message? then e.message else e.description
         unless title
           continue
         title = trim_words(title)
-        row = $("<tr><td><a href='#{ e.link }'>#{ dt }</td><td>#{ title }</td></tr>")
+        link = if e.link? then e.link else "http://www.facebook.com/#{ e.id }" 
+        row = $("<tr><td class='nobreak'><a href='#{ link }'>#{ dt }</td><td>#{ title }</td></tr>")
         if odd
           row.addClass("odd")
           odd = false
