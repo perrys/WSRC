@@ -63,36 +63,6 @@ def get_pagecontent_ctx(page):
         }
     return result
 
-def add_empty_slots(bookings):
-    court_to_bookings_map = {1: [], 2: [], 3: []}
-    result = []
-    def slot_available(last_end, start):
-        return last_end is not None and (start-last_end) >= COURT_SLOT_LENGTH
-    for b in bookings:
-        court_to_bookings_map[b.court].append(b)
-    for court,booking_list in court_to_bookings_map.iteritems():
-        newlist = []
-        last_end_time = None
-        idx = 0
-        while idx < len(booking_list):
-            if slot_available(last_end_time, booking_list[idx].start_time):
-                end_time = last_end_time + COURT_SLOT_LENGTH
-                newlist.append(BookingSystemEvent(
-                        start_time = last_end_time,
-                        end_time = end_time,
-                        court = court,
-                        description = "_"))
-                last_end_time = end_time
-            else:
-                booking = booking_list[idx]
-                newlist.append(booking)
-                last_end_time = booking.end_time
-                idx += 1
-        result.extend(newlist)
-    result.sort(key=lambda x: x.start_time)
-    return result
-            
-            
 @require_safe
 def generic_view(request, page):
     ctx = get_pagecontent_ctx(page)
@@ -154,10 +124,9 @@ def index_view(request):
 
     now = timezone.now()
     midnight_today = now - datetime.timedelta(hours=now.hour, minutes=now.minute, seconds=now.second, microseconds = now.microsecond)
-    cutoff_today = midnight_today + datetime.timedelta(hours=17)
+    cutoff_today = midnight_today + datetime.timedelta(hours=7)
     midnight_tomorrow = midnight_today + datetime.timedelta(days=1)
     bookings = BookingSystemEvent.objects.filter(start_time__gte=cutoff_today, start_time__lt=midnight_tomorrow).order_by('start_time')
-    bookings = add_empty_slots(bookings)
     ctx["bookings"] = bookings
     ctx["today"] = timezones.as_iso_date(now)
     return TemplateResponse(request, 'index.html', ctx)
