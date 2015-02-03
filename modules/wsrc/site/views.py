@@ -48,6 +48,23 @@ FACEBOOK_GRAPH_ACCESS_TOKEN_URL = FACEBOOK_GRAPH_URL + "oauth/access_token"
 WSRC_FACEBOOK_PAGE_ID = 576441019131008
 COURT_SLOT_LENGTH = datetime.timedelta(minutes=45)
 
+HOME_TEAM_SHORT_NAMES = {
+    u"Woking 1": "1sts",
+    u"Woking 2": "2nds",
+    u"Woking 3": "3rds",
+    u"Woking 4": "4ths",
+    }
+        
+AWAY_TEAM_SHORT_NAMES = {
+    "Racquets": "R.",
+    "Nuffield": "Nuf'ld",
+    "Cannons": "Can's",
+    "David Lloyd": "D. Lloyd",
+    "Virgin Active": "V. Active",
+    "Tennis & Squash": "T. & S.",
+    "Surrey Sports Park": "Surrey S. P.",
+    }        
+
 LOGGER = logging.getLogger(__name__)
 LOGGER.setLevel(logging.WARNING)
 
@@ -70,21 +87,6 @@ def generic_view(request, page):
 
 @require_safe
 def index_view(request):
-    TEAMS = {
-        u"Woking 1": "1sts",
-        u"Woking 2": "2nds",
-        u"Woking 3": "3rds",
-        u"Woking 4": "4ths",
-        }        
-    REPLACEMENTS = {
-        "Racquets": "R.",
-        "Nuffield": "Nuf'ld",
-        "Cannons": "Can's",
-        "David Lloyd": "D. Lloyd",
-        "Virgin Active": "V. Active",
-        "Tennis & Squash": "T. & S.",
-        "Surrey Sports Park": "Surrey S. P.",
-        }        
 
     ctx = get_pagecontent_ctx('home')
     levels = SquashLevels.objects.all().order_by('-level')
@@ -96,11 +98,11 @@ def index_view(request):
     found_empty = False
     for idx,f in enumerate(leaguemasterfixtures):
         opponents = f.opponents
-        for k,v in REPLACEMENTS.iteritems():
+        for k,v in AWAY_TEAM_SHORT_NAMES.iteritems():
             opponents = opponents.replace(k,v)
         d = {
             "date": f.date,
-            "team": TEAMS[f.team],
+            "team": HOME_TEAM_SHORT_NAMES[f.team],
             "opponents": opponents,
             "home_or_away": f.home_or_away,
             "scores": None,
