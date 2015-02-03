@@ -7,23 +7,23 @@ prerequisites:
 
 Pip:
 
-```shell
+```sh
 $ apt-get install python-pip
 ```
 
 MySQL: either:
 
-```shell
+```sh
 $ apt-get install python-mysqldb
 ```
 
 or:
 
-```shell
+```sh
 $ pip install mysqlclient
 ```
 
-```shell
+```sh
 $ pip install Django==1.6
 $ pip install djangorestframework
 $ pip install django-coverage 
