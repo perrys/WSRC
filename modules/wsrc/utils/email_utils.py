@@ -1,87 +1,143 @@
 #!/opt/bin/python
 
-import smtplib
-import unittest
+import logging
+import markdown
+import os
+import time
 import traceback
+import unittest
 
-TEST_MODE = False
+from django.core.mail import EmailMultiAlternatives
 
-def send(headers, body, config):
+LOGGER = logging.getLogger(__name__)
+LOGGER.setLevel(logging.INFO)
 
-  if "From" not in headers:
-    headers["From"] = config.username
+def send_email(subject, text_body, html_body, from_address, to_list, bcc_list=None, reply_to_address=None):
+  headers = {}
+  if reply_to_address is not None:
+    headers['Reply-To'] = reply_to_address
+  msg = EmailMultiAlternatives(subject, text_body, from_address,
+                               to_list, bcc_list, headers)
+  msg.attach_alternative(html_body, "text/html")
+  msg.send(fail_silently=False)
 
-  if "To" not in headers:
-    raise Exception("cannot send email - no To: address supplied")
+def send_markdown_email(subject, markdown_body, from_address, to_list, bcc_list=None, reply_to_address=None):
+  html_content = markdown.markdown(markdown_body)
+  send_email(subject, markdown_body, html_content, from_address, to_list, bcc_list, reply_to_address)
 
-  message = "\n".join(["%(k)s: %(v)s" % locals() for k,v in headers.iteritems()])
-  server = smtplib.SMTP(config.server, config.port)
+class BatchEmailFailure(Exception):
 
-  if config.isSecure:
-    server.ehlo()
-    server.starttls()
-    server.ehlo()
+  def __init__(self, message, success_list, reason=None):
+    super.__init__(self, EmailFailure, message)
+    self.success_list = success_list
+    self.reason = reason
 
-  (retcode, response) = server.login(config.username, config.password)
-  if retcode != 235:
-    raise Exception("unable to log in to SMTP server, responsecode: %(retcode)d, message:\n\n%(response)s\n" % locals())
-
-  message += "\n\n"
-  message += body
-
-  return server.sendmail(headers["From"], headers["To"], message)
-
-def send_mixed_mail(sender, recipient, subject, textMsg, htmlMsg, config):
-  boundary = "------=_NextPart_DC7E1BB5_1105_4DB3_BAE3_2A6208EB099D"
-  headers = {"From": sender, 
-             "To": recipient, 
-             "Reply-to": "tournaments@wokingsquashclub.org", 
-             "Subject": subject,
-             "Content-type": "multipart/alternative; boundary=\"%(boundary)s\"" % locals()}
-
-  msg = """--%(boundary)s
-Content-type: text/plain; charset=iso-8859-1
-""" % locals()
-  msg += textMsg
-  msg += """--%(boundary)s
-Content-type: text/html; charset=iso-8859-1
-""" % locals()
-  msg += htmlMsg
-  msg += "--%(boundary)s--" % locals()
-
-  if True:
-#  if recipient == "stewart.c.perry@gmail.com":
-    try:
-      if TEST_MODE:
-        print headers
-        print msg
+def select_members(member_types, honour_email_preferences=True):
+  from wsrc.site.usermodel.models import Player
+  from django.db.models import Q
+  queryset = Player.objects.filter(user__is_active=True)
+  queryset = queryset.filter(user__email__isnull=False)
+  queryset = queryset.filter(user__email__contains='@')
+  if honour_email_preferences:
+    queryset = queryset.exclude(prefs_receive_email=False)
+  clauses = None
+  if member_types is not None:
+    for t in member_types:
+      clause = Q(membership_type=t)
+      if clauses is None:
+        clauses = clause
       else:
-        send(headers, msg, config)
-        print "*successs* " + recipient 
+        clauses = clauses | clause
+  if clauses is not None:
+    queryset = queryset.filter(clauses)
+  return [m for m in queryset]
+
+def bulk_email_membership(subject, markdown_body, from_address, members, batch_size=50):
+  success_list = []
+  for i in range(0, len(members), batch_size):
+    batch = members[i:i+batch_size]
+    emails = [member.user.email for member in batch]
+    try:
+      LOGGER.info("Sending batch of {n} email(s)".format(n=len(emails)))
+      send_markdown_email(subject, markdown_body, from_address, ["members@wokingsquashclub.org"], emails, None)
+      success_list.extend(batch)
+      time.sleep(2) # some SMTP servers have anti-spammer lock-outs if you send mails too quickly
     except Exception, e:
-      print e
-      traceback.print_exc()
-      print headers
-      print msg
-      raise e
-
+      raise BatchEmailFailure("Error during batch email", success_list, e)
+  return success_list
+  
 class tester(unittest.TestCase):
-  def testEmailer(self):
 
-    import jsonutils
-    import os.path
-    config = open(os.path.expanduser("../../etc/smtp.json"))
-    config = jsonutils.deserializeFromFile(config)["gmail"]
-    toAddress = "stewart.c.perry@gmail.com"
-    headers = {"To": toAddress,
-               "From": "foobar@dbsquash.org",
-               "Subject": "testing testing",
-               "MIME-Version": "1.0"}
-    body = "test message"
-    print send(headers, body, config)
+  # a number of these tests rely on certain characteristics of the
+  # data in the database. It would perhaps be better to setup a test
+  # DB as part of the suite, but it is also reasuring to see these
+  # pass with live data
 
+  def setUp(self):
+    from wsrc.site.usermodel.models import Player
+    self.all_players = Player.objects.all()
+    self.assertGreater(len(self.all_players), 0)
+
+    self.active_players_with_email = [p for p in self.all_players if (p.user.is_active and p.user.email is not None and len(p.user.email) > 0)]
+    self.assertGreater(len(self.active_players_with_email), 0)
+    self.assertLess(len(self.active_players_with_email), len(self.all_players))
+    
+  def test__given_live_database__when_filtering_membertypes__ensure_appropriate_players_returned(self):
+    membertypes = ["full", "junior"]
+    set1 = select_members(membertypes)
+    example_full_member = None
+    for p in set1:
+      self.assertIn(p.membership_type, membertypes)
+      if example_full_member is None:
+        example_full_member = p
+    self.assertIsNotNone(example_full_member)
+    membertypes = ["junior"]
+    set2 = select_members(membertypes)
+    self.assertGreater(len(set1), len(set2))
+    for p in set2:
+      self.assertIn(p.membership_type, membertypes)
+      self.assertNotEqual(p.id, example_full_member.id)
+
+  def test__given_live_database__when_selecting_all__ensure_all_players_with_email_returned(self):
+    def test_with_list(l):
+      test_list = select_members(l, honour_email_preferences=False)
+      self.assertEqual(len(self.active_players_with_email), len(test_list))
+    test_with_list([])
+    test_with_list(None)
+
+  def test__given_live_database__when_selecting_all__ensure_inactive_players_not_returned(self):
+    inactive_player_ids = [p.id for p in self.all_players if (p.user.is_active == False)]
+    self.assertGreater(len(inactive_player_ids), 0)
+    self.assertLess(len(inactive_player_ids), len(self.all_players))
+    relevant_players = select_members(None, honour_email_preferences=False)
+    for p in relevant_players:
+      self.assertNotIn(p.id, inactive_player_ids)
+
+  def test__given_live_database__when_selecting_all__ensure_no_players_with_email_optout_returned(self):
+    players_with_email_optout = [p for p in self.all_players if (p.user.email is not None and len(p.user.email) > 0)]
+    self.assertGreater(len(players_with_email_optout), 0)
+    self.assertLess(len(players_with_email_optout), len(self.all_players))
+    email_permitted_players = select_members(None, honour_email_preferences=True) 
+    self.assertGreater(len(email_permitted_players), 0)
+    self.assertLess(len(email_permitted_players), len(self.active_players_with_email))
+    for p in email_permitted_players:
+      self.assertTrue((p.prefs_receive_email is None) or p.prefs_receive_email == True)
+
+  @unittest.skip("requires network and smtp server")
+  def test_emailer(self):
+    test_player = None
+    for p in self.active_players_with_email:
+      if p.user.first_name == "Stewart" and p.user.last_name == "Perry":
+        test_player = p
+    self.assertIsNotNone(test_player)
+    body = "Test *message*"
+    success_list = bulk_email_membership("testing testing", body, "foobar@dbsquash.org", [test_player])
+    self.assertEqual(1, len(success_list))
+    self.assertIn(test_player, success_list)
 
 if __name__ == "__main__":
+  
+  os.environ.setdefault("DJANGO_SETTINGS_MODULE", "wsrc.site.settings.settings")
   suite = unittest.TestLoader().loadTestsFromTestCase(tester)
   unittest.TextTestRunner(verbosity=2).run(suite)
   exit(0)
