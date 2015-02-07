@@ -6,11 +6,13 @@ resources/js/restful.js
 resources/js/*.min.js
 resources/js/all*.js
 resources/js/_*.js
-resources/js/wsrc.js
+resources/js/admin.js
+resources/js/wsrc*.js
 
 resources/css/*.min.css
 resources/css/all*.css
 resources/css/_*.css
+resources/css/wsrc_admin.css
 
 resources/images/sources
 resources/images/icons-png
