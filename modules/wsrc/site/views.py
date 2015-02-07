@@ -82,6 +82,7 @@ def get_pagecontent_ctx(page):
 
 @require_safe
 def generic_view(request, page):
+    "Informational views rendered directly from markdown content stored in the DB"
     ctx = get_pagecontent_ctx(page)
     return TemplateResponse(request, 'generic_page.html', ctx)
 
@@ -136,6 +137,7 @@ def index_view(request):
     
 @require_safe
 def facebook_view(request):
+    "Proxy view for the FB graph data from the WSRC page feed"
 
     def FBException(Exception):
         def __init__(self, message, errortype, statuscode):
@@ -159,7 +161,7 @@ def facebook_view(request):
           raise FBException(content, resp_headers.reason, resp_headers.status)
       return content
     
-    def refresh_auth_token():
+    def obtain_auth_token():
       LOGGER.info("Refreshing Facebook access token...")
       params = {
           "grant_type":    "client_credentials",
@@ -169,10 +171,11 @@ def facebook_view(request):
       url = FACEBOOK_GRAPH_ACCESS_TOKEN_URL +  "?" + urllib.urlencode(params)
       return fb_get(url)
 
-    token = refresh_auth_token()
-
+    # First get an access token (using a pre-configured app ID) then use that to get the page feed
+    token = obtain_auth_token()
     url = FACEBOOK_GRAPH_URL + str(WSRC_FACEBOOK_PAGE_ID) + "/feed?" + token
     try:
+        # the response is JSON so pass it straight through
         return HttpResponse(fb_get(url), content_type="application/json")
     except FBException, e:
         msg = "ERROR: Unable to fetch Facebook page: %s [%d] - %s" % [e.reason, e.statuscode, e.message]
