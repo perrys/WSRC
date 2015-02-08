@@ -20,6 +20,9 @@ install: build
 bdist: build
 	python ./setup.py bdist
 
+bdist_windows: build
+	python ./setup.py bdist_wininst
+
 
 
 
