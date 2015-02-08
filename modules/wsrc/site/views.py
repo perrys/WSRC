@@ -222,7 +222,7 @@ class PlayerForm(ModelForm):
 
 def settings_view(request):
     if not request.user.is_authenticated():
-        return redirect(reverse_url(django.contrib.auth.views.login) + '?next=%s' % request.path)
+        return redirect(reverse_url("django.contrib.auth.views.login") + '?next=%s' % request.path)
 
     success = False
     if request.method == 'POST': 
