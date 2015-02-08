@@ -38,12 +38,12 @@ class Player(models.Model):
                                          help_text="ID on the squashlevels website - it is not normally necessary to change this",
                                          verbose_name="SquashLevels ID"
                                          )
-  prefs_receive_email  = models.BooleanField(default=True,
-                                             null=True,
-                                             blank=True,
-                                             help_text="Uncheck if you do *not* want to receive emails from the club&emdash; match reminders, social events etc.",
-                                             verbose_name="Receive Email"
-                                             )
+  prefs_receive_email  = models.NullBooleanField(default=True,
+                                                 null=True,
+                                                 blank=True,
+                                                 help_text="Uncheck if you do *not* want to receive emails from the club&emdash; match reminders, social events etc.",
+                                                 verbose_name="Receive Email"
+                                                 )
 
 #  def get_absolute_url(self):
 #      return "/users/%s/" % urlquote(self.user.email)
