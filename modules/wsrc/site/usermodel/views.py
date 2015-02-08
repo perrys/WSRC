@@ -2,8 +2,14 @@ from django.views.generic.list import ListView
 
 from wsrc.site.usermodel.models import Player
 from wsrc.site.competitions.views import get_competition_lists
+from django.core.exceptions import PermissionDenied
 
 class MemberListView(ListView):
+
+    def dispatch(self, request, *args, **kwargs):
+        if not request.user.is_authenticated():
+            raise PermissionDenied()
+        return super(MemberListView, self).dispatch(request, *args, **kwargs)
 
     def get_queryset(self):
       return Player.objects.filter(user__is_active=True).order_by('user__first_name', 'user__last_name')
