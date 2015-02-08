@@ -19,9 +19,9 @@ class ModelRecordWrapper:
         item = item()
     return item
 
-  @staticmethod
-  def wrap_queryset(queryset):
-    return [ModelRecordWrapper(record) for record in queryset.all()]
+  @classmethod
+  def wrap_queryset(cls, queryset):
+    return [cls(record) for record in queryset.all()]
 
 class FieldMappingWrapper:
   """Allow fields in a record to be accessed by alternative names"""
@@ -34,8 +34,8 @@ class FieldMappingWrapper:
       name = self.field_mapping[name]
     return self.target[name]
 
-  @staticmethod
-  def wrap_records(records, **field_mapping):
+  @classmethod
+  def wrap_records(cls, records, **field_mapping):
     return [FieldMappingWrapper(r, **field_mapping) for r in records]
   
 class FieldJoiningWrapper:
@@ -51,8 +51,8 @@ class FieldJoiningWrapper:
       return self.separator.join([self.target[f] for f in self.join_fields])
     return self.target[name]
 
-  @staticmethod
-  def wrap_records(records, field_name, join_fields, separator):
+  @classmethod
+  def wrap_records(cls, records, field_name, join_fields, separator):
     return [FieldJoiningWrapper(r, field_name, join_fields, separator) for r in records]
 
 class BooleanFieldWrapper:
@@ -64,12 +64,65 @@ class BooleanFieldWrapper:
   def __getitem__(self, name):
     val = self.target[name]
     if name in self.fields:
-      return val is not None and val.lower()[0] == "y"
+      if val is None or len(val) == 0:
+        return None
+      return val.lower()[0] == "y"
     return val
 
-  @staticmethod
-  def wrap_records(records, *fields):
-    return [BooleanFieldWrapper(r, *fields) for r in records]
+  @classmethod
+  def wrap_records(cls, records, *fields):
+    return [cls(r, *fields) for r in records]
+  
+class ValueTranslatingFieldWrapper:
+  def __init__(self, target, *fields, **translations):
+    self.target = target
+    self.fields = fields
+    self.translations = translations
+
+  def __getitem__(self, name):
+    val = self.target[name]
+    if name in self.fields:
+      for k,v in self.translations.iteritems():
+        val = val.replace(k,v)
+    return val
+
+  @classmethod
+  def wrap_records(cls, records, *fields, **kwargs):
+    return [cls(r, *fields, **kwargs) for r in records]
+  
+class IntegerFieldWrapper:
+  """Return fields names with spaces when asked with underscores"""
+  def __init__(self, target, *fields):
+    self.target = target
+    self.fields = fields
+
+  def __getitem__(self, name):
+    val = self.target[name]
+    if name in self.fields:
+      if len(val) > 0:
+        return int(val)
+      return None
+    return val
+
+  @classmethod
+  def wrap_records(cls, records, *fields):
+    return [cls(r, *fields) for r in records]
+  
+class LowerCaseFieldWrapper:
+  """Return lower-cased values"""
+  def __init__(self, target, *fields):
+    self.target = target
+    self.fields = fields
+
+  def __getitem__(self, name):
+    val = self.target[name]
+    if name in self.fields:
+      return val.lower()
+    return val
+
+  @classmethod
+  def wrap_records(cls, records, *fields):
+    return [cls(r, *fields) for r in records]
   
 def parse_csv(filename):
   import csv

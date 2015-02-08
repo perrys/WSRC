@@ -25,6 +25,9 @@ def persist_member_details(csv_record):
   user.save()
   user.player.cell_phone=csv_record["mobile_phone"]
   user.player.other_phone=csv_record["home_phone"]
+  user.player.prefs_receive_email=csv_record["Data Prot email"]
+  user.player.membership_id=csv_record["cardnumber"]
+  user.player.membership_type=csv_record["category"]
   user.player.save()
 
 def add_former_member(csv_filename, first, last):
@@ -40,6 +43,62 @@ def add_former_member(csv_filename, first, last):
     raise Exception("Expected one record of %(first)s %(last)s, got %(nrecords)d" % locals())
 
   persist_member_details(records[0])
+
+def email_membership(argv):
+  import getopt
+  import wsrc.utils.email_utils as email_utils
+  def usage():
+    import os.path
+    prog = os.path.basename(argv[0])
+    sys.stderr.write("USAGE: %s %s --subject <subject> --messagefile <filename> --from <email_address> [--filter <member_type1>,<member_type2>..] [--test_email] [--noconfirm]\n" % (prog, argv[1]))
+  try:
+    optlist, args = getopt.getopt(argv[2:], "s:m:f:", ["subject=", "messagefile=", "filter=", "from=", "test_email=", "noconfirm"])
+  except getopt.GetoptError as err:
+    sys.stderr.write(str(err) + "\n")
+    usage()
+    sys.exit(2)
+    
+  subject = messagefile = from_address = member_types = test_email = None
+  noconfirm = False
+  for opt,val in optlist:
+    if opt in ["-s", "--subject"]:
+      subject = val
+    elif opt in ["-m", "--messagefile"]:
+      messagefile = val
+    elif opt in ["-f", "--from"]:
+      from_address = val
+    elif opt in ["--filter"]:
+      member_types = val
+    elif opt in ["--test_email"]:
+      test_email = val
+    elif opt in ["--noconfirm"]:
+      noconfirm = True
+    else:
+      assert False, "unhandled option"
+  if subject is None or messagefile is None or from_address is None:
+    usage()
+    sys.exit(2)
+
+  fh = open(os.path.expanduser(messagefile))
+  message = fh.read()
+  fh.close()
+  
+  if test_email is not None:
+    from wsrc.site.usermodel.models import Player
+    member_list = [Player.objects.get(user__email=email) for email in test_email.split(",")]
+  else:
+    if member_types is not None:
+      member_types = member_types.split(",")
+    member_list = email_utils.select_members(member_types)
+    
+  if not noconfirm:
+    sys.stdout.write("About to email %d member(s), are you sure [y/N]: " % len(member_list))
+    line = sys.stdin.readline()
+    if not line.lower().startswith("y"):
+      sys.exit(0)
+  
+  success_list = email_utils.bulk_email_membership(subject, message, from_address, member_list)
+  print "Emailed %d members" % len(success_list)
   
 def sync_membership_records(csv_filename):
 
@@ -56,6 +115,17 @@ def sync_membership_records(csv_filename):
   csv_records = [r for r in csv_records if is_valid_member_predicate(r)]
   csv_records = sync_utils.FieldJoiningWrapper.wrap_records(csv_records, "name", ["firstname", "surname"], " ")
   csv_records = sync_utils.BooleanFieldWrapper.wrap_records(csv_records, "active")
+  csv_records = sync_utils.BooleanFieldWrapper.wrap_records(csv_records, "Data Prot email")
+  csv_records = sync_utils.IntegerFieldWrapper.wrap_records(csv_records, "cardnumber")
+  translations = {
+    "complimenrtary": "compl",
+    "complementary":  "compl",
+    "non-playing":    "non_play",
+    "off-peak":       "off_peak",
+    "young adult":    "y_adult",
+    }
+  csv_records = sync_utils.LowerCaseFieldWrapper.wrap_records(csv_records, "category")
+  csv_records = sync_utils.ValueTranslatingFieldWrapper.wrap_records(csv_records, "category", **translations)
 
   db_records = sync_utils.ModelRecordWrapper.wrap_queryset(Player.objects.all())
   db_records = sync_utils.FieldMappingWrapper.wrap_records(db_records, 
@@ -63,17 +133,32 @@ def sync_membership_records(csv_filename):
                                                            email="user.email", 
                                                            mobile_phone="cell_phone",
                                                            home_phone="other_phone",
+                                                           cardnumber="membership_id",
+                                                           category="membership_type",
                                                            active="user.is_active")
+  for f in db_records:
+    f.field_mapping["Data Prot email"] = "prefs_receive_email"
 
-  comparison_fields = ["email", "mobile_phone", "home_phone", "active"]
-  lhsonly, rhsonly, diffs = sync_utils.report_differences(db_records, csv_records, "name", comparison_fields)
+
+  comparison_fields = ["email", "mobile_phone", "home_phone", "active", "cardnumber", "category", "Data Prot email"]
+  lhsonly, rhsonly, diffs  = sync_utils.report_differences(db_records, csv_records, "name", comparison_fields)
 
   print "\n*** Members only in db:"
   for record in lhsonly:
+    # TODO - invalididate members in DB when set invalid in CSV file
     print record["name"]
 
   print "\n*** Members only in CSV file:"
   for record in rhsonly:
+    existing_player = None
+    try:
+      if record["cardnumber"] is not None:
+        existing_player = Player.objects.get(membership_id=int(record["cardnumber"]))
+        print existing_player
+    except Player.DoesNotExist:
+      pass
+    if existing_player is not None:
+      continue
     print record["name"]
     possibles = Player.objects.filter(user__last_name__iexact=record["surname"])
     if len(possibles) > 0:
@@ -86,7 +171,7 @@ def sync_membership_records(csv_filename):
       matches = User.objects.filter(username=username) 
       if len(matches) == 0:
         persist_member_details(record)
-        
+
   print "\n*** Record differences:"
   for name,v in diffs.iteritems():
     diff, record, csv_record = v
@@ -94,12 +179,16 @@ def sync_membership_records(csv_filename):
     print player, diff
     if settings._WSRC_SETTINGS["sync_updates"]:
       for field,vals in diff.iteritems():
-        if field == "mobile_phone":
-          player.cell_phone = vals[1]
-        elif field == "home_phone":
-          player.other_phone = vals[1]
-        elif field == "email":
-          player.user.email = vals[1]
+        def testAndSetField(csv_field, db_record, db_field):
+          if field == csv_field:
+            setattr(db_record, db_field, vals[1])
+        testAndSetField("mobile_phone",    player, "cell_phone")
+        testAndSetField("home_phone",      player, "other_phone")
+        testAndSetField("email",           player.user, "email")
+        testAndSetField("cardnumber",      player, "membership_id")
+        testAndSetField("category",        player, "membership_type")
+        testAndSetField("Data Prot email", player, "prefs_receive_email")
+        
       player.save()
       player.user.save()
 
@@ -130,6 +219,9 @@ if __name__ == "__main__":
 
   elif command in ("sync-membership"):
     sync_membership_records(args[0])
+
+  elif command in ("email-membership"):
+    email_membership(sys.argv)
 
   elif command in ("add-old-league"):
     wsrc.external_sites.main.cmdline_add_old_league(args[0])
