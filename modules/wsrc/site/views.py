@@ -23,7 +23,7 @@ from django.contrib.auth.forms import PasswordChangeForm
 from django.contrib.auth.models import User
 from django.core.urlresolvers import reverse as reverse_url
 from django.db import transaction
-from django.forms import ModelForm
+from django.forms import ModelForm, TextInput
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
 from django.shortcuts import redirect
@@ -202,6 +202,11 @@ def change_password_view(request):
     return TemplateResponse(request, 'change_password.html', ctx)
 
 class UserForm(ModelForm):
+    def __init__(self, *args, **kwargs):
+        super(UserForm, self).__init__(*args, **kwargs)
+        self.fields["first_name"].label = "First Name"
+        self.fields["last_name"].label = "Last Name"
+        self.fields["email"].label = "Email"
     class Meta:
         model = User
         fields = ["first_name", "last_name", "username",  "email"]
@@ -209,14 +214,19 @@ class UserForm(ModelForm):
 class PlayerForm(ModelForm):
     def __init__(self, *args, **kwargs):
         super(PlayerForm, self).__init__(*args, **kwargs)
-        self.fields["squashlevels_id"].label = "SquashLevels ID"
         instance = getattr(self, 'instance', None)
+        if instance and instance.pk:
+          self.fields['membership_id'].widget.attrs['readonly'] = True
+          self.fields['membership_id'].widget.attrs['disabled'] = "disabled"
+        if instance and instance.pk:
+          self.fields['membership_type'].widget.attrs['readonly'] = True
+          self.fields['membership_type'].widget.attrs['disabled'] = "disabled"
         if instance and instance.pk:
           self.fields['squashlevels_id'].widget.attrs['readonly'] = True
           self.fields['squashlevels_id'].widget.attrs['disabled'] = "disabled"
     class Meta:
         model = Player
-        fields = ["cell_phone", "other_phone", "short_name",  "squashlevels_id"]
+        fields = ["cell_phone", "other_phone", "short_name",  "membership_type",  "membership_id",  "squashlevels_id"]
         exclude = ('user',)
 
 

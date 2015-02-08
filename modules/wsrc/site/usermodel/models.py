@@ -23,27 +23,17 @@ class Player(models.Model):
 
   phone_validator = validators.RegexValidator(re.compile('^\+?[\d ]+$'), ('Enter a valid phone number.'), 'invalid')
 
-  cell_phone  = models.CharField(('mobile phone'), max_length=30, validators = [phone_validator], blank=True)
-  other_phone = models.CharField(('other phone'), max_length=30, validators = [phone_validator], blank=True)
-  short_name  = models.CharField(('short name'), max_length=32, blank=True)
+  cell_phone  = models.CharField(('Mobile Phone'), max_length=30, validators = [phone_validator], blank=True)
+  other_phone = models.CharField(('Other Phone'), max_length=30, validators = [phone_validator], blank=True)
+  short_name  = models.CharField(("Short Name"), max_length=32, blank=True)
 
-  membership_type = models.CharField(max_length=8, choices=MEMBERSHIP_TYPES,
-                                         verbose_name="Membership Type"
-                                     )
-  membership_id  = models.IntegerField(db_index=True, blank=True, null=True,
-                                         help_text="Your membership ID - this is normally the number on your door entry card",
-                                         verbose_name="Membership ID"
-                                       )
-  squashlevels_id  = models.IntegerField(db_index=True, blank=True, null=True, 
-                                         help_text="ID on the squashlevels website - it is not normally necessary to change this",
-                                         verbose_name="SquashLevels ID"
-                                         )
-  prefs_receive_email  = models.NullBooleanField(default=True,
-                                                 null=True,
-                                                 blank=True,
-                                                 help_text="Uncheck if you do *not* want to receive emails from the club&emdash; match reminders, social events etc.",
-                                                 verbose_name="Receive Email"
-                                                 )
+  membership_type = models.CharField(("Membership Type"), max_length=8, choices=MEMBERSHIP_TYPES)
+  membership_id  = models.IntegerField(("Membership ID"), db_index=True, blank=True, null=True,
+                                       help_text="Your membership ID - this is normally the number on your door entry card")
+  squashlevels_id  = models.IntegerField(("SquashLevels ID"), db_index=True, blank=True, null=True, 
+                                         help_text="ID on the squashlevels website - it is not normally necessary to change this")
+  prefs_receive_email  = models.NullBooleanField(("Receive Email"), default=True, null=True, blank=True,
+                                                 help_text="Uncheck if you do *not* want to receive emails from the club&emdash; match reminders, social events etc.")
 
 #  def get_absolute_url(self):
 #      return "/users/%s/" % urlquote(self.user.email)

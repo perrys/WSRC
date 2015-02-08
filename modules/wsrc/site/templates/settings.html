@@ -49,8 +49,10 @@
 {% usekwacro createfield player_form.other_phone %}
 </fieldset>
 
-<fieldset name="external_sites">
-<legend>External Websites</legend>
+<fieldset name="information">
+<legend>Information</legend>
+{% usekwacro createfield player_form.membership_type %}
+{% usekwacro createfield player_form.membership_id %}
 {% usekwacro createfield player_form.squashlevels_id %}
 </fieldset>
 
