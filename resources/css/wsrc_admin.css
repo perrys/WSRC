@@ -1,0 +1,71 @@
+body {
+  font-size: 0.8em;
+}
+
+.hidden {
+    display: none;
+}
+
+.align-right {
+    float: right;
+}
+
+.align-right:after {
+    clear: both;
+}
+
+.ui-field-contain {
+    padding: 0;
+    margin: 1em 0;
+    border-bottom-width: 0;
+}
+.ui-field-contain:before,
+.ui-field-contain:after {
+    content: "";
+    display: table;
+}
+.ui-field-contain:after {
+    clear: both;
+}
+.ui-field-contain > label {
+    float: left;
+    width: 5em;
+    margin: .5em 2% 0 0;
+    text-align: right;
+}
+
+ul.entrants_list,
+ol.entrants_list {
+  list-style: none;
+  padding-top: 0.5em;
+  padding-bottom: 0.5em;
+  padding-left: 5em;
+  margin-left: 2%;
+}
+
+.entrants_list li {
+  width: 20em;
+  border: 1px solid #dddddd;
+  color: #333333;
+  padding: 0.2em;
+}
+
+li.seeded {
+  list-style: decimal;
+}
+  
+li > a.ui-icon {
+  display: inline-block;
+  float: right;
+}
+
+span.field-error {
+    color: #ed3338;
+    font-size: 0.8em;
+}
+.form_success_message {
+    color: #3eb249;
+}
+.form_error_message {
+    color: #ed3338
+}
