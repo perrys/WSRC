@@ -53,7 +53,11 @@ ol.entrants_list {
 li.seeded {
   list-style: decimal;
 }
-  
+
+input.handicap {
+    text-align: right;
+}
+
 li > a.ui-icon {
   display: inline-block;
   float: right;

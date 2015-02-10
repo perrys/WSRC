@@ -52,6 +52,8 @@ jQuery(document).ready(function(){WSRC_admin.onReady(players, competition_data)}
               </optgroup>
               {% endfor %}
             </select>
+            <input type="radio" onchange="WSRC_admin.comp_type_toggled()" name="tournament_type" value="seeded" checked="checked">Seeded</input>
+            <input type="radio" onchange="WSRC_admin.comp_type_toggled()" name="tournament_type" value="handicap">Handicap</input>
           </div>
           </form>
           <ol class="entrants_list">

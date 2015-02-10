@@ -100,6 +100,27 @@ window.WSRC_admin =
     list.append(items)
     return null
 
+  sort_handicap: (cb) ->
+    items = []
+    list = this.jq_entrant_list
+    list.find("li").each((idx, elt) ->
+      elt.setAttribute("data-idx", idx)
+      items.push(elt)
+    )
+    get_hcap = (elt) ->
+      parseInt(elt.find("input.handicap").val())
+    items.sort((lhs,rhs) ->
+      lhs = $(lhs)
+      rhs = $(rhs)
+      result = get_hcap(lhs) - get_hcap(rhs)
+      if result == 0
+        result = lhs.data("idx") - rhs.data("idx")
+      return result
+    )
+    list.empty()
+    list.append(items)
+    return null
+
   shuffle_non_seeds: () ->
     cb = (items) =>
       seeds = items.filter (elt) ->
@@ -115,28 +136,48 @@ window.WSRC_admin =
       return true
     return false
 
+  get_comp_type: () ->
+    $("input[name='tournament_type']:checked").val()
+
+  comp_type_toggled: () ->
+    comp_type = this.get_comp_type()
+    this.jq_entrant_list.find("input").addClass("hidden")
+    this.jq_entrant_list.find("input.#{ comp_type }").removeClass("hidden")
+      
   add_entrant_item: (entrant) ->
+    comp_type = this.get_comp_type()
+    seed_class = if comp_type == "seeded"   then "" else "hidden"
+    hcap_class = if comp_type == "handicap" then "" else "hidden"
+    hcap_val = if entrant.handicap then entrant.handicap else ""
     checked = cls = ""
     if entrant.seeded
       checked = "checked='checked'"
       cls = "seeded"
     player = entrant.player
     item = $("<li data-playerid='#{ player.id }' class='#{ cls }'>
-      <input type='checkbox' onclick='WSRC_admin.check_seed(this);' #{ checked }>#{ player.full_name }
-      <a class='ui-icon ui-icon-close' href='javascript:WSRC_admin.remove_entrant(#{ player.id });'></a>
+      <input type='checkbox' class='seeded #{ seed_class }' onclick='WSRC_admin.check_seed(this);' #{ checked }>
+      <input type='number' class='handicap #{ hcap_class }' min='-100' max='15' size='2' value='#{ hcap_val }'>
+        #{ player.full_name }
+      <a class='ui-icon ui-icon-close' href='#' onclick='WSRC_admin.remove_entrant(#{ player.id });'></a>
       </li>"
     )
     this.jq_entrant_list.append(item)
 
-            
+
   add_entrant: (form) ->
     input = $(form).find("input") 
     name = input.val()
+    tokens = name.split("/")
+    hcap = null
+    if tokens.length > 1
+      name = tokens[0]
+      hcap_val = tokens[1]
     player = this.find_player(name)
     if player
       unless this.entrant_already_present(player)
         this.add_entrant_item
           player: player
+          handicap: hcap_val
         input.val("")
       return true
 
@@ -144,12 +185,14 @@ window.WSRC_admin =
     form = $(form)
     entrants = []
     comp_id = competition_data.id
+    comp_type = this.get_comp_type()
     this.jq_entrant_list.find("li").each (idx, elt) =>
       elt = $(elt)
       player_id = elt.data("playerid")
+      handicap = if comp_type == "handicap" then elt.find("input.handicap").val() else null
       entrants.push
         competition: comp_id
-        handicap: null
+        handicap: handicap
         hcap_suffix: ""
         ordering: idx+1
         player: this.players[player_id]
@@ -164,7 +207,6 @@ window.WSRC_admin =
 
     this.players = players
     player_list = (obj for id,obj of players)
-  
     $( "#tabs" )
       .tabs()
       .removeClass("initiallyHidden")
@@ -195,11 +237,15 @@ window.WSRC_admin =
       )
       .disableSelection()
 
+    comp_type = if comp_data.name.indexOf("Handicap") < 0 then "seeded" else "handicap"
+    radios = $("input[name='tournament_type']")
+    radios.filter("[value='#{ comp_type }']").prop("checked", true)
+            
     entrants = comp_data?.entrants
     if entrants
       entrants.sort (lhs, rhs) ->
         lhs.ordering - rhs.ordering
       for p in entrants
         this.add_entrant_item(p)
-      
+
     return null
