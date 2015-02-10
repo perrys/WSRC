@@ -58,8 +58,14 @@ class EntrantSerializer(serializers.ModelSerializer):
   player = PlayerSerializer(read_only="True")
   class Meta:
     model = Entrant
-    fields = ('player', 'ordering', "seeded", "handicap", "hcap_suffix")
+    fields = ('competition', 'player', 'ordering', "seeded", "handicap", "hcap_suffix")
 
+class EntrantDeSerializer(serializers.ModelSerializer):
+  class Meta:
+    model = Entrant
+    fields = ('competition', 'player', 'ordering', "seeded", "handicap", "hcap_suffix")
+  def create(self, validated_data):
+      return Entrant.objects.create(**validated_data)
 
 class MatchSerializer(serializers.ModelSerializer):
   team1_player1 = team1_player2 = team2_player1 = team2_player2 = PlayerSerializer()

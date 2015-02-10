@@ -34,7 +34,13 @@ class CompetitionGroup(models.Model):
 
 class Competition(models.Model):
   """An individual competition, with an end date. For example this could be a knockout tournament or a league."""
+  STATES = (
+    ("not_started", "Not Started"),
+    ("active",      "In Process"),
+    ("complete",    "Concluded"),
+  )
   name = models.CharField(max_length=128)
+  state = models.CharField(max_length=16, choices=STATES)
   end_date = models.DateField()
   group = models.ForeignKey(CompetitionGroup, blank=True, null=True) 
   url = models.CharField(max_length=128, blank=True)

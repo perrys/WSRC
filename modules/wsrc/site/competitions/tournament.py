@@ -13,8 +13,11 @@
 # You should have received a copy of the GNU General Public License
 # along with WSRC.  If not, see <http://www.gnu.org/licenses/>.
 
+from wsrc.site.competitions.models import Competition, Entrant, Match
 from wsrc.utils.html_table import Table, Cell, SpanningCell
+from django.db import transaction
 
+import wsrc.utils.bracket
 import lxml.etree as etree
 
 NON_BRK_SPACE     = u'\xa0'
@@ -196,3 +199,33 @@ def render_tournament(competition):
 
     return etree.tostring(table.toHtml(), encoding='UTF-8', method='html')
 
+@transaction.atomic
+def reset(comp_id, entrants):
+    from serializers import EntrantDeSerializer
+    competition = Competition.objects.get(pk=comp_id)
+    for e in competition.entrant_set.all():
+        e.delete()
+    for m in competition.match_set.all():
+        m.delete()
+    for e in entrants:
+        e["player"] = e["player"]["id"]
+        serializer = EntrantDeSerializer(data=e)        
+        if not serializer.is_valid():
+            print serializer.errors
+            raise Exception(serializer.errors)
+        competition.entrant_set.add(serializer.save())
+    entrants = competition.entrant_set.order_by("ordering")
+    slots = wsrc.utils.bracket.calc_slots(len(entrants))
+    for slot,entrant in zip(slots, entrants):
+        bottomSlot = slot & 1
+        match_id = slot >> 1
+        try:
+            match = competition.match_set.get(competition_match_id=match_id)
+        except Match.DoesNotExist:
+            match = competition.match_set.create(competition_match_id=match_id)
+        if bottomSlot:
+            match.team2_player1 = entrant.player
+        else:
+            match.team1_player1 = entrant.player
+        match.save()
+        

@@ -4,10 +4,10 @@
 <head>
 
   <link rel="stylesheet" href="/static/css/admin.css">
+  <link rel='stylesheet' href='/static/css/jquery.loadmask.css'/>
 
-  <script src="/static/js/_jquery.js"></script>
-  <script src="/static/js/jquery-ui.js"></script>
   <script src="/static/js/wsrc_admin.js"></script>
+  <script src="/static/js/jquery.loadmask.js"></script>
 
 {% load kwacros %}
 {% loadkwacros 'form_macros.html' %}
@@ -15,9 +15,9 @@
   <title>Tournament Admin - Woking Squash Rackets Club</title>
 
   <script type="text/javascript">
-var players  = [{% for p in players %} {% if forloop.counter0 > 0 %},{% endif %}{id: {{ p.id }}, name: "{{ p.user.first_name }} {{ p.user.last_name }}"}{% endfor %}];
-var entrants = [{% for p in entrants %}{% if forloop.counter0 > 0 %},{% endif %}{id: {{ p.id }}, name: "{{ p.user.first_name }} {{ p.user.last_name }}", seeding: {{ p.seeding }}}{% endfor %}];
-jQuery(document).ready(function(){WSRC_admin.onReady(players, entrants)});
+var players  = { {% for p in players %}{% if forloop.counter0 > 0 %},{% endif %}{{ p.id }}: {id: {{ p.id }}, full_name: "{{ p.user.first_name }} {{ p.user.last_name }}"}{% endfor %} };
+var competition_data = {{ competition_data|safe }};
+jQuery(document).ready(function(){WSRC_admin.onReady(players, competition_data)});
   </script>
 
 </head>
@@ -43,28 +43,26 @@ jQuery(document).ready(function(){WSRC_admin.onReady(players, entrants)});
       {% endif %}
         <fieldset name="tournament_entrants" class="ui-corner-all">
           <legend>Tournament Entrants</Legend>
+          <form method="post" onsubmit="return false;" action="">{% csrf_token %}
           <div class="ui-field-contain">
             <label for="tournament">Tournament:</label>
-            <select name="tournament">
+            <select name="tournament" onchange="document.location='/tournaments/admin/' + this.options[this.selectedIndex].value">
               {% for yearly_tournaments in tournaments|dictsortreversed:'year' %}
               <optgroup label="{{ yearly_tournaments.year }}">
                 {% for tournament in yearly_tournaments.competitions %}
-                 <option value="{{ tournament.id }}" {% if tournament == edit_tournament_form.instance %}selected="selected"{% endif %}>{{ tournament.name }} {{ yearly_tournaments.year }}</option>
+                 <option value="{{ yearly_tournaments.year }}/{{ tournament.name }}" {% if tournament == edit_tournament_form.instance %}selected="selected"{% endif %}>{{ tournament.name }} {{ yearly_tournaments.year }}</option>
                  {% endfor %}
               </optgroup>
               {% endfor %}
             </select>
           </div>
+          </form>
           <ol class="entrants_list">
           </ol>
-          <form method="post" onsubmit="WSRC_admin.submit_entrants(this);" action="">{% csrf_token %}
-            <input type="hidden" name="action" value="edit_tournament">
-            <input name="seedings" type="hidden">
-            <select multiple="multiple" id="id_editform_players" name="players" class="hidden">
-            </select>
+          <form method="post" onsubmit="return false;" action="">{% csrf_token %}
             <div class="align-right">
               <input type="button" value="Shuffle non-Seeds" onclick="WSRC_admin.shuffle_non_seeds()"></input>
-              <input type="submit" value="Save and Preview" ></input>
+              <input type="submit" value="Save" onclick="WSRC_admin.submit_entrants(this.form); return false;"></input>
             </div>
           </form>
           <form action="#" onsubmit="WSRC_admin.add_entrant(this); return false;">

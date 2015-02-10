@@ -14,20 +14,23 @@
 # along with WSRC.  If not, see <http://www.gnu.org/licenses/>.
 
 from wsrc.site.usermodel.models import Player
-from wsrc.site.competitions.models import Competition, CompetitionGroup, Match
+from wsrc.site.competitions.models import Competition, CompetitionGroup, Match, Entrant
 from wsrc.site.competitions.serializers import PlayerSerializer, CompetitionSerializer, CompetitionGroupSerializer
 from wsrc.utils.timezones import parse_iso_date_to_naive
 
+from django.core.exceptions import PermissionDenied, SuspiciousOperation
 from django.shortcuts import get_object_or_404
 from django.shortcuts import redirect
 from django.shortcuts import render
 from django.template.response import TemplateResponse
 from django.forms import ModelForm, ModelChoiceField
-from django.http import HttpResponseBadRequest
+from django.http import HttpResponse, HttpResponseBadRequest
 
 import rest_framework.filters
 import rest_framework.generics as rest_generics
 from rest_framework.renderers import JSONRenderer
+from rest_framework.parsers import JSONParser
+from rest_framework.views import APIView
 
 import tournament
 
@@ -75,6 +78,21 @@ class MatchDetail(rest_generics.RetrieveUpdateDestroyAPIView):
 
 class MatchCreate(rest_generics.CreateAPIView):
     model = Match
+
+class UpdateTournament(APIView):
+    parser_classes = (JSONParser,)
+    def put(self, request, pk, format="json"):
+        comp_id = int(pk)
+        comp_data = request.DATA
+        if comp_data["id"] != comp_id:
+            raise SuspiciousOperation()
+        competition = Competition.objects.get(pk=comp_id)
+        if competition.state != "not_started":
+            raise PermissionDenied()
+        entrants = comp_data["entrants"]
+        tournament.reset(comp_id, entrants)
+        return HttpResponse(status=201)
+    
 
 # HTML template views:
 
@@ -173,14 +191,15 @@ class EditTournamentForm(ModelForm):
 
 def bracket_admin_view(request, year=None, name=None):
     if not request.user.is_authenticated():
-        return redirect(reverse_url(django.contrib.auth.views.login) + '?next=%s' % request.path)
+        raise PermissionDenied()
 
     competition = None
+    comp_data = '{}'
     if name is not None:
         group = get_object_or_404(CompetitionGroup.objects, end_date__year=year, comp_type='wsrc_tournaments')
         name = name.replace("_", " ")        
         competition = get_object_or_404(group.competition_set, name__iexact=name)
-        seeding_set = competition.seeding_set
+        comp_data = JSON_RENDERER.render(CompetitionSerializer(competition, context={"request": FAKE_REQUEST_CONTEXT}).data)
 
     new_group_form        = None
     new_tournament_form   = None
@@ -201,11 +220,6 @@ def bracket_admin_view(request, year=None, name=None):
             if new_tournament_form.is_valid(): 
                 new_tournament_form.save()            
                 new_tournament_form.success_message = "created tournament " + str(new_tournament_form.instance)
-        elif action == "edit_tournament":
-            edit_tournament_form = EditTournamentForm(request.POST, auto_id='id_editform_%s', instance=competition)
-            if edit_tournament_form.is_valid(): 
-                edit_tournament_form.save()            
-                edit_tournament_form.success_message = "updated entrants for " + str(edit_tournament_form.instance)
         else:
             return HttpResponseBadRequest("<h1>invalid form data</h1>")
 
@@ -219,24 +233,12 @@ def bracket_admin_view(request, year=None, name=None):
     tournaments = []
     for group in CompetitionGroup.objects.filter(comp_type="wsrc_tournaments"):
         tournaments.append({"year": group.end_date.year, "competitions": group.competition_set.all()})
-    entrants = []
-    if competition is not None:
-        seedings = dict([(c.player.id, c.seeding) for c in competition.seeding_set.all()])
-        entrants = [e for e in competition.players.all()]
-        def comparer(lhs, rhs):
-            lhsseed, rhsseed = [(seedings.get(x.id) or 1e7) for x in (lhs, rhs)]
-            return cmp(lhsseed, rhsseed)
-        entrants.sort(cmp=comparer)
-        entrants = [{"id": e.id, "user": e.user, "seeding": seedings.get(e.id) or "null"} for e in entrants]
-#        for e in entrants:
-#            if e.id in seedings:
-#                e["seeded"] = True
         
     return render(request, 'tournaments_admin.html', {
         'edit_tournament_form': edit_tournament_form,
         'new_tournament_form':  new_tournament_form,
         'new_group_form':       new_group_form,
-        'players':              Player.objects.all(),
-        'entrants':             entrants,
+        'players':              Player.objects.filter(user__is_active=True),
+        'competition_data':     comp_data,
         'tournaments':          tournaments,
     })
