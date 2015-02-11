@@ -18,7 +18,7 @@ from rest_framework import serializers
 from django.contrib.auth.models import User
 
 from wsrc.site.usermodel.models import Player
-from wsrc.site.competitions.models import CompetitionGroup, Competition, Match, Entrant
+from wsrc.site.competitions.models import CompetitionGroup, Competition, Match, Entrant, CompetitionRound
 
 SCORE_TO_POINTS_MAPPING = {3 : {0: (7,2), 1: (6,3), 2: (5,4)},
                            2 : {0: (4,2), 1: (4,3), 2: (4,4)},
@@ -67,6 +67,11 @@ class EntrantDeSerializer(serializers.ModelSerializer):
   def create(self, validated_data):
       return Entrant.objects.create(**validated_data)
 
+class RoundSerializer(serializers.ModelSerializer):
+  class Meta:
+    model = CompetitionRound
+    fields = ('round', 'end_date')
+
 class MatchSerializer(serializers.ModelSerializer):
   team1_player1 = team1_player2 = team2_player1 = team2_player2 = PlayerSerializer()
   class Meta:
@@ -107,10 +112,11 @@ class CompactMatchField(serializers.RelatedField):
 class CompetitionSerializer(serializers.ModelSerializer):
   matches = CompactMatchField(source="match_set", many=True, read_only=True)
   entrants = EntrantSerializer(source="entrant_set", many=True)
+  rounds   = RoundSerializer(many=True)
   class Meta:
     model = Competition
     depth = 0
-    fields = ('id', 'name', 'end_date', 'url', 'entrants', 'matches')
+    fields = ('id', 'name', 'end_date', 'url', 'entrants', 'matches', 'rounds')
 
   def __init__(self, *args, **kwargs):
     expanded = False

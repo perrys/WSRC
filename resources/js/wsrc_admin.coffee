@@ -183,6 +183,22 @@ window.WSRC_admin =
         input.val("")
       return true
 
+  remove_round: (elt) ->
+    $(elt).parent("div").remove()
+    
+  add_round: (date) ->
+    button = $("#add_round_button")
+    if not date
+      date = ""
+    elt = $("<div class='round-date'>
+      <input name='round' class='round-date' value='#{ date }'>
+      <a class='ui-icon ui-icon-close' href='#' onclick='WSRC_admin.remove_round(this);'></a>
+      </div>
+    ")
+    button.before(elt)
+    elt.find("input").datepicker
+      dateFormat: "yy-mm-dd"
+    
   submit_entrants: (form) ->
     form = $(form)
     entrants = []
@@ -200,6 +216,11 @@ window.WSRC_admin =
         player: this.players[player_id]
         seeded: elt.hasClass("seeded")
     competition_data.entrants = entrants
+    dates = []
+    $("div.round-date input").each (idx, elt) ->
+      dates.push($(elt).val())
+    dates.sort()
+    competition_data.rounds = ({round: num, end_date: dates[num-1]} for num in [1..dates.length])
     opts =
       csrf_token: form.find("input[name='csrfmiddlewaretoken']").val()
       loadMaskId: "manage_tournament"
@@ -253,5 +274,12 @@ window.WSRC_admin =
           lhs.ordering - rhs.ordering
         for p in entrants
           this.add_entrant_item(p)
-  
+
+      rounds = comp_data?.rounds
+      if rounds
+        rounds.sort (lhs,rhs) ->
+          lhs.end_date - rhs.end_date
+        for r in rounds
+          this.add_round(r.end_date)
+      
     return null

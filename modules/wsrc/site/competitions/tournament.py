@@ -229,3 +229,10 @@ def reset(comp_id, entrants):
             match.team1_player1 = entrant.player
         match.save()
         
+@transaction.atomic
+def set_rounds(comp_id, rounds):
+    competition = Competition.objects.get(pk=comp_id)
+    for r in competition.rounds.all():
+        r.delete()
+    for r in rounds:
+        competition.rounds.create(**r)

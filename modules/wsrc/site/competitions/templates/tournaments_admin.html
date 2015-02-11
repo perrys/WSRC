@@ -58,16 +58,20 @@ jQuery(document).ready(function(){WSRC_admin.onReady(players, competition_data)}
           </form>
           <ol class="entrants_list">
           </ol>
-          <form method="post" onsubmit="return false;" action="">{% csrf_token %}
-            <div class="align-right">
-              <input type="button" value="Shuffle non-Seeds" onclick="WSRC_admin.shuffle_non_seeds()"></input>
-              <input type="submit" value="Save" onclick="WSRC_admin.submit_entrants(this.form); return false;"></input>
-            </div>
-          </form>
           <form action="#" onsubmit="WSRC_admin.add_entrant(this); return false;">
             <div class="ui-field-contain">
               <label for="add_member_textbox">Add: </label>
               <input id="add_member_textbox">
+            </div>
+            <div class="ui-field-contain">
+              <label for="add_member_textbox">Rounds: </label>
+              <input type="button" id="add_round_button" value="Add Round" onclick="WSRC_admin.add_round()"></input>
+            </div>
+          </form>
+          <form method="post" onsubmit="return false;" action="">{% csrf_token %}
+            <div class="align-right">
+              <input type="button" value="Shuffle non-Seeds" onclick="WSRC_admin.shuffle_non_seeds()"></input>
+              <input type="submit" value="Save" onclick="WSRC_admin.submit_entrants(this.form); return false;"></input>
             </div>
           </form>
         </fieldset>

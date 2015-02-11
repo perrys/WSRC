@@ -58,6 +58,20 @@ input.handicap {
     text-align: right;
 }
 
+div.round-date {
+  display: inline-block;
+  margin-right: 0.5em;
+}
+
+div.round-date input {
+  width: 8em;
+}
+
+div.round-date a {
+  display: inline-block;
+  margin-left: -1.5em;
+}
+
 li > a.ui-icon {
   display: inline-block;
   float: right;

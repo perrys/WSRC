@@ -91,6 +91,9 @@ class UpdateTournament(APIView):
             raise PermissionDenied()
         entrants = comp_data["entrants"]
         tournament.reset(comp_id, entrants)
+        rounds = comp_data["rounds"]
+        if rounds:
+            tournament.set_rounds(comp_id, rounds)
         return HttpResponse(status=201)
     
 
