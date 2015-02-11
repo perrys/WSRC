@@ -21,20 +21,22 @@ window.WSRC_admin =
     headers = {}
     if opts.csrf_token?
       headers["X-CSRFToken"] = opts.csrf_token
-    jQuery.ajax(
+    settings =
       url: url
       type: method
       contentType: "application/json"
       data: JSON.stringify(data)
-      dataType: "json"
-      processData: false
       headers: headers
       success: opts.successCB
       error: opts.failureCB
       complete: (xhr, status) ->
         if opts.loadMaskId?
           jQuery("##{ opts.loadMaskId }").unmask()
-    )
+    if method == "GET"
+      settings.dataType = "json" # expected return value
+    else
+      settings.processData = false
+    jQuery.ajax(settings)
     return null
 
   find_entrant_by_id: (player_id) ->
@@ -148,7 +150,7 @@ window.WSRC_admin =
     comp_type = this.get_comp_type()
     seed_class = if comp_type == "seeded"   then "" else "hidden"
     hcap_class = if comp_type == "handicap" then "" else "hidden"
-    hcap_val = if entrant.handicap then entrant.handicap else ""
+    hcap_val = if entrant.handicap != null then entrant.handicap else ""
     checked = cls = ""
     if entrant.seeded
       checked = "checked='checked'"
@@ -201,6 +203,9 @@ window.WSRC_admin =
     opts =
       csrf_token: form.find("input[name='csrfmiddlewaretoken']").val()
       loadMaskId: "manage_tournament"
+      failureCB: (xhr, status) => 
+          alert("ERROR: Failed to save, status: #{ status }")
+        
     this.ajax_helper("/data/competition/tournament/#{ comp_id }", competition_data, opts, "PUT")
       
   onReady: (players, comp_data) ->
