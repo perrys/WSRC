@@ -237,15 +237,16 @@ window.WSRC_admin =
       )
       .disableSelection()
 
-    comp_type = if comp_data.name.indexOf("Handicap") < 0 then "seeded" else "handicap"
-    radios = $("input[name='tournament_type']")
-    radios.filter("[value='#{ comp_type }']").prop("checked", true)
-            
-    entrants = comp_data?.entrants
-    if entrants
-      entrants.sort (lhs, rhs) ->
-        lhs.ordering - rhs.ordering
-      for p in entrants
-        this.add_entrant_item(p)
-
+    if comp_data?.name
+      comp_type = if comp_data.name.indexOf("Handicap") < 0 then "seeded" else "handicap"
+      radios = $("input[name='tournament_type']")
+      radios.filter("[value='#{ comp_type }']").prop("checked", true)
+              
+      entrants = comp_data?.entrants
+      if entrants
+        entrants.sort (lhs, rhs) ->
+          lhs.ordering - rhs.ordering
+        for p in entrants
+          this.add_entrant_item(p)
+  
     return null
