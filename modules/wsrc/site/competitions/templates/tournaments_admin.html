@@ -87,6 +87,7 @@ jQuery(document).ready(function(){WSRC_admin.onReady(players, competition_data)}
 
       <form method="post" action="#new_tournament">{% csrf_token %}
         <input type="hidden" name="action" value="new_tournament">
+        <input type="hidden" name="state" value="not_started">
         <fieldset name="tournament_details" class="ui-corner-all">
           <legend>New Tournament</legend>
           {% usekwacro createfield new_tournament_form.group %}

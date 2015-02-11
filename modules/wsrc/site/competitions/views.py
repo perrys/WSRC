@@ -182,7 +182,7 @@ class NewTournamentForm(ModelForm):
                              initial=CompetitionGroup.objects.filter(comp_type = "wsrc_tournaments").order_by('-end_date')[0])
     class Meta:
         model = Competition
-        fields = ["name", "end_date", "group"]
+        fields = ["name", "end_date", "group", "state"]
 
 class EditTournamentForm(ModelForm):
     class Meta:
