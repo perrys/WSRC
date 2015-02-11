@@ -764,7 +764,7 @@ window.WSRC =
           entrant = entrants[id]
           if entrant.seeded
             elt.prev().html(entrant.ordering)
-          else if entrant.handicap
+          else if entrant.handicap != null
             elt.prev().html(entrant.handicap + entrant.hcap_suffix)
       addSeed(match.team1_player1, team1Elt)
       addSeed(match.team2_player1, team2Elt)
