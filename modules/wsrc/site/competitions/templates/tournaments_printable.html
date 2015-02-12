@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>{{ competition.name }} {{ competition.end_date|date:'Y' }} - Woking Squash Rackets Club</title>
+
+  <link rel="stylesheet" href="http://fonts.googleapis.com/css?family=Open+Sans:300,400,700" />
+
+  <script src="/static/js/all{% if not debug %}.min{% endif %}.js"></script>
+  <link rel="stylesheet" href="/static/css/all_html5{% if not debug %}.min{% endif %}.css" />
+<script>
+window.WSRC_bracket_data = {{ bracket_data|safe }};
+</script>
+</head>
+<body>
+  <div id="outer_page_div" data-role="page" data-pagetype="tournament" data-competitionid="{{ competition.id }}" class="wsrc-site" style="background-color: white;">
+    <div style="margin-left: auto; margin-right: auto; width:1000px;">
+      <img  style="float:right;" src="/static/images/WSRC-logo_web_.jpg" alt="Woking Squash Club">
+      <h1>{{ competition.name }} Tournament {{ competition.end_date|date:'Y' }}</h1>
+      <div style="clear: both;margin-bottom:40px;"></div>
+      {{ bracket|safe }}
+    </div>
+  </div>
+</body>
+</html>
+

@@ -39,10 +39,11 @@ urlpatterns = patterns('',
     url(r'^boxes/(\d{4}-\d{2}-\d{2})/?$', wsrc.site.competitions.views.boxes_view), # end-date based
     url(r'^boxes/?$',                     wsrc.site.competitions.views.boxes_view, name="boxes"), # most recent
 
-    url(r'^tournaments/admin/(\d{4})/([\w\s]+)/?', wsrc.site.competitions.views.bracket_admin_view),
-    url(r'^tournaments/admin/?',                   wsrc.site.competitions.views.bracket_admin_view),
-    url(r'^tournaments/(\d{4})/([\w\s]+)/?$',      wsrc.site.competitions.views.bracket_view),
-    url(r'^tournaments/?',                         wsrc.site.competitions.views.bracket_view, {"year":None, "name":"Open"} , name="tournaments"),
+    url(r'^tournaments/admin/(\d{4})/([\w\s]+)/?',  wsrc.site.competitions.views.bracket_admin_view),
+    url(r'^tournaments/admin/?',                    wsrc.site.competitions.views.bracket_admin_view),
+    url(r'^tournaments/(\d{4})/([\w\s]+)/print/?$', wsrc.site.competitions.views.bracket_view, {'template_name': 'tournaments_printable.html'}),
+    url(r'^tournaments/(\d{4})/([\w\s]+)/?$',       wsrc.site.competitions.views.bracket_view),
+    url(r'^tournaments/?',                          wsrc.site.competitions.views.bracket_view, {"year":None, "name":"Open"} , name="tournaments"),
 
     url(r'^settings/?$', wsrc.site.views.settings_view, name="settings"),
 

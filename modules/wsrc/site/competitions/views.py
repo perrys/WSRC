@@ -158,7 +158,7 @@ def boxes_view(request, end_date=None):
     
     
 
-def bracket_view(request, year, name):
+def bracket_view(request, year, name, template_name="tournaments.html"):
     if year is None:
         group = get_object_or_404(CompetitionGroup.objects, end_date__year=2014, comp_type='wsrc_tournaments') # TODO: get latest active
     else:
@@ -173,7 +173,7 @@ def bracket_view(request, year, name):
     ctx = {"competition": competition, "bracket": html_table, "bracket_data": bracket_data}
     ctx.update(get_competition_lists())
     
-    return TemplateResponse(request, "tournaments.html", ctx)
+    return TemplateResponse(request, template_name, ctx)
 
 class NewCompetitionGroupForm(ModelForm):
     class Meta:
