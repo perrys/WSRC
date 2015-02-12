@@ -6,6 +6,8 @@ unless window.assert?
       
 window.WSRC =
 
+  HIGHLIGHT_CLASS: "wsrc-highlight"
+
   days_of_week: ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]
 
   months_of_year: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
@@ -722,7 +724,31 @@ window.WSRC =
         err_container.html(xhr.responseText)    
         return false
     )
-    
+
+  bind_tournament_events: () ->
+    playerElts = jQuery("td.player").filter(":not(td.empty-match)")
+    playerElts.mouseenter (evt) => 
+      matches = jQuery("td.player").filter(() -> this.innerHTML == evt.target.innerHTML)
+      matches.addClass(this.HIGHLIGHT_CLASS)
+    playerElts.mouseleave (evt) =>      
+      jQuery("td.#{ this.HIGHLIGHT_CLASS }").removeClass(this.HIGHLIGHT_CLASS)
+    scoreDialog = (elt) =>
+      tokens = elt.id.split("_")
+      comp = tokens[1]
+      matchId = parseInt(tokens[2])
+      match = this.competitions[comp][matchId]
+      this.showScoreEntryDialog([match])
+      
+    # playerElts.dblclick (evt) ->
+    #   scoreDialog(evt.target)
+    # playerElts.siblings().filter(".score").dblclick (evt) ->
+    #   target = evt.target;
+    #   while not target.classList.contains("player") # TODO - support older browsers
+    #     target = target.previousSibling
+    #   scoreDialog(target)
+
+    return true
+        
 
   refresh_tournament_data: (competition_data) ->
 
@@ -747,7 +773,7 @@ window.WSRC =
             return entrant.player.short_name 
           return entrant.player.full_name
         unless id1?
-          return " "
+          return "&nbsp;"
         result = selector(entrants[id1])
         if id2
           result += " & " + selector(entrants[id2]) 
@@ -806,6 +832,8 @@ window.WSRC =
 
     populateMatch(m) for m in competition_data.matches
     # TODO: add events for highlighting and score dialog
+
+#    this.bind_tournament_events()
     
     return true
       

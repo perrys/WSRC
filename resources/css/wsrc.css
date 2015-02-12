@@ -651,6 +651,9 @@ div.coaching  ul {
     font-size: 0.7em;
 }
 
+td.wsrc-highlight {
+ background-color: #dadada;
+}
 
 /******************************************************************************** 
   Larger Screen Media Conditionals
