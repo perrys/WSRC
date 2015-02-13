@@ -7,8 +7,8 @@ MINIFY = minify --no-comments
 
 all: all.min.js all_admin.js
 
-%.js: %.coffee
-	coffee -c $<
+%.js: coffeescript/%.coffee
+	coffee -c -p $< > $@
 
 %.min.js: %.js
 	$(MINIFY) $< -o $@
