@@ -727,8 +727,11 @@ window.WSRC =
 
   bind_tournament_events: () ->
     playerElts = jQuery("td.player").filter(":not(td.empty-match)")
-    playerElts.mouseenter (evt) => 
-      matches = jQuery("td.player").filter(() -> this.innerHTML == evt.target.innerHTML)
+    playerElts.mouseenter (evt) =>
+      if  evt.target.innerHTML == "&nbsp;"
+        return
+      target = $(evt.target)
+      matches = jQuery("td.player").filter(() -> $(this).data("teamid") == target.data("teamid"))
       matches.addClass(this.HIGHLIGHT_CLASS)
     playerElts.mouseleave (evt) =>      
       jQuery("td.#{ this.HIGHLIGHT_CLASS }").removeClass(this.HIGHLIGHT_CLASS)
@@ -739,13 +742,13 @@ window.WSRC =
       match = this.competitions[comp][matchId]
       this.showScoreEntryDialog([match])
       
-    # playerElts.dblclick (evt) ->
-    #   scoreDialog(evt.target)
-    # playerElts.siblings().filter(".score").dblclick (evt) ->
-    #   target = evt.target;
-    #   while not target.classList.contains("player") # TODO - support older browsers
-    #     target = target.previousSibling
-    #   scoreDialog(target)
+    playerElts.filter(":not(td.partial-match)").dblclick (evt) ->
+      scoreDialog(evt.target)
+    playerElts.siblings().filter(".score").dblclick (evt) ->
+      target = evt.target;
+      while not target.classList.contains("player") # TODO - support older browsers
+        target = target.previousSibling
+      scoreDialog(target)
 
     return true
         
@@ -762,10 +765,22 @@ window.WSRC =
       baseSelector = "td#match_#{ competition_data.id  }_#{ match.competition_match_id }"
       team1Elt = jQuery(baseSelector + "_t")  # top cell
       team2Elt = jQuery(baseSelector + "_b")  # bottom cell
+
+      unless team1Elt.length and team2Elt.length
+        return
+
+      single_team = false
+      if (not match.team1_player1) or (not match.team2_player1)
+        single_team = true
+        
       for elt in [team1Elt, team2Elt]
         elt.removeClass("empty-match")
         elt.nextUntil(".seed", ".score").removeClass("empty-match")
         elt.prev(".seed").removeClass("empty-match")
+        if single_team
+          elt.addClass("partial-match")
+          elt.nextUntil(".seed", ".score").addClass("partial-match")
+          elt.prev(".seed").addClass("partial-match")
   
       makeTeamName = (id1, id2) =>
         selector = (entrant) ->
@@ -783,6 +798,8 @@ window.WSRC =
       team2Name = makeTeamName(match.team2_player1, match.team2_player2) 
       team1Elt.html(team1Name)
       team2Elt.html(team2Name)
+      team1Elt.data("teamid", "#{ match.team1_player1 }_#{ match.team1_player2 }")
+      team2Elt.data("teamid", "#{ match.team2_player1 }_#{ match.team2_player2 }")
   
       # now the seeds:
       addSeed = (id, elt) =>
@@ -831,9 +848,8 @@ window.WSRC =
       return true
 
     populateMatch(m) for m in competition_data.matches
-    # TODO: add events for highlighting and score dialog
 
-#    this.bind_tournament_events()
+    this.bind_tournament_events()
     
     return true
       
