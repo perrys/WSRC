@@ -1,64 +1,13 @@
-
-unless window.assert?
-  window.assert = (condition, message) ->
-    unless condition 
-      throw message || "Assertion failed"
-      
+                  
 window.WSRC =
 
   HIGHLIGHT_CLASS: "wsrc-highlight"
 
-  days_of_week: ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]
-
   months_of_year: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
-
-  set_on_and_off: (onid, offid) ->
-    jQuery("##{ onid }").show()
-    jQuery("##{ offid }").hide()
 
   competitiongroup_data: null
 
   bxslider_inited: false
-
-  list_lookup: (list, id, id_key) ->
-    unless id_key?
-      id_key = "id"
-    for l in list
-      if l[id_key] == id
-        return l
-    return null
-
-  is_valid_int: (i) ->
-    if i == ""
-      return false
-    i = parseInt(i)
-    return not isNaN(i)
-
-  get_ordinal_suffix: (i) ->
-    if i in [11, 12, 13]
-      return "th"
-    r = i % 10    
-    switch r
-      when 1 then return "st"
-      when 2 then return "nd"
-      when 3 then return "rd"
-      else return "th"
-
-  iso_to_js_date: (str) ->
-    toint = (start, len) -> parseInt(str.substr(start, start+len))
-    new Date(toint(0,4), toint(5,2)-1, toint(8,2)) # gotcha - JS dates use 0-offset months...
-
-  get_day_humanized: (basedate, offset) ->
-    switch offset
-      when 0 then return "Today"
-      when 1 then return "Tomorrow"
-      when -1 then return "Yesterday"
-    dt = this.iso_to_js_date(basedate)
-    dt.setDate(dt.getDate() + offset)
-    dow = this.days_of_week[dt.getDay()]
-    dom = dt.getDate()
-    suffix = this.get_ordinal_suffix(dom)
-    return "#{ dow } #{ dom }#{ suffix }"
 
   add_empty_slots: (bookings) ->
 
@@ -123,19 +72,12 @@ window.WSRC =
         
   get_competition_for_id: (box_id) ->
     box_id = parseInt(box_id)
-    this.list_lookup(this.competitiongroup_data.competitions_expanded, box_id)
+    WSRC_utils.list_lookup(this.competitiongroup_data.competitions_expanded, box_id)
 
   get_player_config: (box_id, player_id) ->
     players = this.get_competition_for_id(box_id).players
     player_id = parseInt(player_id)
-    return this.list_lookup(players, player_id)
-
-  toggle: (evt) ->
-    root = $(evt.target).parents(".toggle-root")
-    hiders = root.find(".togglable")
-    showers = root.find(".toggled")
-    hiders.removeClass("togglable").addClass("toggled")
-    showers.removeClass("toggled").addClass("togglable")
+    WSRC_utils.list_lookup(players, player_id)
 
   ##
   # Remove non-empty items from the selector and replace with the given list
@@ -178,50 +120,6 @@ window.WSRC =
     )
     popupdiv.popup("open")
     return true
-
-  ##
-  # Helper function for Ajax requests back to the server.
-  # URL is the request url, should not include query params
-  # DATA is an object which will be sent back as JSON
-  # OPTS is an object containing:
-  #  successCB - function to call back when successful
-  #  failureCB - function to call back when there is an error
-  #  csrf_token - (optional) CSRF token to be passed back to server
-  # METHOD is the http CRUD type
-  ## 
-  ajax_helper: (url, data, opts, method) ->
-    jQuery.mobile.loading("show", 
-      text: ""
-      textVisible: false
-      textonly: false
-      theme: "a"
-      html: ""
-    )
-    headers = {}
-    if opts.csrf_token?
-      headers["X-CSRFToken"] = opts.csrf_token
-    jQuery.ajax(
-      url: url
-      type: method
-      data: data
-      dataType: "json"
-      headers: headers
-      success: opts.successCB
-      error: opts.failureCB
-      complete: (xhr, status) ->
-        jQuery.mobile.loading("hide") 
-    )
-    return null
-
-  ajax_GET: (url, opts) ->
-    this.ajax_helper(url, null, opts, "GET")
-
-  ajax_POST: (url, data, opts) ->
-    this.ajax_helper(url, data, opts, "POST")
-    
-  ajax_PUT: (url, data, opts) ->
-    this.ajax_helper(url, data, opts, "PUT")
-
 
   ##
   # Configure and show the box detail popup for the league from which it was opened
@@ -273,7 +171,7 @@ window.WSRC =
       form.find("table td input").textinput().textinput("disable")
       form.find("input#result_type_normal").prop("checked",true).checkboxradio().checkboxradio("refresh");
       form.find("input#result_type_walkover").prop("checked",false).checkboxradio().checkboxradio("refresh");
-      this.set_on_and_off('score-entry-input', 'walkover_input')
+      WSRC_utils.set_on_and_off('score-entry-input', 'walkover_input')
       form.find("input[type='radio']").checkboxradio().checkboxradio('disable')
       form.find("button[type='button']").prop('disabled', true)
       form.find("table#score-entry-input th#header-player1").text("Player 1")
@@ -304,9 +202,9 @@ window.WSRC =
     form = jQuery("form#add-change-form")
     result_type = form.find("input[name='result_type']:checked").val()
     if result_type == "normal"
-      this.set_on_and_off('score-entry-input', 'walkover_input')
+      WSRC_utils.set_on_and_off('score-entry-input', 'walkover_input')
     else
-      this.set_on_and_off('walkover_input', 'score-entry-input')
+      WSRC_utils.set_on_and_off('walkover_input', 'score-entry-input')
     return true
 
   load_scores_for_match: (cfg, players) ->
@@ -373,7 +271,7 @@ window.WSRC =
     selector = form.find("select##{ selector_id }")
     selected_player_id = parseInt(selector.val())
     opponents = []
-    selected_player = this.list_lookup(players, selected_player_id)
+    selected_player = WSRC_utils.list_lookup(players, selected_player_id)
     header = form.find("table#score-entry-input th#header-#{ selector_id }") 
     if selected_player?
       opponents.push(selected_player)
@@ -391,7 +289,7 @@ window.WSRC =
     else
       other_player_id = parseInt(other_player_id)
       this.fill_select(other_selector, valid_opponent_list, other_player_id, true)
-      other_player = this.list_lookup(players, other_player_id)
+      other_player = WSRC_utils.list_lookup(players, other_player_id)
       if other_player?
         opponents.push(other_player)
         opponents.reverse() if selector_id == "player2"
@@ -449,7 +347,7 @@ window.WSRC =
     for i in [1..5]
       for j in [1..2]
         score = form.find("input#team#{ j }_score#{ i }").val()
-        if this.is_valid_int(score)
+        if WSRC_utils.is_valid_int(score)
           data["team#{ j }_score#{ i }"] = parseInt(score)
     match_id = match_id_field.val()
     result_type = form.find("input[name='result_type']:checked").val()
@@ -459,11 +357,11 @@ window.WSRC =
         data.walkover = 1
       else
         data.walkover = 2
-    if this.is_valid_int(match_id) 
+    if WSRC_utils.is_valid_int(match_id) 
       # update existing match result:
       data.id = parseInt(match_id)
       url = "/data/match/#{ match_id }"
-      this.ajax_PUT(url, data,
+      WSRC_ajax.PUT(url, data,
         successCB: (data) =>
           return true
         failureCB: (xhr, status) => 
@@ -474,7 +372,7 @@ window.WSRC =
     else
       # new match result:
       url = "/data/match/"
-      this.ajax_POST(url, data,
+      WSRC_ajax.POST(url, data,
         successCB: (data) =>
           return true
         failureCB: (xhr, status) => 
@@ -712,10 +610,10 @@ window.WSRC =
     dayoffset = parseInt(table.data("dayoffset"))
     dayoffset += days
     url = "/data/bookings?date=#{ basedate }&day_offset=#{ dayoffset }"    
-    this.ajax_GET(url,
+    WSRC_ajax.GET(url,
       successCB: (data) =>
         table.data("dayoffset", dayoffset)
-        container.find("h4").html(this.get_day_humanized(basedate, dayoffset))
+        container.find("h4").html(WSRC_utils.get_day_humanized(basedate, dayoffset))
         this.display_court_bookings(data, dayoffset, WSRC_user_player_id?)
         return true
       failureCB: (xhr, status) =>
@@ -875,7 +773,7 @@ window.WSRC =
 
     url = "/data/competition/#{ competition_id }?expand=1"
     loadPageData = () =>
-      this.ajax_GET(url,
+      WSRC_ajax.GET(url,
         successCB: (data) =>
           this.refresh_tournament_data(data)
           return true
@@ -893,7 +791,7 @@ window.WSRC =
       
     url = "/data/competitiongroup/#{ competitiongroup_id }?expand=1"
     loadPageData = () =>
-      this.ajax_GET(url,
+      WSRC_ajax.GET(url,
         successCB: (data) =>
           return true
         failureCB: (xhr, status) => 
@@ -917,10 +815,10 @@ window.WSRC =
     
   onHomePageShow: (page) ->
 
-    $(".toggle-link a").on("click", this.toggle)
+    $(".toggle-link a").on("click", WSRC_utils.toggle)
 
     url = "/data/facebook"    
-    this.ajax_GET(url,
+    WSRC_ajax.GET(url,
       successCB: (data) =>
         this.refresh_facebook(data)
         return true

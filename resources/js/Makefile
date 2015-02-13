@@ -13,8 +13,10 @@ all: all.min.js all_admin.js
 %.min.js: %.js
 	$(MINIFY) $< -o $@
 
-all.js: wsrc.js _jquery.js _jquery.mobile.js pre_jqm.js legacy_shims.js jquery.bxslider.js 
-	cat _jquery.js pre_jqm.js _jquery.mobile.js legacy_shims.js jquery.bxslider.js $< > $@
+ORDERED_MAIN_JS_SRCS = _jquery.js pre_jqm.js _jquery.mobile.js legacy_shims.js jquery.bxslider.js wsrc_utils.js wsrc_ajax.js wsrc.js 
+
+all.js: $(ORDERED_MAIN_JS_SRCS)
+	cat $(ORDERED_MAIN_JS_SRCS) > $@
 
 all_admin.js: _jquery.js _jquery-ui.js jquery.loadmask.js wsrc_admin.js
 	cat _jquery.js _jquery-ui.js jquery.loadmask.js wsrc_admin.js > $@
