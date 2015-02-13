@@ -15,33 +15,35 @@ window.WSRC_bracket_data = {{ bracket_data|safe }};
 
 
 <div role="main" class="ui-content jqm-content">
-    <form id="page-control-form" method="GET" action="#" onsubmit="return false;" >  
-      <div class="left-control-box">
-        <select name="tournament_year_and_name" onchange="WSRC.onTournamentSelected(this)">
-          <option value="">Select Tournament . . .</option>
+
+  <form id="page-control-form" method="GET" action="#" onsubmit="return false;" >  
+    <div class="left-control-box">
+      <select name="tournament_year_and_name" onchange="WSRC.onTournamentSelected(this)">
+        <option value="">Select Tournament . . .</option>
 {% for yearly_tournaments in tournaments|dictsortreversed:'year' %}
-          <optgroup label="{{ yearly_tournaments.year }}">
+        <optgroup label="{{ yearly_tournaments.year }}">
 {% for tournament in yearly_tournaments.competitions %}
-            <option value="{% url 'tournaments' %}/{{ yearly_tournaments.year }}/{{ tournament.name|escape_url }}">{{ tournament.name }}</option>
+          <option value="{% url 'tournaments' %}/{{ yearly_tournaments.year }}/{{ tournament.name|escape_url }}">{{ tournament.name }}</option>
 {% endfor %}
-          </optgroup>
+        </optgroup>
 {% endfor %}
-        </select>
-      </div>
-      <div class="right-control-box">
-        <fieldset data-role="controlgroup" data-type="horizontal" data-shadow="true">
-          <button id="edit-button" data-inline="true" class="ui-btn ui-icon-edit ui-btn-icon-right ui-state-disabled">Edit</button>
-        </fieldset>
-        <fieldset data-role="controlgroup" data-type="horizontal" data-shadow="true">
-          <button id="bracket-refresh-button" data-inline="true" class="ui-btn ui-icon-refresh ui-btn-icon-right">Refresh</button>
-        </fieldset>
-      </div>
-      <div class="clear-all"></div>
-    </form>
+      </select>
+    </div>
+    <div class="right-control-box">
+      <fieldset data-role="controlgroup" data-type="horizontal" data-shadow="true">
+        <button id="edit-button" data-inline="true" class="ui-btn ui-icon-edit ui-btn-icon-right ui-state-disabled">Edit</button>
+      </fieldset>
+      <fieldset data-role="controlgroup" data-type="horizontal" data-shadow="true">
+        <button id="bracket-refresh-button" data-inline="true" class="ui-btn ui-icon-refresh ui-btn-icon-right">Refresh</button>
+      </fieldset>
+    </div>
+    <div class="clear-all"></div>
+  </form>
 
   <div class="competition-wrapper">
   {{ bracket|safe }}
   </div>
+
 </div>
 
 {% endblock %}
