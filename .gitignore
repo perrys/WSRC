@@ -2,7 +2,6 @@
 TODO
 TAGS
 
-resources/js/restful.js
 resources/js/*.min.js
 resources/js/all*.js
 resources/js/_*.js
