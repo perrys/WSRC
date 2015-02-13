@@ -14,34 +14,36 @@ window.WSRC_box_data = {{ box_data|safe }};
 
 
 <div role="main" class="ui-content jqm-content">
-    <form id="page-control-form" method="GET" action="#" onsubmit="return false;" >  
-      <div class="left-control-box">
-        <select name="league_end_date" id="league_end_date" onchange="WSRC.onLeagueSelected(this)">
-          <option value="" >Leagues Ending . . .</option>
-{% regroup leagues|dictsortreversed:'year' by year as yearly_leagues_list %}
-{% for yearly_leagues in yearly_leagues_list %}
-          <optgroup label="{{ yearly_leagues.grouper }}">
-{% for league in yearly_leagues.list|dictsortreversed:'end_date' %}
-            <option value="{{ league.end_date|date:'Y-m-d' }}">{{ league.name }}</option>
-{% endfor %}
-          </optgroup>
-{% endfor %}
-        </select>
-      </div>
-      <div class="right-control-box">
-        <fieldset data-role="controlgroup" data-type="horizontal" data-shadow="true">
-          <input type="radio" name="view_type" id="view_type_boxes" value="boxes" checked="checked" />
-          <label for="view_type_boxes">Boxes</label>
-          <input type="radio" name="view_type" id="view_type_tables" value="tables" />
-          <label for="view_type_tables">Tables</label>
-        </fieldset>
-        <fieldset data-role="controlgroup" data-type="horizontal" data-shadow="true">
-          <button id="box-refresh-button" data-inline="true" class="ui-btn ui-icon-refresh ui-btn-icon-right">Refresh</button>
-        </fieldset>
-      </div>
-      <div class="clear-all"></div>
-    </form>
-<div class="competition-wrapper">
+
+  <form id="page-control-form" method="GET" action="#" onsubmit="return false;" >  
+    <div class="left-control-box">
+      <select name="league_end_date" id="league_end_date" onchange="WSRC.onLeagueSelected(this)">
+        <option value="" >Leagues Ending . . .</option>
+ regroup leagues|dictsortreversed:'year' by year as yearly_leagues_list %}
+ for yearly_leagues in yearly_leagues_list %}
+        <optgroup label="{{ yearly_leagues.grouper }}">
+ for league in yearly_leagues.list|dictsortreversed:'end_date' %}
+          <option value="{{ league.end_date|date:'Y-m-d' }}">{{ league.name }}</option>
+ endfor %}
+        </optgroup>
+ endfor %}
+      </select>
+    </div>
+    <div class="right-control-box">
+      <fieldset data-role="controlgroup" data-type="horizontal" data-shadow="true">
+        <input type="radio" name="view_type" id="view_type_boxes" value="boxes" checked="checked" />
+        <label for="view_type_boxes">Boxes</label>
+        <input type="radio" name="view_type" id="view_type_tables" value="tables" />
+        <label for="view_type_tables">Tables</label>
+      </fieldset>
+      <fieldset data-role="controlgroup" data-type="horizontal" data-shadow="true">
+        <button id="box-refresh-button" data-inline="true" class="ui-btn ui-icon-refresh ui-btn-icon-right">Refresh</button>
+      </fieldset>
+    </div>
+    <div class="clear-all"></div>
+  </form>
+
+  <div class="competition-wrapper">
 {% for box_config in boxes %}
 <!-- {{ box_config.colspec }} {{ box_config.nthcol }} -->
 {% if box_config.colspec != 'double' or box_config.nthcol != 'second' %}
