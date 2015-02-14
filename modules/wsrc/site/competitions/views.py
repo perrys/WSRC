@@ -102,7 +102,7 @@ class UpdateTournament(APIView):
 def get_competition_lists():
     tournaments = []
     for group in CompetitionGroup.objects.filter(comp_type="wsrc_tournaments"):
-        tournaments.append({"year": group.end_date.year, "competitions": group.competition_set.all()})
+        tournaments.append({"year": group.end_date.year, "competitions": group.competition_set.exclude(state="not_started")})
     leagues = []
     for group in CompetitionGroup.objects.filter(comp_type="wsrc_boxes"):
         leagues.append({"year": group.end_date.year, "end_date": group.end_date, "name": group.name})
