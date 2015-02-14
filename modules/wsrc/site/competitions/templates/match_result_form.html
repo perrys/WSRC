@@ -1,4 +1,4 @@
-<form id="add-change-form" method="POST" action="." onsubmit="WSRC.submit_match_result(); return false" >{% csrf_token %}
+<form id="add-change-form" method="POST" action="." onsubmit="WSRC_result_form.submit_match_result(); return false" >{% csrf_token %}
   <div style="padding:10px 20px;">
     <label for="player1" class="ui-hidden-accessible">Player 1:</label>
     <input type="hidden" id="competition_id" name="competition_id" value="" />
