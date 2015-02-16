@@ -212,8 +212,14 @@ class UserForm(ModelForm):
         fields = ["first_name", "last_name", "username",  "email"]
 
 class PlayerForm(ModelForm):
+    class Meta:
+        model = Player
+        fields = ["cell_phone", "other_phone", "short_name", "prefs_receive_email"]
+        exclude = ('user',)
+
+class InfoForm(ModelForm):
     def __init__(self, *args, **kwargs):
-        super(PlayerForm, self).__init__(*args, **kwargs)
+        super(InfoForm, self).__init__(*args, **kwargs)
         instance = getattr(self, 'instance', None)
         if instance and instance.pk:
           self.fields['membership_id'].widget.attrs['readonly'] = True
@@ -226,9 +232,8 @@ class PlayerForm(ModelForm):
           self.fields['squashlevels_id'].widget.attrs['disabled'] = "disabled"
     class Meta:
         model = Player
-        fields = ["cell_phone", "other_phone", "short_name",  "membership_type",  "membership_id",  "squashlevels_id"]
+        fields = ["membership_type",  "membership_id",  "squashlevels_id"]
         exclude = ('user',)
-
 
 def settings_view(request):
     if not request.user.is_authenticated():
@@ -244,13 +249,15 @@ def settings_view(request):
                 uform.save()
             success = True
     else:
-        
         pform = PlayerForm(instance=request.user.player)
         uform = UserForm(instance=request.user)
+
+    iform = InfoForm(instance=request.user.player)
 
     return render(request, 'settings.html', {
         'player_form': pform,
         'user_form':   uform,
+        'info_form':   iform,
         'form_saved': success,
     })
 

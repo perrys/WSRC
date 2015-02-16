@@ -47,13 +47,14 @@
 {% usekwacro createfield user_form.email %}
 {% usekwacro createfield player_form.cell_phone %}
 {% usekwacro createfield player_form.other_phone %}
+{% usekwacro createfield player_form.prefs_receive_email %}
 </fieldset>
 
 <fieldset name="information">
 <legend>Information</legend>
-{% usekwacro createfield player_form.membership_type %}
-{% usekwacro createfield player_form.membership_id %}
-{% usekwacro createfield player_form.squashlevels_id %}
+{% usekwacro createfield info_form.membership_type %}
+{% usekwacro createfield info_form.membership_id %}
+{% usekwacro createfield info_form.squashlevels_id %}
 </fieldset>
 
 <input id="submit_button" type="submit" value="Update" data-theme="b"></input>
