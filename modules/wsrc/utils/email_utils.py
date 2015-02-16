@@ -123,8 +123,8 @@ class tester(unittest.TestCase):
     for p in email_permitted_players:
       self.assertTrue((p.prefs_receive_email is None) or p.prefs_receive_email == True)
 
-  @unittest.skip("requires network and smtp server")
-  def test_emailer(self):
+#  @unittest.skip("requires network and smtp server") # skip property not supported by python 2.6
+  def xx_test_emailer(self):
     test_player = None
     for p in self.active_players_with_email:
       if p.user.first_name == "Stewart" and p.user.last_name == "Perry":
