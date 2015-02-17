@@ -56,14 +56,15 @@ class PlayerSerializer(serializers.ModelSerializer):
 
 class EntrantSerializer(serializers.ModelSerializer):
   player = PlayerSerializer(read_only="True")
+  player2 = PlayerSerializer(read_only="True")
   class Meta:
     model = Entrant
-    fields = ('competition', 'player', 'ordering', "seeded", "handicap", "hcap_suffix")
+    fields = ('competition', 'player', 'player2', 'ordering', "seeded", "handicap", "hcap_suffix")
 
 class EntrantDeSerializer(serializers.ModelSerializer):
   class Meta:
     model = Entrant
-    fields = ('competition', 'player', 'ordering', "seeded", "handicap", "hcap_suffix")
+    fields = ('competition', 'player', 'player2', 'ordering', "seeded", "handicap", "hcap_suffix")
   def create(self, validated_data):
       return Entrant.objects.create(**validated_data)
 

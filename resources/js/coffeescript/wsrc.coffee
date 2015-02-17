@@ -270,8 +270,12 @@ window.WSRC =
   refresh_tournament_data: (competition_data) ->
 
     entrants = {}
+    players = {}
     for p in competition_data.entrants
       entrants[p.player.id] = p
+      players[p.player.id] = p.player
+      if p.player2
+        players[p.player2.id] = p.player2
     
     populateMatch = (match) ->
   
@@ -297,15 +301,15 @@ window.WSRC =
           elt.prev(".seed").addClass("partial-match")
   
       makeTeamName = (id1, id2) =>
-        selector = (entrant) ->
+        selector = (player) ->
           if id2
-            return entrant.player.short_name 
-          return entrant.player.full_name
+            return player.short_name 
+          return player.full_name
         unless id1?
           return "&nbsp;"
-        result = selector(entrants[id1])
+        result = selector(players[id1])
         if id2
-          result += " & " + selector(entrants[id2]) 
+          result += " & " + selector(players[id2]) 
         return result.replace(" ", "&nbsp;")
         
       team1Name = makeTeamName(match.team1_player1, match.team1_player2) 

@@ -97,7 +97,8 @@ class CompetitionRound(models.Model):
 class Entrant(models.Model):
   # players may not be populated for all types of competitions, as some are inferred from matches:
   competition = models.ForeignKey(Competition)
-  player = models.ForeignKey(user_models.Player)
+  player  = models.ForeignKey(user_models.Player)
+  player2 = models.ForeignKey(user_models.Player, null=True, blank=True, related_name="entrant2+")
   ordering = models.IntegerField()
   handicap = models.IntegerField(null=True, blank=True)
   hcap_suffix = models.CharField(max_length=4, blank=True)

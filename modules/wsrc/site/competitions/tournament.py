@@ -209,6 +209,7 @@ def reset(comp_id, entrants):
         m.delete()
     for e in entrants:
         e["player"] = e["player"]["id"]
+        e["player2"] = e.get("player2") and e["player2"]["id"] or None
         serializer = EntrantDeSerializer(data=e)        
         if not serializer.is_valid():
             print serializer.errors
@@ -225,8 +226,10 @@ def reset(comp_id, entrants):
             match = competition.match_set.create(competition_match_id=match_id)
         if bottomSlot:
             match.team2_player1 = entrant.player
+            match.team2_player2 = entrant.player2
         else:
             match.team1_player1 = entrant.player
+            match.team1_player2 = entrant.player2
         match.save()
         
 @transaction.atomic
