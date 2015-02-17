@@ -50,6 +50,25 @@ ol.entrants_list {
   padding: 0.2em;
 }
 
+.entrants_list > li.doubles {
+  width: 40em;
+}
+
+.entrants_list .player1,
+.entrants_list .player2 {
+  padding: 0.2em;
+}
+
+.entrants_list .player1 {
+  display: inline-block;
+}
+
+li.doubles > .player1,
+li.doubles > .player2 {
+  width: 42%;
+  border: 1px solid #dddddd;
+}
+
 li.seeded {
   list-style: decimal;
 }
