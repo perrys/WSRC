@@ -52,13 +52,14 @@ jQuery(document).ready(function(){WSRC_admin.onReady(players, competition_data)}
               </optgroup>
               {% endfor %}
             </select>
-            <input type="radio" onchange="WSRC_admin.comp_type_toggled()" name="tournament_type" value="seeded" checked="checked">Seeded</input>
-            <input type="radio" onchange="WSRC_admin.comp_type_toggled()" name="tournament_type" value="handicap">Handicap</input>
+            <input type="radio" onchange="WSRC_admin.on_comp_type_toggled()" name="tournament_type" value="seeded" checked="checked">Seeded</input>
+            <input type="radio" onchange="WSRC_admin.on_comp_type_toggled()" name="tournament_type" value="handicap">Handicap</input>
+            <input type="radio" onchange="WSRC_admin.on_comp_type_toggled()" name="tournament_type" value="doubles">Doubles</input>
           </div>
           </form>
           <ol class="entrants_list">
           </ol>
-          <form action="#" onsubmit="WSRC_admin.add_entrant(this); return false;">
+          <form action="#" onsubmit="WSRC_admin.on_add_entrant(this); return false;">
             <div class="ui-field-contain">
               <label for="add_member_textbox">Add: </label>
               <input id="add_member_textbox">
@@ -67,11 +68,11 @@ jQuery(document).ready(function(){WSRC_admin.onReady(players, competition_data)}
           <form method="post" onsubmit="return false;" action="">{% csrf_token %}
             <div class="ui-field-contain">
               <label for="add_member_textbox">Rounds: </label>
-              <input type="button" id="add_round_button" value="Add Round" onclick="WSRC_admin.add_round()"></input>
+              <input type="button" id="add_round_button" value="Add Round" onclick="WSRC_admin.on_add_round()"></input>
             </div>
             <div class="align-right">
               <input type="button" value="Shuffle non-Seeds" onclick="WSRC_admin.shuffle_non_seeds()"></input>
-              <input type="submit" value="Save" onclick="WSRC_admin.submit_entrants(this.form); return false;"></input>
+              <input type="submit" value="Save" onclick="WSRC_admin.on_submit_entrants(this.form); return false;"></input>
             </div>
           </form>
         </fieldset>
