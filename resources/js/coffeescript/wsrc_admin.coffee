@@ -42,21 +42,16 @@ window.WSRC_admin =
   find_entrant_by_id: (player_id) ->
     children = this.jq_entrant_list[0].children
     for child in children
-      attr = child.attributes.getNamedItem("data-playerid")
-      id = attr?.value
-      if `id == player_id`
-        return child
+      child = $(child)
+      for attr in ["playerid", "player2id"]        
+        id = child.data(attr)
+        if `id == player_id`
+          return child
     return null
     
   entrant_already_present: (player) ->
     return this.find_entrant_by_id(player.id) != null
 
-  find_player: (name) ->
-    for id,p of this.players
-      if name == p.full_name
-        return p
-    return null
-    
   shuffle: (array, offset) ->
     # Fisher-Yates shuffle, with offset
     m = array.length - offset    
@@ -70,16 +65,6 @@ window.WSRC_admin =
       array[rhs] = array[lhs];
       array[lhs] = t;
     return array;
-
-  check_seed: (cmp) ->
-    cmp = $(cmp)
-    item = cmp.parent("li")
-    if cmp.prop('checked')
-      item.addClass("seeded")
-    else
-      item.removeClass("seeded")
-    this.sort_seeds()
-    return null
 
   sort_seeds: (cb) ->
     items = []
@@ -123,7 +108,61 @@ window.WSRC_admin =
     list.append(items)
     return null
 
-  shuffle_non_seeds: () ->
+  get_comp_type: () ->
+    $("input[name='tournament_type']:checked").val()
+
+      
+  add_entrant_item: (entrant) ->
+    comp_type = this.get_comp_type()
+    seed_class = if comp_type in ["seeded", "doubles"] then "" else "hidden"
+    hcap_class = if comp_type == "handicap" then "" else "hidden"
+    player2_class = if comp_type == "doubles" then "" else "hidden"
+    hcap_val = if entrant.handicap != null then entrant.handicap else ""
+    checked = cls = ""
+    unless entrant.player2
+      entrant.player2 =
+        id: ''
+        full_name: ''
+    if entrant.seeded
+      checked = "checked='checked'"
+      cls += " seeded"
+    if comp_type == "doubles"
+      cls += " doubles"
+    item = $("<li data-playerid='#{ entrant.player.id }' data-player2id='#{ entrant.player2.id }' class='#{ cls }'>
+      <input type='checkbox' class='seeded #{ seed_class }' onclick='WSRC_admin.on_toggle_seed(this);' #{ checked }>
+      <input type='number' class='handicap #{ hcap_class }' min='-100' max='15' size='2' value='#{ hcap_val }'>
+      <div class='player1'>
+        #{ entrant.player.full_name }
+      </div>
+      <input class='player2 doubles #{ player2_class }' value='#{ entrant.player2.full_name }'>
+      <a class='ui-icon ui-icon-close' href='#' onclick='WSRC_admin.on_remove_entrant(#{ entrant.player.id });'></a>
+      </li>"
+    )
+    this.jq_entrant_list.append(item)
+    p2_input = item.find("input.player2")
+    p2_input.autocomplete(
+      source: this.player_list
+      select: (evt, ui) =>
+        id = WSRC_admin.on_auto_complete(p2_input, evt, ui)
+        player = this.players[id]
+        entrant = this.find_entrant_by_id(id)
+        if entrant != null
+          alert("WARNING: Player #{ player.full_name } [#{ id }] is already an entrant")
+        p2_input.parent('li').data("player2id", id)
+    )
+
+  on_comp_type_toggled: () ->
+    comp_type = this.get_comp_type()
+    this.jq_entrant_list.find("input").addClass("hidden")
+    this.jq_entrant_list.find("input.#{ comp_type }").removeClass("hidden")
+    items = this.jq_entrant_list.find("li")
+    if comp_type == "doubles"
+      items.addClass("doubles")
+      this.jq_entrant_list.find("input.seeded").removeClass("hidden")
+    else
+      items.removeClass("doubles")    
+
+  on_shuffle_non_seeds: () ->
     cb = (items) =>
       seeds = items.filter (elt) ->
         $(elt).hasClass('seeded')
@@ -131,42 +170,43 @@ window.WSRC_admin =
     this.sort_seeds(cb)
     return null
 
-  remove_entrant: (id) ->
-    entrant = this.find_entrant_by_id(id)
-    if entrant
-      entrant.parentElement.removeChild(entrant)
-      return true
-    return false
+  on_add_round: (date) ->
+    button = $("#add_round_button")
+    if not date
+      date = ""
+    elt = $("<div class='round-date'>
+      <input name='round' class='round-date' value='#{ date }'>
+      <a class='ui-icon ui-icon-close' href='#' onclick='WSRC_admin.on_remove_round(this);'></a>
+      </div>
+    ")
+    button.before(elt)
+    elt.find("input").datepicker
+      dateFormat: "yy-mm-dd"
+    
+  on_remove_round: (elt) ->
+    $(elt).parent("div").remove()
+    
+  on_toggle_seed: (cmp) ->
+    cmp = $(cmp)
+    item = cmp.parent("li")
+    if cmp.prop('checked')
+      item.addClass("seeded")
+    else
+      item.removeClass("seeded")
+    this.sort_seeds()
+    return null
 
-  get_comp_type: () ->
-    $("input[name='tournament_type']:checked").val()
+  on_auto_complete: (cmp, event, ui) ->
+    event.preventDefault()
+    cmp.val(ui.item.label)
+    player_id = parseInt(ui.item.value)
+    player = this.players[player_id]
+    unless player
+      alert("Unable to find player #{ ui.item.label } [#{ ui.item.value }]")
+    cmp.data('playerid', player_id)
+    return player_id
 
-  comp_type_toggled: () ->
-    comp_type = this.get_comp_type()
-    this.jq_entrant_list.find("input").addClass("hidden")
-    this.jq_entrant_list.find("input.#{ comp_type }").removeClass("hidden")
-      
-  add_entrant_item: (entrant) ->
-    comp_type = this.get_comp_type()
-    seed_class = if comp_type == "seeded"   then "" else "hidden"
-    hcap_class = if comp_type == "handicap" then "" else "hidden"
-    hcap_val = if entrant.handicap != null then entrant.handicap else ""
-    checked = cls = ""
-    if entrant.seeded
-      checked = "checked='checked'"
-      cls = "seeded"
-    player = entrant.player
-    item = $("<li data-playerid='#{ player.id }' class='#{ cls }'>
-      <input type='checkbox' class='seeded #{ seed_class }' onclick='WSRC_admin.check_seed(this);' #{ checked }>
-      <input type='number' class='handicap #{ hcap_class }' min='-100' max='15' size='2' value='#{ hcap_val }'>
-        #{ player.full_name }
-      <a class='ui-icon ui-icon-close' href='#' onclick='WSRC_admin.remove_entrant(#{ player.id });'></a>
-      </li>"
-    )
-    this.jq_entrant_list.append(item)
-
-
-  add_entrant: (form) ->
+  on_add_entrant: (form) ->
     input = $(form).find("input") 
     name = input.val()
     tokens = name.split("/")
@@ -174,7 +214,8 @@ window.WSRC_admin =
     if tokens.length > 1
       name = tokens[0]
       hcap_val = tokens[1]
-    player = this.find_player(name)
+    player_id = parseInt(input.data("playerid"))
+    player = this.players[player_id]
     if player
       unless this.entrant_already_present(player)
         this.add_entrant_item
@@ -183,23 +224,14 @@ window.WSRC_admin =
         input.val("")
       return true
 
-  remove_round: (elt) ->
-    $(elt).parent("div").remove()
-    
-  add_round: (date) ->
-    button = $("#add_round_button")
-    if not date
-      date = ""
-    elt = $("<div class='round-date'>
-      <input name='round' class='round-date' value='#{ date }'>
-      <a class='ui-icon ui-icon-close' href='#' onclick='WSRC_admin.remove_round(this);'></a>
-      </div>
-    ")
-    button.before(elt)
-    elt.find("input").datepicker
-      dateFormat: "yy-mm-dd"
-    
-  submit_entrants: (form) ->
+  on_remove_entrant: (id) ->
+    entrant = this.find_entrant_by_id(id)
+    if entrant
+      entrant.remove()
+      return true
+    return false
+
+  on_submit_entrants: (form) ->
     form = $(form)
     entrants = []
     comp_id = competition_data.id
@@ -208,12 +240,14 @@ window.WSRC_admin =
       elt = $(elt)
       player_id = elt.data("playerid")
       handicap = if comp_type == "handicap" then elt.find("input.handicap").val() else null
+      player2_id = if comp_type == "doubles" then elt.data("player2id") else null
       entrants.push
         competition: comp_id
         handicap: handicap
         hcap_suffix: ""
         ordering: idx+1
-        player: this.players[player_id]
+        player:  this.players[player_id]
+        player2: this.players[player2_id]
         seeded: elt.hasClass("seeded")
     competition_data.entrants = entrants
     dates = []
@@ -232,17 +266,15 @@ window.WSRC_admin =
   onReady: (players, comp_data) ->
 
     this.players = players
-    player_list = (obj for id,obj of players)
+    this.player_list = ({label: p.full_name, value: id} for id,p of players)
     $( "#tabs" )
       .tabs()
       .removeClass("initiallyHidden")
-    $("#add_member_textbox").autocomplete(
-      source: (request, response) =>
-        matcher = new RegExp($.ui.autocomplete.escapeRegex(request.term), "i")
-        matched_players = $.grep(player_list, (value) ->
-          return matcher.test(value.full_name)
-        )
-        response(m.full_name for m in matched_players)
+    add_member_input = $("#add_member_textbox")
+    add_member_input.autocomplete(
+      source: this.player_list
+      select: (evt, ui) ->
+        WSRC_admin.on_auto_complete(add_member_input, evt, ui)
     )
 
     $("input").addClass("ui-corner-all")
@@ -265,6 +297,8 @@ window.WSRC_admin =
 
     if comp_data?.name
       comp_type = if comp_data.name.indexOf("Handicap") < 0 then "seeded" else "handicap"
+      if comp_data.name.indexOf("Doubles") >= 0
+        comp_type = "doubles"
       radios = $("input[name='tournament_type']")
       radios.filter("[value='#{ comp_type }']").prop("checked", true)
               
@@ -280,6 +314,6 @@ window.WSRC_admin =
         rounds.sort (lhs,rhs) ->
           lhs.end_date - rhs.end_date
         for r in rounds
-          this.add_round(r.end_date)
+          this.on_add_round(r.end_date)
       
     return null
