@@ -10,10 +10,6 @@ body {
 div.ui-controlgroup-label {
     font-size: 0.9em;
 }
-.settings-form .ui-select .ui-btn.ui-state-disabled,
-.settings-form .ui-state-disabled {
-    opacity: 0.6;
-}
 .clear-all {
     clear: both;
 }
@@ -435,6 +431,10 @@ span.field-error {
     left: inherit;
     top: inherit;
     margin-top: -20px;
+}
+.settings-form .ui-select .ui-btn.ui-state-disabled,
+.settings-form .ui-state-disabled {
+    opacity: 0.6;
 }
 
 /* leagues */
