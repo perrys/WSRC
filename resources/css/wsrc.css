@@ -10,8 +10,8 @@ body {
 div.ui-controlgroup-label {
     font-size: 0.9em;
 }
-.ui-select .ui-btn.ui-state-disabled,
-.ui-state-disabled {
+.settings-form .ui-select .ui-btn.ui-state-disabled,
+.settings-form .ui-state-disabled {
     opacity: 0.6;
 }
 .clear-all {
