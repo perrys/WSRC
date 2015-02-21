@@ -510,15 +510,6 @@ div.boxes-wrapper-singlecolumn {
 div.boxes-wrapper-doublecolumn {
     max-width: 500px; 
 }
-fieldset#match-type div.ui-controlgroup-controls {
-    width: 100%;
-}
-fieldset#match-type div.ui-radio {
-    width: 50%;
-}
-fieldset#match-type label {
-    text-align: center;
-}
 .wsrc-currentuser {
     color: #ed3338;
 }
@@ -616,29 +607,40 @@ td.winningscore, td.winner {
   font-weight: bold; 
 }
 /* score entry dialog */
-table.score_entry {
+table.score-entry {
     padding-top: 5px;
     text-align:center;
-    max-width: 200px;
+    max-width: 250px;
     margin-left: auto;
     margin-right: auto;
 }
-table.score_entry th {
+table.score-entry th {
     padding:0 10px 5px 0px;
 }
-table.score_entry div.ui-input-text {
+table.score-entry div.ui-input-text {
     padding:0px 2px;
     margin:0;
 }
-table.score_entry input {
+table.score-entry input {
     text-align: center;
 }
-td.score_row_label {
+td.score-row-label {
     padding-right: 5px;
 }
-td.score_total {
+td.score-total {
     font-weight: bold;
 }
+
+fieldset.match-type div.ui-controlgroup-controls {
+    width: 100%;
+}
+fieldset.match-type div.ui-radio {
+    width: 50%;
+}
+fieldset.match-type label.centered-text {
+    text-align: center;
+}
+
 /* misc */
 div.coaching img.left-picture-block {
     float: none;
