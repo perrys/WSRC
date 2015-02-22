@@ -1,24 +1,24 @@
-<form class="match-result-form" method="POST" action="." onsubmit="WSRC_result_form.submit_match_result(); return false" >{% csrf_token %}
+<form class="match-result-form" method="POST" action="." onsubmit="wsrc.result_form.submit_match_result(); return false" >{% csrf_token %}
   <div style="padding:10px 20px;">
-    <select name="team1" data-theme="a" data-native-menu="false" onchange="WSRC_result_form.on_team_selected(this)">
+    <select name="team1" data-theme="a" data-native-menu="false" onchange="wsrc.result_form.on_team_selected(this)">
       <option value=""> </option>
     </select>
-    <select name="team2" data-theme="a" data-native-menu="false" onchange="WSRC_result_form.on_team_selected(this)">
+    <select name="team2" data-theme="a" data-native-menu="false" onchange="wsrc.result_form.on_team_selected(this)">
       <option value=""> </option>
     </select>
     <fieldset data-role="controlgroup" data-type="horizontal" class="match-type">
       <legend  class="ui-hidden-accessible">Result Type:</legend>
       <label class="centered-text">Match
-        <input type="radio" name="result_type" value="normal" checked="checked" onchange="WSRC_result_form.on_result_type_changed(this)">
+        <input type="radio" name="result_type" value="normal" checked="checked" onchange="wsrc.result_form.on_result_type_changed(this)">
       </label>
       <label class="centered-text">Walkover
-        <input type="radio" name="result_type" value="walkover" onchange="WSRC_result_form.on_result_type_changed(this)">
+        <input type="radio" name="result_type" value="walkover" onchange="wsrc.result_form.on_result_type_changed(this)">
       </label>
     </fieldset>
 
     <p class="walkover-input" style="display: none;">
       <label class="ui-hidden-accessible" for="walkover_result">Winner:</label>
-      <select name="walkover_result" data-theme="a" data-native-menu="false" onchange="WSRC_result_form.on_walkover_result_changed(this)">
+      <select name="walkover_result" data-theme="a" data-native-menu="false" onchange="wsrc.result_form.on_walkover_result_changed(this)">
       <option value="">Winner</option>
       </select>
     </p>
@@ -33,12 +33,12 @@
         <td class="score-row-label">Set&nbsp;1:</td>
         <td class="score-column">
           <div>
-            <input name="team1_score1" type="number" data-clear-btn="false" onchange="WSRC_result_form.on_score_changed(this)"/>
+            <input name="team1_score1" type="number" data-clear-btn="false" onchange="wsrc.result_form.on_score_changed(this)"/>
           </div>
         </td>
         <td class="score-column">
           <div>
-            <input name="team2_score1" type="number" data-clear-btn="false" onchange="WSRC_result_form.on_score_changed(this)"/>
+            <input name="team2_score1" type="number" data-clear-btn="false" onchange="wsrc.result_form.on_score_changed(this)"/>
           </div>
         </td>
       </tr>
@@ -46,12 +46,12 @@
         <td class="score-row-label">Set&nbsp;2:</td>
         <td class="score-column">
           <div>
-            <input name="team1_score2" type="number" data-clear-btn="false" onchange="WSRC_result_form.on_score_changed(this)"/>
+            <input name="team1_score2" type="number" data-clear-btn="false" onchange="wsrc.result_form.on_score_changed(this)"/>
           </div>
         </td>
         <td class="score-column">
           <div>
-            <input name="team2_score2" type="number" data-clear-btn="false" onchange="WSRC_result_form.on_score_changed(this)"/>
+            <input name="team2_score2" type="number" data-clear-btn="false" onchange="wsrc.result_form.on_score_changed(this)"/>
           </div>
         </td>
       </tr>
@@ -59,12 +59,12 @@
         <td class="score-row-label">Set&nbsp;3:</td>
         <td class="score-column">
           <div>
-            <input name="team1_score3" type="number" data-clear-btn="false" onchange="WSRC_result_form.on_score_changed(this)"/>
+            <input name="team1_score3" type="number" data-clear-btn="false" onchange="wsrc.result_form.on_score_changed(this)"/>
           </div>
         </td>
         <td class="score-column">
           <div>
-            <input name="team2_score3" type="number" data-clear-btn="false" onchange="WSRC_result_form.on_score_changed(this)"/>
+            <input name="team2_score3" type="number" data-clear-btn="false" onchange="wsrc.result_form.on_score_changed(this)"/>
           </div>
         </td>
       </tr>
@@ -72,12 +72,12 @@
         <td class="score-row-label">Set&nbsp;4:</td>
         <td class="score-column">
           <div>
-            <input name="team1_score4" type="number" data-clear-btn="false" onchange="WSRC_result_form.on_score_changed(this)"/>
+            <input name="team1_score4" type="number" data-clear-btn="false" onchange="wsrc.result_form.on_score_changed(this)"/>
           </div>
         </td>
         <td class="score-column">
           <div>
-            <input name="team2_score4" type="number" data-clear-btn="false" onchange="WSRC_result_form.on_score_changed(this)"/>
+            <input name="team2_score4" type="number" data-clear-btn="false" onchange="wsrc.result_form.on_score_changed(this)"/>
           </div>
         </td>
       </tr>
@@ -85,12 +85,12 @@
         <td class="score-row-label">Set&nbsp;5:</td>
         <td class="score-column">
           <div>
-            <input name="team1_score5" type="number" data-clear-btn="false" onchange="WSRC_result_form.on_score_changed(this)"/>
+            <input name="team1_score5" type="number" data-clear-btn="false" onchange="wsrc.result_form.on_score_changed(this)"/>
           </div>
         </td>
         <td class="score-column">
           <div>
-            <input name="team2_score5" type="number" data-clear-btn="false" onchange="WSRC_result_form.on_score_changed(this)"/>
+            <input name="team2_score5" type="number" data-clear-btn="false" onchange="wsrc.result_form.on_score_changed(this)"/>
           </div>
         </td>
       </tr>

@@ -336,5 +336,5 @@ class WSRC_result_form
       )
 
     return false
-    
-window.WSRC_result_form = WSRC_result_form
+
+wsrc.utils.add_to_namespace("result_form", WSRC_result_form)

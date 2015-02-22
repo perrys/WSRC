@@ -6,7 +6,7 @@ window.WSRC_tournaments =
     dialog = $('#score_entry_dialog')
     form = dialog.find("form.match-result-form")
     prefix = if @competition_data.name.indexOf("Doubles") >= 0 then "Team" else "Player"
-    form_controller = new WSRC_result_form(form, @competition_data, permitted_matches, selected_match, prefix)
+    form_controller = new wsrc.result_form(form, @competition_data, permitted_matches, selected_match, prefix)
     form.data("controller", form_controller)
     dialog.popup('open')
 
