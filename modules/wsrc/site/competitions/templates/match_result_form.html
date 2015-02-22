@@ -18,7 +18,7 @@
 
     <p class="walkover-input" style="display: none;">
       <label class="ui-hidden-accessible" for="walkover_result">Winner:</label>
-      <select name="walkover_result" data-theme="a" data-native-menu="false">
+      <select name="walkover_result" data-theme="a" data-native-menu="false" onchange="WSRC_result_form.on_walkover_result_changed(this)">
       <option value="">Winner</option>
       </select>
     </p>
@@ -29,68 +29,68 @@
         <th class="score-column header-team1">Team 1</th>
         <th class="score-column header-team2">Team 2</th>
       </tr>
-      <tr class="score-row" class="set1">
+      <tr class="score-row" data-set="1">
         <td class="score-row-label">Set&nbsp;1:</td>
         <td class="score-column">
           <div>
-            <input name="team1_score1" type="number" data-clear-btn="false"/>
+            <input name="team1_score1" type="number" data-clear-btn="false" onchange="WSRC_result_form.on_score_changed(this)"/>
           </div>
         </td>
         <td class="score-column">
           <div>
-            <input name="team2_score1" type="number" data-clear-btn="false"/>
+            <input name="team2_score1" type="number" data-clear-btn="false" onchange="WSRC_result_form.on_score_changed(this)"/>
           </div>
         </td>
       </tr>
-      <tr class="score-row" class="set2">
+      <tr class="score-row" data-set="2">
         <td class="score-row-label">Set&nbsp;2:</td>
         <td class="score-column">
           <div>
-            <input name="team1_score2" type="number" data-clear-btn="false"/>
+            <input name="team1_score2" type="number" data-clear-btn="false" onchange="WSRC_result_form.on_score_changed(this)"/>
           </div>
         </td>
         <td class="score-column">
           <div>
-            <input name="team2_score2" type="number" data-clear-btn="false"/>
+            <input name="team2_score2" type="number" data-clear-btn="false" onchange="WSRC_result_form.on_score_changed(this)"/>
           </div>
         </td>
       </tr>
-      <tr class="score-row" class="set3">
+      <tr class="score-row" data-set="3">
         <td class="score-row-label">Set&nbsp;3:</td>
         <td class="score-column">
           <div>
-            <input name="team1_score3" type="number" data-clear-btn="false"/>
+            <input name="team1_score3" type="number" data-clear-btn="false" onchange="WSRC_result_form.on_score_changed(this)"/>
           </div>
         </td>
         <td class="score-column">
           <div>
-            <input name="team2_score3" type="number" data-clear-btn="false"/>
+            <input name="team2_score3" type="number" data-clear-btn="false" onchange="WSRC_result_form.on_score_changed(this)"/>
           </div>
         </td>
       </tr>
-      <tr class="score-row" class="set4">
+      <tr class="score-row" data-set="4">
         <td class="score-row-label">Set&nbsp;4:</td>
         <td class="score-column">
           <div>
-            <input name="team1_score4" type="number" data-clear-btn="false"/>
+            <input name="team1_score4" type="number" data-clear-btn="false" onchange="WSRC_result_form.on_score_changed(this)"/>
           </div>
         </td>
         <td class="score-column">
           <div>
-            <input name="team2_score4" type="number" data-clear-btn="false"/>
+            <input name="team2_score4" type="number" data-clear-btn="false" onchange="WSRC_result_form.on_score_changed(this)"/>
           </div>
         </td>
       </tr>
-      <tr class="score-row" class="set5">
+      <tr class="score-row" data-set="5">
         <td class="score-row-label">Set&nbsp;5:</td>
         <td class="score-column">
           <div>
-            <input name="team1_score5" type="number" data-clear-btn="false"/>
+            <input name="team1_score5" type="number" data-clear-btn="false" onchange="WSRC_result_form.on_score_changed(this)"/>
           </div>
         </td>
         <td class="score-column">
           <div>
-            <input name="team2_score5" type="number" data-clear-btn="false"/>
+            <input name="team2_score5" type="number" data-clear-btn="false" onchange="WSRC_result_form.on_score_changed(this)"/>
           </div>
         </td>
       </tr>

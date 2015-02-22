@@ -24,9 +24,9 @@ class WSRC_result_form
 
     if selected_match
       WSRC_utils.select(top_selector,    selected_match.team1_player1)
-      @on_team1_selected(top_selector)
+      @handle_team1_selected(top_selector)
       WSRC_utils.select(bottom_selector, selected_match.team2_player1)
-      @on_team2_selected(bottom_selector)
+      @handle_team2_selected(bottom_selector)
     else
       if WSRC_user_player_id
         WSRC_utils.select(top_selector, WSRC_user_player_id)
@@ -86,7 +86,7 @@ class WSRC_result_form
     WSRC_utils.fill_selector(selector, team_list)
     return team_list[1..]
 
-  on_team1_selected: (selector) ->
+  handle_team1_selected: (selector) ->
     team1_id = WSRC_result_form.get_selected_id(selector)
     if team1_id
       teams = WSRC_result_form.get_team_map(@valid_match_set, @players)
@@ -97,11 +97,11 @@ class WSRC_result_form
       team_list = @fill_selector(bottom_selector, team1_id)
       if team_list.length == 1
         WSRC_utils.select(bottom_selector, team_list[0][0])
-        @on_team2_selected(bottom_selector)
+        @handle_team2_selected(bottom_selector)
     else
       @disable_and_reset_inputs(false)
     
-  on_team2_selected: (selector) ->
+  handle_team2_selected: (selector) ->
     team2_id = WSRC_result_form.get_selected_id(selector)
     if team2_id
       teams = WSRC_result_form.get_team_map(@valid_match_set, @players)
@@ -111,9 +111,58 @@ class WSRC_result_form
       team1_id = WSRC_result_form.get_selected_id(top_selector)
       if team1_id
         @enable_score_entry()
+        list = [
+          ["", "Winner"]
+          [team1_id, teams[team1_id].toString()]
+          [team2_id, teams[team2_id].toString()]
+        ]
+        walkover_selector = @form.find("select[name='walkover_result']")
+        WSRC_utils.fill_selector(walkover_selector, list)
     else
       @disable_score_entry()
+
+  handle_result_type_changed: (input) ->
+    @toggle_mode(input.value)
+    # call the change handlers to invalidate the submit button if necessary
+    if input.value == 'walkover'
+      walkover_selector = @form.find("select[name='walkover_result']")
+      @handle_walkover_result_changed(walkover_selector)
+    else
+      @handle_score_changed()
+    return null
+
+  handle_walkover_result_changed: (selector) ->
+    valid = $(selector).val().length > 0
+    @form.find("button[type='submit']").prop('disabled', not valid)
+    return null
+
+  handle_score_changed: () ->
+    valid = @validate_scores()
+    @form.find("button[type='submit']").prop('disabled', not valid)
+    return null
     
+  # check that the entered scores are a valid match result. We need at
+  # least one valid set result. Multiple sets cannot contain blank
+  # rows.
+  validate_scores: () ->
+    total = 0
+    blank_row_found = false    
+    for i in [1..5]
+      val1 = @form.find("input[name='team1_score#{ i }']").val()
+      val2 = @form.find("input[name='team2_score#{ i }']").val()
+      if val1.length > 0 or val2.length > 0
+        if blank_row_found
+          return false
+        # use absolute values as handicap scores can be negative, and
+        # e.g. -15/15 is a valid result
+        row_total = Math.abs(parseInt(val1)) + Math.abs(parseInt(val2))
+        if isNaN(row_total) or row_total == 0
+          return false
+        total += row_total
+      else
+        blank_row_found = true
+    return not isNaN(total) and total > 0
+                
   # return a map of players in the comp keyed by their player id
   @get_player_map: (entrants) ->
     players = {}
@@ -169,52 +218,21 @@ class WSRC_result_form
   @on_team_selected: (selector) ->
     form_controller = WSRC_result_form.get_controler(selector.form)
     if selector.name == "team1"
-      form_controller.on_team1_selected(selector)
+      form_controller.handle_team1_selected(selector)
     else if selector.name == "team2"
-      form_controller.on_team2_selected(selector)
+      form_controller.handle_team2_selected(selector)
 
   @on_result_type_changed: (input) ->
-    alert(input.name + input.value)    
+    form_controller = WSRC_result_form.get_controler(input.form)
+    form_controller.handle_result_type_changed(input)
 
-  legacy_setup: (competition, match_set, selected_match) ->
-    this.competition_id = competition.id
-    this.match_set = match_set
-    
-    # get form and disable most inputs
-    form = $("form#add-change-form")    
-    form.find("table td input").textinput().textinput("disable")
-    form.find("input#result_type_normal").prop("checked",true).checkboxradio().checkboxradio("refresh");
-    form.find("input#result_type_walkover").prop("checked",false).checkboxradio().checkboxradio("refresh");
-    @toggle_mode('normal')
-    form.find("input[type='radio']").checkboxradio().checkboxradio('disable')
-    form.find("button[type='button']").prop('disabled', true)
-    form.find("table#score-entry-input th#header-player1").text("Player 1")
-    form.find("table#score-entry-input th#header-player2").text("Player 2")
+  @on_walkover_result_changed: (selector) ->
+    form_controller = WSRC_result_form.get_controler(selector.form)
+    form_controller.handle_walkover_result_changed(selector)
 
-    # add players/teams from matches to the player drop-downs 
-    players = this.get_player_map(competition.entrants)
-    teams = (t for id, t of this.get_team_map(match_set, players))
-    teams.sort((lhs,rhs) -> lhs.toString() > rhs.toString())
-    
-    list = ([p.primary_id, p.toString()] for p in teams)
-    list.unshift(["", "Opponent 1"])
-    selected_val = WSRC_user_player_id ? null
-    this.fill_select(form.find("select#player1"), list, selected_val, true)
-    list[0][1] = "Player 2"
-    this.fill_select(form.find("select#player2"), list, null, true)
-    # TODO: pre-select logged-in player if applicable
-    if selected_val?
-      for t in teams
-        if t.has_player(selected_val)
-          this.on_player_selected("player1")
-          break
-    return null
-
-  result_type_changed: () ->
-    form = jQuery("form#add-change-form")
-    result_type = form.find("input[name='result_type']:checked").val()
-    toggle_mode(result_type)
-    return true
+  @on_score_changed: (input) ->
+    form_controller = WSRC_result_form.get_controler(input.form)
+    form_controller.handle_score_changed()
 
   load_scores_for_match: (cfg, players) ->
     existing_match = null
@@ -265,72 +283,6 @@ class WSRC_result_form
     if existing_match?
       this.validate_match_result()
 
-  legacy_on_team1_selected: (selected_value) ->    
-    players = (p.player for p in this_box_config.entrants)
-    players.sort((lhs,rhs) -> lhs.full_name > rhs.full_name)
-        
-    selector = form.find("select##{ selector_id }")
-    selected_player_id = parseInt(selector.val())
-    opponents = []
-    selected_player = WSRC_utils.list_lookup(players, selected_player_id)
-    header = form.find("table#score-entry-input th#header-#{ selector_id }") 
-    if selected_player?
-      opponents.push(selected_player)
-      header.text(selected_player.full_name)
-    else
-      header.text(selected_player.full_name)      
-
-    valid_opponent_list = ([p.id, p.full_name] for p in players when (p.id != selected_player_id))
-    
-    other_selector_id = (selector_id == "player2") and "player1" or "player2"
-    other_selector = form.find("select##{ other_selector_id }")
-    other_player_id = other_selector.val()
-    if other_player_id == ""
-      this.fill_select(other_selector, valid_opponent_list)
-    else
-      other_player_id = parseInt(other_player_id)
-      this.fill_select(other_selector, valid_opponent_list, other_player_id, true)
-      other_player = WSRC_utils.list_lookup(players, other_player_id)
-      if other_player?
-        opponents.push(other_player)
-        opponents.reverse() if selector_id == "player2"
-
-    checkBothPlayersSelected = () =>
-      if opponents.length == 2
-        # we have names for both players; enable the other inputs:
-        form.find("input[type='radio']").checkboxradio('enable')
-        form.find("table td input").textinput("enable")
-        # add players to the walkover result combo:
-        this.fill_select(form.find("select#walkover_result"), ([p.id, p.full_name] for p in opponents))
-        # load existing points record/walkover result, if any:
-        opponent_ids = (p.id for p in opponents)
-        this.load_scores_for_match(this_box_config, opponent_ids)
-      else
-        # blank the scores:
-        this.load_scores_for_match(this_box_config, null)
-
-    checkBothPlayersSelected()
-    this.validate_match_result()
-    return null
-
-  validate_match_result: () ->
-    form = jQuery("form#add-change-form")
-    box_id = parseInt(form.find("input#competition_id").val())
-    this_box_config = this.get_competition_for_id(box_id)
-    result_type = form.find("input[name='result_type']:checked").val()
-    valid = false
-
-    if result_type == "normal"
-      valid =
-        parseInt(form.find("select#player1").val()) > 0 and
-        parseInt(form.find("select#player2").val()) > 0 and
-        (parseInt(form.find("input#team1_score1").val()) + parseInt(form.find("input#team2_score1").val())) > 0
-    else if result_type == "walkover"
-      valid = parseInt(form.find("select#walkover_result").val()) > 0
-
-    submit_button = form.find("button#submit_match")
-    submit_button.prop("disabled", not valid)
-      
 
   submit_match_result: () ->
     box_id = parseInt(jQuery("input#competition_id").val())
@@ -384,29 +336,4 @@ class WSRC_result_form
 
     return false
     
-  setup_add_change_events: () ->
-    form = jQuery("form#add-change-form")
-    form.find("input[name^='player']").on("change", () =>
-      this.validate_match_result()
-      return true
-    )
-    form.find("input[name^='team']").on("change", () =>
-      this.validate_match_result()
-      return true
-    )
-    form.find("input#result_type_normal").on("change", () =>
-      this.result_type_changed()
-      this.validate_match_result()
-      return true
-    )
-    form.find("input#result_type_walkover").on("change", () =>
-      this.result_type_changed()
-      this.validate_match_result()
-      return true
-    )
-    form.find("select#walkover_result").on("change", () =>
-      this.validate_match_result()
-      return true
-    )
-
 window.WSRC_result_form = WSRC_result_form
