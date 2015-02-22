@@ -1,7 +1,15 @@
 window.WSRC_tournaments =
 
   competition_data: null
-  
+
+  show_score_entry_dialog: (permitted_matches, selected_match) ->
+    dialog = $('#score_entry_dialog')
+    form = dialog.find("form.match-result-form")
+    prefix = if @competition_data.name.indexOf("Doubles") >= 0 then "Team" else "Player"
+    form_controller = new WSRC_result_form(form, @competition_data, permitted_matches, selected_match, prefix)
+    form.data("controller", form_controller)
+    dialog.popup('open')
+    
   bind_tournament_events: () ->
     playerElts = jQuery("td.player").filter(":not(td.empty-match)")
     playerElts.mouseenter (evt) =>
@@ -16,8 +24,12 @@ window.WSRC_tournaments =
       tokens = elt.id.split("_")
       comp = tokens[1]
       matchId = parseInt(tokens[2])
-      match = this.competitions[comp][matchId]
-      this.showScoreEntryDialog([match])
+      matches = $.grep(this.competition_data.matches, (obj, idx) ->
+        obj.competition_match_id == matchId
+      )
+      if matches.length != 1
+        throw "ERROR: expected 1 match for id #{ matchId }, got #{ matches.length }"
+      this.show_score_entry_dialog(matches, matches[0])
       
     playerElts.filter(":not(td.partial-match)").dblclick (evt) ->
       scoreDialog(evt.target)
