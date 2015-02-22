@@ -24,5 +24,9 @@ bdist_windows: build
 	python ./setup.py bdist_wininst
 
 
-
+etags: 
+	etags `find modules -name '*.py'` \
+	`find resources -name '*.coffee'` \
+	`find resources -name 'wsrc_*.css'` \
+	`find modules -name '*.html'`
 
