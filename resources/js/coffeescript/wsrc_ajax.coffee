@@ -22,17 +22,21 @@ class WSRC_ajax
     headers = {}
     if opts.csrf_token?
       headers["X-CSRFToken"] = opts.csrf_token
-    jQuery.ajax(
+    settings =
       url: url
       type: method
-      data: data
-      dataType: "json"
+      contentType: "application/json"
+      data: JSON.stringify(data)
       headers: headers
       success: opts.successCB
       error: opts.failureCB
       complete: (xhr, status) ->
         jQuery.mobile.loading("hide") 
-    )
+    if method == "GET"
+      settings.dataType = "json" # expected return value
+    else
+      settings.processData = false
+    jQuery.ajax(settings)
     return null
 
   @GET: (url, opts) ->
