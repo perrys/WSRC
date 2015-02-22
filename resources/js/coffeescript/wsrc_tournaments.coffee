@@ -33,11 +33,15 @@ class WSRC_Tournament
     
     playerElts = playerElts.filter(":not(td.empty-match)")
     playerElts.mouseenter (evt) =>
-      console.log(evt)
-      if  evt.target.innerHTML == "&nbsp;"
-        return
       target = $(evt.target)
-      matches = jQuery("td.player").filter(() -> $(this).data("teamid") == target.data("teamid"))
+      myteam = target.data("team")
+      unless myteam
+        return false
+      matches = jQuery("td.player").filter () ->
+        theirteam = $(this).data("team")
+        unless theirteam
+          return false
+        return myteam.primary_id == theirteam.primary_id
       matches.addClass(wsrc.Tournament.HIGHLIGHT_CLASS)
     playerElts.mouseleave (evt) =>      
       jQuery("td.#{ wsrc.Tournament.HIGHLIGHT_CLASS }").removeClass(wsrc.Tournament.HIGHLIGHT_CLASS)
@@ -54,6 +58,7 @@ class WSRC_Tournament
       this.show_score_entry_dialog(this.get_unplayed_matches(), matches[0])
       
     playerElts = playerElts.filter(":not(td.partial-match)")
+    playerElts = playerElts.filter(":not(td.completed-match)")
 
     playerElts.dblclick (evt) ->
       open_score_entry_dialog(evt.target)
@@ -91,34 +96,24 @@ class WSRC_Tournament
       single_team = false
       if (not match.team1_player1) or (not match.team2_player1)
         single_team = true
-        
+
       for elt in [team1Elt, team2Elt]
-        elt.removeClass("empty-match")
-        elt.nextUntil(".seed", ".score").removeClass("empty-match")
-        elt.prev(".seed").removeClass("empty-match")
+        apply_to_row = (f) ->
+          f elt
+          f elt.nextUntil(".seed", ".score")
+          f elt.prev(".seed")
+        apply_to_row (target) -> target.removeClass("empty-match")
         if single_team
-          elt.addClass("partial-match")
-          elt.nextUntil(".seed", ".score").addClass("partial-match")
-          elt.prev(".seed").addClass("partial-match")
+          apply_to_row (target) -> target.addClass("partial-match")
+        else if match.scores.length > 0
+          apply_to_row (target) -> target.addClass("completed-match")
   
-      makeTeamName = (id1, id2) =>
-        selector = (player) ->
-          if id2
-            return player.short_name 
-          return player.full_name
-        unless id1?
-          return "&nbsp;"
-        result = selector(players[id1])
-        if id2
-          result += " & " + selector(players[id2]) 
-        return result.replace(" ", "&nbsp;")
-        
-      team1Name = makeTeamName(match.team1_player1, match.team1_player2) 
-      team2Name = makeTeamName(match.team2_player1, match.team2_player2) 
-      team1Elt.html(team1Name)
-      team2Elt.html(team2Name)
-      team1Elt.data("teamid", "#{ match.team1_player1 }_#{ match.team1_player2 }")
-      team2Elt.data("teamid", "#{ match.team2_player1 }_#{ match.team2_player2 }")
+      team1 = new WSRC_team(players[match.team1_player1], players[match.team1_player2])
+      team2 = new WSRC_team(players[match.team2_player1], players[match.team2_player2])
+      team1Elt.html(team1.toString())
+      team2Elt.html(team2.toString())
+      team1Elt.data("team", team1)
+      team2Elt.data("team", team2)
   
       # now the seeds:
       addSeed = (id, elt) =>
