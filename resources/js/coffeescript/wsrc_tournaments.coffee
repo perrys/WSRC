@@ -19,10 +19,10 @@ class WSRC_Tournament
 
   get_unplayed_matches: () ->
     predicate = (match) ->
-      if match.scores.length > 0
-        return false
       unless match.team1_player1 and match.team2_player1
         return false
+      if match.scores.length > 0
+        return false # todo - allow authorized users to edit existing matches
       return true
     matches = (m for m in this.competition_data.matches when predicate(m))
     return matches
@@ -107,13 +107,16 @@ class WSRC_Tournament
           apply_to_row (target) -> target.addClass("partial-match")
         else if match.scores.length > 0
           apply_to_row (target) -> target.addClass("completed-match")
-  
-      team1 = new WSRC_team(players[match.team1_player1], players[match.team1_player2])
-      team2 = new WSRC_team(players[match.team2_player1], players[match.team2_player2])
-      team1Elt.html(team1.toString())
-      team2Elt.html(team2.toString())
-      team1Elt.data("team", team1)
-      team2Elt.data("team", team2)
+
+      set_team = (elt, idx) ->
+        p1id = match["team#{ idx }_player1"]
+        if p1id
+          p2id = match["team#{ idx }_player2"]
+          team = new WSRC_team(players[p1id], players[p2id])
+          elt.html(team.toString())
+          elt.data("team", team)
+      for [elt, idx] in [[team1Elt, 1], [team2Elt, 2]]
+        set_team(elt, idx)
   
       # now the seeds:
       addSeed = (id, elt) =>
