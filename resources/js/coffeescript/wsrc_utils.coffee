@@ -3,11 +3,11 @@ unless window.assert?
     unless condition 
       throw message || "Assertion failed"
 
-window.WSRC_utils =
+class WSRC_utils
   
-  DAYS_OF_WEEK: ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]
+  @DAYS_OF_WEEK: ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]
 
-  list_lookup: (list, id, id_key) ->
+  @list_lookup: (list, id, id_key) ->
     unless id_key?
       id_key = "id"
     for l in list
@@ -15,20 +15,20 @@ window.WSRC_utils =
         return l
     return null
 
-  is_valid_int: (i) ->
+  @is_valid_int: (i) ->
     if i == ""
       return false
     i = parseInt(i)
     return not isNaN(i)
 
-  toggle: (evt) ->
+  @toggle: (evt) ->
     root = $(evt.target).parents(".toggle-root")
     hiders = root.find(".togglable")
     showers = root.find(".toggled")
     hiders.removeClass("togglable").addClass("toggled")
     showers.removeClass("toggled").addClass("togglable")
 
-  get_ordinal_suffix: (i) ->
+  @get_ordinal_suffix: (i) ->
     if i in [11, 12, 13]
       return "th"
     r = i % 10    
@@ -38,11 +38,11 @@ window.WSRC_utils =
       when 3 then return "rd"
       else return "th"
 
-  iso_to_js_date: (str) ->
+  @iso_to_js_date: (str) ->
     toint = (start, len) -> parseInt(str.substr(start, start+len))
     new Date(toint(0,4), toint(5,2)-1, toint(8,2)) # gotcha - JS dates use 0-offset months...
 
-  get_day_humanized: (basedate, offset) ->
+  @get_day_humanized: (basedate, offset) ->
     switch offset
       when 0 then return "Today"
       when 1 then return "Tomorrow"
@@ -57,7 +57,7 @@ window.WSRC_utils =
   ##
   # Remove all items from the selector and replace with the given list
   ## 
-  fill_selector: (selector, list, selected_val) ->
+  @fill_selector: (selector, list, selected_val) ->
     selector.find("option").remove()
     for item in list
       opt = jQuery("<option value='#{ item[0] }'>#{ item[1] }</option>")
@@ -68,8 +68,15 @@ window.WSRC_utils =
     selector.selectmenu('refresh', true);
     return null
 
-  select: (selector, selected_val) ->
+  @select: (selector, selected_val) ->
     selector.find("option").prop('selected': false)
     selector.find("option[value='#{ selected_val }']").prop('selected': true)
     selector.selectmenu('refresh', true);
     return null
+
+  @add_to_namespace: (name, obj) ->
+    unless window.wsrc
+      window.wsrc = {}
+    window.wsrc[name] = obj
+
+WSRC_utils.add_to_namespace("utils", WSRC_utils)

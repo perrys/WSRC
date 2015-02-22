@@ -146,10 +146,10 @@ window.WSRC_homepage =
     dayoffset = parseInt(table.data("dayoffset"))
     dayoffset += days
     url = "/data/bookings?date=#{ basedate }&day_offset=#{ dayoffset }"    
-    WSRC_ajax.GET(url,
+    wsrc.ajax.GET(url,
       successCB: (data) =>
         table.data("dayoffset", dayoffset)
-        container.find("h4").html(WSRC_utils.get_day_humanized(basedate, dayoffset))
+        container.find("h4").html(wsrc.utils.get_day_humanized(basedate, dayoffset))
         this.display_court_bookings(data, dayoffset, WSRC_user_player_id?)
         return true
       failureCB: (xhr, status) =>

@@ -50,7 +50,7 @@ window.WSRC =
 
     url = "/data/competition/#{ competition_id }?expand=1"
     loadPageData = () =>
-      WSRC_ajax.GET(url,
+      wsrc.ajax.GET(url,
         successCB: (data) =>
           WSRC_tournaments.refresh_tournament_data(data)
           return true
@@ -67,7 +67,7 @@ window.WSRC =
       
     url = "/data/competitiongroup/#{ competitiongroup_id }?expand=1"
     loadPageData = () =>
-      WSRC_ajax.GET(url,
+      wsrc.ajax.GET(url,
         successCB: (data) =>
           return true
         failureCB: (xhr, status) => 
@@ -91,10 +91,10 @@ window.WSRC =
     
   onHomePageShow: (page) ->
 
-    $(".toggle-link a").on("click", WSRC_utils.toggle)
+    $(".toggle-link a").on("click", wsrc.utils.toggle)
 
     url = "/data/facebook"    
-    WSRC_ajax.GET(url,
+    wsrc.ajax.GET(url,
       successCB: (data) =>
         WSRC_homepage.refresh_facebook(data)
         return true

@@ -3,12 +3,12 @@ window.WSRC_leagues =
 
   get_competition_for_id: (box_id) ->
     box_id = parseInt(box_id)
-    WSRC_utils.list_lookup(this.competitiongroup_data.competitions_expanded, box_id)
+    wsrc.utils.list_lookup(this.competitiongroup_data.competitions_expanded, box_id)
 
   get_player_config: (box_id, player_id) ->
     players = this.get_competition_for_id(box_id).players
     player_id = parseInt(player_id)
-    WSRC_utils.list_lookup(players, player_id)
+    wsrc.utils.list_lookup(players, player_id)
 
   ##
   # Configure and show the box detail popup for the league from which it was opened
@@ -60,7 +60,7 @@ window.WSRC_leagues =
       form.find("table td input").textinput().textinput("disable")
       form.find("input#result_type_normal").prop("checked",true).checkboxradio().checkboxradio("refresh");
       form.find("input#result_type_walkover").prop("checked",false).checkboxradio().checkboxradio("refresh");
-      WSRC_utils.set_on_and_off('score-entry-input', 'walkover_input')
+      wsrc.utils.set_on_and_off('score-entry-input', 'walkover_input')
       form.find("input[type='radio']").checkboxradio().checkboxradio('disable')
       form.find("button[type='button']").prop('disabled', true)
       form.find("table#score-entry-input th#header-player1").text("Player 1")

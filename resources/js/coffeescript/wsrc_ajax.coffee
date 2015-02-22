@@ -1,5 +1,5 @@
 
-window.WSRC_ajax =
+class WSRC_ajax
 
   ##
   # Helper function for Ajax requests back to the server.
@@ -11,7 +11,7 @@ window.WSRC_ajax =
   #  csrf_token - (optional) CSRF token to be passed back to server
   # METHOD is the http CRUD type
   ## 
-  ajax_helper: (url, data, opts, method) ->
+  @ajax_helper: (url, data, opts, method) ->
     jQuery.mobile.loading("show", 
       text: ""
       textVisible: false
@@ -35,13 +35,14 @@ window.WSRC_ajax =
     )
     return null
 
-  GET: (url, opts) ->
+  @GET: (url, opts) ->
     this.ajax_helper(url, null, opts, "GET")
 
-  POST: (url, data, opts) ->
+  @POST: (url, data, opts) ->
     this.ajax_helper(url, data, opts, "POST")
     
-  PUT: (url, data, opts) ->
+  @PUT: (url, data, opts) ->
     this.ajax_helper(url, data, opts, "PUT")
 
 
+wsrc.utils.add_to_namespace("ajax", WSRC_ajax)

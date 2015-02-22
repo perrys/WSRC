@@ -23,13 +23,13 @@ class WSRC_result_form
     @fill_selector(top_selector, null)
 
     if selected_match
-      WSRC_utils.select(top_selector,    selected_match.team1_player1)
+      wsrc.utils.select(top_selector,    selected_match.team1_player1)
       @handle_team1_selected(top_selector)
-      WSRC_utils.select(bottom_selector, selected_match.team2_player1)
+      wsrc.utils.select(bottom_selector, selected_match.team2_player1)
       @handle_team2_selected(bottom_selector)
     else
       if WSRC_user_player_id
-        WSRC_utils.select(top_selector, WSRC_user_player_id)
+        wsrc.utils.select(top_selector, WSRC_user_player_id)
 
   disable_and_reset_inputs: (include_team1_selector) ->
     @disable_score_entry()
@@ -39,7 +39,7 @@ class WSRC_result_form
       if i == 2 or include_team1_selector
         selector = @form.find("select[name='team#{ i }']")
         list = [["", empty_text]]
-        WSRC_utils.fill_selector(selector, list)
+        wsrc.utils.fill_selector(selector, list)
         if i == 2
           selector.prop('disabled', true)
         selector.selectmenu('refresh')
@@ -83,7 +83,7 @@ class WSRC_result_form
     name = selector[0].name
     suffix = name.substr(name.length-1)
     team_list.unshift(["", "#{ @team_type_prefix } #{ suffix }"])
-    WSRC_utils.fill_selector(selector, team_list)
+    wsrc.utils.fill_selector(selector, team_list)
     return team_list[1..]
 
   handle_team1_selected: (selector) ->
@@ -96,7 +96,7 @@ class WSRC_result_form
       bottom_selector.prop('disabled', false)
       team_list = @fill_selector(bottom_selector, team1_id)
       if team_list.length == 1
-        WSRC_utils.select(bottom_selector, team_list[0][0])
+        wsrc.utils.select(bottom_selector, team_list[0][0])
         @handle_team2_selected(bottom_selector)
     else
       @disable_and_reset_inputs(false)
@@ -117,7 +117,7 @@ class WSRC_result_form
           [team2_id, teams[team2_id].toString()]
         ]
         walkover_selector = @form.find("select[name='walkover_result']")
-        WSRC_utils.fill_selector(walkover_selector, list)
+        wsrc.utils.fill_selector(walkover_selector, list)
     else
       @disable_score_entry()
 
@@ -301,7 +301,7 @@ class WSRC_result_form
     for i in [1..5]
       for j in [1..2]
         score = form.find("input#team#{ j }_score#{ i }").val()
-        if WSRC_utils.is_valid_int(score)
+        if wsrc.utils.is_valid_int(score)
           data["team#{ j }_score#{ i }"] = parseInt(score)
     match_id = match_id_field.val()
     result_type = form.find("input[name='result_type']:checked").val()
@@ -311,11 +311,11 @@ class WSRC_result_form
         data.walkover = 1
       else
         data.walkover = 2
-    if WSRC_utils.is_valid_int(match_id) 
+    if wsrc.utils.is_valid_int(match_id) 
       # update existing match result:
       data.id = parseInt(match_id)
       url = "/data/match/#{ match_id }"
-      WSRC_ajax.PUT(url, data,
+      wsrc.ajax.PUT(url, data,
         successCB: (data) =>
           return true
         failureCB: (xhr, status) => 
@@ -326,7 +326,7 @@ class WSRC_result_form
     else
       # new match result:
       url = "/data/match/"
-      WSRC_ajax.POST(url, data,
+      wsrc.ajax.POST(url, data,
         successCB: (data) =>
           return true
         failureCB: (xhr, status) => 
