@@ -436,6 +436,9 @@ span.field-error {
 .settings-form .ui-state-disabled {
     opacity: 0.6;
 }
+.wsrc-disabled {
+    opacity: 0.3;
+}
 
 /* leagues */
 .wsrc-site table.boxes {
