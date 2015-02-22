@@ -2,7 +2,7 @@ class WSRC_Tournament
 
   @HIGHLIGHT_CLASS: "wsrc-highlight"
     
-  constructor: (@competition_data) ->
+  constructor: (@competition_data, @page_dirty_callback) ->
     @refresh_tournament(@competition_data)
 
   refresh_tournament: () ->
@@ -13,7 +13,11 @@ class WSRC_Tournament
     dialog = $('#score_entry_dialog')
     form = dialog.find("form.match-result-form")
     prefix = if @competition_data.name.indexOf("Doubles") >= 0 then "Team" else "Player"
-    form_controller = new wsrc.result_form(form, @competition_data, permitted_matches, selected_match, prefix)
+    submit_callback = () =>
+      dialog.popup("close")
+      if @page_dirty_callback
+        @page_dirty_callback()
+    form_controller = new wsrc.result_form(form, @competition_data, permitted_matches, selected_match, prefix, submit_callback)
     form.data("controller", form_controller)
     dialog.popup('open')
 
@@ -173,6 +177,8 @@ class WSRC_Tournament
             team2Elt.addClass("winner")
       return true
 
+    $("td.partial-match").removeClass("partial-match")
+    $("td.completed-match").removeClass("completed-match")
     populateMatch(m) for m in competition_data.matches
 
     return true

@@ -47,7 +47,9 @@ window.WSRC =
     competition_id = page.data().competitionid
 
     refresh_tournament_data = (data) ->
-      controller = new wsrc.Tournament(data)
+      page_dirty_callback = () ->
+        loadPageData()
+      controller = new wsrc.Tournament(data, page_dirty_callback)
       page.data("tournament", controller)
       return true
       

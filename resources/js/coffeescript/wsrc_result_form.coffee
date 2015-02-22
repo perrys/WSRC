@@ -9,7 +9,7 @@ class WSRC_result_form
   # 4b - score-entry without at least one score populated
   # 5. Ready for submit 
 
-  constructor: (@form, @competition_data, @valid_match_set, @selected_match, @team_type_prefix) ->
+  constructor: (@form, @competition_data, @valid_match_set, @selected_match, @team_type_prefix, @submitted_callback) ->
 
     unless @team_type_prefix
       @team_type_prefix = "Player"
@@ -331,6 +331,8 @@ class WSRC_result_form
       url = "/data/match/#{ match.id }"
       wsrc.ajax.PUT(url, match,
         successCB: (data) =>
+          if @submitted_callback
+            @submitted_callback()
           return true
         failureCB: (xhr, status) => 
           WSRC.show_error_dialog("ERROR: Failed to load data from #{ url }")
@@ -342,6 +344,8 @@ class WSRC_result_form
       url = "/data/match/"
       wsrc.ajax.POST(url, match,
         successCB: (data) =>
+          if @submitted_callback
+            @submitted_callback()
           return true
         failureCB: (xhr, status) => 
           WSRC.show_error_dialog("ERROR: Failed to load data from #{ url }")
