@@ -57,3 +57,23 @@ window.WSRC_utils =
     dom = dt.getDate()
     suffix = this.get_ordinal_suffix(dom)
     return "#{ dow } #{ dom }#{ suffix }"
+
+  ##
+  # Remove all items from the selector and replace with the given list
+  ## 
+  fill_selector: (selector, list, selected_val) ->
+    selector.find("option").remove()
+    for item in list
+      opt = jQuery("<option value='#{ item[0] }'>#{ item[1] }</option>")
+      selector.append(opt)
+      if item[0] == selected_val
+        opt.prop('selected': true)
+    selector.selectmenu();
+    selector.selectmenu('refresh', true);
+    return null
+
+  select: (selector, selected_val) ->
+    selector.find("option").prop('selected': false)
+    selector.find("option[value='#{ selected_val }']").prop('selected': true)
+    selector.selectmenu('refresh', true);
+    return null
