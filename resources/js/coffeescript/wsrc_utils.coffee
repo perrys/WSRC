@@ -7,10 +7,6 @@ window.WSRC_utils =
   
   DAYS_OF_WEEK: ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]
 
-  set_on_and_off: (onid, offid) ->
-    jQuery("##{ onid }").show()
-    jQuery("##{ offid }").hide()
-
   list_lookup: (list, id, id_key) ->
     unless id_key?
       id_key = "id"
