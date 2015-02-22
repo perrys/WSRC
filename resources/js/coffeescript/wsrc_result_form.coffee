@@ -31,6 +31,7 @@ class WSRC_result_form
     else
       if WSRC_user_player_id
         wsrc.utils.select(top_selector, WSRC_user_player_id)
+        @handle_team1_selected(top_selector)
 
   disable_and_reset_inputs: (include_team1_selector) ->
     @disable_score_entry()
