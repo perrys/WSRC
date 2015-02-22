@@ -9,14 +9,14 @@
     <fieldset data-role="controlgroup" data-type="horizontal" class="match-type">
       <legend  class="ui-hidden-accessible">Result Type:</legend>
       <label class="centered-text">Match
-        <input type="radio" name="result_type" value="normal" checked="checked">
+        <input type="radio" name="result_type" value="normal" checked="checked" onchange="WSRC_result_form.on_result_type_changed(this)">
       </label>
       <label class="centered-text">Walkover
-        <input type="radio" name="result_type" value="walkover">
+        <input type="radio" name="result_type" value="walkover" onchange="WSRC_result_form.on_result_type_changed(this)">
       </label>
     </fieldset>
 
-    <p class="walkover_input" style="display: none;">
+    <p class="walkover-input" style="display: none;">
       <label class="ui-hidden-accessible" for="walkover_result">Winner:</label>
       <select name="walkover_result" data-theme="a" data-native-menu="false">
       <option value="">Winner</option>
