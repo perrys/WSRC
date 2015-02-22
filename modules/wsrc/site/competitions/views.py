@@ -118,6 +118,8 @@ class UpdateMatch(APIView):
 class UpdateTournament(APIView):
     parser_classes = (JSONParser,)
     def put(self, request, pk, format="json"):
+        if not request.user.is_authenticated():
+            raise PermissionDenied()
         comp_id = int(pk)
         comp_data = request.DATA
         if comp_data["id"] != comp_id:
