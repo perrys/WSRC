@@ -604,7 +604,10 @@ td.wsrc-highlight {
  background-color: #dadada;
 }
 td.empty-match {
-  border: 1px solid #eee;	
+  opacity: 0.3;	
+}
+td.partial-match {
+  opacity: 0.6;	
 }
 td.winningscore, td.winner {
   font-weight: bold; 
