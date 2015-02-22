@@ -9,6 +9,16 @@ window.WSRC_tournaments =
     form_controller = new WSRC_result_form(form, @competition_data, permitted_matches, selected_match, prefix)
     form.data("controller", form_controller)
     dialog.popup('open')
+
+  get_unplayed_matches: () ->
+    predicate = (match) ->
+      if match.scores.length > 0
+        return false
+      unless match.team1_player1 and match.team2_player1
+        return false
+      return true
+    matches = (m for m in this.competition_data.matches when predicate(m))
+    return matches
     
   bind_tournament_events: () ->
     playerElts = jQuery("td.player").filter(":not(td.empty-match)")
@@ -29,7 +39,7 @@ window.WSRC_tournaments =
       )
       if matches.length != 1
         throw "ERROR: expected 1 match for id #{ matchId }, got #{ matches.length }"
-      this.show_score_entry_dialog(matches, matches[0])
+      this.show_score_entry_dialog(this.get_unplayed_matches(), matches[0])
       
     playerElts = playerElts.filter(":not(td.partial-match)")
 
