@@ -73,11 +73,22 @@ class CompetitionGroupDetail(rest_generics.RetrieveUpdateDestroyAPIView):
     queryset = CompetitionGroup.objects.all()
     serializer_class = CompetitionGroupSerializer
 
-class MatchDetail(rest_generics.RetrieveUpdateDestroyAPIView):
-    model = Match
-
-class MatchCreate(rest_generics.CreateAPIView):
-    model = Match
+class UpdateMatch(APIView):
+    parser_classes = (JSONParser,)
+    def put(self, request, pk, format="json"):
+        raise SuspiciousOperation()
+        match_id = int(pk)
+        match_data = request.DATA
+        if int(match_data["id"]) != match_id:
+            raise SuspiciousOperation()
+        match = Match.objects.get(pk=match_id)
+        for i in range(1,3):
+            for j in range(1,6):
+                field = "team%(i)d_score%(j)d" % locals()
+                setattr(match, field, match_data[field])
+        match.walkover = match_data["walkover"]
+        match.save()
+        return HttpResponse(status=201)
 
 class UpdateTournament(APIView):
     parser_classes = (JSONParser,)
