@@ -313,15 +313,18 @@ class WSRC_result_form
     if result_type == "walkover"
       winner_id = parseInt(@form.find("select[name='walkover_result']").val())
       if winner_id == team_ids[0]
-        match.walkover = 1
+        match.walkover = if reversed then 2 else 1
       else
-        match.walkover = 2
+        match.walkover = if reversed then 1 else 2
     else
       for i in [1..5]
         for j in [1..2]
           score = @form.find("input[name='team#{ j }_score#{ i }']").val()
           score = if wsrc.utils.is_valid_int(score) then parseInt(score) else null
-          match["team#{ j }_score#{ i }"] = score
+          team = j
+          if reversed
+            team = if j == 2 then 1 else 2
+          match["team#{ team }_score#{ i }"] = score
           
     if match.id
       # update existing match result:
