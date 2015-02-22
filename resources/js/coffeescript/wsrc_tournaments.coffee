@@ -31,8 +31,13 @@ window.WSRC_tournaments =
         throw "ERROR: expected 1 match for id #{ matchId }, got #{ matches.length }"
       this.show_score_entry_dialog(matches, matches[0])
       
-    playerElts.filter(":not(td.partial-match)").dblclick (evt) ->
+    playerElts = playerElts.filter(":not(td.partial-match)")
+
+    playerElts.dblclick (evt) ->
       scoreDialog(evt.target)
+    playerElts.on "taphold", (evt) ->
+      scoreDialog(evt.target)
+    
     playerElts.siblings().filter(".score").dblclick (evt) ->
       target = evt.target;
       while not target.classList.contains("player") # TODO - support older browsers
