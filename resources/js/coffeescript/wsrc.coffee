@@ -244,9 +244,6 @@ window.WSRC =
   onBoxActionClicked: (link) ->
     this.open_box_detail_popup(link.id)
 
-  onPlayerSelected: (selector) ->
-    WSRC_result_form.on_player_selected(selector.id)
-
   onTournamentSelected: (selector) ->
     $.mobile.loading("show")
     link = $(selector).val()
