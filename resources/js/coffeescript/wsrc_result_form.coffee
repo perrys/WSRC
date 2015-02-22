@@ -27,6 +27,7 @@ class WSRC_result_form
       @handle_team1_selected(top_selector)
       wsrc.utils.select(bottom_selector, selected_match.team2_player1)
       @handle_team2_selected(bottom_selector)
+      @load_scores_for_match(selected_match, false)
     else
       if WSRC_user_player_id
         wsrc.utils.select(top_selector, WSRC_user_player_id)
@@ -43,6 +44,9 @@ class WSRC_result_form
         if i == 2
           selector.prop('disabled', true)
         selector.selectmenu('refresh')
+    for idx in [1..5]
+      @form.find("input[name='team1_score#{ idx }']").val("")
+      @form.find("input[name='team2_score#{ idx }']").val("")
     return null
 
   enable_score_entry: () ->
@@ -97,7 +101,7 @@ class WSRC_result_form
       team_list = @fill_selector(bottom_selector, team1_id)
       if team_list.length == 1
         wsrc.utils.select(bottom_selector, team_list[0][0])
-        @handle_team2_selected(bottom_selector)
+      @handle_team2_selected(bottom_selector)
     else
       @disable_and_reset_inputs(false)
     
@@ -120,7 +124,16 @@ class WSRC_result_form
         wsrc.utils.fill_selector(walkover_selector, list)
     else
       @disable_score_entry()
+    @load_scores_for_match()
 
+  set_result_type: (type) ->
+    radios = @form.find("input[name='result_type']")
+    radio = radios.filter("[value='#{ type }']")
+    radio.prop("checked", true)
+    radios.checkboxradio("refresh")
+    @handle_result_type_changed(radio[0])
+    return null
+    
   handle_result_type_changed: (input) ->
     @toggle_mode(input.value)
     # call the change handlers to invalidate the submit button if necessary
@@ -212,6 +225,15 @@ class WSRC_result_form
       selected_value = null
     return selected_value
 
+  # find an existing match with the given player/team ids. The 
+  @find_match_for_ids: (valid_match_set, id1, id2) ->
+    for match in valid_match_set
+      if id1 == match.team1_player1 and id2 == match.team2_player1
+        return [match, false]
+      else if id1 == match.team2_player1 and id2 == match.team1_player1
+        return [match, true]
+    return [null, null]
+
   @get_controler: (form) ->
     $(form).data("controller") # get the instance of this class associted with the form
     
@@ -235,55 +257,46 @@ class WSRC_result_form
     form_controller = WSRC_result_form.get_controler(input.form)
     form_controller.handle_score_changed()
 
-  load_scores_for_match: (cfg, players) ->
-    existing_match = null
-    p1idx = 0
-    p2idx = 1
-    if players?
-      for match in cfg.matches
-        if players[0] == match.team1_player1 and players[1] == match.team2_player1
-          existing_match = match
-          break
-        else if players[0] == match.team2_player1 and players[1] == match.team1_player1
-          existing_match = match
+  load_scores_for_match: (existing_match, isreversed) ->
+    team1_id = WSRC_result_form.get_selected_id @form.find("select[name='team1']")
+    team2_id = WSRC_result_form.get_selected_id @form.find("select[name='team2']")
+    
+    unless existing_match
+      [existing_match, isreversed] = WSRC_result_form.find_match_for_ids(@valid_match_set, team1_id, team2_id)
+
+    if existing_match
+      radios = @form.find("input[name='result_type']")
+      if existing_match.walkover
+        @set_result_type('walkover')
+        winner_select = @form.find("select[name='walkover_result']")
+        if existing_match.walkover == 1
+          winner_select.val(existing_match.team1_player1)
+        else
+          winner_select.val(existing_match.team2_player1)
+        winner_select.selectmenu("refresh")
+        @handle_walkover_result_changed(winner_select[0])
+      else
+        @set_result_type('normal')
+        p1idx = 0
+        p2idx = 1
+        idx = 1
+        if isreversed
           p1idx = 1
           p2idx = 0
-          break
-    form = jQuery("form#add-change-form")
-    match_id_field = form.find("input#match_id")
-    idx = 1
-    if not existing_match?
-      match_id_field.val("")
+        for s in existing_match.scores
+          @form.find("input[name='team1_score#{ idx }']").val(s[p1idx])
+          @form.find("input[name='team2_score#{ idx }']").val(s[p2idx])
+          idx += 1
+        while idx <=5
+          @form.find("input[name='team1_score#{ idx }']").val("")
+          @form.find("input[name='team2_score#{ idx }']").val("")
+          idx += 1
+        @handle_score_changed()
     else
-      match_id_field.val(existing_match.id)
-      for s in existing_match.scores
-        form.find("input#team1_score#{ idx }").val(s[p1idx])
-        form.find("input#team2_score#{ idx }").val(s[p2idx])
-        idx += 1
-      radios = form.find("input[name='result_type']")
-      if existing_match.walkover?
-        radios.filter("[value='walkover']").prop("checked", true)
-        radios.checkboxradio("refresh")
-        this.result_type_changed()
-        winner_select = form.find("select#walkover_result")
-        if existing_match.walkover == 1
-          winner_select.val(match.team1_player1)
-        else
-          winner_select.val(match.team2_player1)
-        winner_select.selectmenu("refresh")
-      else
-        radios.filter("[value='normal']").prop("checked", true)
-        radios.checkboxradio("refresh")
-        this.result_type_changed()
-        
-    while idx <=5
-      form.find("input#team1_score#{ idx }").val("")
-      form.find("input#team2_score#{ idx }").val("")
-      idx += 1
-
-    if existing_match?
-      this.validate_match_result()
-
+      @set_result_type('normal')
+      for idx in [1..5]
+        @form.find("input[name='team1_score#{ idx }']").val("")
+        @form.find("input[name='team2_score#{ idx }']").val("")
 
   submit_match_result: () ->
     box_id = parseInt(jQuery("input#competition_id").val())
