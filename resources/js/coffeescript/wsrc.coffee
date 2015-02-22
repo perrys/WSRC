@@ -1,8 +1,6 @@
                   
 window.WSRC =
 
-  HIGHLIGHT_CLASS: "wsrc-highlight"
-
   competitiongroup_data: null
 
   bxslider_inited: false
@@ -48,19 +46,22 @@ window.WSRC =
   onTournamentPageShow: (page) ->
     competition_id = page.data().competitionid
 
+    refresh_tournament_data = (data) ->
+      controller = new wsrc.Tournament(data)
+      page.data("tournament", controller)
+      return true
+      
     url = "/data/competition/#{ competition_id }?expand=1"
     loadPageData = () =>
       wsrc.ajax.GET(url,
-        successCB: (data) =>
-          WSRC_tournaments.refresh_tournament_data(data)
-          return true
+        successCB: refresh_tournament_data
         failureCB: (xhr, status) => 
           this.show_error_dialog("ERROR: Failed to load tournament data from #{ url }")
           return false
       )
     $("#bracket-refresh-button").click (evt) ->
       loadPageData()
-    WSRC_tournaments.refresh_tournament_data(WSRC_bracket_data)
+    refresh_tournament_data(WSRC_bracket_data)
 
   onLeaguePageShow: (page) ->
     competitiongroup_id = page.data().competitiongroupid

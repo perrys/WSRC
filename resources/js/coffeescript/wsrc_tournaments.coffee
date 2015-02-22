@@ -1,7 +1,14 @@
-window.WSRC_tournaments =
+class WSRC_Tournament
 
-  competition_data: null
+  @HIGHLIGHT_CLASS: "wsrc-highlight"
+    
+  constructor: (@competition_data) ->
+    @refresh_tournament(@competition_data)
 
+  refresh_tournament: () ->
+    WSRC_Tournament.populate_matches(@competition_data)
+    @bind_tournament_events()
+    
   show_score_entry_dialog: (permitted_matches, selected_match) ->
     dialog = $('#score_entry_dialog')
     form = dialog.find("form.match-result-form")
@@ -21,16 +28,21 @@ window.WSRC_tournaments =
     return matches
     
   bind_tournament_events: () ->
-    playerElts = jQuery("td.player").filter(":not(td.empty-match)")
+    playerElts = jQuery("td.player")
+    playerElts.unbind()
+    
+    playerElts = playerElts.filter(":not(td.empty-match)")
     playerElts.mouseenter (evt) =>
+      console.log(evt)
       if  evt.target.innerHTML == "&nbsp;"
         return
       target = $(evt.target)
       matches = jQuery("td.player").filter(() -> $(this).data("teamid") == target.data("teamid"))
-      matches.addClass(this.HIGHLIGHT_CLASS)
+      matches.addClass(wsrc.Tournament.HIGHLIGHT_CLASS)
     playerElts.mouseleave (evt) =>      
-      jQuery("td.#{ this.HIGHLIGHT_CLASS }").removeClass(this.HIGHLIGHT_CLASS)
-    scoreDialog = (elt) =>
+      jQuery("td.#{ wsrc.Tournament.HIGHLIGHT_CLASS }").removeClass(wsrc.Tournament.HIGHLIGHT_CLASS)
+      
+    open_score_entry_dialog = (elt) =>
       tokens = elt.id.split("_")
       comp = tokens[1]
       matchId = parseInt(tokens[2])
@@ -44,20 +56,19 @@ window.WSRC_tournaments =
     playerElts = playerElts.filter(":not(td.partial-match)")
 
     playerElts.dblclick (evt) ->
-      scoreDialog(evt.target)
+      open_score_entry_dialog(evt.target)
     playerElts.on "taphold", (evt) ->
-      scoreDialog(evt.target)
+      open_score_entry_dialog(evt.target)
     
     playerElts.siblings().filter(".score").dblclick (evt) ->
       target = evt.target;
       while not target.classList.contains("player") # TODO - support older browsers
         target = target.previousSibling
-      scoreDialog(target)
+      open_score_entry_dialog(target)
 
     return true
     
-  refresh_tournament_data: (competition_data) ->
-    this.competition_data = competition_data
+  @populate_matches: (competition_data) ->
     
     entrants = {}
     players = {}
@@ -157,7 +168,6 @@ window.WSRC_tournaments =
 
     populateMatch(m) for m in competition_data.matches
 
-    this.bind_tournament_events()
-    
     return true
       
+wsrc.utils.add_to_namespace("Tournament", WSRC_Tournament)
