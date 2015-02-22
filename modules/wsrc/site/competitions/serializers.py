@@ -74,9 +74,16 @@ class RoundSerializer(serializers.ModelSerializer):
     fields = ('round', 'end_date')
 
 class MatchSerializer(serializers.ModelSerializer):
-  team1_player1 = team1_player2 = team2_player1 = team2_player2 = PlayerSerializer()
+  team1_player1 = PlayerSerializer()
+  team1_player2 = PlayerSerializer()
+  team2_player1 = PlayerSerializer()
+  team2_player2 = PlayerSerializer()
   class Meta:
     model = Match
+    fields = ("team1_player1", "team1_player2", "team2_player1", "team2_player2", 
+              "team1_score1", "team1_score2", "team1_score3", "team1_score4", "team1_score5", 
+              "team2_score1", "team2_score2", "team2_score3", "team2_score4", "team2_score5", 
+              "competition_match_id", "walkover")
 
 class CompactMatchField(serializers.RelatedField):
   def to_representation(self, match):
