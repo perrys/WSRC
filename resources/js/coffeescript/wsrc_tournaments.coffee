@@ -45,6 +45,9 @@ class WSRC_Tournament
       matches.addClass(wsrc.Tournament.HIGHLIGHT_CLASS)
     playerElts.mouseleave (evt) =>      
       jQuery("td.#{ wsrc.Tournament.HIGHLIGHT_CLASS }").removeClass(wsrc.Tournament.HIGHLIGHT_CLASS)
+
+    unless WSRC_user_player_id?
+      return null
       
     open_score_entry_dialog = (elt) =>
       tokens = elt.id.split("_")
@@ -71,7 +74,7 @@ class WSRC_Tournament
         target = target.previousSibling
       open_score_entry_dialog(target)
 
-    return true
+    return null
     
   @populate_matches: (competition_data) ->
     
