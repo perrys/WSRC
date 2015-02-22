@@ -259,7 +259,6 @@ window.WSRC =
 
   onTournamentPageShow: (page) ->
     competition_id = page.data().competitionid
-    WSRC_result_form.setup_add_change_events()
 
     url = "/data/competition/#{ competition_id }?expand=1"
     loadPageData = () =>
