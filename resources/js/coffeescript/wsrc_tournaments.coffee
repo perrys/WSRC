@@ -75,6 +75,12 @@ class WSRC_Tournament
       open_score_entry_dialog(target)
 
     return null
+
+  @on_edit_clicked: (button) ->
+    page = $(button).parents("div[data-role='page']")
+    controller = page.data("tournament")
+    matches = controller.get_unplayed_matches()
+    controller.show_score_entry_dialog(matches)
     
   @populate_matches: (competition_data) ->
     
