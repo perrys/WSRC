@@ -76,7 +76,6 @@ class CompetitionGroupDetail(rest_generics.RetrieveUpdateDestroyAPIView):
 class UpdateMatch(APIView):
     parser_classes = (JSONParser,)
     def put(self, request, pk, format="json"):
-        raise SuspiciousOperation()
         match_id = int(pk)
         match_data = request.DATA
         if int(match_data["id"]) != match_id:
