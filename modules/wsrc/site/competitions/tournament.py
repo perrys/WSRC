@@ -199,6 +199,22 @@ def render_tournament(competition):
 
     return etree.tostring(table.toHtml(), encoding='UTF-8', method='html')
 
+def get_or_create_next_match(competition, slot_id, player1, player2):
+    bottomSlot = slot_id & 1
+    match_id = slot_id >> 1
+    try:
+        match = competition.match_set.get(competition_match_id=match_id)
+    except Match.DoesNotExist:
+        match = competition.match_set.create(competition_match_id=match_id)
+    if bottomSlot:
+        match.team2_player1 = player1
+        match.team2_player2 = player2
+    else:
+        match.team1_player1 = player1
+        match.team1_player2 = player2
+    match.save()
+    return match
+
 @transaction.atomic
 def reset(comp_id, entrants):
     from serializers import EntrantDeSerializer
@@ -218,19 +234,13 @@ def reset(comp_id, entrants):
     entrants = competition.entrant_set.order_by("ordering")
     slots = wsrc.utils.bracket.calc_slots(len(entrants))
     for slot,entrant in zip(slots, entrants):
-        bottomSlot = slot & 1
-        match_id = slot >> 1
-        try:
-            match = competition.match_set.get(competition_match_id=match_id)
-        except Match.DoesNotExist:
-            match = competition.match_set.create(competition_match_id=match_id)
-        if bottomSlot:
-            match.team2_player1 = entrant.player
-            match.team2_player2 = entrant.player2
-        else:
-            match.team1_player1 = entrant.player
-            match.team1_player2 = entrant.player2
-        match.save()
+        get_or_create_next_match(competition, slot, entrant.player, entrant.player2)
+
+@transaction.atomic
+def submit_match_winners(match, winners):
+    match.save()
+    get_or_create_next_match(match.competition, match.competition_match_id, winners[0], winners[1])
+    
         
 @transaction.atomic
 def set_rounds(comp_id, rounds):

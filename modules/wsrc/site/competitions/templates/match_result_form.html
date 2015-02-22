@@ -1,4 +1,4 @@
-<form class="match-result-form" method="POST" action="." onsubmit="wsrc.result_form.submit_match_result(); return false" >{% csrf_token %}
+<form class="match-result-form" method="POST" action="." onsubmit="wsrc.result_form.on_submit(this); return false" >{% csrf_token %}
   <div style="padding:10px 20px;">
     <select name="team1" data-theme="a" data-native-menu="false" onchange="wsrc.result_form.on_team_selected(this)">
       <option value=""> </option>

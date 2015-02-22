@@ -257,6 +257,10 @@ class WSRC_result_form
     form_controller = WSRC_result_form.get_controler(input.form)
     form_controller.handle_score_changed()
 
+  @on_submit: (form) ->
+    form_controller = WSRC_result_form.get_controler(form)
+    form_controller.handle_submit()
+    
   load_scores_for_match: (existing_match, isreversed) ->
     team1_id = WSRC_result_form.get_selected_id @form.find("select[name='team1']")
     team2_id = WSRC_result_form.get_selected_id @form.find("select[name='team2']")
@@ -298,52 +302,45 @@ class WSRC_result_form
         @form.find("input[name='team1_score#{ idx }']").val("")
         @form.find("input[name='team2_score#{ idx }']").val("")
 
-  submit_match_result: () ->
-    box_id = parseInt(jQuery("input#competition_id").val())
-    this_box_config = this.get_competition_for_id(box_id)
-    form = jQuery("form#add-change-form")
-    selects = (form.find("select##{ p }") for p in ['player1', 'player2'])
-    player_ids = (parseInt(e.val()) for e in selects)
-    match_id_field = form.find("input#match_id")
-    csrf_token = form.find("input[name='csrfmiddlewaretoken']").val()
-    data = {
-      competition: box_id,
-      team1_player1: player_ids[0],
-      team2_player1: player_ids[1]
-    }
-    for i in [1..5]
-      for j in [1..2]
-        score = form.find("input#team#{ j }_score#{ i }").val()
-        if wsrc.utils.is_valid_int(score)
-          data["team#{ j }_score#{ i }"] = parseInt(score)
-    match_id = match_id_field.val()
-    result_type = form.find("input[name='result_type']:checked").val()
+  handle_submit: () ->
+    selectors = (@form.find("select[name='team#{ p }']") for p in [1, 2])
+    team_ids = (WSRC_result_form.get_selected_id(selector) for selector in selectors)
+    [match, reversed] = WSRC_result_form.find_match_for_ids(@valid_match_set, team_ids[0], team_ids[1])
+    csrf_token = @form.find("input[name='csrfmiddlewaretoken']").val()
+    match.competition = @competition_data.id
+    result_type = @form.find("input[name='result_type']:checked").val()
     if result_type == "walkover"
-      winner_id = parseInt(form.find("select#walkover_result").val())
-      if winner_id == player_ids[0]
-        data.walkover = 1
+      winner_id = parseInt(@form.find("select[name='walkover_result']").val())
+      if winner_id == team_ids[0]
+        match.walkover = 1
       else
-        data.walkover = 2
-    if wsrc.utils.is_valid_int(match_id) 
+        match.walkover = 2
+    else
+      for i in [1..5]
+        for j in [1..2]
+          score = @form.find("input[name='team#{ j }_score#{ i }']").val()
+          score = if wsrc.utils.is_valid_int(score) then parseInt(score) else null
+          match["team#{ j }_score#{ i }"] = score
+          
+    if match.id
       # update existing match result:
-      data.id = parseInt(match_id)
-      url = "/data/match/#{ match_id }"
-      wsrc.ajax.PUT(url, data,
+      url = "/data/match/#{ match.id }"
+      wsrc.ajax.PUT(url, match,
         successCB: (data) =>
           return true
         failureCB: (xhr, status) => 
-          this.show_error_dialog("ERROR: Failed to load data from #{ url }")
+          WSRC.show_error_dialog("ERROR: Failed to load data from #{ url }")
           return false
         csrf_token: csrf_token
       )
     else
       # new match result:
       url = "/data/match/"
-      wsrc.ajax.POST(url, data,
+      wsrc.ajax.POST(url, match,
         successCB: (data) =>
           return true
         failureCB: (xhr, status) => 
-          this.show_error_dialog("ERROR: Failed to load data from #{ url }")
+          WSRC.show_error_dialog("ERROR: Failed to load data from #{ url }")
           return false
         csrf_token: csrf_token
       )

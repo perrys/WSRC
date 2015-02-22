@@ -81,12 +81,36 @@ class UpdateMatch(APIView):
         if int(match_data["id"]) != match_id:
             raise SuspiciousOperation()
         match = Match.objects.get(pk=match_id)
-        for i in range(1,3):
-            for j in range(1,6):
-                field = "team%(i)d_score%(j)d" % locals()
-                setattr(match, field, match_data[field])
-        match.walkover = match_data["walkover"]
-        match.save()
+        walkover = match_data.get("walkover")
+        winners = None
+        if walkover is not None:
+            match.walkover = walkover
+            if walkover == 1:
+                winners = [match.team1_player1, match.team1_player2]
+            else:
+                winners = [match.team2_player1, match.team2_player2]
+        else:
+          wins = [0,0]
+          for j in range(1,6):
+            scores = []  
+            for i in range(1,3):
+                  field = "team%(i)d_score%(j)d" % locals()
+                  setattr(match, field, match_data[field])
+                  scores.append(match_data[field])
+            if scores[0] > scores[1]:
+              wins[0] += 1
+            elif scores[0] < scores[1]:
+              wins[1] += 1
+          if wins[0] > wins[1]:
+              winners = [match.team1_player1, match.team1_player2]
+          elif wins[0] < wins[1]:
+              winners = [match.team2_player1, match.team2_player2]
+        if match.competition.group.comp_type == "wsrc_tournaments":
+            if winners is None:
+                return HttpResponse("tournament matches must have a winner", status=400)
+            tournament.submit_match_winners(match, winners)
+        else:
+            match.save()
         return HttpResponse(status=201)
 
 class UpdateTournament(APIView):
