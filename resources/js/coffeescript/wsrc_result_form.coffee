@@ -199,7 +199,8 @@ class WSRC_result_form
 
   @team_map_to_list: (team_map) ->
     team_list = (t for id, t of team_map)
-    team_list.sort((lhs,rhs) -> lhs.toString() > rhs.toString())
+    team_list.sort (lhs,rhs) ->
+      (lhs.toString() > rhs.toString()) - (lhs.toString() < rhs.toString())
     team_list = ([p.primary_id, p.toString()] for p in team_list)
     return team_list
 
