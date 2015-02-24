@@ -182,7 +182,9 @@ def scrape_week_events(eventData, first_date, court_number):
 
 def scrape_old_league_table(data):
   soup = BeautifulSoup(data, "lxml")
-  headers = soup.find_all('td', text=re.compile("^League\s+No"))
+  headers = soup.find_all('td', text=re.compile("^Division:"))
+  if len(headers) == 0:
+    headers = soup.find_all('td', text=re.compile("^League\s+No"))
   return [process_box_header(h) for h in headers]
   
 
