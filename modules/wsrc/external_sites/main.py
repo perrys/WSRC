@@ -66,7 +66,7 @@ def get_club_fixtures_and_results():
 
 def get_old_leage_data(date):
   datefmt = date.strftime("%d%m%y")
-  URL = 'http://www.wokingsquashclub.org/Leagues_%(datefmt)s.htm' % locals()  
+  URL = 'http://wokingsquashclub.org/Leagues_%(datefmt)s.htm' % locals()  
   return get_content(URL, {})
 
 def get_week_view(year, month, day, court):
@@ -85,8 +85,8 @@ class PointsTable:
 
   def __init__(self):
     self.pointsLookup = {7 : {2: (3,0), 3: (3,0)}, # 7-3 is not valid, assume meant to enter 7-2
-                         6 : {3: (3,1), 2: (3,1)}, # 6-2 is not valid, assume meant to enter 6-3
-                         5 : {4: (3,2)},
+                         6 : {3: (3,1), 2: (3,1), 6: (1,3)}, # 6-2 is not valid, assume meant to enter 6-3
+                         5 : {4: (3,2), 3: (3,2)}, # 5-3 is not valid, assume meant to enter 6-4
                          4 : {4: (2,2), 3: (2,1), 2: (2,0)},
                          3 : {3: (1,1), 2: (1,0)},
                          2 : {2: (0,0)},
@@ -121,7 +121,7 @@ def analyse_box(name, data):
   table = PointsTable()
   for (rowidx,player) in enumerate(players):
     for colidx in range(rowidx+1,len(players)):
-#      print players[rowidx] + " vs " + players[colidx]
+      print players[rowidx] + " vs " + players[colidx]
       mypoints = data[rowidx][colidx+coloffset]
       if mypoints == "-" or mypoints == "": 
         mypoints = None 
@@ -130,7 +130,7 @@ def analyse_box(name, data):
         if theirpoints == "-" or theirpoints == "": 
           theirpoints = None 
         if theirpoints is not None:
-#          print " points: \"%(mypoints)s, %(theirpoints)s\"" % locals()
+          print " points: \"%(mypoints)s, %(theirpoints)s\"" % locals()
           matches.append({"player1": players[rowidx], "player2": players[colidx], 
                           "points": (mypoints, theirpoints),
                           "scores": table(mypoints, theirpoints),
@@ -404,9 +404,11 @@ def add_old_league_data(boxes_data, end_date):
     comp = Competition(name=name, end_date=end_date)
     comp.save()
     LOGGER.info("Saved Competition {comp.name} {comp.id}".format(**locals()))
-    group.competitions.add(comp)
+    group.competition_set.add(comp)
+    order = 1
     for player_name,record in players:
-      comp.players.add(record)
+      comp.entrant_set.create(player=record, ordering=order)
+      order += 1
     for match in matches:
       player1 = player_map[match["player1"]]
       player2 = player_map[match["player2"]]
