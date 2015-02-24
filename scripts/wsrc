@@ -44,6 +44,119 @@ def add_former_member(csv_filename, first, last):
 
   persist_member_details(records[0])
 
+def email_reminders():
+  import wsrc.site.competitions.models as comp_models;
+  import wsrc.site.usermodel.models as user_models;
+  from django.db.models import Q
+  current_tournaments = comp_models.CompetitionGroup.objects.filter(comp_type="wsrc_tournaments").filter(active=True)[0].competition_set.all()
+  player_to_matches_map = {}
+  def get_match_list(player_id):
+    l = player_to_matches_map.get(player_id)
+    if l is None:
+      l = []
+      player_to_matches_map[player_id] = l
+    return l
+
+  def get_unplayed_matches(comp):
+    at_least_one_player_expr = Q(team1_player1__isnull=False) | Q(team2_player1__isnull=False)
+    unplayed_matches = comp.match_set.filter(at_least_one_player_expr)
+    unplayed_matches.filter(team1_score1__isnull=True)
+    unplayed_matches.filter(team2_score1__isnull=True)
+    return unplayed_matches
+
+  for tournament in current_tournaments:
+    for m in get_unplayed_matches(tournament):
+      for i in [1,2]:
+        for j in [1,2]:
+          player = getattr(m, "team%(i)d_player%(j)d" % locals())
+          if player is not None:
+            get_match_list(player.id).append(m)
+
+  def get_opponent_desc(match, other_team_number):
+    p1 = getattr(match, "team%(other_team_number)d_player1" % locals())
+    if p1 is None:
+      return None
+    opponents = [p1.get_full_name()]
+    p2 = getattr(match, "team%(other_team_number)d_player2" % locals())
+    if p2 is not None:
+      opponents.append(p2.get_full_name())
+    return " & ".join(opponents)
+
+  def get_previous_match(match, other_team_number):
+    previous_match_id = match.competition_match_id << 1
+    if other_team_number == 2:
+      previous_match_id += 1
+    return comp_models.Match.objects.filter(competition_id = match.competition_id).get(competition_match_id=previous_match_id) 
+
+  for id, match_list in player_to_matches_map.iteritems():
+    player = user_models.Player.objects.get(pk=id)
+    match_table = {"rows": []}
+    for match in match_list:
+      if id in [match.team1_player1, match.team1_player2]:
+        other_team_number = 2
+      else:
+        other_team_number = 1
+      opponent_desc = get_opponent_desc(match, other_team_number)
+      if opponent_desc is None:
+        previous_match = get_previous_match(match, other_team_number)
+        t1 = get_opponent_desc(previous_match, 1)
+        t2 = get_opponent_desc(previous_match, 2)
+        opponent_desc = "(WINNER of %(t1)s vs %(t2)s)" % locals()
+      match_table["rows"].append([match.competition.name, opponent_desc])
+    print player.user.email
+    print match_table["rows"]
+
+def email_passwords():
+  from wsrc.site.usermodel.models import Player
+  import time
+  import wsrc.utils.email_utils as email_utils
+  fh = open("/var/tmp/pw.txt")
+  for line in fh:
+    print line
+    pw,username = line.split()
+    player = Player.objects.get(user__username=username)
+    if not player.user.is_active:
+      continue
+    if player.user.email is not None and "@" not in player.user.email:
+      continue
+    print player.get_full_name()
+    first_name = player.user.first_name
+    body = """
+Dear %(first_name)s,
+
+There is a new club website at http://www.wokingsquashclub.org. Some
+parts of the site are restricted to members only, for example members'
+contact details, and updating scores on the tournaments page, so you
+will need to log in to access these.
+
+Your login details are as follows:
+
+    Username: %(username)s
+
+    Password: %(pw)s
+
+These can be changed from the "Settings" page when you have logged in.
+
+The new web site has been developed to work on both desktop and mobile
+web browsers. Some aspects may not work properly on very old browsers,
+in particular Internet Explorer versions 7 and earlier.
+
+Note - on small screen devices, the site's menu is normally hidden and
+is accessible by clicking the bars icon in the top-left corner.
+
+Feedback and suggestions for the new website are very welcome.
+
+Regards,
+
+Stewart.
+""" % locals()
+    subject = "New Club Website"
+    from_address = "webmaster@wokingsquashclub.org"
+    if True: #player.user.username == "stewart_perry":
+      email_utils.send_markdown_email(subject, body, from_address, [player.user.email])
+      print player.user.email
+      time.sleep(2) # some SMTP servers have anti-spammer lock-outs if you send mails too quickly
+
 def email_membership(argv):
   import getopt
   import wsrc.utils.email_utils as email_utils
@@ -237,6 +350,12 @@ if __name__ == "__main__":
 
   elif command in ("email-membership"):
     email_membership(sys.argv)
+
+  elif command in ("email-pw"):
+    email_passwords()
+
+  elif command in ("send-reminder"):
+    email_reminders()
 
   elif command in ("add-old-league"):
     wsrc.external_sites.main.cmdline_add_old_league(args[0])
