@@ -53,8 +53,10 @@ window.WSRC_box_data = {{ box_data|safe }};
       <div class="ui-bar ui-bar-a" data-role="header" data-position="inline">
         <h2>{{ box_config.name }}</h2>
 {% if user.is_authenticated %}
+<!--
         <a id="link-{{ box_config.id }}" href="#boxDetailDialog" data-rel="popup" data-position-to="window" data-transition="pop" class="ui-btn ui-icon-edit ui-btn-icon-notext ui-corner-all ui-btn-right" onclick="WSRC.onBoxActionClicked(this); return true;">
         </a>
+-->
 {% endif %}
       </div>
       <div class="ui-body ui-body-a">
