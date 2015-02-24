@@ -19,14 +19,14 @@ window.WSRC_box_data = {{ box_data|safe }};
     <div class="left-control-box">
       <select name="league_end_date" id="league_end_date" onchange="WSRC.onLeagueSelected(this)">
         <option value="" >Leagues Ending . . .</option>
- regroup leagues|dictsortreversed:'year' by year as yearly_leagues_list %}
- for yearly_leagues in yearly_leagues_list %}
+{% regroup leagues|dictsortreversed:'year' by year as yearly_leagues_list %}
+{% for yearly_leagues in yearly_leagues_list %}
         <optgroup label="{{ yearly_leagues.grouper }}">
- for league in yearly_leagues.list|dictsortreversed:'end_date' %}
+{% for league in yearly_leagues.list|dictsortreversed:'end_date' %}
           <option value="{{ league.end_date|date:'Y-m-d' }}">{{ league.name }}</option>
- endfor %}
+{% endfor %}
         </optgroup>
- endfor %}
+{% endfor %}
       </select>
     </div>
     <div class="right-control-box">
