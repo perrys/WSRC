@@ -106,57 +106,6 @@ def email_reminders():
     print player.user.email
     print match_table["rows"]
 
-def email_passwords():
-  from wsrc.site.usermodel.models import Player
-  import time
-  import wsrc.utils.email_utils as email_utils
-  fh = open("/var/tmp/pw.txt")
-  for line in fh:
-    print line
-    pw,username = line.split()
-    player = Player.objects.get(user__username=username)
-    if not player.user.is_active:
-      continue
-    if player.user.email is not None and "@" not in player.user.email:
-      continue
-    print player.get_full_name()
-    first_name = player.user.first_name
-    body = """
-Dear %(first_name)s,
-
-There is a new club website at http://www.wokingsquashclub.org. Some
-parts of the site are restricted to members only, for example members'
-contact details, and updating scores on the tournaments page, so you
-will need to log in to access these.
-
-Your login details are as follows:
-
-    Username: %(username)s
-
-    Password: %(pw)s
-
-These can be changed from the "Settings" page when you have logged in.
-
-The new web site has been developed to work on both desktop and mobile
-web browsers. Some aspects may not work properly on very old browsers,
-in particular Internet Explorer versions 7 and earlier.
-
-Note - on small screen devices, the site's menu is normally hidden and
-is accessible by clicking the bars icon in the top-left corner.
-
-Feedback and suggestions for the new website are very welcome.
-
-Regards,
-
-Stewart.
-""" % locals()
-    subject = "New Club Website"
-    from_address = "webmaster@wokingsquashclub.org"
-    if True: #player.user.username == "stewart_perry":
-      email_utils.send_markdown_email(subject, body, from_address, [player.user.email])
-      print player.user.email
-      time.sleep(2) # some SMTP servers have anti-spammer lock-outs if you send mails too quickly
-
 def email_membership(argv):
   import getopt
   import wsrc.utils.email_utils as email_utils
@@ -350,9 +299,6 @@ if __name__ == "__main__":
 
   elif command in ("email-membership"):
     email_membership(sys.argv)
-
-  elif command in ("email-pw"):
-    email_passwords()
 
   elif command in ("send-reminder"):
     email_reminders()
