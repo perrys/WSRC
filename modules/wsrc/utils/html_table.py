@@ -56,6 +56,25 @@ class ChildCell:
   "A placeholder for cell positions which are occupied by a SpanningCell"
   def toHtml(self, builder):
     pass
+
+class AnchorCell(Cell):
+  "A table cell of unit width and height which holds a link"
+
+  LINK_PREFIXES = ["http://", "mailto:", "sms:", "tel:"]  
+
+  def toHtml(self, builder):
+    tag = self.isHeader and "th" or "td"
+    builder.start(tag, self.attrs)
+    builder.start("a", {"href": self.content})
+    content = self.content
+    for l in AnchorCell.LINK_PREFIXES:
+      if content.startswith(l):
+        content = content[len(l):]
+        break;
+    builder.data(content)
+    builder.end("a")
+    builder.end(tag)
+    
     
 class Table:
   "Encapsulates an HTML table"
@@ -117,3 +136,25 @@ class Table:
 
     bld.end("table")
     return bld.close()
+
+
+def formatTable(dataTable, hasHeader = False, col_prefixes=None):
+  nrows = len(dataTable)
+  ncols = len(dataTable[0])
+  table = Table(ncols, nrows)
+  for (i,row) in enumerate(dataTable):
+    for (j,data) in enumerate(row):
+      isHeader = hasHeader and i == 0
+      attrs = {"style": "padding-right: 1em;", "align": "left"}
+      if not isHeader:
+        if col_prefixes is not None and len(data) > 0:
+          data = col_prefixes[j] + data
+      cls = Cell
+      for prefix in AnchorCell.LINK_PREFIXES:
+        if data.startswith(prefix):
+          cls = AnchorCell
+          if prefix in ["sms:", "tel:"]:
+            attrs["align"] = "right"
+          break
+      table.addCell(cls(data, attrs, isHeader=isHeader), j, i)
+  return etree.tostring(table.toHtml(), encoding='UTF-8', method='html')
