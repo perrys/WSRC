@@ -13,9 +13,10 @@
 # You should have received a copy of the GNU General Public License
 # along with WSRC.  If not, see <http://www.gnu.org/licenses/>.
 
-from wsrc.site.competitions.models import Competition, Entrant, Match
+from wsrc.site.competitions.models import CompetitionGroup, Competition, Entrant, Match
 from wsrc.utils.html_table import Table, Cell, SpanningCell
 from django.db import transaction
+from django.db.models import Q
 
 import wsrc.utils.bracket
 import lxml.etree as etree
@@ -198,6 +199,50 @@ def render_tournament(competition):
         col += SETS_PER_MATCH    
 
     return etree.tostring(table.toHtml(), encoding='UTF-8', method='html')
+
+def get_current_competitions():
+    current_tournament_group = CompetitionGroup.objects.filter(comp_type="wsrc_tournaments").get(active=True)
+    return current_tournament_group.competition_set.all()
+
+def get_unplayed_matches(comp):
+    at_least_one_player_expr = Q(team1_player1__isnull=False) | Q(team2_player1__isnull=False)
+    unplayed_matches = comp.match_set.filter(at_least_one_player_expr)
+    unplayed_matches.filter(team1_score1__isnull=True)
+    unplayed_matches.filter(team2_score1__isnull=True)
+    return unplayed_matches
+
+def get_previous_match(match, team_number):
+    previous_match_id = match.competition_match_id << 1
+    if team_number == 2:
+      previous_match_id += 1
+    return Match.objects.filter(competition_id = match.competition_id).get(competition_match_id=previous_match_id) 
+
+def get_players(match, team_number, player_set=None):
+    p1 = getattr(match, "team%(team_number)d_player1" % locals())
+    if p1 is None:
+      return None
+    players = [p1]
+    p2 = getattr(match, "team%(team_number)d_player2" % locals())
+    if p2 is not None:
+      players.append(p2)
+    if player_set is not None:
+      for p in players:
+        player_set.add(p.id)
+    return players
+
+def get_team_number(match, player_id):
+    "Get the team number for this player in the given match"
+    for team in [1,2]:
+        player_set = set()
+        get_players(match, team, player_set)
+        if player_id in player_set:
+            return team
+    return None
+
+def other_team_number(team_number):
+    if team_number == 1:
+        return 2
+    return 1
 
 def get_or_create_next_match(competition, slot_id, player1, player2):
     bottomSlot = slot_id & 1
