@@ -14,6 +14,20 @@ class PageContent(models.Model):
   def __unicode__(self):
     return self.page
 
+class EmailContent(models.Model):
+  TEMPLATE_TYPES = (
+    ("django", "Django"),
+    ("jinja2", "Jinja 2"),
+  )
+  name = models.CharField(max_length=32)
+  template_type = models.CharField(max_length=16, choices=TEMPLATE_TYPES)
+  markup = models.TextField()
+  last_updated = models.DateTimeField(auto_now=True)
+  
+  def __unicode__(self):
+    return self.name
+
+
 class BookingSystemEvent(models.Model):
   start_time = models.DateTimeField()
   end_time = models.DateTimeField()
