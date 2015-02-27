@@ -12,6 +12,8 @@ from django.core.mail import EmailMultiAlternatives
 LOGGER = logging.getLogger(__name__)
 LOGGER.setLevel(logging.INFO)
 
+EMAIL_DELAY_PERIOD = 2
+
 def send_email(subject, text_body, html_body, from_address, to_list, bcc_list=None, reply_to_address=None):
   headers = {}
   if reply_to_address is not None:
@@ -61,11 +63,14 @@ def bulk_email_membership(subject, markdown_body, from_address, members, batch_s
       LOGGER.info("Sending batch of {n} email(s)".format(n=len(emails)))
       send_markdown_email(subject, markdown_body, from_address, ["members@wokingsquashclub.org"], emails, None)
       success_list.extend(batch)
-      time.sleep(2) # some SMTP servers have anti-spammer lock-outs if you send mails too quickly
+      pause_between_emails()
     except Exception, e:
       raise BatchEmailFailure("Error during batch email", success_list, e)
   return success_list
   
+def pause_between_emails():
+  time.sleep(EMAIL_DELAY_PERIOD) # some SMTP servers have anti-spammer lock-outs if you send mails too quickly
+
 class tester(unittest.TestCase):
 
   # a number of these tests rely on certain characteristics of the
