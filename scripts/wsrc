@@ -107,6 +107,7 @@ def email_tournament_match_reminders(usernames):
   # now iterate over the players and construct emails using these tables
   email_template = site_models.EmailContent.objects.get(name="Tournament Reminder")
   email_template = Template(email_template.markup)
+  failed_players = []
   for player_id in player_to_match_table_map.iterkeys():
     p = user_models.Player.objects.get(pk=player_id)
     match_table = player_to_match_table_map[player_id]
@@ -132,8 +133,13 @@ def email_tournament_match_reminders(usernames):
         html_body = markdown.markdown(email_template.render(context))
         context["content_type"] = "text/plain"
         text_body = email_template.render(context)
-        to_list = [p.user.email]
-        email_utils.send_email(subject, text_body, html_body, from_address, to_list)
+        to_list = ['foo.bar'] #[p.user.email]
+        try:
+          email_utils.send_email(subject, text_body, html_body, from_address, to_list)
+        except:
+          failed_players.append(p)
+          import traceback
+          traceback.print_exc()
         email_utils.pause_between_emails()
       else:
         sys.stderr.write("WARNING: no email address for " + p.get_full_name())
@@ -141,6 +147,8 @@ def email_tournament_match_reminders(usernames):
       context["content_type"] = "text/plain"
       print "\n*** " + p.user.email + "\n"
       print email_template.render(Context(context))
+    if len(failed_players) > 0:
+      sys.stderr.write("ERROR: failed to send email to the following:\n" + "\n".join([p.get_full_name() + " " + p.user.email for p in failed_players]) + "\n")
 
 def email_membership(argv):
   import wsrc.utils.email_utils as email_utils
