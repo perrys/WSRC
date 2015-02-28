@@ -62,6 +62,7 @@ DATABASES = {
 # https://docs.djangoproject.com/en/1.6/topics/i18n/
 
 LANGUAGE_CODE = 'en-GB'
+DEFAULT_CHARSET = 'utf-8'
 
 TIME_ZONE = 'Europe/London'
 USE_I18N = True
