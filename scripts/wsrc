@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# -*- coding: utf-8 -*-
 
 import getopt
 import logging
@@ -133,8 +134,10 @@ def email_tournament_match_reminders(usernames):
         html_body = markdown.markdown(email_template.render(context))
         context["content_type"] = "text/plain"
         text_body = email_template.render(context)
-        to_list = ['foo.bar'] #[p.user.email]
+        to_list = [p.user.email]
         try:
+          print "\n*** " + p.user.email
+          sys.stdout.flush()
           email_utils.send_email(subject, text_body, html_body, from_address, to_list)
         except:
           failed_players.append(p)
@@ -146,7 +149,7 @@ def email_tournament_match_reminders(usernames):
     else:
       context["content_type"] = "text/plain"
       print "\n*** " + p.user.email + "\n"
-      print email_template.render(Context(context))
+      print email_template.render(Context(context)).encode('utf-8')
     if len(failed_players) > 0:
       sys.stderr.write("ERROR: failed to send email to the following:\n" + "\n".join([p.get_full_name() + " " + p.user.email for p in failed_players]) + "\n")
 
