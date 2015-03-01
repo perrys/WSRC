@@ -10,7 +10,7 @@ import uuid
 from wsrc.utils.timezones import parse_iso_datetime_to_naive, naive_utc_to_local
 from wsrc.utils.timezones import UK_TIMEZONE
 from wsrc.utils.timezones import UK_TZINFO
-
+import wsrc.utils.url_utils as url_utils
 
 # installation:
 # pip install --upgrade google-api-python-client
@@ -88,7 +88,7 @@ class CalendarWrapper:
 class Event:
   "Simple wrapper for a calendar event. Has some utilities to convert to/from Google calendar event structures."
 
-  def __init__(self, name, link, time=None, duration=None, location=None, id=None, googleEvent=None):
+  def __init__(self, name, link, time=None, duration=None, location=None, id=None, googleEvent=None, description=None):
     self.name = name
     self.link = link
     self.time = time
@@ -96,6 +96,7 @@ class Event:
     self.location = location
     self.id = (id is None) and uuid.uuid1().hex or id
     self.googleEvent = googleEvent
+    self.description = description
 
   def to_google_cal_event(self):
     gevt = self.googleEvent
@@ -164,3 +165,8 @@ class Event:
 
   def __hash__(self):
       return hash(self.__key())
+
+  def get_booking_id(self):
+    "Attempt to extract the booking system id from the link. May be a bit fragile"
+    params = url_utils.get_url_params(self.link)
+    return params['id']
