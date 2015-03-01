@@ -59,7 +59,7 @@ def process_booking(cell):
   link = cell.a
   if link is None:
     return get_tag_content(cell)
-  return Event(get_tag_content(link), 'http://www.court-booking.co.uk/WokingSquashClub/' + link['href'])
+  return Event(get_tag_content(link), 'http://www.court-booking.co.uk/WokingSquashClub/' + link['href'], description=link.get("title"))
 
 def process_week_row(row):
   """Parse a 15-minute row in the weekly timetable, returning a time
