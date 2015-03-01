@@ -167,13 +167,6 @@ def match_player_name(name):
   LOGGER.error("Unable to find a player matching %(name)s" % locals())
   return None
 
-def nearest_last_monday(date=None):
-  """Return the Monday previous to DATE, or DATE if it happens to be a Monday. 
-  DATE defaults to today if not supplied"""
-  if date is None:
-    date = datetime.date.today()
-  return date - datetime.timedelta(days=date.weekday())
-
 def update_google_calendar(bookingSystemEvents, clearExistingCalendarEvents=False):
 
   cal_events.LOGGER.setLevel(logging.DEBUG)
@@ -183,7 +176,7 @@ def update_google_calendar(bookingSystemEvents, clearExistingCalendarEvents=Fals
   smtpConfig = jsonutils.deserializeFromFile(open(os.path.join(configDir, "smtp.json"))).gmail
 
   # Obtain all events in the Google calendar starting from the previous Monday:
-  date = nearest_last_monday()
+  date = timezones.nearest_last_monday()
   cal = cal_events.CalendarWrapper(WSRC_CALENDAR_ID)
 #  cal.testing = True
   LOGGER.debug("Fetching calendar \"{0}\"".format(WSRC_CALENDAR_ID))
@@ -430,7 +423,7 @@ def add_old_league_data(boxes_data, end_date):
 def cmdline_sync_bookings():
 
   bookingSystemEvents = []
-  date = nearest_last_monday()
+  date = timezones.nearest_last_monday()
 
   # Loop over this week and next week:
   for td in (datetime.timedelta(0), datetime.timedelta(days=7)):
