@@ -83,3 +83,11 @@ def naive_utc_to_local(dt, tz):
   dt = dt.replace(tzinfo=UTC_TZINFO)
   dt = dt.astimezone(tz)
   return dt
+
+def nearest_last_monday(date=None):
+  """Return the Monday previous to DATE, or DATE if it happens to be a Monday. 
+  DATE defaults to today if not supplied"""
+  if date is None:
+    date = datetime.date.today()
+  return date - datetime.timedelta(days=date.weekday())
+
