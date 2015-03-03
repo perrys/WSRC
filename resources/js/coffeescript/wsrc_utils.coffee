@@ -79,4 +79,16 @@ class WSRC_utils
       window.wsrc = {}
     window.wsrc[name] = obj
 
+  @partition: (jqitems, callback, val) ->
+    filtered   = []
+    unfiltered = []
+    idx = 0
+    for jq in jqitems
+      dst = if callback.call(jq, idx++, val) then filtered else unfiltered
+      dst.push(jq)
+    return {
+      filtered:   filtered
+      unfiltered: unfiltered
+    }
+    
 WSRC_utils.add_to_namespace("utils", WSRC_utils)
