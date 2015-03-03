@@ -147,6 +147,16 @@ window.WSRC =
       if parts[0] == "scrollto"
         callback = () -> $.mobile.silentScroll($("#" + parts[1])[0].offsetTop)
         window.setTimeout(callback, 500)
+      else if parts[0] == "filter-ids"
+        filterable = $(".wsrc-filterable")
+        items = filterable.children()
+        ids = parts[1].split(",")
+        partitioned = wsrc.utils.partition(items, (idx, val) ->
+          id = $(this).data("wsrcfilter").toString()
+          return ids.indexOf(id) >= 0
+        )
+        $( partitioned.unfiltered ).addClass( "ui-screen-hidden" )
+        $( partitioned.filtered ).removeClass( "ui-screen-hidden" )
     )
 
   
