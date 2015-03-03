@@ -150,3 +150,6 @@ window.WSRC =
     )
 
   
+if window.WSRC_deferedPageContainerShow
+  [event, ui] = WSRC_deferedPageContainerShow
+  WSRC.onPageContainerShow(event, ui)
