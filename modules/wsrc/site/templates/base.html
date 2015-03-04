@@ -17,7 +17,7 @@ $( document ).on( "pagecreate", ".wsrc-site", function( event ) {
 <div id="outer_page_div" data-role="page" data-pagetype="{% block pagetype %}{% endblock %}" {% block pageattrs %}{% endblock %} class="wsrc-site">
 
   <div data-role="header" class="jqm-header">
-    <h2><a href="/home"><img src="/static/images/WSRC-banner.jpg" alt="Woking Squash Club"></a></h2>
+    <h2><a href="/home" data-ajax="false" onclick="$.mobile.loading('show')"><img src="/static/images/WSRC-banner.jpg" alt="Woking Squash Club"></a></h2>
     <p>{% block pagetitle %}{% endblock %}</p>
     <a href="#" class="jqm-navmenu-link ui-btn ui-btn-icon-notext ui-corner-all ui-icon-bars ui-nodisc-icon ui-alt-icon ui-btn-left">Menu</a>
     <div class="wsrc-login-block">
