@@ -466,6 +466,11 @@ div.right-control-box form > * {
 div#boxDetailDialog {
     min-width: 350px;
 }
+table.boxes a.ui-link,
+div.boxes a.ui-link {
+    text-decoration: none;
+    color: #333;
+}
 table.boxes th {
     font-weight:300;
     overflow: hidden;
@@ -513,7 +518,8 @@ div.boxes-wrapper-singlecolumn {
 div.boxes-wrapper-doublecolumn {
     max-width: 500px; 
 }
-.wsrc-currentuser {
+th.wsrc-currentuser,
+th.wsrc-currentuser > a.ui-link {
     color: #ed3338;
 }
 .winner {
