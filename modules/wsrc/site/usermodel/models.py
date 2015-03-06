@@ -14,8 +14,8 @@ class Player(models.Model):
     ("compl", "Complementary"),
     ("full", "Full"),
     ("junior", "Junior"),
-    ("non_play", "Social"),
     ("off_peak", "Off-Peak"),
+    ("non_play", "Social"),
     ("y_adult", "Young Adult"),
     )
 
