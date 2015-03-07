@@ -21,6 +21,7 @@ from wsrc.utils import timezones
 
 from django.contrib.auth.forms import PasswordChangeForm
 from django.contrib.auth.models import User
+from django.core.exceptions import PermissionDenied
 from django.core.urlresolvers import reverse as reverse_url
 from django.db import transaction
 from django.forms import ModelForm, TextInput
@@ -203,7 +204,7 @@ def change_password_view(request):
 
 def admin_mailshot_view(request):
     if not request.user.is_authenticated() or not request.user.is_staff:
-        return redirect(reverse_url("django.contrib.auth.views.login") + '?next=%s' % request.path)
+        raise PermissionDenied()
     from_email_addresses = ["chairman", "clubnight", "committee", "juniors", "membership", "secretary", "tournaments", "treasurer", "webmaster"]
     ctx = {
         "players": Player.objects.filter(user__is_active=True),
