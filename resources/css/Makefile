@@ -3,7 +3,7 @@
 JINJACC = ../../tools/jinjac
 MINIFY = minify --no-comments
 
-CSS_TARGETS = all_html5.css all_legacy.css all_html5.min.css all_legacy.min.css all_admin.css
+CSS_TARGETS = all_html5.css all_legacy.css all_html5.min.css all_legacy.min.css all_admin.css all_mailshot.css
 
 .INTERMEDIATE: _wsrc_html5.css _wsrc_legacy.css
 .SECONDARY: _jquery.mobile.structure.css _jquery-ui.css
@@ -18,6 +18,9 @@ all_%.css: _wsrc_%.css jqm_svg_icons_trimmed.css jqm_theme.css _jquery.mobile.st
 
 all_admin.css: _jquery-ui.css jquery.loadmask.css wsrc_admin.css
 	cat _jquery-ui.css jquery.loadmask.css wsrc_admin.css > $@
+
+all_mailshot.css: _jquery-ui.css jquery.loadmask.css wsrc_mailshot.css
+	cat _jquery-ui.css jquery.loadmask.css wsrc_mailshot.css > $@
 
 _jquery.mobile.structure.css:
 	wget http://ajax.googleapis.com/ajax/libs/jquerymobile/1.4.3/jquery.mobile.structure.css -O $@

@@ -5,7 +5,7 @@ MINIFY = minify --no-comments
 
 .SECONDARY: _jquery.js _jquery.mobile.js _jquery-ui.js
 
-all: all.min.js all_admin.js
+all: all.min.js all_admin.js all_admin_mailshot.js
 
 %.js: coffeescript/%.coffee
 	coffee -c -p $< > $@
@@ -20,6 +20,9 @@ all.js: $(ORDERED_MAIN_JS_SRCS)
 
 all_admin.js: _jquery.js _jquery-ui.js jquery.loadmask.js wsrc_admin.js
 	cat _jquery.js _jquery-ui.js jquery.loadmask.js wsrc_admin.js > $@
+
+all_admin_mailshot.js: _jquery.js _jquery-ui.js jquery.loadmask.js wsrc_utils.js wsrc_admin_mailshot.js
+	cat _jquery.js _jquery-ui.js jquery.loadmask.js wsrc_utils.js wsrc_admin_mailshot.js > $@
 
 _jquery.js:
 	wget http://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.js -O $@

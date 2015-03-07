@@ -1,0 +1,56 @@
+body {
+  font-size: 0.8em;
+}
+header img {
+    display: none;
+}
+header a {
+    text-decoration: none;
+}
+@media ( min-width: 1200px ) {
+    header img {
+        float:left;
+        display: inline-block;
+    }
+}
+html,body  {
+    height: 100%;
+}
+fieldset {
+    padding: 0.25em 1em;
+    margin-bottom: 0.5em;
+}
+input[type="text"],
+select {
+    width: 450px;
+}
+select {
+    padding: 1px;
+    margin: 0 2px;
+}
+span#totals {
+    float:right;
+    margin-top: -1em;
+}
+.ui-field-contain {
+    margin: 0.5em 0;
+    line-height: 1.5em;
+}
+.ui-field-contain label {
+    float: left;
+    width: 9em;
+    margin-right: 1em;
+    text-align: right;
+}
+label.tall_label {
+    margin-top: -5px;
+}
+#selected_member_table table {
+    width: 100%;
+    padding: 0.5em;
+}
+#selected_member_table th,
+#selected_member_table td {
+    text-align: left;
+    border-bottom: 1px solid #dddddd;
+}

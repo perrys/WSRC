@@ -201,6 +201,17 @@ def change_password_view(request):
     ctx = {"set_password_form": form}
     return TemplateResponse(request, 'change_password.html', ctx)
 
+def admin_mailshot_view(request):
+    if not request.user.is_authenticated() or not request.user.is_staff:
+        return redirect(reverse_url("django.contrib.auth.views.login") + '?next=%s' % request.path)
+    from_email_addresses = ["chairman", "clubnight", "committee", "juniors", "membership", "secretary", "tournaments", "treasurer", "webmaster"]
+    ctx = {
+        "players": Player.objects.filter(user__is_active=True),
+        "from_email_addresses": [x + "@wokingsquashclub.org" for x in from_email_addresses],
+        "membership_types": Player.MEMBERSHIP_TYPES,
+        }
+    return TemplateResponse(request, 'mailshot.html', ctx)
+
 class UserForm(ModelForm):
     def __init__(self, *args, **kwargs):
         super(UserForm, self).__init__(*args, **kwargs)

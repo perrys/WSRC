@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+
+<html class="mailshot">
+<head>
+
+  <link rel="stylesheet" href="/static/css/all_mailshot.css">
+  <script src="/static/js/all_admin_mailshot.js"></script>
+
+{% load kwacros %}
+{% loadkwacros 'form_macros.html' %}
+
+  <title>Mailshot Admin Form - Woking Squash Rackets Club</title>
+
+  <script type="text/javascript">
+var players  = { 
+{% for p in players %}
+ {% if forloop.counter0 > 0 %},{% endif %}
+ {{ p.id }}: {
+  id: {{ p.id }}, 
+  full_name: "{{ p.user.first_name }} {{ p.user.last_name }}",
+  email: "{{ p.user.email }}",
+  prefs_receive_email: "{{ p.prefs_receive_email }}",
+  membership_type: "{{ p.membership_type }}"
+ }
+{% endfor %} 
+};
+jQuery(document).ready(function(){wsrc.admin.mailshot.onReady(players)});
+  </script>
+
+</head>
+<body>
+  <header>
+    <a href="/home""><img  src="/static/images/WSRC-logo_web_.jpg" alt="Woking Squash Club"></a>
+  </header>
+
+  <div class="ui-widget ui-corner-all" style="max-width: 800px; height: 100%; margin-left: auto; margin-right: auto;">
+
+    <fieldset class="ui-widget-content  ui-corner-all">
+      <legend>Email Settings</legend>
+      <div class="ui-field-contain">
+        <label for="from_input">From: </label>
+        <select id="from_input" value="from" onclick="">
+          {% for m in from_email_addresses %}
+          <option value="{{ m }}" {% if m == "committee@wokingsquashclub.org" %}selected="selected"{% endif %}>{{ m }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="ui-field-contain">
+        <label for="subject">Subject: </label>
+        <input type="text" id="subject" name="subject">
+      </div>
+      <div class="ui-field-contain">
+        <label for="email_format" class="tall_label">Format<sup>&dagger;</sup>: </label>
+        <input type="radio" name="email_format" value="mixed" checked="checked" id="email_format">HTML &amp; Plain Text (Multipart)
+        <input type="radio" name="email_format" value="html">HTML Only
+        <input type="radio" name="email_format" value="text">Plain Text Only
+      </div>
+    </fieldset>
+
+    <fieldset class="ui-widget-content  ui-corner-all">
+      <legend>Recipients</legend>
+      <div class="ui-field-contain">
+        <label for="recipient_selector">Selection Type: </label>
+        <select id="recipient_selector" name="recipient_selector" onclick="wsrc.admin.mailshot.on('recipient_selector_changed', this);">
+          <option value="all">All</option>
+          <option value="individuals" selected="selected">Individuals</option>
+          <option value="member_type">Membership Category</option>
+          <option value="competition_entrants">Competition Entrants</option>
+        </select>
+      </div>
+      <div  id="individuals" class="ui-field-contain selection-type">
+        <form action="#" onsubmit="wsrc.admin.mailshot.on('add_individual', this); return false;">
+          <label for="add_member">Individuals: </label>
+          <input type="text" id="add_member">
+          <input type="button" id="add_member_button" value="Add" onclick="wsrc.admin.mailshot.on('add_individual', this.form)">
+          <input type="button" id="add_member_button" value="Clear All" onclick="wsrc.admin.mailshot.on('clear_individuals', this.form)">
+        </form>
+      </div>
+      <div id="member_type" class="ui-field-contain ui-helper-hidden selection-type">
+        <label for="member_type">Category: </label>
+        {% for t in membership_types %}
+        <input type="checkbox" name="member_type" value="{{ t|first }}">{{ t|last }}</input>
+        {% endfor %}
+      </div>
+      <div id="competition_entrants" class="ui-field-contain ui-helper-hidden selection-type">
+        <label for="member_type">Competitions: </label>
+        <input type="checkbox" name="comp_type" value="tournaments">Tournaments</input>
+        <input type="checkbox" name="compt_type" value="leagues">Leagues</input>
+      </div>
+      <div class="ui-field-contain">
+        <label for="respect_opt_out" class="tall_label">Respect Opt-outs<sup>&Dagger;</sup>: </label>
+        <input type="radio" name="respect_opt_out" value="true" checked="checked" id="respect_opt_out">Yes
+        <input type="radio" name="respect_opt_out" value="false">No
+      </div>
+      <span id="totals">0 members, 0 members with valid email, 0 distinct email addresses</span>
+
+    </fieldset>
+
+    <fieldset class="ui-widget-content  ui-corner-all">
+      <legend>Email Body</legend>
+      <textarea id="email_body" name="email_body" style="width:99%; height: 160px;" >
+
+
+
+
+
+
+
+---
+*We hope you enjoy receiving e-mail notices and updates from the club. If you do not wish to receive these e-mail messages, please log into the website at <http://www.wokingsquashclub.org> and set "Receive Email" to "No" in the settings page.*  </textarea>
+      <input type="submit" value="Send" style="float: right;">
+    </fieldset>
+
+    
+  <footer style="font-size: 0.8em; position: absolute; bottom: 0px; max-width: 800px;">
+    <hr>
+    <p>
+      &dagger; Bulk emails should normally be multipart format - this ensures that they will be readable on the widest range of devices, and stand a better chance of passing anti-spam filters. In this case, the body should be written using <a href="http://en.wikipedia.org/wiki/Markdown">Markdown</a> syntax&mdash;it will appear as written in plain-text email clients, and as enhanced HTML in modern email programs.
+    </p>
+    <p>
+        &Dagger; Please do not uncheck this unless it is really justified. If so, delete the opt-out text at the bottom of the email body.
+    </p>
+  </footer>
+  </div>
+
+ <div id="selected_member_table" title="Selected Members" class="ui-helper-hidden">
+   <table>
+     <tbody>
+       <tr class="header-row">
+         <th>Name</th><th>Email</th><th>Type</th><th>Opt-out?</th>
+       <tr>
+     </tbody>
+   </table>
+ </div>
+
+</body>
+</html>
