@@ -206,10 +206,21 @@ def admin_mailshot_view(request):
     if not request.user.is_authenticated() or not request.user.is_staff:
         raise PermissionDenied()
     from_email_addresses = ["chairman", "clubnight", "committee", "juniors", "membership", "secretary", "tournaments", "treasurer", "webmaster"]
+    def get_comp_entrants(group_type):
+        group = CompetitionGroup.objects.filter(comp_type=group_type).get(active=True)
+        player_ids = set()
+        for comp in group.competition_set.all():
+            for entrants in comp.entrant_set.all():
+                player_ids.add(entrants.player.id)
+                if entrants.player2 is not None:
+                    player_ids.add(entrants.player2.id)
+        return player_ids
     ctx = {
         "players": Player.objects.filter(user__is_active=True),
         "from_email_addresses": [x + "@wokingsquashclub.org" for x in from_email_addresses],
         "membership_types": Player.MEMBERSHIP_TYPES,
+        "tournament_player_ids": get_comp_entrants("wsrc_tournaments"),
+        "box_player_ids": get_comp_entrants("wsrc_boxes"),
         }
     return TemplateResponse(request, 'mailshot.html', ctx)
 

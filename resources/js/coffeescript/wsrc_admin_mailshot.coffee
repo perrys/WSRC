@@ -3,11 +3,12 @@ class WSRC_admin_mailshot
 
   individual_ids: []
 
-  constructor: (@player_map) ->
+  constructor: (@player_map, @box_player_ids, @tournament_player_ids) ->
     player_list = ({label: p.full_name, value: id} for id,p of @player_map)
     wsrc.utils.lexical_sort(player_list, 'label')
     $("input[name='respect_opt_out']").on("change", (evt) => @selected_players_changed(evt))
     $("input[name='member_type']").on("change", (evt) => @selected_players_changed(evt))
+    $("input[name='comp_type']").on("change", (evt) => @selected_players_changed(evt))
     add_member_input = $("input#add_member")
     add_member_input.autocomplete(
       source: player_list
@@ -31,10 +32,28 @@ class WSRC_admin_mailshot
     jqtbody.find("tr:not(.header-row)").remove()
     wsrc.utils.lexical_sort(players, "full_name")
     for p in players
-      optout = if p.prefs_receive_email == "False" then "Yes" else ""
+      optout =  if wsrc.admin.mailshot.opted_out(p) then "True" else ""
       jqtbody.append("<tr><td>#{ p.full_name }</td><td>#{ p.email }</td><td>#{ p.membership_type }</td><td>#{ optout }</td></tr>")
     jqdialog.dialog("open")
-        
+
+  send_email: () ->
+    players = @get_selected_players()
+    if @opt_outs_respected()
+      tester = (player, idx) ->
+          wsrc.admin.mailshot.opted_out(player)
+      players = $.grep(players, tester, true) # filter out players who have opted out
+    wsrc.utils.lexical_sort(players, "full_name")
+    csrf_token = $("input[name='csrfmiddlewaretoken']").val()
+    data =
+      subject:      $("input[name='subject']").val()
+      body:         $("textarea[name='email_body']").val()
+      from_address: $("select[name='from_input']").val()
+      to_list:      (p.id for p in players)
+      bcc_list:      (p.id for p in players)
+      format:       $("input[name='email_format']:checked").val()
+    opts =
+      csrf_token:  $("input[name='csrfmiddlewaretoken']").val()
+      
   add_individual: (form) ->
     add_member_input = $(form).find("input#add_member")
     id = add_member_input.data("playerid")
@@ -50,6 +69,14 @@ class WSRC_admin_mailshot
     selection_type = $('select#recipient_selector').val()
     if selection_type == 'individuals'
       return (@player_map[id] for id in @individual_ids)
+    else if selection_type == 'competition_entrants'
+      ids = {}
+      jqcomp_entrants = $("div#competition_entrants").find("input[name='comp_type']:checked")
+      jqcomp_entrants.each (idx, elt) =>
+        id_list = this["#{ elt.value }_player_ids"]
+        for id in id_list
+          ids[id] = true
+      return (@player_map[id] for id,flag of ids)
     else
       all_players = (p for id,p of @player_map)
       if selection_type == 'all'
@@ -75,17 +102,19 @@ class WSRC_admin_mailshot
     cmp.data('playerid', player_id)
     return player_id
 
+  opt_outs_respected: () ->
+    $("input[name='respect_opt_out']:checked").val() == "true"
+
   selected_players_changed: () ->
     selected_players = @get_selected_players()
-    respect_opt_outs = $("input[name='respect_opt_out']:checked").val() == "true"
-    results = WSRC_admin_mailshot.count_players(selected_players, respect_opt_outs)
+    results = WSRC_admin_mailshot.count_players(selected_players, @opt_outs_respected())
     nplayers = results.distinct_players.length
     nemails = results.distinct_emails.length
     jqspan = $("span#totals")
     jqspan.html("""
-      #{ nplayers } member#{ wsrc.utils.plural(nplayers) },
-      #{ results.num_to_receive_email } to receive email,
-      #{ nemails } distinct email address#{ wsrc.utils.plural(nemails, 'es') }
+      <strong>#{ nplayers }</strong> member#{ wsrc.utils.plural(nplayers) },
+      <strong>#{ results.num_to_receive_email }</strong> to receive email,
+      <strong>#{ nemails }</strong> distinct email address#{ wsrc.utils.plural(nemails, 'es') }
       <a href='javascript:wsrc.admin.mailshot.on("show_selected_members_table")' class='#{ if nplayers == 0 then "ui-helper-hidden" }'>(show)</a>
     """)
             
@@ -97,6 +126,9 @@ class WSRC_admin_mailshot
     fieldset.find("##{ val }").removeClass("ui-helper-hidden")
     @selected_players_changed()
 
+  @opted_out: (player) ->
+    player.prefs_receive_email == "False"
+    
   @count_players: (player_list, filter_optouts) ->
     players = {}
     players_with_email = 0
@@ -105,7 +137,7 @@ class WSRC_admin_mailshot
       if players[player.id]
         continue
       players[player.id] = player
-      if filter_optouts && (player.prefs_receive_email == "False")
+      if filter_optouts && @opted_out(player)
         continue
       if player.email.indexOf("@") > 0
         players_with_email += 1
@@ -120,8 +152,8 @@ class WSRC_admin_mailshot
     args = $.fn.toArray.call(arguments)
     @instance[method].apply(@instance, args[1..])
 
-  @onReady: (players) ->
-    @instance = new WSRC_admin_mailshot(players)
+  @onReady: (players, box_player_ids, tournament_player_ids) ->
+    @instance = new WSRC_admin_mailshot(players, box_player_ids, tournament_player_ids)
     
     return null
     
