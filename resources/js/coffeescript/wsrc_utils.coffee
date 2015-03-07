@@ -15,11 +15,21 @@ class WSRC_utils
         return l
     return null
 
+  @lexical_sort: (array, field) ->
+    array.sort (lhs, rhs) ->
+      (lhs[field] > rhs[field]) - (lhs[field] < rhs[field])
+    return null
+    
   @is_valid_int: (i) ->
     if i == ""
       return false
     i = parseInt(i)
     return not isNaN(i)
+
+  @plural: (n, suffix) ->
+    if n == 1
+      return ''
+    if suffix then suffix else 's'
 
   @toggle: (evt) ->
     root = $(evt.target).parents(".toggle-root")
@@ -74,10 +84,14 @@ class WSRC_utils
     selector.selectmenu('refresh', true);
     return null
 
+  @add_object_if_unset: (root, name) ->
+    unless root[name]
+      root[name] = {}
+    return root[name]
+
   @add_to_namespace: (name, obj) ->
-    unless window.wsrc
-      window.wsrc = {}
-    window.wsrc[name] = obj
+    wsrc = WSRC_utils.add_object_if_unset(window, "wsrc")
+    wsrc[name] = obj
 
   @partition: (jqitems, callback, val) ->
     filtered   = []
