@@ -22,7 +22,7 @@ def send_email(subject, text_body, html_body, from_address, to_list, bcc_list=No
     msg = EmailMultiAlternatives(subject, text_body, from_address,
                                  to_list, bcc_list, headers=headers)
     msg.attach_alternative(html_body, "text/html")
-  else
+  else:
     msg = EmailMessage(subject, text_body, from_address,
                        to_list, bcc_list, headers=headers)
   msg.send(fail_silently=False)
