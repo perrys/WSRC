@@ -40,27 +40,40 @@ class WSRC_admin_mailshot
     players = @get_selected_players()
     if @opt_outs_respected()
       tester = (player, idx) ->
-          wsrc.admin.mailshot.opted_out(player)
+        player.email.indexOf("@") <= 0 or wsrc.admin.mailshot.opted_out(player)
       players = $.grep(players, tester, true) # filter out players who have opted out
     wsrc.utils.lexical_sort(players, "full_name")
     csrf_token = $("input[name='csrfmiddlewaretoken']").val()
     email_addresses = wsrc.utils.unique_field_list(players, "email")
     jqmask = $("body")
+    batch_size = 50
     data =
       subject:      $("input[name='subject']").val()
       body:         $("textarea[name='email_body']").val()
       from_address: $("select[name='from_input']").val()
       to_list:      ["members@wokingsquashclub.org"]
-      bcc_list:     email_addresses
       format:       $("input[name='email_format']:checked").val()
     opts =
       csrf_token:  $("input[name='csrfmiddlewaretoken']").val()
-      completeCB:  (xhr, status) ->
+      failureCB: (xhr, status) -> 
         jqmask.unmask()
-      failureCB: (xhr, status) => 
-          alert("ERROR: status: #{ status }")
-    jqmask.mask("Sending email...")
-    wsrc.ajax.ajax_bare_helper("/admin/mailshot/send", data, opts, "PUT")
+        alert("ERROR #{ xhr.status }: #{ xhr.statusText }\nResponse: #{ xhr.responseText }\n\nThis batch of email failed to send.")
+    iterate = (start) ->
+      end = Math.min(start + batch_size, email_addresses.length)
+      batch = email_addresses[start...end]
+      data['bcc_list'] = batch
+      opts['successCB'] = (xhr, status) ->
+        jqmask.unmask()
+        if end < email_addresses.length
+          pause = 2
+          jqmask.mask("Waiting for #{ pause } seconds...")
+          resume = () ->
+            jqmask.unmask()
+            iterate(end)
+          setTimeout(resume, pause * 1000)
+      jqmask.mask("Sending emails #{ start+1 } to #{ end } of #{ email_addresses.length }...")
+      wsrc.ajax.ajax_bare_helper("/admin/mailshot/send", data, opts, "PUT")
+    iterate(0)
       
   add_individual: (form) ->
     add_member_input = $(form).find("input#add_member")
