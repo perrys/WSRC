@@ -57,7 +57,7 @@ span#totals {
     text-align: right;
 }
 label.tall_label {
-    margin-top: -5px;
+    margin-top: -2px;
 }
 input#send_button {
     float: right;
