@@ -44,15 +44,23 @@ class WSRC_admin_mailshot
       players = $.grep(players, tester, true) # filter out players who have opted out
     wsrc.utils.lexical_sort(players, "full_name")
     csrf_token = $("input[name='csrfmiddlewaretoken']").val()
+    email_addresses = wsrc.utils.unique_field_list(players, "email")
+    jqmask = $("body")
     data =
       subject:      $("input[name='subject']").val()
       body:         $("textarea[name='email_body']").val()
       from_address: $("select[name='from_input']").val()
-      to_list:      (p.id for p in players)
-      bcc_list:      (p.id for p in players)
+      to_list:      ["members@wokingsquashclub.org"]
+      bcc_list:     email_addresses
       format:       $("input[name='email_format']:checked").val()
     opts =
       csrf_token:  $("input[name='csrfmiddlewaretoken']").val()
+      completeCB:  (xhr, status) ->
+        jqmask.unmask()
+      failureCB: (xhr, status) => 
+          alert("ERROR: status: #{ status }")
+    jqmask.mask("Sending email...")
+    wsrc.ajax.ajax_bare_helper("/admin/mailshot/send", data, opts, "PUT")
       
   add_individual: (form) ->
     add_member_input = $(form).find("input#add_member")

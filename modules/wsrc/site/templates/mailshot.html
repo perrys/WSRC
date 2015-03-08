@@ -42,7 +42,7 @@ jQuery(document).ready(function(){wsrc.admin.mailshot.onReady(players, box_playe
       <legend>Email Settings</legend>
       <div class="ui-field-contain">
         <label for="from_input">From: </label>
-        <select id="from_input" value="from" onclick="">
+        <select name="from_input" value="from" onclick="">
           {% for m in from_email_addresses %}
           <option value="{{ m }}" {% if m == "committee@wokingsquashclub.org" %}selected="selected"{% endif %}>{{ m }}</option>
           {% endfor %}
@@ -110,8 +110,8 @@ jQuery(document).ready(function(){wsrc.admin.mailshot.onReady(players, box_playe
 
 
 ---
-*We hope you enjoy receiving e-mail notices and updates from the club. If you do not wish to receive these e-mail messages, please log into the website at <http://www.wokingsquashclub.org> and set "Receive Email" to "No" in the settings page.*  </textarea>
-      <input id="send_button" type="button" value="Send">
+*We hope you enjoy receiving e-mail notices and updates from the club. If you do not wish to receive these e-mail messages, please log into the [website](http://www.wokingsquashclub.org) and set "Receive Email" to "No" in the settings page.*  </textarea>
+      <input id="send_button" type="button" value="Send" onclick="wsrc.admin.mailshot.on('send_email')">
     </fieldset>
 
     

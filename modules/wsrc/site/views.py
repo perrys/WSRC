@@ -15,6 +15,7 @@
 # along with WSRC.  If not, see <http://www.gnu.org/licenses/>.
 
 from wsrc.site.models import PageContent, SquashLevels, LeagueMasterFixtures, BookingSystemEvent
+from wsrc.site.competitions.models import CompetitionGroup
 from wsrc.site.usermodel.models import Player
 import wsrc.site.settings.settings as settings
 from wsrc.utils import timezones
@@ -35,6 +36,8 @@ from django.views.decorators.http import require_safe
 
 import rest_framework.generics as rest_generics
 from rest_framework import serializers
+from rest_framework.parsers import JSONParser
+from rest_framework.views import APIView
 
 import markdown
 import datetime
@@ -223,6 +226,29 @@ def admin_mailshot_view(request):
         "box_player_ids": get_comp_entrants("wsrc_boxes"),
         }
     return TemplateResponse(request, 'mailshot.html', ctx)
+
+class SendEmail(APIView):
+    parser_classes = (JSONParser,)
+    def put(self, request, format="json"):
+        if not request.user.is_authenticated() or not request.user.is_staff:
+            raise PermissionDenied()
+        email_data = request.DATA
+        fmt  = email_data.pop('format')
+        body = email_data.pop('body')
+        if fmt == 'mixed':
+            email_data['text_body'] = body
+            email_data['html_body'] = markdown.markdown(body)
+        elif fmt == 'text':
+            email_data['text_body'] = body
+            email_data['html_body'] = None
+        elif fmt == 'html':
+            email_data['text_body'] = ''
+            email_data['html_body'] = body
+        import pprint
+        print pprint.pprint(email_data)
+        import wsrc.utils.email_utils as email_utils
+        email_utils.send_email(**email_data)
+        return HttpResponse(status=204)
 
 class UserForm(ModelForm):
     def __init__(self, *args, **kwargs):

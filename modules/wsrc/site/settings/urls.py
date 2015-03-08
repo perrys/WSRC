@@ -51,7 +51,8 @@ urlpatterns = patterns('',
     url(r'^data/bookings$', wsrc.site.views.BookingList.as_view()),
     url(r'^data/',    include(wsrc.site.competitions.data_urls)),
 
-    url(r'^admin/mailshot', wsrc.site.views.admin_mailshot_view),
+    url(r'^admin/mailshot/send', wsrc.site.views.SendEmail.as_view()),
+    url(r'^admin/mailshot/?', wsrc.site.views.admin_mailshot_view),
     url(r'^admin/', include(admin.site.urls)),
 
     url(r'^html/club_history.html',   perm_redirect('/about')),
