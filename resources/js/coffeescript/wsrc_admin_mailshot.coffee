@@ -123,7 +123,7 @@ class WSRC_admin_mailshot
       <strong>#{ nplayers }</strong> member#{ wsrc.utils.plural(nplayers) },
       <strong>#{ results.num_to_receive_email }</strong> to receive email,
       <strong>#{ nemails }</strong> distinct email address#{ wsrc.utils.plural(nemails, 'es') }
-      <a href='javascript:wsrc.admin.mailshot.on("show_selected_members_table")' class='#{ if nplayers == 0 then "ui-helper-hidden" }'>(show)</a>
+      <a href='#' onclick='wsrc.admin.mailshot.on("show_selected_members_table")' class='#{ if nplayers == 0 then "ui-helper-hidden" else "" }'>(show)</a>
     """)
             
   recipient_selector_changed: (selector) ->
