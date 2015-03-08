@@ -19,7 +19,20 @@ class WSRC_utils
     array.sort (lhs, rhs) ->
       (lhs[field] > rhs[field]) - (lhs[field] < rhs[field])
     return null
-    
+
+  # returns a list of the given field's distinct values in the array,
+  # ordered consistently with the input
+  @unique_field_list: (array, field) ->
+    unique_set = {}
+    unique_list = []
+    for o in array
+      val = o[field]
+      if unique_set[val]
+        continue
+      unique_set[val] = true
+      unique_list.push(val)
+    return unique_list
+        
   @is_valid_int: (i) ->
     if i == ""
       return false
