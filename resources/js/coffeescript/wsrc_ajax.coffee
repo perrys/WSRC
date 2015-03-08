@@ -19,6 +19,12 @@ class WSRC_ajax
       theme: "a"
       html: ""
     )
+    opts["completeCB"] = (xhr, status) ->
+        jQuery.mobile.loading("hide")
+    @ajax_bare_helper(url, data, opts, method)
+
+  # Ajax method which does not show JQM loadmask 
+  @ajax_bare_helper: (url, data, opts, method) ->
     headers = {}
     if opts.csrf_token?
       headers["X-CSRFToken"] = opts.csrf_token
@@ -30,8 +36,7 @@ class WSRC_ajax
       headers: headers
       success: opts.successCB
       error: opts.failureCB
-      complete: (xhr, status) ->
-        jQuery.mobile.loading("hide") 
+      complete: opts.completeCB
     if method == "GET"
       settings.dataType = "json" # expected return value
     else
