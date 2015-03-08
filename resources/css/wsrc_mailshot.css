@@ -52,7 +52,7 @@ span#totals {
 }
 .ui-field-contain label {
     float: left;
-    width: 9em;
+    width: 10em;
     margin-right: 1em;
     text-align: right;
 }
@@ -65,6 +65,8 @@ input#send_button {
 textarea#email_body {
     width:99%; 
     height: 160px;
+    font-family: Consolas, "Lucida Console", Monaco, monospace;
+    font-size: 9pt;
 }
 @media ( min-height: 800px ) {
     textarea#email_body {
