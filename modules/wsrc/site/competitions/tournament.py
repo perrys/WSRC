@@ -207,8 +207,8 @@ def get_current_competitions():
 def get_unplayed_matches(comp):
     at_least_one_player_expr = Q(team1_player1__isnull=False) | Q(team2_player1__isnull=False)
     unplayed_matches = comp.match_set.filter(at_least_one_player_expr)
-    unplayed_matches.filter(team1_score1__isnull=True)
-    unplayed_matches.filter(team2_score1__isnull=True)
+    unplayed_matches = unplayed_matches.exclude(team1_score1__isnull=False)
+    unplayed_matches = unplayed_matches.exclude(walkover__isnull=False)
     return unplayed_matches
 
 def get_previous_match(match, team_number):
