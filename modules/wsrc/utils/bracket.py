@@ -190,6 +190,13 @@ def reverse(i, n):
     r <<= 1
   return r
 
+def most_significant_bit(n):
+  i = 0
+  while (n > 0):
+    n = n >> 1
+    i += 1
+  return i
+
 def calc_slots(num_entrants):
   """Return the initial slot positions for a single-elimination
   tournament with number of entrants NUM_ENTRANTS, in seed order""" 

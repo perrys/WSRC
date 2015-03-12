@@ -111,12 +111,7 @@ def render_bracket(table, nbrackets, bracketNumber, compressFirstRound, idPrefix
 
     return rowIndices
 
-
-def render_tournament(competition):
-    """Generate an html table showing an empty bracket, sized for the given competition."""
-
-    tournamentId = competition.id
-
+def count_brackets(competition):
     # get the maximum match id
     try:
         maxId = reduce(max, [int(x.competition_match_id) for x in competition.match_set.all()], 0)
@@ -125,10 +120,13 @@ def render_tournament(competition):
         for c in competition.match_set.all().order_by("competition_match_id"):
             print c.__dict__
         raise e
-    nbrackets = 1
-    while (maxId>>1) > 0:
-        nbrackets += 1
-        maxId = (maxId>>1)
+    return wsrc.utils.bracket.most_significant_bit(maxId)
+
+def render_tournament(competition):
+    """Generate an html table showing an empty bracket, sized for the given competition."""
+
+    tournamentId = competition.id
+    nbrackets = count_brackets(competition)
 
     # figure out the number of matches in the first round. If it is equal or less than half of the possible slots 
     # then show the first round parallel with the second round
@@ -216,6 +214,23 @@ def get_previous_match(match, team_number):
     if team_number == 2:
       previous_match_id += 1
     return Match.objects.filter(competition_id = match.competition_id).get(competition_match_id=previous_match_id) 
+
+def descending_round_number_to_ascending(num, nrounds):
+    """Rounds are numbered from 1..N in the database, where the final is N, semi-final is N-1 etc.
+    On the website, they are ordered from N..1. This function converts the latter into the former"""
+    # for nrounds=6:
+    # 1 -> 6
+    # 6 -> 1
+    # 3 -> 4
+    return nrounds - num + 1
+    
+def get_round_for_match(match):
+    rnd = wsrc.utils.bracket.most_significant_bit(match.competition_match_id)
+    nbrackets = count_brackets(match.competition)
+    nrounds = len(match.competition.rounds.all())
+    if nrounds != nbrackets:
+        raise Exception("nrounds (%d) != nbrackets (%d) for competition %s" % (nrounds, nbrackets, str(match.competition)))
+    return match.competition.rounds.get(round=descending_round_number_to_ascending(rnd, nrounds))
 
 def get_players(match, team_number, player_set=None):
     p1 = getattr(match, "team%(team_number)d_player1" % locals())
