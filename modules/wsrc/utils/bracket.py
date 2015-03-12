@@ -1,5 +1,4 @@
 import unittest
-import math
 
 """
 Helper functions for calculating single-elimination tournament rounds
@@ -201,9 +200,8 @@ def calc_slots(num_entrants):
   """Return the initial slot positions for a single-elimination
   tournament with number of entrants NUM_ENTRANTS, in seed order""" 
 
-  log2n = math.log(num_entrants, 2)
-  n1 = int(log2n)
-  n2 = int(math.ceil(log2n))
+  n1 = most_significant_bit(num_entrants)
+  n2 = n1 + 1
   nearest = 1 << n1
   delta   = num_entrants - nearest
   cutoff  = nearest - delta
