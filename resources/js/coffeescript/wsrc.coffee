@@ -110,12 +110,13 @@ window.WSRC =
     unless this.bxslider_inited
       $('.bxslider').bxSlider(
         mode: 'horizontal',
-        slideWidth: 460,
+        slideWidth: 599,
         captions: false,
         randomStart: true,
         controls: false,
-        auto: true,
+#        auto: true,
         pause: 7000,
+        pager: false
       );
       this.bxslider_inited = true
     WSRC_homepage.display_court_bookings(WSRC_today_bookings, 0, WSRC_user_player_id?)
