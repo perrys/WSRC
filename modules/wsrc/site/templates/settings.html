@@ -2,9 +2,8 @@
 {% block pagetitle %}Settings{% endblock %}
 {% load kwacros %}
 {% loadkwacros 'form_macros.html' %}
-{% block content %}
+{% block page_content %}
 
-<div role="main" class="ui-content jqm-content">
 <form method="post" action="{% url 'wsrc.site.views.settings_view' %}" data-ajax="false" class="settings-form">
 {% csrf_token %}
 
@@ -60,5 +59,4 @@
 <input id="submit_button" type="submit" value="Update" data-theme="b" />
 
 </form>
-</div>
 {% endblock %}

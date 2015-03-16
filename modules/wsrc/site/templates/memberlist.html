@@ -2,9 +2,8 @@
 {% block titleprefix %}Member List - {% endblock %}
 {% block pagetitle %}Member List{% endblock %}
 {% block pagetype %}memberlist{% endblock %}
-{% block content %}
+{% block page_content %}
 
-<div role="main" class="ui-content jqm-content">
   <div id="main_div"> 
     <div class="wsrc-member-list">
       <form>
@@ -22,9 +21,5 @@
       </table>
     </div>
   </div>
-</div>
 {% endblock %}
 
-{% block last_updated %}
-last updated: {{ pagedata.last_updated|date:"d M Y" }}
-{% endblock %}

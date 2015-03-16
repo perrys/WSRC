@@ -4,16 +4,14 @@
 {% block pagetype %}boxes{% endblock %}
 {% load competitions_extras %}
 {% block pageattrs %}data-competitiongroupid="{{ competition.id }}"{% endblock %}
-{% block header_extra %}
+{% block html_header_extra %}
 {{ block.super }}
 <script>
 window.WSRC_box_data = {{ box_data|safe }};
 </script>
 {% endblock %}
-{% block content %}
+{% block page_content %}
 
-
-<div role="main" class="ui-content jqm-content">
 
   <form id="page-control-form" method="GET" action="#" onsubmit="return false;" >  
     <div class="left-control-box">
@@ -119,8 +117,10 @@ window.WSRC_box_data = {{ box_data|safe }};
 {% endif %}
 {% endfor %}
   </div>
-</div>
+{% endblock %}{% comment "page_content" %}{% endcomment %}
 
+{% block extra_page_content %}
+{{ block.super }}
 <div data-role="popup" id="boxDetailDialog" data-overlay-theme="b" data-theme="a" data-dismissible="true">
   <div data-role="header" data-theme="a">
     <h2> </h2>
@@ -143,5 +143,4 @@ window.WSRC_box_data = {{ box_data|safe }};
     </div>
   </div>
 </div>
-
-{% endblock %}
+{% endblock %}{% comment "extra_page_content" %}{% endcomment %}

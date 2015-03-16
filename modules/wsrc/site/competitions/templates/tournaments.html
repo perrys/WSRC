@@ -5,16 +5,15 @@
 {% block pagetype %}tournament{% endblock %}
 {% block pageattrs %}data-competitionid="{{ competition.id }}"{% endblock %}
 {% load competitions_extras %}
-{% block header_extra %}
+{% block html_header_extra %}
 {{ block.super }}
 <script>
 window.WSRC_bracket_data = {{ bracket_data|safe }};
 </script>
 {% endblock %}
-{% block content %}
 
 
-<div role="main" class="ui-content jqm-content">
+{% block page_content %}
 
   <form id="page-control-form" method="GET" action="#" onsubmit="return false;" >  
     <div class="left-control-box">
@@ -43,9 +42,11 @@ window.WSRC_bracket_data = {{ bracket_data|safe }};
   <div class="competition-wrapper">
   {{ bracket|safe }}
   </div>
+{% endblock %}{% comment "page_content" %}{% endcomment %}
 
-</div>
 
+{% block extra_page_content %}
+{{ block.super }}
 <div data-role="popup" id="score_entry_dialog" data-overlay-theme="b" data-theme="a" data-dismissible="true">
   <div data-role="header" data-theme="a">
     <h2>Match Result</h2>
@@ -57,5 +58,4 @@ window.WSRC_bracket_data = {{ bracket_data|safe }};
 
   </div>
 </div>
-
-{% endblock %}
+{% endblock %}{% comment "extra_page_content" %}{% endcomment %}

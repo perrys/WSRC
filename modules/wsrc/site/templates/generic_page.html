@@ -2,15 +2,13 @@
 {% block titleprefix %}{{ pagedata.title|capfirst }} - {% endblock %}
 {% block pagetitle %}{{ pagedata.title|capfirst }}{% endblock %}
 {% block pagetype %}{{ pagedata.title|lower }}{% endblock %}
-{% block content %}
+{% block page_content %}
 
-<div role="main" class="ui-content jqm-content {{ pagedata.title|lower }}">
   <div id="main_div"> 
 
 {{ pagedata.content|safe }}
 
   </div>
-</div>
 {% endblock %}
 
 {% block last_updated %}
