@@ -4,14 +4,16 @@
 {% loadkwacros 'form_macros.html' %}
 
 {% block titleprefix %}Login - {% endblock %}
+{% block pagetype %}login{% endblock %}
 
-{% block body %}
-<div data-role="page" data-dialog="true" data-position-to="window" data-pagetype="login">
-  <div data-role="header" data-theme="a">
+<!-- <div data-role="page" data-dialog="true" data-position-to="window" data-pagetype="login"> -->
+{% block pageattrs %}data-dialog="true" data-position-to="window" {% endblock %}
+{% block page_header_attrs %}data-theme="a"{% endblock %}
+{% block page_header %}
     <h1>Login</h1>
-  </div>
-  <div class="ui-content">
+{% endblock %}
 
+{% block page_content %}
 {% if form.errors %}
     <span class="form_error_message ui-btn-icon ui-btn-icon-left ui-icon-alert">
 Invalid username/password. Please try again.
@@ -30,6 +32,4 @@ Invalid username/password. Please try again.
 <script type="text/javascript">document.getElementById("id_username").focus();</script>
 </form>
 
-  </div>
-</div>
 {% endblock %}
