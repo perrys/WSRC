@@ -13,6 +13,7 @@ $( document ).on( "pagecreate", ".wsrc-site", function( event ) {
 </script>
 {% endblock %}{% comment "html_header_extra" %}{% endcomment %}
 
+{% block page_header_classes %}jqm-header{% endblock %}
 {% block page_header %}
     <h2><a href="/home" data-ajax="false" onclick="$.mobile.loading('show')"><img src="/static/images/WSRC-banner.jpg" alt="Woking Squash Club"></a></h2>
     <p>{% block pagetitle %}{% endblock %}</p>
@@ -23,6 +24,7 @@ $( document ).on( "pagecreate", ".wsrc-site", function( event ) {
     </div>
 {% endblock %}{% comment "page_header" %}{% endcomment %}
 
+{% block page_content_classes %}jqm-content{% endblock %}
 {% block extra_page_content %}
   <!-- left nav menu: -->
   <div data-role="panel" class="jqm-navmenu-panel" data-position="left" data-display="overlay" data-theme="a">
@@ -62,6 +64,7 @@ $( document ).on( "pagecreate", ".wsrc-site", function( event ) {
   </div>
 {% endblock %}{% comment "extra_page_content" %}{% endcomment %}
 
+{% block page_footer_classes %}jqm-footer{% endblock %}
 {% block page_footer %}
     <div>Woking Squash Rackets Club</div>
     <div class="last_updated">{% block last_updated %}{% endblock %}</div>
