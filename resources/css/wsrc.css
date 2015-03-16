@@ -29,6 +29,9 @@ div.ui-controlgroup-label {
 .mobile-hidden {
     display: none;
 }
+.toggled {
+    display: none;
+}
 
 /* add support for individual corner radii */
 .ui-corner-all,
@@ -57,9 +60,6 @@ div.ui-controlgroup-label {
 }
 #main_div {
     max-width: 1000px;
-}
-.toggled {
-    display: none;
 }
 /******************************************************************************** 
   Header - note some of these rules are overriden for larger screens
