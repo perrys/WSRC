@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+
+<html>
+  <head>
+{% block html_header %}{% endblock %}
+  </head>
+  <body>
+    <div id="outer_page_div" data-role="page" data-pagetype="{% block pagetype %}{% endblock %}" {% block pageattrs %}{% endblock %} class="wsrc-site">
+      <div id="page_header" data-role="header" class="jqm-header">
+{% block page_header %}{% endblock %}
+      </div>
+      <div id="page_content" role="main" class="ui-content jqm-content">
+{% block page_content %}{% endblock %}
+      </div>
+{% block extra_page_content %}{% endblock %}
+      <div id="page_footer" data-role="footer" data-position="fixed" data-tap-toggle="false" class="jqm-footer">
+{% block page_footer %}{% endblock %}
+      </div>
+    </div>
+{% block extra_body_content %}{% endblock %}
+  </body>
+</html>

@@ -1,6 +1,6 @@
 {% extends "header_base.html" %}
 
-{% block header_extra %}
+{% block html_header_extra %}
 <script>
 $( document ).on( "pagecreate", ".wsrc-site", function( event ) {
   var page = $( this );
@@ -11,12 +11,9 @@ $( document ).on( "pagecreate", ".wsrc-site", function( event ) {
   });
 });
 </script>
-{% endblock %}
+{% endblock %}{% comment "html_header_extra" %}{% endcomment %}
 
-{% block body %}
-<div id="outer_page_div" data-role="page" data-pagetype="{% block pagetype %}{% endblock %}" {% block pageattrs %}{% endblock %} class="wsrc-site">
-
-  <div data-role="header" class="jqm-header">
+{% block page_header %}
     <h2><a href="/home" data-ajax="false" onclick="$.mobile.loading('show')"><img src="/static/images/WSRC-banner.jpg" alt="Woking Squash Club"></a></h2>
     <p>{% block pagetitle %}{% endblock %}</p>
     <a href="#" class="jqm-navmenu-link ui-btn ui-btn-icon-notext ui-corner-all ui-icon-bars ui-nodisc-icon ui-alt-icon ui-btn-left">Menu</a>
@@ -24,10 +21,9 @@ $( document ).on( "pagecreate", ".wsrc-site", function( event ) {
     <a href="{% if user.is_authenticated %}#logout_dialog{% else %}/login?next={{ request.get_full_path }}{% endif %}" class="wsrc-login-icon ui-btn ui-btn-icon-notext ui-corner-all ui-icon-user ui-nodisc-icon ui-alt-icon" {% if user.is_authenticated %}data-transition="pop"{% else %}data-ajax="false" onclick="$.mobile.loading('show')"{% endif %}>Login</a>
     <a href="{% if user.is_authenticated %}#logout_dialog{% else %}/login?next={{ request.get_full_path }}{% endif %}" class="wsrc-login-textlink" {% if user.is_authenticated %}data-transition="pop"{% else %}data-ajax="false" onclick="$.mobile.loading('show')"{% endif %}>{% if user.is_authenticated %}{{ user.first_name }}{% else %}Login{% endif %}</a>
     </div>
-  </div>
+{% endblock %}{% comment "page_header" %}{% endcomment %}
 
-    {% block content %}{% endblock %}
-
+{% block extra_page_content %}
   <!-- left nav menu: -->
   <div data-role="panel" class="jqm-navmenu-panel" data-position="left" data-display="overlay" data-theme="a">
     <ul class="jqm-list ui-alt-icon ui-nodisc-icon">
@@ -55,11 +51,6 @@ $( document ).on( "pagecreate", ".wsrc-site", function( event ) {
     </ul>
   </div>
 
-  <div data-role="footer" data-position="fixed" data-tap-toggle="false" class="jqm-footer">
-    <div>Woking Squash Rackets Club</div>
-    <div class="last_updated">{% block last_updated %}{% endblock %}</div>
-  </div>
-
   <div data-role="popup" id="errorPopupDialog" data-overlay-theme="b" data-theme="b" data-dismissible="false" style="max-width:400px;">
     <div data-role="header" data-theme="a">
       <h1>Error</h1>
@@ -69,9 +60,14 @@ $( document ).on( "pagecreate", ".wsrc-site", function( event ) {
       <a href="#" class="ui-btn ui-corner-all ui-shadow ui-btn-inline ui-btn-b" data-rel="back" data-transition="flow">Ok</a>
     </div>
   </div>
+{% endblock %}{% comment "extra_page_content" %}{% endcomment %}
 
-</div><!-- /page -->
+{% block page_footer %}
+    <div>Woking Squash Rackets Club</div>
+    <div class="last_updated">{% block last_updated %}{% endblock %}</div>
+{% endblock %}{% comment "page_footer" %}{% endcomment %}
 
+{% block extra_body_content %}
 {% if user.is_authenticated %}
 <div data-role="page" data-dialog="true" data-position-to="window" id="logout_dialog" data-dismissible="false">
   <div data-role="header" data-theme="a">
@@ -85,5 +81,4 @@ $( document ).on( "pagecreate", ".wsrc-site", function( event ) {
   </div>
 </div>
 {% endif %}
-  
-{% endblock %}
+{% endblock %}{% comment "extra_body_content" %}{% endcomment %}

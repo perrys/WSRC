@@ -1,8 +1,6 @@
-<!DOCTYPE html>
+{% extends "basic_structure.html" %}
 
-<html>
-<head>
-  {% block header %}
+{% block html_header %}
   <meta charset="utf-8">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black">
@@ -26,9 +24,8 @@
   <link rel="stylesheet" href="/static/css/all_html5{% if not debug %}.min{% endif %}.css" />
  <!--<![endif]-->
 
-  {% block header_extra %}{% endblock %}
+  {% block html_header_extra %}{% endblock %}
 
-  {% endblock %}
 
 {% if user.is_authenticated %}
 <script>
@@ -36,9 +33,4 @@ window.WSRC_user_player_id = {% if user.player %}{{ user.player.id }}{% else %}-
 </script>
 {% endif %}
 
-</head>
-<body>
-{% block body %}
 {% endblock %}
-</body>
-</html>

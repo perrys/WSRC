@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% block pagetitle %}Home{% endblock %}
 {% block pagetype %}home{% endblock %}
-{% block header_extra %}
+{% block html_header_extra %}
 {{ block.super }}
 <script>
 window.WSRC_today_bookings = [
@@ -12,10 +12,9 @@ window.WSRC_today_bookings = [
 ];
 </script>
 {% endblock %}
-{% block content %}
+{% block page_content %}
 
-<div role="main" class="ui-content jqm-content">
-  <div id="main_div"> 
+<div id="main_div"> 
 
   {{ pagedata.content|safe }}
 
@@ -85,7 +84,6 @@ window.WSRC_today_bookings = [
         <div class="footnote toggled toggle-link"><a href="#">(top 10)</a></div>
       </div>
     </div>        	
-  </div>
   </div>
 </div>
 
