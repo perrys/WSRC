@@ -1,8 +1,14 @@
+html, body {
+    height: 100%;
+}
 
 
 /* Small screen default font size is 14px */
 body {
     font-size: 1em;
+    margin: 0;
+    padding: 0;
+    background-color: white;
 }
 
 .ui-btn,
@@ -132,13 +138,15 @@ div.ui-controlgroup-label {
 /******************************************************************************** 
    Footer 
 ********************************************************************************/
-
-.wsrc-site .jqm-footer.ui-footer {
+.wsrc-site .jqm-content {
+    padding-bottom: 40px;
+}
+.wsrc-site .jqm-footer {
     position: absolute;
     bottom: 0;
     padding-bottom: 0;
-}
-.wsrc-site .jqm-footer {
+    height: 40px;
+    width: 100%;
     border-top: 1px solid #ed3338;
     font-family: 'Open Sans', sans-serif;
     font-weight: 400;
