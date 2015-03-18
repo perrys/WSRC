@@ -10,6 +10,20 @@ body {
     padding: 0;
     background-color: white;
 }
+#body_header {
+    border-top: 4px solid #ed3338;
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+}
+#body_footer {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    z-index: 1;
+}
 
 .ui-btn,
 .ui-mobile label,
@@ -58,9 +72,7 @@ div.ui-controlgroup-label {
 .ui-corner-br {
 	border-bottom-right-radius: .3125em /*{global-radii-blocks}*/;
 }
-#main_div {
-    max-width: 1000px;
-}
+
 /******************************************************************************** 
   Header - note some of these rules are overriden for larger screens
 ********************************************************************************/
@@ -138,25 +150,27 @@ div.ui-controlgroup-label {
 /******************************************************************************** 
    Footer 
 ********************************************************************************/
-.wsrc-site .jqm-content {
+.wsrc-site {
     padding-bottom: 40px;
 }
-.wsrc-site .jqm-footer {
+.jqm-footer {
     position: absolute;
     bottom: 0;
     padding-bottom: 0;
-    height: 40px;
+    height: 39px;
     width: 100%;
     border-top: 1px solid #ed3338;
     font-family: 'Open Sans', sans-serif;
     font-weight: 400;
     color: #666;
 }
-.wsrc-site .jqm-footer div {
-    margin: 1em;
+.jqm-footer div {
+    margin-top: 0.5em;
+    margin-left: 0.5em;
+    margin-right: 0.5em;
     float: left;
 }
-.wsrc-site .jqm-footer .last_updated {
+.jqm-footer .last_updated {
     float: right;
     font-size: 0.8em;
     margin-top: 1.4em;
@@ -167,8 +181,16 @@ div.ui-controlgroup-label {
   Content
 ********************************************************************************/
 
+#page_wrapper .wsrc-site {
+    max-width: 1000px;
+    margin-left: auto;
+    margin-right: auto;
+    position: relative;
+}
+
 .wsrc-site .jqm-content {
     padding-top: 3em;
+    padding-bottom: 40px;
 }
 .wsrc-site .jqm-content h1,
 .wsrc-site .jqm-content h2,
