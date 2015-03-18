@@ -19,8 +19,8 @@ $( document ).on( "pagecreate", ".wsrc-site", function( event ) {
     <p>{% block pagetitle %}{% endblock %}</p>
     <a href="#" class="jqm-navmenu-link ui-btn ui-btn-icon-notext ui-corner-all ui-icon-bars ui-nodisc-icon ui-alt-icon ui-btn-left">Menu</a>
     <div class="wsrc-login-block">
-    <a href="{% if user.is_authenticated %}#logout_dialog{% else %}/login?next={{ request.get_full_path }}{% endif %}" class="wsrc-login-icon ui-btn ui-btn-icon-notext ui-corner-all ui-icon-user ui-nodisc-icon ui-alt-icon" {% if user.is_authenticated %}data-transition="pop"{% else %}data-ajax="false" onclick="$.mobile.loading('show')"{% endif %}>Login</a>
-    <a href="{% if user.is_authenticated %}#logout_dialog{% else %}/login?next={{ request.get_full_path }}{% endif %}" class="wsrc-login-textlink" {% if user.is_authenticated %}data-transition="pop"{% else %}data-ajax="false" onclick="$.mobile.loading('show')"{% endif %}>{% if user.is_authenticated %}{{ user.first_name }}{% else %}Login{% endif %}</a>
+    <a href="{% if user.is_authenticated %}#logout_dialog{% else %}/login?next={{ request.get_full_path }}{% endif %}" class="wsrc-login-icon ui-btn ui-btn-icon-notext ui-corner-all ui-icon-user ui-nodisc-icon ui-alt-icon" {% if user.is_authenticated %}data-transition="none"{% else %}data-ajax="false" onclick="$.mobile.loading('show')"{% endif %}>Login</a>
+    <a href="{% if user.is_authenticated %}#logout_dialog{% else %}/login?next={{ request.get_full_path }}{% endif %}" class="wsrc-login-textlink" {% if user.is_authenticated %}data-transition="none"{% else %}data-ajax="false" onclick="$.mobile.loading('show')"{% endif %}>{% if user.is_authenticated %}{{ user.first_name }}{% else %}Login{% endif %}</a>
     </div>
 {% endblock %}{% comment "page_header" %}{% endcomment %}
 
