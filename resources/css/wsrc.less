@@ -151,6 +151,26 @@ div.ui-controlgroup-label {
         };
         .media-guard(@ruleset-largescreen, @breakpoint-show-navmenu);
     };
+    p {
+        position: absolute;
+        bottom: -2em;
+        margin: 0 1em;
+        color: black;
+        font-family: 'Open Sans', sans-serif;
+        font-weight: 300;
+        text-transform: uppercase;
+        text-shadow: none;
+        @ruleset-largescreen: {
+	    bottom: auto;
+	    left: auto;
+	    top: 50%;
+	    right: 15%;
+	    font-size: 1.2em;
+	    margin-top: -.625em;
+            color: white;
+        };
+        .media-guard(@ruleset-largescreen, @breakpoint-show-navmenu);
+    }
 }
 
 /******************************************************************************** 
@@ -195,6 +215,12 @@ div.ui-controlgroup-label {
 /******************************************************************************** 
   Content
 ********************************************************************************/
+
+/* Square off icon buttons: */
+.ui-btn-icon-notext.ui-corner-all {
+	-webkit-border-radius: .3125em; /* 1em; */
+	border-radius: .3125em; /* 1em; */
+}
 
 #page_wrapper .wsrc-site {
     max-width: 1000px;

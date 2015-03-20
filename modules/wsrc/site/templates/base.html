@@ -20,9 +20,10 @@ $( document ).on( "pagecreate", ".wsrc-site", function( event ) {
       <a href="#">menu</a>
     </div>
     <div class="topicon login-link">
-      <a class="centered-icon" href="{% if user.is_authenticated %}#logout_dialog{% else %}/login?next={{ request.get_full_path }}{% endif %}"><img src="/static/css/images/user-white.png" width="14" height="14" alt="Login"></a>
-      <a href="{% if user.is_authenticated %}#logout_dialog{% else %}/login?next={{ request.get_full_path }}{% endif %}">login</a>
+      <a class="centered-icon" href="{% if user.is_authenticated %}#logout_dialog{% else %}/login?next={{ request.get_full_path }}{% endif %}" {% if user.is_authenticated %}data-transition="none"{% else %}data-ajax="false"{% endif %}><img src="/static/css/images/user-white.png" width="14" height="14" alt="Login"></a>
+      <a href="{% if user.is_authenticated %}#logout_dialog{% else %}/login?next={{ request.get_full_path }}{% endif %}" {% if user.is_authenticated %}data-transition="none"{% else %}data-ajax="false"{% endif %}>{% if user.is_authenticated %}{{ user.first_name }}{% else %}Login{% endif %}</a>
     </div>
+    <p>{% block pagetitle %}{% endblock %}</p>
     <h2 class="large-top-logo"><a href="/home" data-ajax="false" onclick="$.mobile.loading('show')"><img src="/static/images/logo_137x70.png" width="137" height="70" alt="Woking Squash Club"></a></h2>
     <h2 class="small-top-logo"><a href="/home" data-ajax="false" onclick="$.mobile.loading('show')"><img src="/static/images/logo_98x50.png" width="98" height="50" alt="Woking Squash Club" ></a></h2>
 {% endblock %}{% comment "page_header" %}{% endcomment %}
