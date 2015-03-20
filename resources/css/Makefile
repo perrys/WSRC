@@ -1,6 +1,5 @@
 # -*- mode: makefile-gmake; -*-
 
-JINJACC = ../../tools/jinjac
 LESSC = lessc --no-color --strict-math=on
 MINIFY = minify --no-comments
 
@@ -14,8 +13,8 @@ all: $(CSS_TARGETS)
 %.min.css: %.css
 	$(MINIFY) $<
 
-all_%.css: _wsrc_%.css jqm_svg_icons_trimmed.css jqm_theme.css _jquery.mobile.structure.css jquery.bxslider.css
-	cat jqm_svg_icons_trimmed.css jqm_theme.css _jquery.mobile.structure.css jquery.bxslider.css $< > $@
+all_%.css: _wsrc_%.css jquery.mobile.icons.min.css yellow_dots.css _jquery.mobile.structure.css jquery.bxslider.css
+	cat  jquery.mobile.icons.min.css yellow_dots.css  _jquery.mobile.structure.css jquery.bxslider.css $< > $@
 
 all_admin.css: _jquery-ui.css jquery.loadmask.css wsrc_admin.css
 	cat _jquery-ui.css jquery.loadmask.css wsrc_admin.css > $@
@@ -27,16 +26,16 @@ all_accounts.css: _jquery-ui.css jquery.loadmask.css _wsrc_accounts.css
 	cat _jquery-ui.css jquery.loadmask.css _wsrc_accounts.css > $@
 
 _jquery.mobile.structure.css:
-	wget http://ajax.googleapis.com/ajax/libs/jquerymobile/1.4.3/jquery.mobile.structure.css -O $@
+	wget http://ajax.googleapis.com/ajax/libs/jquerymobile/1.4.5/jquery.mobile.structure.css -O $@
 
 _jquery-ui.css:
 	wget http://ajax.googleapis.com/ajax/libs/jqueryui/1.11.2/themes/smoothness/jquery-ui.css -O $@
 
-_wsrc_html5.css: wsrc.css
-	$(JINJACC) $< ie_mode=0 > $@
+_wsrc_html5.css: wsrc.less
+	$(LESSC) --global-var='iemode=false' $< > $@
 
-_wsrc_legacy.css: wsrc.css
-	$(JINJACC) $< ie_mode=1 > $@
+_wsrc_legacy.css: wsrc.less
+	$(LESSC) --global-var='iemode=true' $< > $@
 
 _wsrc_accounts.css: wsrc_accounts.less
 	$(LESSC) $< > $@

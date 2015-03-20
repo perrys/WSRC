@@ -1,3 +1,5 @@
+/* -*- mode: css;-*- */
+
 html, body {
     height: 100%;
 }
@@ -735,11 +737,20 @@ div.thumbnail-container div.copy {
   Larger Screen Media Conditionals
 ********************************************************************************/
 
+.media-guard(@ruleset; @min-width) {
+    & when (@iemode) {
+        @ruleset();
+    }
+    & when not (@iemode) {
+        @media (min-width: @min-width) {
+            @ruleset();
+        }
+    }
+}
 
 /* Display coaching bullet points next to picture if large enough screen */
-{% if not ie_mode %}
-@media (min-width: 500px) {
-{% endif %}
+.media-guard(@coaching-ruleset, 500px);
+@coaching-ruleset: {
 div.coaching img.left-picture-block {
     float: left;
 }
@@ -747,16 +758,13 @@ div.coaching ul {
     margin-left: 210px;
     padding-bottom: 0;
 }
-{% if not ie_mode %}
-}
-{% endif %}
+};
 
 
-{% if not ie_mode %}
 /* larger than a small phone screen in portrait mode 
    - switch to front page square boxes with scrolling */
-@media (min-width: 35em) { /* default 560px */
-{% endif %}
+.media-guard(@tablet-ruleset, 35em);
+@tablet-ruleset: {
     .jqm-block-content > div.restricted{
 	min-height: 16em;
 	max-height: 16em;
@@ -777,14 +785,11 @@ div.coaching ul {
         padding-left: 0;
         padding-right: 0;
     }
-{% if not ie_mode %}
-}
-{% endif %}
+};
 
-
-{% if not ie_mode %}
-@media ( min-width: 40em ) { /* reflow table when larger than about 640px */
-{% endif %}
+/* reflow table when larger than about 640px */
+.media-guard(@membership-table-ruleset, 40em); 
+@membership-table-ruleset: {
 	table.wsrc-member-list {
             padding-top: 0em;
         }
@@ -806,16 +811,12 @@ div.coaching ul {
         .wsrc-member-list th, .wsrc-member-list td {
             border-bottom: 1px solid;
         }
+};
 
-{% if not ie_mode %}
-}
-{% endif %}
-
-{% if not ie_mode %}
 /* larger than a small tablet in portrait mode - switch to larger
    header, remove hamburger icon and bring in side menu */
-@media (min-width: 60em) { /* about 960 px */
-{% endif %}
+.media-guard (@tablet-landscape-ruleset, 60em); /* about 960 px */
+@tablet-landscape-ruleset: {
     .mobile-hidden {
         display: inherit;
     }
@@ -912,15 +913,12 @@ div.coaching ul {
 	left: -17em;
 	right: 17em;
     }
-{% if not ie_mode %}
-}
-{% endif %}
+};
 
 
 
-{% if not ie_mode %}
-@media ( min-width: 70em ) {
-{% endif %}
+.media-guard (@desktop-ruleset, 70em);
+@desktop-ruleset: {
     .jqm-block-content td {
         font-size: 0.9em;
     }
@@ -945,7 +943,5 @@ div.coaching ul {
     div.boxes-wrapper>div.boxes-secondcolumn {
         float: right;
     } 
-{% if not ie_mode %}
-}
-{% endif %}
+};
 
