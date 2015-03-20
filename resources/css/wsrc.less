@@ -14,20 +14,6 @@ body {
     padding: 0;
     background-color: white;
 }
-#body_header {
-    border-top: 4px solid #ed3338;
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-}
-#body_footer {
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    width: 100%;
-    z-index: 1;
-}
 
 .ui-btn,
 .ui-mobile label,
@@ -81,108 +67,107 @@ div.ui-controlgroup-label {
   Header - note some of these rules are overriden for larger screens
 ********************************************************************************/
 
+@small-header-height: 52px;
+@large-header-height: 72px;
+@footer-height: 40px;
+
+#body_header {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: @large-header-height;
+    background-color: black;
+}
+
 .wsrc-site .jqm-header {
-    background: white;
-    height: 50px;
-    border-bottom-color: #eee;
-    h2 {
-        padding: .4em 0 .1em;
-        margin: 0 3em;
+    background: black;
+    height: @small-header-height;
+    background-color: black;
+    border-width: 0;
+    @ruleset-largescreen: {
+        height: @large-header-height;
+    };
+    .media-guard(@ruleset-largescreen, @breakpoint-show-navmenu);
+    .topicon {
+        padding: 0;
+        margin-top: 15px;
         @ruleset-largescreen: {
-	    padding: 1em 0 .7em;
-	    margin: 0 1em 0 3%;
-	    text-align: left;
+            margin-top: 25px;
         };
         .media-guard(@ruleset-largescreen, @breakpoint-show-navmenu);
         a {
-            display: inline-block;
             text-decoration: none;
-            min-height: 40px;
-        }
-        a.jqm-navmenu-link {
-            @ruleset-largescreen: {
-                display: none;
-            };
-            .media-guard(@ruleset-largescreen, @breakpoint-show-navmenu);
-        }
-        img {
-            display: block;
-            width: 140px;
-            height: auto;
-            @ruleset-largescreen: {
-	        width: 222px;
-	        height: 78px;
-            };
-            .media-guard(@ruleset-largescreen, @breakpoint-show-navmenu);
+            color: white;
+            font-size: 0.6em;
+            display:block;
         }
     }
-    p {
-        position: absolute;
-        bottom: -2em;
-        left: 1em;
-        margin: 0;
-        color: #666;
-        font-family: 'Open Sans', sans-serif;
-        font-weight: 300;
-        text-transform: uppercase;
+    @topicons-sidemargin: 0.8em;
+    .centered-icon {
+        width: 14px;
+        margin-left: auto;
+        margin-right: auto;
+    }
+    div.menu-link {
+        float: left;
+        margin-left: @topicons-sidemargin;
         @ruleset-largescreen: {
-	    bottom: auto;
-	    left: auto;
-	    top: 50%;
-	    right: 15%;
-	    font-size: 1.2em;
-	    margin-top: -.625em;
+            display: none;
         };
         .media-guard(@ruleset-largescreen, @breakpoint-show-navmenu);
     }
-    .ui-btn {
-        width: 2em;
-        height: 2em;
-        background: none;
-        border: 0;
-        top: 50%;
-        margin-top: -1em;
-        -webkit-border-radius: .3125em;
-        border-radius: .3125em;
-        opacity: .4;
-        filter: Alpha(Opacity=40);
-    }
-    div.wsrc-login-block {
-        position: absolute;
-        right: 1em;
-        top: 50%;
-        height: 3em;
-        margin-top: -1.5em;
-        background: none;
-        border: 0;
-        text-align: center;
-    }
-    a.wsrc-login-icon {
-        position: relative;
-        display: block;
-        margin-left:  auto;
-        margin-right: auto;
-        margin-top: -1.5em;
-    }
-    a.wsrc-login-textlink {
-        color: #333;
-        display: block;
-        margin-top: 1.25em;
+    div.login-link {
+        float: right;
+        margin-right: @topicons-sidemargin;
+    }    
+    h2 {
+        margin-top: 0px;
+        margin-bottom: 0px;
         padding: 0;
-        opacity: .4;
-        filter: Alpha(Opacity=40);
-        text-decoration: none;
-        font-weight: 300;
-        font-size: 0.8em;
-    }
+        img {
+            padding-top: 1px;
+        }
+        &.small-top-logo {
+            width: 98px;
+            margin-left: auto;
+            margin-right: auto;
+            display: block;
+        }
+        &.large-top-logo {
+            display: none;
+            margin-left: @topicons-sidemargin;
+        }
+        a {
+            text-decoration: none;
+        }
+        @ruleset-largescreen: {
+            &.small-top-logo {
+                display: none;
+            }
+            &.large-top-logo {
+                display: inline;
+            }
+        };
+        .media-guard(@ruleset-largescreen, @breakpoint-show-navmenu);
+    };
 }
 
 /******************************************************************************** 
    Footer 
 ********************************************************************************/
+
 .wsrc-site {
-    padding-bottom: 40px;
+    padding-bottom: @footer-height;
 }
+#body_footer {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    z-index: 1;
+}
+
 .jqm-footer {
     position: absolute;
     bottom: 0;

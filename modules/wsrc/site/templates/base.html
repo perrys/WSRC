@@ -5,7 +5,7 @@
 $( document ).on( "pagecreate", ".wsrc-site", function( event ) {
   var page = $( this );
   $( ".jqm-navmenu-panel ul" ).listview();
-  $( ".jqm-navmenu-link" ).on( "click", function() {
+  $( ".menu-link a" ).on( "click", function() {
     var panel = page.find( ".jqm-navmenu-panel:not(.jqm-panel-page-nav)" ).panel();
     panel.panel( "open" );
   });
@@ -15,13 +15,16 @@ $( document ).on( "pagecreate", ".wsrc-site", function( event ) {
 
 {% block page_header_classes %}jqm-header{% endblock %}
 {% block page_header %}
-    <h2><a href="/home" data-ajax="false" onclick="$.mobile.loading('show')"><img src="/static/images/WSRC-banner.jpg" alt="Woking Squash Club"></a></h2>
-    <p>{% block pagetitle %}{% endblock %}</p>
-    <a href="#" class="jqm-navmenu-link ui-btn ui-btn-icon-notext ui-corner-all ui-icon-bars ui-nodisc-icon ui-alt-icon ui-btn-left">Menu</a>
-    <div class="wsrc-login-block">
-    <a href="{% if user.is_authenticated %}#logout_dialog{% else %}/login?next={{ request.get_full_path }}{% endif %}" class="wsrc-login-icon ui-btn ui-btn-icon-notext ui-corner-all ui-icon-user ui-nodisc-icon ui-alt-icon" {% if user.is_authenticated %}data-transition="none"{% else %}data-ajax="false" onclick="$.mobile.loading('show')"{% endif %}>Login</a>
-    <a href="{% if user.is_authenticated %}#logout_dialog{% else %}/login?next={{ request.get_full_path }}{% endif %}" class="wsrc-login-textlink" {% if user.is_authenticated %}data-transition="none"{% else %}data-ajax="false" onclick="$.mobile.loading('show')"{% endif %}>{% if user.is_authenticated %}{{ user.first_name }}{% else %}Login{% endif %}</a>
+    <div class="topicon menu-link">
+      <a class="centered-icon" href="#"><img src="/static/css/images/bars-white.png" width="14" height="14" alt="Menu"></a>
+      <a href="#">menu</a>
     </div>
+    <div class="topicon login-link">
+      <a class="centered-icon" href="{% if user.is_authenticated %}#logout_dialog{% else %}/login?next={{ request.get_full_path }}{% endif %}"><img src="/static/css/images/user-white.png" width="14" height="14" alt="Login"></a>
+      <a href="{% if user.is_authenticated %}#logout_dialog{% else %}/login?next={{ request.get_full_path }}{% endif %}">login</a>
+    </div>
+    <h2 class="large-top-logo"><a href="/home" data-ajax="false" onclick="$.mobile.loading('show')"><img src="/static/images/logo_137x70.png" width="137" height="70" alt="Woking Squash Club"></a></h2>
+    <h2 class="small-top-logo"><a href="/home" data-ajax="false" onclick="$.mobile.loading('show')"><img src="/static/images/logo_98x50.png" width="98" height="50" alt="Woking Squash Club" ></a></h2>
 {% endblock %}{% comment "page_header" %}{% endcomment %}
 
 {% block page_content_classes %}jqm-content{% endblock %}
@@ -78,9 +81,9 @@ $( document ).on( "pagecreate", ".wsrc-site", function( event ) {
   </div>
   <div class="ui-content">
     <h3 class="ui-title">What would you like to do?</h3>
-    <a href="{% url 'settings' %}" class="ui-btn ui-corner-all ui-shadow ui-btn-inline ui-btn-b">Settings</a>
-    <a href="{% url 'logout' %}?next=/home" class="ui-btn ui-corner-all ui-shadow ui-btn-inline ui-btn-b" data-ajax="false" onclick="$.mobile.loading('show')">Logout</a>
-    <a style="float: right;" href="#" class="ui-btn ui-corner-all ui-shadow ui-btn-inline ui-btn-b" data-rel="back" data-transition="flow">Cancel</a>
+    <a href="{% url 'settings' %}" class="ui-btn ui-corner-all ui-shadow ui-btn-inline ui-btn-a">Settings</a>
+    <a href="{% url 'logout' %}?next=/home" class="ui-btn ui-corner-all ui-shadow ui-btn-inline ui-btn-a" data-ajax="false" onclick="$.mobile.loading('show')">Logout</a>
+    <a style="float: right;" href="#" class="ui-btn ui-corner-all ui-shadow ui-btn-inline ui-btn-a" data-rel="back" data-transition="flow">Cancel</a>
   </div>
 </div>
 {% endif %}
