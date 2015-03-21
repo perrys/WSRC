@@ -184,7 +184,10 @@ def email_tournament_match_reminders(usernames):
       other_team_number = tournament_utils.other_team_number(my_team_number)
       opponent_desc = get_opponent_desc(match, other_team_number, opponent_set)
       if opponent_desc is None:
-        opponent_desc = get_previous_match_opponent_desc(match, other_team_number)
+        try:
+          opponent_desc = get_previous_match_opponent_desc(match, other_team_number)
+        except comp_models.Match.DoesNotExist: # if opponents are two rounds behind
+          opponent_desc = "(PREVIOUS MATCH UNRESOLVED)"
       comp_round = tournament_utils.get_round_for_match(match)
       nrounds = len(comp_round.competition.rounds.all())
       def rnd():
