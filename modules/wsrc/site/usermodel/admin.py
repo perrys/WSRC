@@ -6,15 +6,13 @@ from django.utils.translation import ugettext_lazy as _
 
 from wsrc.site.usermodel.models import Player
 
-class PlayerInline(admin.StackedInline):
-  model = Player
+class UserInline(admin.StackedInline):
+  model = User
   can_delete = False
-  verbose_name_plural = 'players'
 
 # Define a new User admin
-class UserAdmin(UserAdmin):
-    inlines = (PlayerInline, )
+class PlayerAdmin(admin.ModelAdmin):
+    inlines = (UserInline, )
 
 # Re-register UserAdmin
-admin.site.unregister(User)
-admin.site.register(User, UserAdmin)
+admin.site.register(Player) #, PlayerAdmin)
