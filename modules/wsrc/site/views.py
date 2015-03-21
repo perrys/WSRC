@@ -128,6 +128,12 @@ def index_view(request):
             ctx["leaguemaster_recent_max_idx"] = idx+4
         rich_fixtures.append(d)
     ctx["leaguemaster"] = rich_fixtures
+    if not found_empty:
+        last = len(leaguemasterfixtures)-1
+        ctx["leaguemaster_last_result_idx"] = last
+        ctx["leaguemaster_recent_min_idx"] = last-9
+        ctx["leaguemaster_recent_max_idx"] = last
+        
 
     now = timezone.now()
     midnight_today = now - datetime.timedelta(hours=now.hour, minutes=now.minute, seconds=now.second, microseconds = now.microsecond)
