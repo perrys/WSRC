@@ -1,7 +1,9 @@
 /* -*- mode: css;-*- */
 
+@breakpoint-widen-frontpage: 35em;
 @breakpoint-show-navmenu: 60em;
 @color-yellow-dot: #fccb30;
+@max-page-width: 1000px;
 
 html, body {
     height: 100%;
@@ -31,9 +33,22 @@ div.ui-controlgroup-label {
 .nobreak {
     white-space: nowrap;
 }
-.mobile-hidden {
+.mobile-hidden, .small-mobile-hidden {
     display: none;
 }
+@ruleset-small: {
+    .small-mobile-hidden {
+        display: inline;
+    }
+};
+@ruleset-large: {
+    .mobile-hidden {
+        display: inherit;
+    }
+};
+.media-guard(@ruleset-small, @breakpoint-widen-frontpage); 
+.media-guard(@ruleset-large, @breakpoint-show-navmenu); 
+
 .toggled {
     display: none;
 }
@@ -63,6 +78,18 @@ div.ui-controlgroup-label {
 .ui-corner-br {
 	border-bottom-right-radius: .3125em /*{global-radii-blocks}*/;
 }
+
+#page_wrapper .wsrc-site {
+    position: relative;
+}
+
+div.centered-content-wrapper {
+    position: relative;
+    max-width: @max-page-width;
+    margin-left: auto;
+    margin-right: auto;
+}
+
 
 /******************************************************************************** 
   Header - note some of these rules are overriden for larger screens
@@ -194,16 +221,16 @@ div.ui-controlgroup-label {
     color: white;
     background-color: black;
     div {
-        margin-top: 0.5em;
-        margin-left: 0.5em;
-        margin-right: 0.5em;
-        float: left;
-    }
-    .last_updated {
-        float: right;
-        font-size: 0.8em;
-        margin-top: 1.4em;
-        color: @color-yellow-dot;
+        position: relative;
+        margin-top: 10px;
+        padding-left: 0.5em;
+        padding-right: 0.5em;
+        &.last_updated {
+            float: right;
+            font-size: 0.8em;
+            margin-top: 4px;
+            color: @color-yellow-dot;
+        }
     }
 }
 
@@ -216,13 +243,6 @@ div.ui-controlgroup-label {
 .ui-btn-icon-notext.ui-corner-all {
 	-webkit-border-radius: .3125em; /* 1em; */
 	border-radius: .3125em; /* 1em; */
-}
-
-#page_wrapper .wsrc-site {
-    max-width: 1000px;
-    margin-left: auto;
-    margin-right: auto;
-    position: relative;
 }
 
 .wsrc-site .jqm-content {
@@ -243,7 +263,6 @@ div.ui-controlgroup-label {
     margin: 0 0 .625em;
 }
 .wsrc-site .jqm-content > div > h2 {
-    color: #3eb249;
     background-color: transparent;
     border-bottom: 1px solid #ddd;
     font-size: 1.6em;
@@ -251,7 +270,6 @@ div.ui-controlgroup-label {
     margin: 0 0 .7375em;
 }
 .wsrc-site .jqm-content h3 {
-    color: #3eb249;
     background-color: transparent;
     font-size: 1.4em;
     margin: 0 0 0.5em;
@@ -310,7 +328,6 @@ div.ui-controlgroup-label {
 .jqm-block-content h3 {
     font-size: 1.5em;
     font-weight: 300;
-    color: #3eb249;
     border-bottom: 1px solid #ddd;
     padding-bottom: .25em;
     margin: 0 0 .5em;
@@ -330,7 +347,6 @@ div.ui-controlgroup-label {
 .jqm-block-content h4.ui-title {
     font-size: 1em;
     font-weight: 200;
-    color: #3eb249;
     vertical-align: middle;
     padding: 0;
     margin: 0;
@@ -383,13 +399,16 @@ div.ui-controlgroup-label {
 }
 .wsrc-site .jqm-list .ui-btn:hover,
 .wsrc-site .jqm-list .ui-btn:active {
-    color: #3388cc;
+    color: @color-yellow-dot;
 }
 .wsrc-site .jqm-list .ui-btn.ui-btn-active {
     color: #fff;
 }
 .wsrc-site .jqm-list .ui-li-divider {
     color: #ed3338;
+}
+.jqm-navmenu-panel {
+	position: fixed;
 }
 .jqm-navmenu-panel .ui-listview > li .ui-collapsible-heading {
     margin: 0;
@@ -565,7 +584,7 @@ div.boxes>div.ui-bar {
 }
 div.boxes>div.ui-body {
     padding:  .5em .5em;
-    background-color: #f9f9f9;
+/*    background-color: #f9f9f9; */
 }
 div.boxes-wrapper>div.boxes-firstcolumn {
     width: inherit;
@@ -798,8 +817,8 @@ div.coaching ul {
 
 /* larger than a small phone screen in portrait mode 
    - switch to front page square boxes with scrolling */
-.media-guard(@tablet-ruleset, 35em);
-@tablet-ruleset: {
+.media-guard(@widen-frontpage-ruleset, @breakpoint-widen-frontpage);
+@widen-frontpage-ruleset: {
     .jqm-block-content > div.restricted{
 	min-height: 16em;
 	max-height: 16em;
@@ -861,7 +880,7 @@ div.coaching ul {
 	left: 0;
 	clip: initial;
 	float: left;
-	width: 20%;
+	width: 18%;
 	background: none;
 	-webkit-transition: none !important;
 	-moz-transition: none !important;
@@ -880,16 +899,21 @@ div.coaching ul {
 	display: block;
     }
     .wsrc-site .jqm-navmenu-panel .ui-panel-inner {
-	margin-top: 1em;
-	margin-bottom: 3em;
+	margin: 0;
+        padding: 0 1em 0 0.8em ;
     }
     .wsrc-site .jqm-content {
-	width: 77%;
+	width: 100%;
 	padding-top: 2em;
-	padding-left: 3%;
+	padding-left: 0;
 	padding-right: 0;
-	float: right;
     }
+    .wsrc-site .nonmenu-content {
+        width: 79%;
+        float: right;
+        padding-right:0.8em;
+    }
+    .wsrc-site .jqm-content 
     .wsrc-site .jqm-content.jqm-fullwidth {
 	width: auto;
 	padding-left: 15%;

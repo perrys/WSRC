@@ -10,7 +10,7 @@
 window.WSRC_box_data = {{ box_data|safe }};
 </script>
 {% endblock %}
-{% block page_content %}
+{% block centered_page_content %}
 
 
   <form id="page-control-form" method="GET" action="#" onsubmit="return false;" >  
@@ -117,7 +117,7 @@ window.WSRC_box_data = {{ box_data|safe }};
 {% endif %}
 {% endfor %}
   </div>
-{% endblock %}{% comment "page_content" %}{% endcomment %}
+{% endblock %}{% comment "centered_page_content" %}{% endcomment %}
 
 {% block extra_page_content %}
 {{ block.super }}

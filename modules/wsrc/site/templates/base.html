@@ -15,6 +15,7 @@ $( document ).on( "pagecreate", ".wsrc-site", function( event ) {
 
 {% block page_header_classes %}jqm-header{% endblock %}
 {% block page_header %}
+<div class="centered-content-wrapper">
     <div class="topicon menu-link">
       <a class="centered-icon" href="#"><img src="/static/css/images/bars-white.png" width="14" height="14" alt="Menu"></a>
       <a href="#">menu</a>
@@ -26,10 +27,12 @@ $( document ).on( "pagecreate", ".wsrc-site", function( event ) {
     <p>{% block pagetitle %}{% endblock %}</p>
     <h2 class="large-top-logo"><a href="/home" data-ajax="false" onclick="$.mobile.loading('show')"><img src="/static/images/logo_137x70.png" width="137" height="70" alt="Woking Squash Club"></a></h2>
     <h2 class="small-top-logo"><a href="/home" data-ajax="false" onclick="$.mobile.loading('show')"><img src="/static/images/logo_98x50.png" width="98" height="50" alt="Woking Squash Club" ></a></h2>
+</div>
 {% endblock %}{% comment "page_header" %}{% endcomment %}
 
 {% block page_content_classes %}jqm-content{% endblock %}
-{% block extra_page_content %}
+{% block page_content %}
+<div class="centered-content-wrapper">
   <!-- left nav menu: -->
   <div data-role="panel" class="jqm-navmenu-panel" data-position="left" data-display="overlay" data-theme="a">
     <ul class="jqm-list ui-alt-icon ui-nodisc-icon">
@@ -57,6 +60,13 @@ $( document ).on( "pagecreate", ".wsrc-site", function( event ) {
     </ul>
   </div>
 
+  <div class="nonmenu-content"> 
+  {% block centered_page_content %}{% endblock %}
+  </div>
+</div>
+{% endblock %}{% comment "centered-content-wrapper" %}{% endcomment %}
+
+{% block extra_page_content %}
   <div data-role="popup" id="errorPopupDialog" data-overlay-theme="b" data-theme="b" data-dismissible="false" style="max-width:400px;">
     <div data-role="header" data-theme="a">
       <h1>Error</h1>
@@ -70,8 +80,10 @@ $( document ).on( "pagecreate", ".wsrc-site", function( event ) {
 
 {% block page_footer_classes %}jqm-footer{% endblock %}
 {% block page_footer %}
-    <div>Woking Squash Rackets Club</div>
+<div class="centered-content-wrapper">
     <div class="last_updated">{% block last_updated %}{% endblock %}</div>
+    <div>Woking Squash <span class="small-mobile-hidden">Rackets</span> Club</div>
+</div>
 {% endblock %}{% comment "page_footer" %}{% endcomment %}
 
 {% block extra_body_content %}

@@ -2,7 +2,7 @@
 {% block pagetitle %}Settings{% endblock %}
 {% load kwacros %}
 {% loadkwacros 'form_macros.html' %}
-{% block page_content %}
+{% block centered_page_content %}
 
 <form method="post" action="{% url 'wsrc.site.views.settings_view' %}" data-ajax="false" class="settings-form">
 {% csrf_token %}

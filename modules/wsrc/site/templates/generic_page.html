@@ -1,14 +1,13 @@
 {% extends "base.html" %}
+
 {% block titleprefix %}{{ pagedata.title|capfirst }} - {% endblock %}
+
 {% block pagetitle %}{{ pagedata.title|capfirst }}{% endblock %}
+
 {% block pagetype %}{{ pagedata.title|lower }}{% endblock %}
-{% block page_content %}
 
-  <div id="main_div"> 
-
+{% block centered_page_content %}
 {{ pagedata.content|safe }}
-
-  </div>
 {% endblock %}
 
 {% block last_updated %}

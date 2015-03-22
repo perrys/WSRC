@@ -13,7 +13,7 @@ window.WSRC_bracket_data = {{ bracket_data|safe }};
 {% endblock %}
 
 
-{% block page_content %}
+{% block centered_page_content %}
 
   <form id="page-control-form" method="GET" action="#" onsubmit="return false;" >  
     <div class="left-control-box">
@@ -42,7 +42,7 @@ window.WSRC_bracket_data = {{ bracket_data|safe }};
   <div class="competition-wrapper">
   {{ bracket|safe }}
   </div>
-{% endblock %}{% comment "page_content" %}{% endcomment %}
+{% endblock %}{% comment "centered_page_content" %}{% endcomment %}
 
 
 {% block extra_page_content %}
