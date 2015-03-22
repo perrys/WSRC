@@ -13,8 +13,8 @@ all: $(CSS_TARGETS)
 %.min.css: %.css
 	$(MINIFY) $<
 
-all_%.css: _wsrc_%.css jquery.mobile.icons.min.css yellow_dots.css _jquery.mobile.structure.css jquery.bxslider.css
-	cat  jquery.mobile.icons.min.css yellow_dots.css  _jquery.mobile.structure.css jquery.bxslider.css $< > $@
+all_%.css: _wsrc_%.css jquery.mobile.icons.min.css svg-icons-homemade.css yellow_dots.css _jquery.mobile.structure.css jquery.bxslider.css
+	cat  jquery.mobile.icons.min.css svg-icons-homemade.css yellow_dots.css  _jquery.mobile.structure.css jquery.bxslider.css $< > $@
 
 all_admin.css: _jquery-ui.css jquery.loadmask.css wsrc_admin.css
 	cat _jquery-ui.css jquery.loadmask.css wsrc_admin.css > $@
