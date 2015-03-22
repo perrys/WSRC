@@ -60,6 +60,9 @@ class Player(models.Model):
   def __unicode__(self):
     return self.get_full_name()
 
+  class Meta:
+    ordering=["user__first_name", "user__last_name"]
+
 def create_player_profile(sender, instance, created, **kwargs):  
     if created:  
        profile, created = Player.objects.get_or_create(user=instance)  
