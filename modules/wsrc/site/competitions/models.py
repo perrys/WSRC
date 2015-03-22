@@ -31,6 +31,8 @@ class CompetitionGroup(models.Model):
   active = models.BooleanField(default=False)
   def __unicode__(self):
     return u"%s" % (self.name)
+  class Meta:
+    ordering=["comp_type", "-end_date"]
 
 class Competition(models.Model):
   """An individual competition, with an end date. For example this could be a knockout tournament or a league."""
@@ -40,12 +42,16 @@ class Competition(models.Model):
     ("complete",    "Concluded"),
   )
   name = models.CharField(max_length=128)
-  state = models.CharField(max_length=16, choices=STATES)
+  state = models.CharField(max_length=16, choices=STATES, default="not_started")
   end_date = models.DateField()
   group = models.ForeignKey(CompetitionGroup, blank=True, null=True) 
   url = models.CharField(max_length=128, blank=True)
+  ordering = models.IntegerField(blank=True, null=True)
   def __unicode__(self):
     return u"%s - %s [%s]" % (self.group.name, self.name, self.end_date)
+  class Meta:
+    unique_together = (("group", "ordering"),)
+    ordering=["-group__end_date", "ordering", "name"]
 
 class Match(models.Model):
   """A match which forms part of a competition. For singles matches, only player1 is populated for each team"""
@@ -109,3 +115,4 @@ class Entrant(models.Model):
     return u"%s [%d] hcap:(%s%s) <%s>" % (self.player, self.ordering, self.handicap, self.hcap_suffix, self.competition)
   class Meta:
     unique_together = (("competition", "ordering"), ("competition", "player"),)
+    ordering=["-competition__end_date", "competition", "ordering"]

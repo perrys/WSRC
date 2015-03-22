@@ -19,12 +19,31 @@ from django.contrib import admin
 
 import wsrc.site.competitions.models as comp_models
 
+class CompetitionInline(admin.TabularInline):
+    model = comp_models.Competition
+
 class CompetitionGroupAdmin(admin.ModelAdmin):
     list_display = ("name", "comp_type", "end_date", "active",)
+    list_filter = ('comp_type',)
+    inlines = (CompetitionInline,)
 admin.site.register(comp_models.CompetitionGroup, CompetitionGroupAdmin)
 
+class EntrantInline(admin.TabularInline):
+    model = comp_models.Entrant
+
+def set_in_progress(modeladmin, request, queryset):
+  queryset.update(state="active")
+set_in_progress.short_description="Start"
+def set_concluded(modeladmin, request, queryset):
+  queryset.update(state="complete")
+set_concluded.short_description="Conclude"
+
 class CompetitionAdmin(admin.ModelAdmin):
-    list_display = ("name", "group", "state", "end_date")
+    list_display = ("name", "group", "state", "end_date", "ordering")
+    list_editable = ("state", "end_date", "ordering",)
+    list_filter = ('group__comp_type', 'group__name')
+    inlines = (EntrantInline,)
+    actions=(set_in_progress, set_concluded)
 admin.site.register(comp_models.Competition, CompetitionAdmin)
 
 class CompetitionRoundAdmin(admin.ModelAdmin):
@@ -37,5 +56,6 @@ admin.site.register(comp_models.Match, MatchAdmin)
 
 class EntrantAdmin(admin.ModelAdmin):
     list_display = ("competition", "player", "player2")
+    list_filter = ('competition__group',)
 admin.site.register(comp_models.Entrant, EntrantAdmin)
 
