@@ -283,13 +283,12 @@ class InfoForm(ModelForm):
         super(InfoForm, self).__init__(*args, **kwargs)
         instance = getattr(self, 'instance', None)
         if instance and instance.pk:
-          self.fields['membership_id'].widget.attrs['readonly'] = True
+          self.fields['membership_id'].widget.attrs['readonly'] = "readonly"
           self.fields['membership_id'].widget.attrs['disabled'] = "disabled"
         if instance and instance.pk:
-          self.fields['membership_type'].widget.attrs['readonly'] = True
           self.fields['membership_type'].widget.attrs['disabled'] = "disabled"
         if instance and instance.pk:
-          self.fields['squashlevels_id'].widget.attrs['readonly'] = True
+          self.fields['squashlevels_id'].widget.attrs['readonly'] = "readonly"
           self.fields['squashlevels_id'].widget.attrs['disabled'] = "disabled"
     class Meta:
         model = Player
