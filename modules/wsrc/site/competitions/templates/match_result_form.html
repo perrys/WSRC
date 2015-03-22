@@ -1,10 +1,10 @@
 <form class="match-result-form" method="POST" action="." onsubmit="wsrc.result_form.on_submit(this); return false" >{% csrf_token %}
   <div style="padding:10px 20px;">
     <select name="team1" data-theme="a" data-native-menu="false" onchange="wsrc.result_form.on_team_selected(this)">
-      <option value=""> </option>
+      <option value=""> - </option>
     </select>
     <select name="team2" data-theme="a" data-native-menu="false" onchange="wsrc.result_form.on_team_selected(this)">
-      <option value=""> </option>
+      <option value=""> - </option>
     </select>
     <fieldset data-role="controlgroup" data-type="horizontal" class="match-type">
       <legend  class="ui-hidden-accessible">Result Type:</legend>
@@ -17,10 +17,11 @@
     </fieldset>
 
     <p class="walkover-input" style="display: none;">
-      <label class="ui-hidden-accessible" for="walkover_result">Winner:</label>
-      <select name="walkover_result" data-theme="a" data-native-menu="false" onchange="wsrc.result_form.on_walkover_result_changed(this)">
-      <option value="">Winner</option>
-      </select>
+      <label class="ui-hidden-accessible">Winner:
+        <select name="walkover_result" data-theme="a" data-native-menu="false" onchange="wsrc.result_form.on_walkover_result_changed(this)">
+          <option value="">Winner</option>
+        </select>
+      </label>
     </p>
 
     <table class="score-entry">
