@@ -16,3 +16,26 @@
 from django.contrib import admin
 
 # Register your models here.
+
+import wsrc.site.competitions.models as comp_models
+
+class CompetitionGroupAdmin(admin.ModelAdmin):
+    list_display = ("name", "comp_type", "end_date", "active",)
+admin.site.register(comp_models.CompetitionGroup, CompetitionGroupAdmin)
+
+class CompetitionAdmin(admin.ModelAdmin):
+    list_display = ("name", "group", "state", "end_date")
+admin.site.register(comp_models.Competition, CompetitionAdmin)
+
+class CompetitionRoundAdmin(admin.ModelAdmin):
+    list_display = ("competition", "round", "end_date")
+admin.site.register(comp_models.CompetitionRound, CompetitionRoundAdmin)
+
+class MatchAdmin(admin.ModelAdmin):
+    list_display = ("competition", "team1_player1", "team1_player2", "team2_player1", "team2_player2", "last_updated")
+admin.site.register(comp_models.Match, MatchAdmin)
+
+class EntrantAdmin(admin.ModelAdmin):
+    list_display = ("competition", "player", "player2")
+admin.site.register(comp_models.Entrant, EntrantAdmin)
+
