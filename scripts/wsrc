@@ -316,6 +316,7 @@ def sync_membership_records(csv_filename):
   def is_valid_member_predicate(record):
     return (len(record["surname"].strip()) > 0) and \
         not "2099" in record["joiningdate"] and \
+        len(record["active"]) > 0 and \
         record["active"].lower()[0] == "y" 
 
   csv_records = sync_utils.parse_csv(csv_filename)
@@ -358,7 +359,8 @@ def sync_membership_records(csv_filename):
     def is_invalid_member_predicate(record):
       return (len(record["surname"].strip()) > 0) and \
           not "2099" in record["joiningdate"] and \
-          record["active"].lower()[0] != "y" 
+          (len(record["active"]) == 0 or \
+             record["active"].lower()[0] != "y")
     invalid_csv_records = [r for r in sync_utils.parse_csv(csv_filename) if is_invalid_member_predicate(r)]
     invalid_csv_records = sync_utils.FieldJoiningWrapper.wrap_records(invalid_csv_records, "name", ["firstname", "surname"], " ")
     for r in invalid_csv_records:
