@@ -95,8 +95,8 @@ div.centered-content-wrapper {
   Header - note some of these rules are overriden for larger screens
 ********************************************************************************/
 
-@small-header-height: 52px;
-@large-header-height: 72px;
+@small-header-height: 62px;
+@large-header-height: 110px;
 @footer-height: 40px;
 
 #body_header {
@@ -119,9 +119,9 @@ div.centered-content-wrapper {
     .media-guard(@ruleset-largescreen, @breakpoint-show-navmenu);
     .topicon {
         padding: 0;
-        margin-top: 15px;
+        margin-top: 20px;
         @ruleset-largescreen: {
-            margin-top: 25px;
+            margin-top: 40px;
         };
         .media-guard(@ruleset-largescreen, @breakpoint-show-navmenu);
         a {
@@ -153,18 +153,21 @@ div.centered-content-wrapper {
         margin-top: 0px;
         margin-bottom: 0px;
         padding: 0;
-        img {
-            padding-top: 1px;
-        }
         &.small-top-logo {
             width: 98px;
             margin-left: auto;
             margin-right: auto;
             display: block;
+            img {
+                padding-top: 6px;
+            }
         }
         &.large-top-logo {
             display: none;
             margin-left: @topicons-sidemargin;
+            img {
+                padding-top: 20px;
+            }
         }
         a {
             text-decoration: none;
@@ -194,7 +197,7 @@ div.centered-content-wrapper {
 	    top: 50%;
 	    right: 15%;
 	    font-size: 1.2em;
-	    margin-top: -.625em;
+/*	    margin-top: -.625em; */
             color: white;
         };
         .media-guard(@ruleset-largescreen, @breakpoint-show-navmenu);
