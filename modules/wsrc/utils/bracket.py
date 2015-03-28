@@ -200,7 +200,7 @@ def calc_slots(num_entrants):
   """Return the initial slot positions for a single-elimination
   tournament with number of entrants NUM_ENTRANTS, in seed order""" 
 
-  n1 = most_significant_bit(num_entrants)
+  n1 = most_significant_bit(num_entrants)-1
   n2 = n1 + 1
   nearest = 1 << n1
   delta   = num_entrants - nearest
@@ -262,6 +262,10 @@ class Tester(unittest.TestCase):
     
     # 1 less than next power of 2:
     expected = [4,12,14,10,11,15,13]
+    self.assertEqual(expected, calc_slots(len(expected)))
+
+    # 1 more than next power of 2:
+    expected = [8,12,14,10,11,15,13,18,19]
     self.assertEqual(expected, calc_slots(len(expected)))
 
 
