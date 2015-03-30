@@ -33,6 +33,7 @@ INSTALLED_APPS = (
     'django.contrib.staticfiles',
     'rest_framework',
     'wsrc.site',
+    'wsrc.site.accounts',
     'wsrc.site.usermodel',
     'wsrc.site.competitions',
 )

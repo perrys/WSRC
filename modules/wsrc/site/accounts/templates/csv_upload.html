@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+
+<html>
+<head>
+  <link rel="stylesheet" href="/static/css/all_accounts.css">
+  <script src="/static/js/all_admin_accounts.js"></script>
+  <title>Account Management - Woking Squash Rackets Club</title>
+
+  <script type="text/javascript">
+jQuery(document).ready(function(){
+  var categories = {{ categories_data|safe }};
+  wsrc.admin.accounts.onReady(categories)
+});
+  </script>
+
+</head>
+{% load kwacros %}
+{% load wsrc_utils %}
+{% loadkwacros 'form_macros.html' %}
+
+<body>
+  <div id="tabs" class="initiallyHidden">
+    <ul>
+      <li><a href="#transactions">Transactions</a></li>
+      <li><a href="#categories">Categories</a></li>
+    </ul>
+
+    <div id="transactions">
+
+      <form action="" enctype="multipart/form-data" method="post">{% csrf_token %}
+        <fieldset name="file_upload" class="ui-corner-all">
+          <legend>File Upload</legend>
+{% usekwacro createfield form.file True %}
+        </fieldset>
+      </form>
+      <table class="transactions">
+        <tbody>
+          <tr>
+            <th>Date</th>
+            <th>Amount</th>
+            <th>Bank Code</th>
+            <th>Cheque #</th>
+            <th>Bank Memo</th>
+            <th>Comment</th>
+            <th>Category</th>
+          </tr>
+{% for row in csv_data %}
+          <tr class="transaction {% cycle '' 'alt' %}">
+            <td class="date">{{ row.Date }}</td>
+            <td class="amount {% if row.Amount|parse_float < 0.0 %}debit{% else %}credit{% endif %}" >{{ row.Amount }}</td>
+            <td class="bank_code">{{ row.Subcategory }}</td>
+            <td class="chq_number">{{ row.Number }}</td>
+            <td class="bank_memo">{{ row.Memo }}</td>
+            <td class="comment"><input name="comment_{{ forloop.counter }}" /></td>
+            <td class="category">
+              <select name="select_{{ forloop.counter }}">
+                <option value="-">-</option>
+{% for category in categories %}
+                <option value="{{ category.id }}" {% if category.name == row.Category %}selected="selected"{% endif %}>{{ category.description }}</option>
+{% endfor %}
+              </select>
+            </td>
+          </tr>
+{% endfor %}
+        </tbody>
+      </table>
+    </div>
+    <div id="categories">
+      <div class="button-bar">      
+        <input type='button' value="New Row" onclick="wsrc.admin.accounts.on('add_category_row', null, true)" class="edit" style="display: none;"/>
+        <div id="categories_edit_toggle">
+          <input type="radio" id="radio1" name="radio" value="view" onchange="wsrc.admin.accounts.on('toggle_category_edit_mode', this)" checked="checked"><label for="radio1">View</label>
+          <input type="radio" id="radio2" name="radio" value="edit" onchange="wsrc.admin.accounts.on('toggle_category_edit_mode', this)"><label for="radio2">Edit</label>
+        </div>
+      </div>
+      <table class="categories">
+        <tbody>
+          <tr class="header">
+            <th class='order'>Order</th>
+            <th class='name'>Name</th>
+            <th class='desc'>Description</th>
+            <th>Regular Expression</th>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</body>
+</html>

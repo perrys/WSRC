@@ -7,8 +7,10 @@ from django.contrib.auth import views as auth_views
 from django.shortcuts import redirect
 
 import wsrc.site.competitions.data_urls
+import wsrc.site.accounts.data_urls
 
 import wsrc.site.views
+import wsrc.site.accounts.views
 import wsrc.site.competitions.views
 import wsrc.site.usermodel.views
 
@@ -49,7 +51,11 @@ urlpatterns = patterns('',
 
     url(r'^data/facebook$', wsrc.site.views.facebook_view),
     url(r'^data/bookings$', wsrc.site.views.BookingList.as_view()),
+    url(r'^data/accounts/',  include(wsrc.site.accounts.data_urls)),
     url(r'^data/',    include(wsrc.site.competitions.data_urls)),
+
+    url(r'^accounts/csv_upload', wsrc.site.accounts.views.csv_upload),
+                       
 
     url(r'^admin/mailshot/send', wsrc.site.views.SendEmail.as_view()),
     url(r'^admin/mailshot/?', wsrc.site.views.admin_mailshot_view),

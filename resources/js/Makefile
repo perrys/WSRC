@@ -5,7 +5,7 @@ MINIFY = minify --no-comments
 
 .SECONDARY: _jquery.js _jquery.mobile.js _jquery-ui.js
 
-all: all.min.js all_admin.js all_admin_mailshot.js
+all: all.min.js all_admin.js all_admin_mailshot.js all_admin_accounts.js
 
 %.js: coffeescript/%.coffee
 	coffee -c -p $< > $@
@@ -18,11 +18,14 @@ ORDERED_MAIN_JS_SRCS = _jquery.js pre_jqm.js _jquery.mobile.js legacy_shims.js j
 all.js: $(ORDERED_MAIN_JS_SRCS)
 	cat $(ORDERED_MAIN_JS_SRCS) > $@
 
-all_admin.js: _jquery.js _jquery-ui.js jquery.loadmask.js wsrc_admin.js
-	cat _jquery.js _jquery-ui.js jquery.loadmask.js wsrc_admin.js > $@
+all_admin.js: _jquery.js _jquery-ui.js jquery.loadmask.js wsrc_utils.js wsrc_admin.js
+	cat _jquery.js _jquery-ui.js jquery.loadmask.js wsrc_utils.js wsrc_admin.js > $@
 
 all_admin_mailshot.js: _jquery.js _jquery-ui.js jquery.loadmask.js wsrc_utils.js wsrc_ajax.js wsrc_admin_mailshot.js
 	cat _jquery.js _jquery-ui.js jquery.loadmask.js wsrc_utils.js wsrc_ajax.js wsrc_admin_mailshot.js > $@
+
+all_admin_accounts.js: _jquery.js _jquery-ui.js jquery.loadmask.js wsrc_utils.js wsrc_ajax.js wsrc_admin_accounts.js
+	cat _jquery.js _jquery-ui.js jquery.loadmask.js wsrc_utils.js wsrc_ajax.js wsrc_admin_accounts.js > $@
 
 _jquery.js:
 	wget http://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.js -O $@

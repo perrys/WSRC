@@ -1,0 +1,80 @@
+
+@color-alt-row: #eee;
+
+body {
+  font-size: 0.8em;
+}
+
+fieldset {
+    padding: 1em;
+}
+
+.toggled {
+    display: none !important;
+}
+
+table {
+    width: 100%;
+    tr {
+        line-height: 1.8em;
+    }
+    tr.alt td {
+        background-color: @color-alt-row;
+    }
+    th {
+        text-align: left;
+        padding: 0 2em 0.5em 0 ;
+        border-bottom: #333 1px solid;
+    }
+    td {
+        text-align: left;
+        padding: 0 0.5em 0 0;
+    }
+    td.debit {
+        color: red;
+    }
+    td.credit {
+        color: darkgreen;
+    }
+    td.amount, td.bank_code, td.chq_number,
+    th.button, td.button{
+        text-align: right;
+        padding-left: 0.5em;
+        padding-right: 0;
+    }
+    &.transactions {
+        margin-top: 1em;
+    }
+    &.categories {
+        td button {
+            height: 1.5em;
+            width: 2.5em;
+        }
+        input {
+            width: 100%;
+        }
+        .order {
+            width: 2em;
+            max-width: 2em;
+        }
+        .name {
+            width: 10em;
+            max-width: 10em;
+        }
+        .desc {
+            width: 15em;
+            max-width: 15em;
+        }
+    }
+}
+
+div.button-bar {
+    padding-bottom: 1em;
+    & > div, & > input {
+        display: inline-block;
+    }
+    float: right;
+    &:after {
+        clear: both;
+    }
+}
