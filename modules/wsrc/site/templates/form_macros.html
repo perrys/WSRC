@@ -1,9 +1,12 @@
 {% load kwacros %}
 
-{% kwacro createfield field %}
+{% kwacro createfield field add_submit_button %}
 <div class="ui-field-contain {% if field.errors %}field-error{% endif %}"
 {% if field.errors %}title="{% for err in field.errors %}{{ err }}. {% endfor %}"{% endif %}
 >{{ field.label_tag }}{{ field }}
 {% if field.errors %}<div class="clear-all"></div><label>&nbsp;</label><span class="field-error">{% for err in field.errors %}{{ err }}. {% endfor %}</span>{% endif %}
+{% if add_submit_button %}
+<input type="submit" value="Go" />
+{% endif %}
 </div>
 {% endkwacro %}
