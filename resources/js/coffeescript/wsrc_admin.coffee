@@ -67,24 +67,13 @@ window.WSRC_admin =
     return array;
 
   sort_seeds: (cb) ->
-    items = []
-    list = this.jq_entrant_list
-    list.find("li").each((idx, elt) ->
-      elt.setAttribute("data-idx", idx)
-      items.push(elt)
-    )
-    items.sort((lhs,rhs) ->
-      lhs = $(lhs)
-      rhs = $(rhs)
-      result = rhs.hasClass('seeded') - lhs.hasClass('seeded')
-      if result == 0
-        result = lhs.data("idx") - rhs.data("idx")
-      return result
-    )
+    sorter = (lhs, rhs) -> rhs.hasClass('seeded') - lhs.hasClass('seeded')
+    jq_list = @jq_entrant_list.find("li")
+    items = wsrc.utils.jq_stable_sort(jq_list, sorter)
     if cb
       cb(items)
-    list.empty()
-    list.append(items)
+    @jq_entrant_list.empty()
+    @jq_entrant_list.append(items)
     return null
 
   sort_handicap: (cb) ->

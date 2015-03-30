@@ -15,10 +15,32 @@ class WSRC_utils
         return l
     return null
 
+  @lexical_sorter: (lhs, rhs, mapper) ->
+    if mapper
+      lhs = mapper(lhs)
+      rhs = mapper(rhs)
+    (lhs > rhs) - (lhs < rhs)
+
   @lexical_sort: (array, field) ->
-    array.sort (lhs, rhs) ->
-      (lhs[field] > rhs[field]) - (lhs[field] < rhs[field])
+    sorter = (lhs, rhs) -> @lexical_sorter(lhs[field], rhs[field]) 
+    array.sort (sorter)
     return null
+
+  @jq_stable_sort: (jq_list, sorter) ->
+    items = []
+    jq_list.each((idx, elt) ->
+      elt.setAttribute("data-idx", idx)
+      items.push(elt)
+    )
+    stable_sorter = (lhs,rhs) ->
+      lhs = $(lhs)
+      rhs = $(rhs)
+      result = sorter(lhs, rhs)
+      if result == 0
+        result = lhs.data("idx") - rhs.data("idx")
+      return result
+    items.sort(stable_sorter)
+    return items
 
   # returns a list of the given field's distinct values in the array,
   # ordered consistently with the input
@@ -44,8 +66,15 @@ class WSRC_utils
       return ''
     if suffix then suffix else 's'
 
-  @toggle: (evt) ->
-    root = $(evt.target).parents(".toggle-root")
+  @toggle: (target_or_evt) ->
+    target = target_or_evt
+    if target_or_evt.target
+      target = target_or_evt.target
+    target = $(target)
+    if target.hasClass("toggle-root")
+      root = target
+    else
+      root = target.parents(".toggle-root")
     hiders = root.find(".togglable")
     showers = root.find(".toggled")
     hiders.removeClass("togglable").addClass("toggled")
