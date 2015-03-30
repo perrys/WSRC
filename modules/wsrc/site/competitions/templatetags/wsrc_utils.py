@@ -20,3 +20,7 @@ register = Library()
 @register.filter
 def keyvalue(dict, key):    
     return dict[key]
+
+@register.filter
+def parse_float(str):    
+    return float(str)
