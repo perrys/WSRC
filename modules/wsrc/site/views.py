@@ -45,6 +45,7 @@ import urllib
 import httplib
 import httplib2
 import logging
+import time
 
 FACEBOOK_GRAPH_URL              = "https://graph.facebook.com/"
 FACEBOOK_GRAPH_ACCESS_TOKEN_URL = FACEBOOK_GRAPH_URL + "oauth/access_token"
@@ -321,8 +322,14 @@ def settings_view(request):
         'form_saved': success,
     })
 
+class DateTimeTzAwareField(serializers.DateTimeField):
+    def to_representation(self, value):
+        value = timezone.localtime(value) # convert UTC value in DB to local time
+        return super(DateTimeTzAwareField, self).to_representation(value)
 
 class BookingSerializer(serializers.ModelSerializer):
+    start_time = DateTimeTzAwareField()
+    end_time   = DateTimeTzAwareField()
     class Meta:
       model = BookingSystemEvent
 
@@ -333,6 +340,7 @@ class BookingList(rest_generics.ListAPIView):
         date = self.request.QUERY_PARAMS.get('date', None)
         if date is not None:
             date = timezones.parse_iso_date_to_naive(date)
+            date = datetime.datetime.combine(date, datetime.time(0, tzinfo=timezone.get_default_timezone()))
             delta = self.request.QUERY_PARAMS.get('day_offset', None)
             if delta is not None:
               date = date + datetime.timedelta(days=int(delta))
