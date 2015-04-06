@@ -22,7 +22,7 @@ class WSRC_utils
     (lhs > rhs) - (lhs < rhs)
 
   @lexical_sort: (array, field) ->
-    sorter = (lhs, rhs) -> @lexical_sorter(lhs[field], rhs[field]) 
+    sorter = (lhs, rhs) -> WSRC_utils.lexical_sorter(lhs[field], rhs[field]) 
     array.sort (sorter)
     return null
 
