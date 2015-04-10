@@ -67,18 +67,28 @@ class CategoryListView(rest_generics.ListAPIView):
         if not request.user.is_authenticated():
             raise PermissionDenied()
         category_data = request.DATA
-        serializers = []
-        for datum in category_data:
-            serializer = CategorySerializer(data=datum, user=request.user)
-            serializers.append(serializer)
+        existing_categories = dict([(c.id, c) for c in Category.objects.all()])
         errors = []
         with transaction.atomic():
-            Category.objects.all().delete() # have to delete before validating or unique ordering fails
+            for (id, category_model_obj) in existing_categories.iteritems():
+                category_model_obj.ordering += 10000
+                category_model_obj.save()
+            serializers = []
+            for datum in category_data:
+                id = datum.get("id")
+                if id is not None and id in existing_categories:
+                    serializer = CategorySerializer(existing_categories[id], data=datum, user=request.user)
+                    del existing_categories[id]
+                else:
+                    serializer = CategorySerializer(data=datum, user=request.user)
+                serializers.append(serializer)
             for serializer in serializers:
                 if not serializer.is_valid():
-                    errors.push(serializer.errors)
+                    errors.append(serializer.errors)
                 else:
                     serializer.save()
+            for (id, category_model_obj) in existing_categories.iteritems():
+                category_model_obj.delete() # may throw if still linked to existing transactions
         if len(errors) > 0:
             return Response(errors, status=status.HTTP_400_BAD_REQUEST)
         categories = Category.objects.all();
@@ -106,15 +116,27 @@ class UploadFileForm(forms.Form):
 
 def csv_upload(request):
     data = None
+    def preprocess_row(row):
+        # Convert old spreadsheet columns to columns to format of bank statements
+        def convert(old_name, new_name, multiplier=None):
+            if old_name in row:
+                val = row[old_name].decode("ascii", "ignore").replace(",", "")
+                if len(val) > 0 :
+                  if multiplier is not None:
+                    val = float(val) * multiplier
+                  row[new_name] = val
+        for cvt in [("Outgoing", "Amount", -1.0), ("Income", "Amount", 1.0), ("Item", "Comment"), ("Chq No", "Number")]:
+            convert(*cvt)
+        return row
     if request.method == 'POST':
         form = UploadFileForm(request.POST, request.FILES)
         if form.is_valid():
             reader = csv.DictReader(gen(request.FILES['file']))
-            data = [row for row in reader]
+            data = [preprocess_row(row) for row in reader]
     else:
         form = UploadFileForm()
 
-    categories = Category.objects.all();
+    categories = Category.objects.all().order_by('description');
     serialiser = CategorySerializer(categories, many=True)
     categories_data = JSON_RENDERER.render(serialiser.data)
 
