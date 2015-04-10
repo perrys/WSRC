@@ -35,7 +35,7 @@ jQuery(document).ready(function(){
       </form>
       <table class="transactions">
         <tbody>
-          <tr>
+          <tr class="header">
             <th>Date</th>
             <th>Amount</th>
             <th>Bank Code</th>
@@ -45,22 +45,25 @@ jQuery(document).ready(function(){
             <th>Category</th>
           </tr>
 {% for row in csv_data %}
-          <tr class="transaction {% cycle '' 'alt' %}">
+{% if row.Amount or row.Number %}
+          <tr class="{% cycle '' 'alt' %}">
             <td class="date">{{ row.Date }}</td>
             <td class="amount {% if row.Amount|parse_float < 0.0 %}debit{% else %}credit{% endif %}" >{{ row.Amount }}</td>
             <td class="bank_code">{{ row.Subcategory }}</td>
             <td class="chq_number">{{ row.Number }}</td>
             <td class="bank_memo">{{ row.Memo }}</td>
-            <td class="comment"><input name="comment_{{ forloop.counter }}" /></td>
+            <td class="comment"><input name="comment" value="{{ row.Comment }}"></td>
             <td class="category">
-              <select name="select_{{ forloop.counter }}">
-                <option value="-">-</option>
+                <!-- {{ row.Category|lower }} -->
+              <select name="category">
+                <option value="">-</option>
 {% for category in categories %}
-                <option value="{{ category.id }}" {% if category.name == row.Category %}selected="selected"{% endif %}>{{ category.description }}</option>
+                <option value="{{ category.id }}" {% if category.name|lower == row.Category|lower %}selected="selected"{% endif %}>{{ category.description }}</option>
 {% endfor %}
               </select>
             </td>
           </tr>
+{% endif %}
 {% endfor %}
         </tbody>
       </table>
