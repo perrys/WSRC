@@ -3,21 +3,38 @@ class WSRC_admin_accounts
 
 
   constructor: (category_list) ->
+    @jq_transactions_tbody = $('table.transactions tbody')
     @jq_category_tbody = $('table.categories tbody')
     @data_row_selector = 'tr:not(.header)'
+    
     @update_category_map(category_list)
     @jq_category_tbody.sortable(
       disabled: true
       items: "> #{ @data_row_selector }"
       placeholder: "ui-state-highlight"
-      update: @handle_category_order_updated
+      update: () =>
+        @handle_category_order_updated.call(this)
     ).disableSelection()
     @add_category_rows(category_list)
 
-  update_category_map: (data) ->
+  update_category_map: (category_list) ->
     @categories = {}
-    for category in data
+    for category in category_list
       @categories[category.id] = category
+    category_list.sort (lhs, rhs) ->
+      wsrc.utils.lexical_sorter(lhs, rhs, (x) -> x.description)
+    jq_selects = @jq_transactions_tbody.find(@data_row_selector).find("select[name='category']")
+    # add new categories and remove obsolete ones, but leave existing as they may have been manually selected
+    jq_selects.each (idx, elt) =>
+      jq_select = $(elt)
+      options = jq_select.children()      
+      options.each (idx, elt) =>
+        if idx > 0 # skip blank option
+          unless @categories[parseInt(elt.value)]
+            elt.parentElement.removeChild(elt)
+      for category in category_list
+        unless jq_select.find("option[value='#{ category.id }']").length > 0
+          jq_select.append("<option value='#{ category.id }'>#{ category.description }</option>")
     
   toggle_category_edit_mode: (elt) ->
     mode = $(elt).parent().find("input[name='#{ elt.name }']:checked").val()
@@ -32,7 +49,7 @@ class WSRC_admin_accounts
       @jq_category_tbody.sortable('disable')
       @reset_categories(@apply_categories)
 
-  handle_category_order_updated: (evt, ui) ->
+  handle_category_order_updated: () ->
     jq_rows = @jq_category_tbody.find(@data_row_selector)
     jq_rows.each (idx, elt) ->
       $(elt).find('td.order').text(idx+1)
@@ -63,9 +80,11 @@ class WSRC_admin_accounts
   add_category_rows: (records, clear) ->
     if clear
       @jq_category_tbody.find(@data_row_selector).remove()
+
+    records.sort (lhs, rhs) ->
+      return lhs.ordering - rhs.ordering
     for record in records
       @add_category_row(record)
-    wsrc.utils.toggle($('table.categories'))
      
   reset_categories: (callback) ->
     rows = @jq_category_tbody.find(@data_row_selector)
@@ -74,6 +93,7 @@ class WSRC_admin_accounts
       record = {}
       for field in ["name", "description", "regex"]
         record[field] = $(row).find("input[name='#{ field }']").val()
+      record.id = parseInt($(row).data('id'))
       record.ordering = parseInt($(row).find('td.order').text())
       records.push(record)
     csrf_token = $("input[name='csrfmiddlewaretoken']").val()
@@ -85,9 +105,10 @@ class WSRC_admin_accounts
         alert("ERROR #{ xhr.status }: #{ xhr.statusText }\nResponse: #{ xhr.responseText }\n\Update failed.")
       successCB: (data, status, jq_xhr) =>
         jqmask.unmask()
+        @update_category_map(data)
         @add_category_rows(data, true)
         if callback
-          callback()
+          callback.apply(this)
     jqmask.mask("Updating...")
     wsrc.ajax.ajax_bare_helper("/data/accounts/account/category/", records, opts, "PUT")
 
@@ -96,7 +117,7 @@ class WSRC_admin_accounts
     id = parseInt(row.data("id"))
     record = @categories[id]
     for field in ["name", "description", "regex"]
-      input = row.find("input[name='#{ field }_#{ id }']")
+      input = row.find("input[name='#{ field }']")
       value = input.val()
       record[field] = value
       input.siblings("span").text(value)
@@ -114,21 +135,24 @@ class WSRC_admin_accounts
     wsrc.ajax.ajax_bare_helper("/data/accounts/account/category/#{ id }", record, opts, "PATCH")
 
   apply_categories: () ->
-    test_list = {}
+    test_list = []
     for id, category_object of @categories
       try
-        test_list[id] = new RegExp(category_object.regex)
+        test_list.push([id, new RegExp(category_object.regex), category_object.ordering])
       catch error
         alert(error)
-    rows = $('.transactions tr.transaction')
+    test_list.sort((lhs, rhs) -> lhs[2] - rhs[2])
+    rows = @jq_transactions_tbody.find(@data_row_selector)
     set_category = (row, id) ->
       row.find('select').val(id)
     for row in rows
       row = $(row)
-      for id, regex of test_list
+      for [id, regex] in test_list
         found = false
         for field in ['bank_memo', 'comment']
-          text = row.find("td.#{ field }").text()
+          td_field = row.find("td.#{ field }")
+          input = td_field.find("input")
+          text = if input.length > 0 then input.val() else td_field.text()
           if regex.test(text) 
             set_category(row, id)
             found = true
