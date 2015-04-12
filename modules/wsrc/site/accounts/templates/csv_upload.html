@@ -73,7 +73,7 @@ jQuery(document).ready(function(){
     <div id="upload_tab" class="fixed-height-wrapper">
 
 {% if csv_data %}
-      <form action="#" method="GET">{% csrf_token %}
+      <form action="#" method="GET" onsubmit="return false;">{% csrf_token %}
         <fieldset name="file_upload" class="ui-corner-all">
           <legend>Transaction Upload</legend>
           <div class="information-set">
@@ -121,11 +121,11 @@ jQuery(document).ready(function(){
 {% for row in csv_data %}
 {% if row.Amount or row.Number %}
           <tr class="{% cycle '' 'alt' %}">
-            <td class="date">{{ row.Date }}</td>
+            <td class="date_issued">{{ row.Date }}</td>
             <td class="date_cleared">{% if row.Date_Cleared|default:"undef" == "undef" %}{{ row.Date }}{% else %}{{ row.Date_Cleared }}{% endif %}</td>
             <td class="amount {% if row.Amount|parse_float < 0.0 %}debit{% else %}credit{% endif %}" >{{ row.Amount }}</td>
             <td class="bank_code">{{ row.Subcategory }}</td>
-            <td class="chq_number">{{ row.Number }}</td>
+            <td class="bank_number">{{ row.Number }}</td>
             <td class="bank_memo">{{ row.Memo }}</td>
             <td class="comment"><input name="comment" value="{{ row.Comment }}"></td>
             <td class="category">

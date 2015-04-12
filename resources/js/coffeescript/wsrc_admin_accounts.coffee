@@ -160,35 +160,51 @@ class WSRC_admin_accounts
         if found
           break
 
+  row_to_transaction_record: (jq_row) ->
+    toISO = (jq_elt) ->
+      str = jq_elt.text()
+      if str == "null"
+        return null
+      chop = (start, len) -> str.substr(start, len)
+      "#{ chop(6,4) }-#{ chop(3,2) }-#{ chop(0,2) }"
+    parse_float_or_zero = (jq_elt) ->
+      val = parseFloat(jq_elt.text())
+      return if isNaN(val) then 0 else val
+    parse_int_or_null = (jq_elt) ->
+      str = jq_elt.text()
+      if str.length == 0
+         return null
+      val = parseInt(str)
+      return if isNaN(val) then null else val
+    text_value = (jq_elt) ->
+      jq_elt.text()
+    input_value = (jq_elt) ->
+      jq_elt.find('input').val()
+    select_value = (jq_elt) ->
+      jq_elt.find('select').val()
+    mapping = [
+      ['date_issued',  toISO]
+      ['date_cleared', toISO]
+      ['amount',       parse_float_or_zero]
+      ['bank_number',  parse_int_or_null]
+      ['bank_memo',    text_value]
+      ['comment',      input_value]
+      ['category',     select_value]
+    ]
+    transaction = {}
+    for m in mapping
+      field = m[0]
+      map_func = m[1]
+      transaction[field] = map_func(jq_row.find("td.#{ field }"))
+    return transaction
+        
   upload_transactions: () ->
     start_date = $("#upload_start_date_input").datepicker("getDate")
     end_date   = $("#upload_end_date_input").datepicker("getDate")
     rows = @jq_transactions_tbody.find(@data_row_selector)
     transactions = []
-    toISO = (str) ->
-      if str == "null"
-        return null
-      chop = (start, len) -> str.substr(start, len)
-      "#{ chop(6,4) }-#{ chop(3,2) }-#{ chop(0,2) }"
-    parse_float_or_zero = (str) ->
-      val = parseFloat(str)
-      return if isNaN(val) then 0 else val
-    parse_int_or_null = (str) ->
-      if str.length == 0
-         return null
-      val = parseInt(str)
-      return if isNaN(val) then null else val
-    rows.each (idx, elt) ->
-      row = $(elt)
-      transaction =
-        date_issued: toISO(row.find("td.date").text())
-        date_cleared: toISO(row.find("td.date_cleared").text())
-        amount: parse_float_or_zero(row.find("td.amount").text())
-        category: parseInt(row.find("td.category select").val())
-        bank_number: parse_int_or_null(row.find('td.chq_number').text())
-        bank_memo: row.find('td.bank_memo').text()
-        comment: row.find('td.comment input').val()
-      transactions.push(transaction)
+    rows.each (idx, elt) =>
+      transactions.push(@row_to_transaction_record($(elt)))
     data =
       transactions: transactions
       account: parseInt($("#upload_account_selector").val())
@@ -217,7 +233,7 @@ class WSRC_admin_accounts
       return wsrc.utils.get_or_add_property(category_totals, cat_name, () -> {count: 0, total: 0.0})
     rows.each (idx, elt) ->
       row = $(elt)
-      date = wsrc.utils.british_to_js_date(row.find("td.date").text())
+      date = wsrc.utils.british_to_js_date(row.find("td.date_issued").text())
       if date >= start_date and date <= end_date
         if date > max_date
           max_date = date
