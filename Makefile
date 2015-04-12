@@ -28,5 +28,6 @@ etags:
 	etags `find modules -name '*.py'` \
 	`find resources -name '*.coffee'` \
 	`find resources -name 'wsrc_*.css'` \
+	`find resources -name 'wsrc_*.less'` \
 	`find modules -name '*.html'`
 
