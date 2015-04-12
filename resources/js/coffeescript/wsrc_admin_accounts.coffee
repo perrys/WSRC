@@ -3,7 +3,7 @@ class WSRC_admin_accounts
 
 
   constructor: (category_list) ->
-    @jq_transactions_tbody = $('table.transactions tbody')
+    @jq_upload_transactions_tbody = $('#upload_tab table.transactions tbody')
     @jq_category_tbody = $('table.categories tbody')
     @data_row_selector = 'tr:not(.header)'
     
@@ -23,7 +23,7 @@ class WSRC_admin_accounts
       @categories[category.id] = category
     category_list.sort (lhs, rhs) ->
       wsrc.utils.lexical_sorter(lhs, rhs, (x) -> x.description)
-    jq_selects = @jq_transactions_tbody.find(@data_row_selector).find("select[name='category']")
+    jq_selects = @jq_upload_transactions_tbody.find(@data_row_selector).find("select[name='category']")
     # add new categories and remove obsolete ones, but leave existing as they may have been manually selected
     jq_selects.each (idx, elt) =>
       jq_select = $(elt)
@@ -142,7 +142,7 @@ class WSRC_admin_accounts
       catch error
         alert(error)
     test_list.sort((lhs, rhs) -> lhs[2] - rhs[2])
-    rows = @jq_transactions_tbody.find(@data_row_selector)
+    rows = @jq_upload_transactions_tbody.find(@data_row_selector)
     set_category = (row, id) ->
       row.find('select').val(id)
     for row in rows
@@ -197,16 +197,22 @@ class WSRC_admin_accounts
       map_func = m[1]
       transaction[field] = map_func(jq_row.find("td.#{ field }"))
     return transaction
+
+  get_upload_transaction_data: (start_date, end_date) ->
+    rows = @jq_upload_transactions_tbody.find(@data_row_selector)
+    transactions = []
+    rows.each (idx, elt) =>
+      transaction = @row_to_transaction_record($(elt))
+      date = wsrc.utils.iso_to_js_date(transaction.date_issued)
+      if date >= start_date and date <= end_date  
+        transactions.push(transaction)
+    return transactions    
         
   upload_transactions: () ->
     start_date = $("#upload_start_date_input").datepicker("getDate")
     end_date   = $("#upload_end_date_input").datepicker("getDate")
-    rows = @jq_transactions_tbody.find(@data_row_selector)
-    transactions = []
-    rows.each (idx, elt) =>
-      transactions.push(@row_to_transaction_record($(elt)))
     data =
-      transactions: transactions
+      transactions: @get_upload_transaction_data(start_date, end_date)
       account: parseInt($("#upload_account_selector").val())
     csrf_token = $("input[name='csrfmiddlewaretoken']").val()
     jqmask = $("body")
@@ -221,8 +227,7 @@ class WSRC_admin_accounts
     account = $("#upload_account_selector").val()
     wsrc.ajax.ajax_bare_helper("/data/accounts/account/#{ account }/transactions/", data, opts, "PUT")
     
-  sumarize_transactions: (start_date, end_date) ->
-    rows = @jq_transactions_tbody.find(@data_row_selector)
+  sumarize_transactions: (transactions, start_date, end_date, use_cleared_date) ->
     incoming = 0.0
     outgoing = 0.0
     count = 0
@@ -231,26 +236,24 @@ class WSRC_admin_accounts
     category_totals = {}
     get_category = (cat_name) ->
       return wsrc.utils.get_or_add_property(category_totals, cat_name, () -> {count: 0, total: 0.0})
-    rows.each (idx, elt) ->
-      row = $(elt)
-      date = wsrc.utils.british_to_js_date(row.find("td.date_issued").text())
+    for transaction in transactions    
+      date = if use_cleared_date then transaction.date_cleared else transaction.date_issued
+      date = wsrc.utils.iso_to_js_date(date)
       if date >= start_date and date <= end_date
         if date > max_date
           max_date = date
         if date < min_date
           min_date = date
-        amount = parseFloat(row.find("td.amount").text())
-        category = row.find("td.category select").val()
-        if category.length == 0
-          category = "undefined"
-        cat_summary = get_category(category)
+        if transaction.category.length == 0
+          transaction.category = "undefined"
+        cat_summary = get_category(transaction.category)
         cat_summary.count += 1
-        if not isNaN(amount)
-          cat_summary.total += amount
-          if amount > 0
-            incoming += amount
+        if not isNaN(transaction.amount)
+          cat_summary.total += transaction.amount
+          if transaction.amount > 0
+            incoming += transaction.amount
           else
-            outgoing += amount
+            outgoing += transaction.amount
         count += 1
     return {
       incoming: incoming
@@ -265,7 +268,8 @@ class WSRC_admin_accounts
     unless summary
       start_date = $("#upload_start_date_input").datepicker("getDate")
       end_date   = $("#upload_end_date_input").datepicker("getDate")
-      summary = @sumarize_transactions(start_date, end_date)
+      transactions = @get_upload_transaction_data(start_date, end_date)
+      summary = @sumarize_transactions(transactions, start_date, end_date)
     $("#upload_transaction_count_input").val(summary.count)
     $("#upload_incoming_input").val(summary.incoming.toFixed(2))
     $("#upload_outgoing_input").val(summary.outgoing.toFixed(2))
@@ -294,7 +298,10 @@ class WSRC_admin_accounts
     $("input[class='datepicker']").datepicker().datepicker("option", "dateFormat", "dd/mm/yy")
     $('.information-set input').attr('readonly', true)    
 
-    summary = @instance.sumarize_transactions(new Date(0), new Date(2099, 1, 1))
+    start_date = new Date(0)
+    end_date   = new Date(2099, 1, 1)
+    upload_transactions = @instance.get_upload_transaction_data(start_date, end_date)
+    summary = @instance.sumarize_transactions(upload_transactions, start_date, end_date)
     $("#upload_start_date_input").datepicker("setDate", summary.min_date)
     $("#upload_end_date_input").datepicker("setDate", summary.max_date)
     @instance.handle_upload_data_changed(summary)
