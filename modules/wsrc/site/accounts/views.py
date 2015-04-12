@@ -22,6 +22,7 @@ class AccountSerializer(serializers.ModelSerializer):
     transaction_set = serializers.PrimaryKeyRelatedField(many=True, queryset = Transaction.objects.all())
     class Meta:
         model = Account
+        depth = 1
         fields = ["name", "transaction_set"]
 
 class AccountListSerializer(serializers.ModelSerializer):
@@ -40,14 +41,36 @@ class AccountListView(rest_generics.ListCreateAPIView):
 class TransactionSerializer(serializers.ModelSerializer):
     class Meta:
         model = Transaction
-        fields = ["account", "date", "amount", "category", "bank_transaction_category", "bank_number", "bank_memo", "comment"]
+        fields = ["account", "date_issued", "date_cleared", "amount", "category", "bank_transaction_category", "bank_number", "bank_memo", "comment"]
 
-class TransactionView(rest_generics.ListCreateAPIView):
+class TransactionView(rest_generics.ListAPIView):
     permission_classes = (rest_permissions.IsAuthenticated,)
     serializer_class = TransactionSerializer
     def get_queryset(self):
-        account_name = self.kwargs['account_name']
-        queryset = Transaction.objects.filter(account__name=account_name) 
+        account_name = self.kwargs.get('account_name')
+        if account_name is None:
+            account_id = int(self.kwargs.get('account_id'))
+            queryset = Transaction.objects.filter(account__id=account_id) 
+        else:
+            queryset = Transaction.objects.filter(account__name=account_name) 
+        return queryset
+    def put(self, request, account_id, format="json"):
+        # Bulk Upload
+        account_id = int(account_id)
+        assert(account_id == request.DATA['account'])
+        account = Account.objects.get(pk=int(account_id))
+        transaction_data = request.DATA['transactions']
+        categories = dict([(cat.id, cat) for cat in Category.objects.all()])
+        models = []
+        for tran in transaction_data:
+            tran['account'] = account
+            tran['category'] = categories[int(tran['category'])]
+            tran['last_updated_by'] = request.user
+            models.append(Transaction(**tran))
+        with transaction.atomic():
+            for model in models:
+                model.save()
+        return Response(status=status.HTTP_201_CREATED)
 
 class CategorySerializer(LastUpdaterModelSerializer):
   last_updater_field = "last_updated_by"
@@ -62,8 +85,8 @@ class CategoryListView(rest_generics.ListAPIView):
     def put(self, request, format="json"):
         """Full reset of the category list. Because of the ordering
         parameter, it is not that useful to be able to create a new
-        category in isolation, and it is often necessary to recreate
-        the list from scratch"""
+        category in isolation, you need to update the old ones at the
+        same time"""
         if not request.user.is_authenticated():
             raise PermissionDenied()
         category_data = request.DATA
@@ -114,7 +137,7 @@ def gen(upload):
 class UploadFileForm(forms.Form):
     file = forms.FileField()
 
-def csv_upload(request):
+def accounts_view(request, account_name=None):
     data = None
     def preprocess_row(row):
         # Convert old spreadsheet columns to columns to format of bank statements
@@ -125,7 +148,7 @@ def csv_upload(request):
                   if multiplier is not None:
                     val = float(val) * multiplier
                   row[new_name] = val
-        for cvt in [("Outgoing", "Amount", -1.0), ("Income", "Amount", 1.0), ("Item", "Comment"), ("Chq No", "Number")]:
+        for cvt in [("Outgoing", "Amount", -1.0), ("Income", "Amount", 1.0), ("Transfers", "Amount", -1.0), ("Item", "Comment"), ("Chq No", "Number")]:
             convert(*cvt)
         return row
     if request.method == 'POST':
@@ -137,14 +160,24 @@ def csv_upload(request):
         form = UploadFileForm()
 
     categories = Category.objects.all().order_by('description');
-    serialiser = CategorySerializer(categories, many=True)
-    categories_data = JSON_RENDERER.render(serialiser.data)
+    categories_serialiser = CategorySerializer(categories, many=True)
+    categories_data = JSON_RENDERER.render(categories_serialiser.data)
+    accounts = Account.objects.all().order_by('name')
+    if account_name is None:
+        account_name = "Community"
+    account = Account.objects.all().get(name=account_name)
+    transactions = account.transaction_set.all()
+    transaction_serializer = TransactionSerializer(transactions, many=True)
+    transaction_data = JSON_RENDERER.render(transaction_serializer.data)
 
     return render(request, 'csv_upload.html', {
         'form': form,
         'csv_data': data,
         'categories': categories,
         'categories_data': categories_data,
+        'accounts': accounts,
+        'account': account,
+        'transaction_data': transaction_data,
     })        
         
         

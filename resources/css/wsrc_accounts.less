@@ -2,16 +2,79 @@
 
 @color-alt-row: #eee;
 
+html, body{
+  margin:0;
+  padding:0;
+  height:100%;
+}
+* {
+    margin: 0;
+}
 body {
   font-size: 0.8em;
 }
 
 fieldset {
-    padding: 1em;
+    padding: 0 1em 0.5em 1em;
+    margin-bottom: 1em;
 }
 
+.errorfield {
+    color: red;
+}
+
+.ui-field-contain {
+    padding: 0;
+    margin: 0.5em 0;
+    border-bottom-width: 0;
+    &:before,
+    &:after {
+        content: "";
+        display: table;
+    }
+    &:after {
+        xxxclear: both;
+    }
+    & > label {
+        float: left;
+        width: 7em;
+        margin: .5em 1em 0 0;
+        text-align: right;
+    }
+    & > input, & > select  {
+        width: 9em;
+    }
+    & > input[type='file'] {
+        width: 20em;
+    }
+    & > input[type='submit'] {
+        width: 3em;
+    }
+}
+
+.information-set {
+    float: right;
+    width: 30em;
+    .ui-field-contain > label {
+        width: 10em;
+    }
+}
 .toggled {
     display: none !important;
+}
+
+div#tabs {
+    height: calc(100% - 0.4em - 2px);
+}
+
+div.fixed-height-wrapper {
+    height: calc(100% - 2.8em - 2em);
+}
+
+.container {
+    overflow-y: auto;
+    height: calc(100% - 169px);
+    margin: 0 auto;
 }
 
 table {
@@ -45,6 +108,11 @@ table {
     }
     &.transactions {
         margin-top: 1em;
+        height: 100%;
+        overflow-y: scroll;
+        & input {
+            width: 99%;
+        }
     }
     &.categories {
         td button {
@@ -79,3 +147,4 @@ div.button-bar {
         clear: both;
     }
 }
+

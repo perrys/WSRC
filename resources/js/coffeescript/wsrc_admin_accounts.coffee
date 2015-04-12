@@ -38,7 +38,7 @@ class WSRC_admin_accounts
     
   toggle_category_edit_mode: (elt) ->
     mode = $(elt).parent().find("input[name='#{ elt.name }']:checked").val()
-    button_selector = "#categories .button-bar "
+    button_selector = "#categories_tab .button-bar "
     if mode == "edit"
       @jq_category_tbody.find('.edit').add(button_selector + ".edit").show()
       @jq_category_tbody.find('.view').add(button_selector + ".view").hide()
@@ -110,7 +110,7 @@ class WSRC_admin_accounts
         if callback
           callback.apply(this)
     jqmask.mask("Updating...")
-    wsrc.ajax.ajax_bare_helper("/data/accounts/account/category/", records, opts, "PUT")
+    wsrc.ajax.ajax_bare_helper("/data/accounts/category/", records, opts, "PUT")
 
   save_category: (ui) ->
     row = $(ui).parents('tr')
@@ -132,7 +132,7 @@ class WSRC_admin_accounts
         jqmask.unmask()
         wsrc.utils.toggle({target:ui})
     jqmask.mask("Updating...")
-    wsrc.ajax.ajax_bare_helper("/data/accounts/account/category/#{ id }", record, opts, "PATCH")
+    wsrc.ajax.ajax_bare_helper("/data/accounts/category/#{ id }/", record, opts, "PATCH")
 
   apply_categories: () ->
     test_list = []
@@ -159,6 +159,108 @@ class WSRC_admin_accounts
             break
         if found
           break
+
+  upload_transactions: () ->
+    start_date = $("#upload_start_date_input").datepicker("getDate")
+    end_date   = $("#upload_end_date_input").datepicker("getDate")
+    rows = @jq_transactions_tbody.find(@data_row_selector)
+    transactions = []
+    toISO = (str) ->
+      if str == "null"
+        return null
+      chop = (start, len) -> str.substr(start, len)
+      "#{ chop(6,4) }-#{ chop(3,2) }-#{ chop(0,2) }"
+    parse_float_or_zero = (str) ->
+      val = parseFloat(str)
+      return if isNaN(val) then 0 else val
+    parse_int_or_null = (str) ->
+      if str.length == 0
+         return null
+      val = parseInt(str)
+      return if isNaN(val) then null else val
+    rows.each (idx, elt) ->
+      row = $(elt)
+      transaction =
+        date_issued: toISO(row.find("td.date").text())
+        date_cleared: toISO(row.find("td.date_cleared").text())
+        amount: parse_float_or_zero(row.find("td.amount").text())
+        category: parseInt(row.find("td.category select").val())
+        bank_number: parse_int_or_null(row.find('td.chq_number').text())
+        bank_memo: row.find('td.bank_memo').text()
+        comment: row.find('td.comment input').val()
+      transactions.push(transaction)
+    data =
+      transactions: transactions
+      account: parseInt($("#upload_account_selector").val())
+    csrf_token = $("input[name='csrfmiddlewaretoken']").val()
+    jqmask = $("body")
+    opts =
+      csrf_token:  $("input[name='csrfmiddlewaretoken']").val()
+      failureCB: (xhr, status) -> 
+        jqmask.unmask()
+        alert("ERROR #{ xhr.status }: #{ xhr.statusText }\nResponse: #{ xhr.responseText }\n\Update failed.")
+      successCB: (data, status, jq_xhr) =>
+        jqmask.unmask()
+    jqmask.mask("Updating...")
+    account = $("#upload_account_selector").val()
+    wsrc.ajax.ajax_bare_helper("/data/accounts/account/#{ account }/transactions/", data, opts, "PUT")
+    
+  sumarize_transactions: (start_date, end_date) ->
+    rows = @jq_transactions_tbody.find(@data_row_selector)
+    incoming = 0.0
+    outgoing = 0.0
+    count = 0
+    min_date = end_date
+    max_date = start_date
+    category_totals = {}
+    get_category = (cat_name) ->
+      return wsrc.utils.get_or_add_property(category_totals, cat_name, () -> {count: 0, total: 0.0})
+    rows.each (idx, elt) ->
+      row = $(elt)
+      date = wsrc.utils.british_to_js_date(row.find("td.date").text())
+      if date >= start_date and date <= end_date
+        if date > max_date
+          max_date = date
+        if date < min_date
+          min_date = date
+        amount = parseFloat(row.find("td.amount").text())
+        category = row.find("td.category select").val()
+        if category.length == 0
+          category = "undefined"
+        cat_summary = get_category(category)
+        cat_summary.count += 1
+        if not isNaN(amount)
+          cat_summary.total += amount
+          if amount > 0
+            incoming += amount
+          else
+            outgoing += amount
+        count += 1
+    return {
+      incoming: incoming
+      outgoing: outgoing * -1.0
+      count: count
+      category_totals: category_totals
+      max_date: max_date
+      min_date: min_date
+    }
+
+  handle_upload_data_changed: (summary) ->
+    unless summary
+      start_date = $("#upload_start_date_input").datepicker("getDate")
+      end_date   = $("#upload_end_date_input").datepicker("getDate")
+      summary = @sumarize_transactions(start_date, end_date)
+    $("#upload_transaction_count_input").val(summary.count)
+    $("#upload_incoming_input").val(summary.incoming.toFixed(2))
+    $("#upload_outgoing_input").val(summary.outgoing.toFixed(2))
+    uncategorized = summary.category_totals["undefined"]?.count
+    if uncategorized
+      $("#upload_uncategorized_count_input").val(uncategorized)
+      $("#upload_uncategorized_count_input").parents("div.ui-field-contain").show()
+      $("#upload_go_button").attr('disabled', true)
+    else
+      $("#upload_uncategorized_count_input").parents("div.ui-field-contain").hide()
+      $("#upload_go_button").attr('disabled', false)
         
   @on: (method) ->
     args = $.fn.toArray.call(arguments)
@@ -166,13 +268,20 @@ class WSRC_admin_accounts
 
   @onReady: (initial_categories) ->
     @instance = new WSRC_admin_accounts(initial_categories)
+    @instance.apply_categories()
+    
     $("#tabs")
       .tabs()
       .removeClass("initiallyHidden")
-    $("#categories_edit_toggle").buttonset()
+    $(".radio-buttonset").buttonset()
     $(".button-bar > input[type='button']").button()
-    @instance.apply_categories()
-    
+    $("input[class='datepicker']").datepicker().datepicker("option", "dateFormat", "dd/mm/yy")
+    $('.information-set input').attr('readonly', true)    
+
+    summary = @instance.sumarize_transactions(new Date(0), new Date(2099, 1, 1))
+    $("#upload_start_date_input").datepicker("setDate", summary.min_date)
+    $("#upload_end_date_input").datepicker("setDate", summary.max_date)
+    @instance.handle_upload_data_changed(summary)
     return null
     
 admin = wsrc.utils.add_object_if_unset(window.wsrc, "admin")

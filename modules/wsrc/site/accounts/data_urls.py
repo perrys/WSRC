@@ -21,9 +21,10 @@ import wsrc.site.accounts.views as views
 urlpatterns = patterns('',
     url(r'^account/$', views.AccountListView.as_view()),
     url(r'^account/(?P<pk>[0-9]*)$', views.AccountView.as_view()),
-    url(r'^account/transactions/(?P<account_name>\w*)$', views.TransactionView.as_view()),
-    url(r'^account/category/$', views.CategoryListView.as_view()),
-    url(r'^account/category/(?P<pk>[0-9]*)$', views.CategoryDetailView.as_view()),
+    url(r'^account/(?P<account_id>[0-9]*)/transactions/?$', views.TransactionView.as_view()),
+    url(r'^account/(?P<account_name>\w*)/transactions/?$', views.TransactionView.as_view()),
+    url(r'^category/$', views.CategoryListView.as_view()),
+    url(r'^category/(?P<pk>[0-9]*)$', views.CategoryDetailView.as_view()),
 )
 
 urlpatterns = format_suffix_patterns(urlpatterns)

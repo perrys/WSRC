@@ -17,10 +17,12 @@ class Category(models.Model):
     return self.name
   class Meta:
     verbose_name_plural = "categories"
+    ordering=["ordering"]
   
 class Transaction(models.Model):
   account = models.ForeignKey(Account)
-  date = models.DateField()
+  date_issued = models.DateField()
+  date_cleared = models.DateField(blank=True, null=True)
   amount = models.FloatField()
   category = models.ForeignKey(Category)
   bank_transaction_category = models.CharField(max_length=32, blank=True, null=True)
@@ -28,10 +30,10 @@ class Transaction(models.Model):
   bank_memo = models.CharField(max_length=256, blank=True, null=True)
   comment  = models.CharField(max_length=256, blank=True, null=True)
   last_updated = models.DateTimeField(auto_now=True)
-  last_updated_by = models.OneToOneField(User)
+  last_updated_by = models.ForeignKey(User)
   def __unicode__(self):
-    return "[{name}] {date} {amount} {category} {comment}".format(self.__dict__)
+    return "[{account}] {date} {amount} {category}".format(account=self.account.name, date=self.date_issued, amount=self.amount, category=self.category.name)
   
   class Meta:
-    ordering=["date", "category"]
+    ordering=["date_issued", "date_cleared", "category"]
 

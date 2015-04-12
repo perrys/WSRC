@@ -9,7 +9,8 @@
   <script type="text/javascript">
 jQuery(document).ready(function(){
   var categories = {{ categories_data|safe }};
-  wsrc.admin.accounts.onReady(categories)
+  var transactions = {{ transaction_data|safe }};
+  wsrc.admin.accounts.onReady(categories, transactions)
 });
   </script>
 
@@ -21,22 +22,93 @@ jQuery(document).ready(function(){
 <body>
   <div id="tabs" class="initiallyHidden">
     <ul>
-      <li><a href="#transactions">Transactions</a></li>
-      <li><a href="#categories">Categories</a></li>
+      <li><a href="#transactions_tab">Transactions</a></li>
+      <li><a href="#categories_tab">Categories</a></li>
+      <li><a href="#upload_tab">Upload</a></li>
     </ul>
 
-    <div id="transactions">
+    <div id="transactions_tab" class="fixed-height-wrapper">
+      <fieldset name="file_upload" class="ui-corner-all">
+        <legend>Summary</legend>
+        <form action="#" method="GET">{% csrf_token %}
+          <div class="ui-field-contain">
+            <label for="transactions_account_selector">Account:</label>
+            <select name="account" id="transactions_account_selector" >
+{% for acc in accounts %}
+              <option value="{{ acc.id }}" {% if account.id == acc.id %}selected="selected"{% endif %}>{{ acc.name }}</option>
+{% endfor %}
+            </select>
+          </div>
+          {% usekwacro createfield_adhoc "Start Date" "start_date" "transactions_start_date_input" "datepicker"  %}
+          {% usekwacro createfield_adhoc "End Date"   "end_date"   "transactions_end_date_input"   "datepicker"  %}
+          <div class="ui-field-contain">
+            <label>Date Type:</label>
+            <div class="radio-buttonset">
+              <input name="transactions_date_type" id="transactions_issued"  type="radio" value="issued"><label for="transactions_issued">Issued</label>
+              <input name="transactions_date_type" id="transactions_cleared" type="radio" value="cleared"><label for="transactions_cleared">Cleared</label>
+            </div>
+          </div>
+        </form>
+      </fieldset>
+      <div class="container">
+        <table class="transactions" id="transaction-upload-table">
+          <thead>
+            <tr class="header">
+              <th>Date Issued</th>
+              <th>Date Cleared</th>
+              <th>Amount</th>
+              <th>Bank Code</th>
+              <th>Cheque #</th>
+              <th>Bank Memo</th>
+              <th>Comment</th>
+              <th>Category</th>
+            </tr>
+          </thead>
+          <tbody>
+          </tbody>
+        </table>
+      </div>
+    </div>
 
-      <form action="" enctype="multipart/form-data" method="post">{% csrf_token %}
+    <div id="upload_tab" class="fixed-height-wrapper">
+
+{% if csv_data %}
+      <form action="#" method="GET">{% csrf_token %}
+        <fieldset name="file_upload" class="ui-corner-all">
+          <legend>Transaction Upload</legend>
+          <div class="information-set">
+            {% usekwacro createfield_adhoc "# Transactions"   "transaction_count"   "upload_transaction_count_input" "readonly"%}
+            {% usekwacro createfield_adhoc "# Uncategorized"   "uncategorized_count"   "upload_uncategorized_count_input" "errorfield readonly"%}
+            {% usekwacro createfield_adhoc "Incoming"   "incoming"   "upload_incoming_input" "readonly"%}
+            {% usekwacro createfield_adhoc "Outgoing"   "outgoing"   "upload_outgoing_input" "readonly"%}
+          </div>
+          {% usekwacro createfield_adhoc "Start Date" "start_date" "upload_start_date_input" "datepicker" "wsrc.admin.accounts.on('handle_upload_data_changed')" %}
+          {% usekwacro createfield_adhoc "End Date"   "end_date"   "upload_end_date_input"   "datepicker" "wsrc.admin.accounts.on('handle_upload_data_changed')" %}
+          <div class="ui-field-contain">
+            <label for="upload_account_selector">Account:</label>
+            <select name="account" id="upload_account_selector" >
+{% for acc in accounts %}
+              <option value="{{ acc.id }}">{{ acc.name }}</option>
+{% endfor %}
+            </select>
+            <button id='upload_go_button' onclick="wsrc.admin.accounts.on('upload_transactions')" disabled='true'>Go</button>
+          </div>
+        </fieldset>
+      </form>
+{% else %}
+      <form action="{% url 'wsrc.site.accounts.views.accounts_view' %}/#upload_tab" enctype="multipart/form-data" method="post">{% csrf_token %}
         <fieldset name="file_upload" class="ui-corner-all">
           <legend>File Upload</legend>
 {% usekwacro createfield form.file True %}
         </fieldset>
       </form>
-      <table class="transactions">
-        <tbody>
+{% endif %}
+  <div class="container">
+      <table class="transactions" id="transaction-upload-table">
+        <thead>
           <tr class="header">
-            <th>Date</th>
+            <th>Date Issued</th>
+            <th>Date Cleared</th>
             <th>Amount</th>
             <th>Bank Code</th>
             <th>Cheque #</th>
@@ -44,10 +116,13 @@ jQuery(document).ready(function(){
             <th>Comment</th>
             <th>Category</th>
           </tr>
+        </thead>
+        <tbody>
 {% for row in csv_data %}
 {% if row.Amount or row.Number %}
           <tr class="{% cycle '' 'alt' %}">
             <td class="date">{{ row.Date }}</td>
+            <td class="date_cleared">{% if row.Date_Cleared|default:"undef" == "undef" %}{{ row.Date }}{% else %}{{ row.Date_Cleared }}{% endif %}</td>
             <td class="amount {% if row.Amount|parse_float < 0.0 %}debit{% else %}credit{% endif %}" >{{ row.Amount }}</td>
             <td class="bank_code">{{ row.Subcategory }}</td>
             <td class="chq_number">{{ row.Number }}</td>
@@ -55,7 +130,7 @@ jQuery(document).ready(function(){
             <td class="comment"><input name="comment" value="{{ row.Comment }}"></td>
             <td class="category">
                 <!-- {{ row.Category|lower }} -->
-              <select name="category">
+              <select name="category" onchange="wsrc.admin.accounts.on('handle_upload_data_changed')">
                 <option value="">-</option>
 {% for category in categories %}
                 <option value="{{ category.id }}" {% if category.name|lower == row.Category|lower %}selected="selected"{% endif %}>{{ category.description }}</option>
@@ -67,13 +142,14 @@ jQuery(document).ready(function(){
 {% endfor %}
         </tbody>
       </table>
+      </div>
     </div>
-    <div id="categories">
+    <div id="categories_tab">
       <div class="button-bar">      
         <input type='button' value="New Row" onclick="wsrc.admin.accounts.on('add_category_row', null, true)" class="edit" style="display: none;"/>
-        <div id="categories_edit_toggle">
-          <input type="radio" id="radio1" name="radio" value="view" onchange="wsrc.admin.accounts.on('toggle_category_edit_mode', this)" checked="checked"><label for="radio1">View</label>
-          <input type="radio" id="radio2" name="radio" value="edit" onchange="wsrc.admin.accounts.on('toggle_category_edit_mode', this)"><label for="radio2">Edit</label>
+        <div class="radio-buttonset">
+          <input type="radio" id="radio_view_mode" name="radio" value="view" onchange="wsrc.admin.accounts.on('toggle_category_edit_mode', this)" checked="checked"><label for="radio_view_mode">View</label>
+          <input type="radio" id="radio_edit_mode" name="radio" value="edit" onchange="wsrc.admin.accounts.on('toggle_category_edit_mode', this)"><label for="radio_edit_mode">Edit</label>
         </div>
       </div>
       <table class="categories">
