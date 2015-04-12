@@ -15,6 +15,13 @@ class WSRC_utils
         return l
     return null
 
+  @get_or_add_property: (obj, prop_name, factory) ->
+    val = obj[prop_name]
+    unless val
+      val = factory()
+      obj[prop_name] = val
+    return val
+    
   @lexical_sorter: (lhs, rhs, mapper) ->
     if mapper
       lhs = mapper(lhs)
@@ -91,8 +98,14 @@ class WSRC_utils
       else return "th"
 
   @iso_to_js_date: (str) ->
-    toint = (start, len) -> parseInt(str.substr(start, start+len))
+    # dateformat: 2001-12-31
+    toint = (start, len) -> parseInt(str.substr(start, len))
     new Date(toint(0,4), toint(5,2)-1, toint(8,2)) # gotcha - JS dates use 0-offset months...
+
+  @british_to_js_date: (str) ->
+    # dateformat: 31/12/2001
+    toint = (start, len) -> parseInt(str.substr(start, len))
+    new Date(toint(6,4), toint(3,2)-1, toint(0,2)) # gotcha - JS dates use 0-offset months...
 
   @get_day_humanized: (basedate, offset) ->
     switch offset
