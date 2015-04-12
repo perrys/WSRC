@@ -1,7 +1,7 @@
 # -*- mode: makefile-gmake; -*-
 
 JINJACC = ../../tools/jinjac
-LESSC = lessc --no-color
+LESSC = lessc --no-color --strict-math=on
 MINIFY = minify --no-comments
 
 CSS_TARGETS = all_html5.css all_legacy.css all_html5.min.css all_legacy.min.css all_admin.css all_mailshot.css all_accounts.css
