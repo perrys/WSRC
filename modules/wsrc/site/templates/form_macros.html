@@ -10,3 +10,9 @@
 {% endif %}
 </div>
 {% endkwacro %}
+
+{% kwacro createfield_adhoc label name id class onchange%}
+<div class="ui-field-contain">
+  <label for="{{ id }}" class="{{ class }}">{{ label }}:</label><input name="{{ name  }}" id="{{ id }}" class="{{ class }}" onchange="{{ onchange }}">
+</div>
+{% endkwacro %}
