@@ -31,21 +31,42 @@ jQuery(document).ready(function(){
       <fieldset name="file_upload" class="ui-corner-all">
         <legend>Summary</legend>
         <form action="#" method="GET">{% csrf_token %}
+          <div class="information-table ui-corner-all">
+            <table>
+              <thead>
+                <tr class="header">
+                  <th>Category</th>
+                  <th># Transactions</th>
+                  <th>Incomming</th>
+                  <th>Outgoing</th>
+                  <th>Net</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
           <div class="ui-field-contain">
             <label for="transactions_account_selector">Account:</label>
-            <select name="account" id="transactions_account_selector" >
+            <select name="account" id="transactions_account_selector" class="ui-corner-all">
 {% for acc in accounts %}
               <option value="{{ acc.id }}" {% if account.id == acc.id %}selected="selected"{% endif %}>{{ acc.name }}</option>
 {% endfor %}
             </select>
           </div>
-          {% usekwacro createfield_adhoc "Start Date" "start_date" "transactions_start_date_input" "datepicker"  %}
-          {% usekwacro createfield_adhoc "End Date"   "end_date"   "transactions_end_date_input"   "datepicker"  %}
+          {% usekwacro createfield_adhoc "Start Date" "start_date" "transactions_start_date_input" "datepicker" "wsrc.admin.accounts.on('set_transaction_summary')" %}
+          {% usekwacro createfield_adhoc "End Date"   "end_date"   "transactions_end_date_input"   "datepicker" "wsrc.admin.accounts.on('set_transaction_summary')" %}
           <div class="ui-field-contain">
             <label>Date Type:</label>
             <div class="radio-buttonset">
-              <input name="transactions_date_type" id="transactions_issued"  type="radio" value="issued"><label for="transactions_issued">Issued</label>
+              <input name="transactions_date_type" id="transactions_issued"  type="radio" value="issued" checked="checked"><label for="transactions_issued">Issued</label>
               <input name="transactions_date_type" id="transactions_cleared" type="radio" value="cleared"><label for="transactions_cleared">Cleared</label>
+            </div>
+          </div>
+          <div class="ui-field-contain">
+            <label>First Date:</label>
+            <div class="radio-buttonset">
+              <input name="transactions_date_ordering" id="dates_descending" type="radio" value="descending" checked="checked"><label for="dates_descending">Newest</label>
+              <input name="transactions_date_ordering" id="dates_ascending"  type="radio" value="ascending"><label for="dates_ascending">Oldest</label>
             </div>
           </div>
         </form>
