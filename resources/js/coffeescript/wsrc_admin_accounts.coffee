@@ -2,8 +2,10 @@
 class WSRC_admin_accounts 
 
 
-  constructor: (category_list) ->
+  constructor: (category_list, @transaction_list) ->
+    @jq_account_transactions_tbody = $('#transactions_tab table.transactions tbody')
     @jq_upload_transactions_tbody = $('#upload_tab table.transactions tbody')
+    @jq_summary_tbody = $("#transactions_tab .information-table tbody")
     @jq_category_tbody = $('table.categories tbody')
     @data_row_selector = 'tr:not(.header)'
     
@@ -16,6 +18,8 @@ class WSRC_admin_accounts
         @handle_category_order_updated.call(this)
     ).disableSelection()
     @add_category_rows(category_list)
+    @add_transaction_rows()
+    @set_transaction_summary()
 
   update_category_map: (category_list) ->
     @categories = {}
@@ -35,7 +39,17 @@ class WSRC_admin_accounts
       for category in category_list
         unless jq_select.find("option[value='#{ category.id }']").length > 0
           jq_select.append("<option value='#{ category.id }'>#{ category.description }</option>")
-    
+    alt = false
+    @jq_summary_tbody.children().remove()
+    for category in category_list
+      jq_row = $("<tr data-id='#{ category.id }'><td class='category'><input type='checkbox'> #{ category.description }</td><td class='count'> <td class='incomming'> <td class='outoing'> <td class='net_total'> </tr>")
+      if alt
+        jq_row.addClass('alt')
+        alt = false
+      else
+        alt = true
+      @jq_summary_tbody.append(jq_row)
+      
   toggle_category_edit_mode: (elt) ->
     mode = $(elt).parent().find("input[name='#{ elt.name }']:checked").val()
     button_selector = "#categories_tab .button-bar "
@@ -160,6 +174,76 @@ class WSRC_admin_accounts
         if found
           break
 
+  set_transaction_summary: () ->
+    start_date = $("#transactions_start_date_input").datepicker("getDate")
+    end_date = $("#transactions_end_date_input").datepicker("getDate")
+    summary = @sumarize_transactions(@transaction_list, start_date, end_date)
+    @jq_summary_tbody.children().each (idx, elt) ->
+      jq_row = $(elt)
+      cat_id = parseInt(jq_row.data('id'))
+      cat_summary = summary.category_totals[cat_id]
+      unless cat_summary
+        cat_summary = {count: 0, net_total: 0}
+      jq_row.find("td.count").text(cat_summary.count)
+      jq_net_total = jq_row.find("td.net_total").text(cat_summary.net_total.toFixed(2))
+      if cat_summary.net_total > 0
+        jq_net_total.removeClass('debit').addClass('credit')
+      else if cat_summary.net_total < 0
+        jq_net_total.addClass('debit').removeClass('credit')
+      else
+        jq_net_total.removeClass('debit').removeClass('credit')
+
+  add_transaction_rows: () ->
+    alt_row = false
+    for record in @transaction_list
+      jq_row = @transaction_record_to_row(record)
+      if alt_row
+        jq_row.addClass('alt')
+        alt_row = false
+      else
+        alt_row = true
+      @jq_account_transactions_tbody.append(jq_row)
+      
+  transaction_record_to_row: (record) ->
+    toBritish = (record, field) ->
+      str = record[field]
+      unless str
+        return ""
+      chop = (start, len) -> str.substr(start, len)
+      "#{ chop(8,2) }/#{ chop(5,2) }/#{ chop(0,4) }"
+    credit_or_debit = (record, field) ->
+      val = parseFloat(record[field])
+      if val < 0 then "debit" else "credit"
+    str = (record, field) ->
+      val = record[field]
+      if val then val else ""
+    ccy = (record, field) ->
+      val = parseFloat(record[field])
+      val.toFixed(2)
+    category_name = (record, field) =>
+      id = parseInt(record[field])
+      @categories[id].description
+      
+    mapping = [
+      ['date_issued',  toBritish]
+      ['date_cleared', toBritish]
+      ['amount',       ccy, credit_or_debit]
+      ['bank_code',    str]
+      ['bank_number',  str]
+      ['bank_memo',    str]
+      ['comment',      str]
+      ['category',     category_name]
+    ]
+    jq_row = $("<tr></tr>")
+    for data in mapping
+      field = data[0]
+      value = data[1](record, field)
+      extra_classes = ""
+      if data.length == 3
+        extra_classes = data[2](record, field)
+      jq_row.append("<td class='#{ field } #{ extra_classes }'>#{ value }</td>")
+    return jq_row
+    
   row_to_transaction_record: (jq_row) ->
     toISO = (jq_elt) ->
       str = jq_elt.text()
@@ -234,8 +318,8 @@ class WSRC_admin_accounts
     min_date = end_date
     max_date = start_date
     category_totals = {}
-    get_category = (cat_name) ->
-      return wsrc.utils.get_or_add_property(category_totals, cat_name, () -> {count: 0, total: 0.0})
+    get_category = (cat_id) ->
+      return wsrc.utils.get_or_add_property(category_totals, cat_id, () -> {count: 0, net_total: 0.0})
     for transaction in transactions    
       date = if use_cleared_date then transaction.date_cleared else transaction.date_issued
       date = wsrc.utils.iso_to_js_date(date)
@@ -249,10 +333,10 @@ class WSRC_admin_accounts
         cat_summary = get_category(transaction.category)
         cat_summary.count += 1
         if not isNaN(transaction.amount)
-          cat_summary.total += transaction.amount
+          cat_summary.net_total += transaction.amount
           if transaction.amount > 0
             incoming += transaction.amount
-          else
+          else 
             outgoing += transaction.amount
         count += 1
     return {
@@ -286,8 +370,14 @@ class WSRC_admin_accounts
     args = $.fn.toArray.call(arguments)
     @instance[method].apply(@instance, args[1..])
 
-  @onReady: (initial_categories) ->
-    @instance = new WSRC_admin_accounts(initial_categories)
+  @onReady: (initial_categories, initial_transactions) ->
+    $("input[class='datepicker']").datepicker().datepicker("option", "dateFormat", "dd/mm/yy")
+    today = new Date()
+    three_months_back = new Date(today.getYear() + 1900, today.getMonth()-3, today.getDate())
+    $("#transactions_start_date_input").datepicker("setDate", three_months_back)
+    $("#transactions_end_date_input").datepicker("setDate", today)
+
+    @instance = new WSRC_admin_accounts(initial_categories, initial_transactions)
     @instance.apply_categories()
     
     $("#tabs")
@@ -295,7 +385,6 @@ class WSRC_admin_accounts
       .removeClass("initiallyHidden")
     $(".radio-buttonset").buttonset()
     $(".button-bar > input[type='button']").button()
-    $("input[class='datepicker']").datepicker().datepicker("option", "dateFormat", "dd/mm/yy")
     $('.information-set input').attr('readonly', true)    
 
     start_date = new Date(0)
