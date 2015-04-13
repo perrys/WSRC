@@ -42,7 +42,7 @@ class WSRC_admin_accounts
     alt = false
     @jq_summary_tbody.children().remove()
     for category in category_list
-      jq_row = $("<tr data-id='#{ category.id }'><td class='category'><input type='checkbox'> #{ category.description }</td><td class='count'> <td class='incomming'> <td class='outoing'> <td class='net_total'> </tr>")
+      jq_row = $("<tr data-id='#{ category.id }'><td class='category'><input type='checkbox'> #{ category.description }</td><td class='count'> <td class='incoming'> <td class='outgoing'> <td class='net_total'> </tr>")
       if alt
         jq_row.addClass('alt')
         alt = false
@@ -177,14 +177,16 @@ class WSRC_admin_accounts
   set_transaction_summary: () ->
     start_date = $("#transactions_start_date_input").datepicker("getDate")
     end_date = $("#transactions_end_date_input").datepicker("getDate")
-    summary = @sumarize_transactions(@transaction_list, start_date, end_date)
+    summary = @summarise_transactions(@transaction_list, start_date, end_date)
     @jq_summary_tbody.children().each (idx, elt) ->
       jq_row = $(elt)
       cat_id = parseInt(jq_row.data('id'))
       cat_summary = summary.category_totals[cat_id]
       unless cat_summary
-        cat_summary = {count: 0, net_total: 0}
+        cat_summary = {count: 0, incoming: 0, outgoing: 0, net_total: 0}
       jq_row.find("td.count").text(cat_summary.count)
+      jq_row.find("td.incoming").text(cat_summary.incoming.toFixed(2))
+      jq_row.find("td.outgoing").text(cat_summary.outgoing.toFixed(2))
       jq_net_total = jq_row.find("td.net_total").text(cat_summary.net_total.toFixed(2))
       if cat_summary.net_total > 0
         jq_net_total.removeClass('debit').addClass('credit')
@@ -311,7 +313,7 @@ class WSRC_admin_accounts
     account = $("#upload_account_selector").val()
     wsrc.ajax.ajax_bare_helper("/data/accounts/account/#{ account }/transactions/", data, opts, "PUT")
     
-  sumarize_transactions: (transactions, start_date, end_date, use_cleared_date) ->
+  summarise_transactions: (transactions, start_date, end_date, use_cleared_date) ->
     incoming = 0.0
     outgoing = 0.0
     count = 0
@@ -319,7 +321,7 @@ class WSRC_admin_accounts
     max_date = start_date
     category_totals = {}
     get_category = (cat_id) ->
-      return wsrc.utils.get_or_add_property(category_totals, cat_id, () -> {count: 0, net_total: 0.0})
+      return wsrc.utils.get_or_add_property(category_totals, cat_id, () -> {count: 0, incoming: 0, outgoing: 0, net_total: 0.0})
     for transaction in transactions    
       date = if use_cleared_date then transaction.date_cleared else transaction.date_issued
       date = wsrc.utils.iso_to_js_date(date)
@@ -336,8 +338,10 @@ class WSRC_admin_accounts
           cat_summary.net_total += transaction.amount
           if transaction.amount > 0
             incoming += transaction.amount
+            cat_summary.incoming += transaction.amount
           else 
             outgoing += transaction.amount
+            cat_summary.outgoing += transaction.amount * -1.0
         count += 1
     return {
       incoming: incoming
@@ -353,7 +357,7 @@ class WSRC_admin_accounts
       start_date = $("#upload_start_date_input").datepicker("getDate")
       end_date   = $("#upload_end_date_input").datepicker("getDate")
       transactions = @get_upload_transaction_data(start_date, end_date)
-      summary = @sumarize_transactions(transactions, start_date, end_date)
+      summary = @summarise_transactions(transactions, start_date, end_date)
     $("#upload_transaction_count_input").val(summary.count)
     $("#upload_incoming_input").val(summary.incoming.toFixed(2))
     $("#upload_outgoing_input").val(summary.outgoing.toFixed(2))
@@ -390,7 +394,7 @@ class WSRC_admin_accounts
     start_date = new Date(0)
     end_date   = new Date(2099, 1, 1)
     upload_transactions = @instance.get_upload_transaction_data(start_date, end_date)
-    summary = @instance.sumarize_transactions(upload_transactions, start_date, end_date)
+    summary = @instance.summarise_transactions(upload_transactions, start_date, end_date)
     $("#upload_start_date_input").datepicker("setDate", summary.min_date)
     $("#upload_end_date_input").datepicker("setDate", summary.max_date)
     @instance.handle_upload_data_changed(summary)
