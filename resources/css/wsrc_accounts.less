@@ -42,13 +42,23 @@ fieldset {
         text-align: right;
     }
     & > input, & > select  {
-        width: 9em;
+        width: 10em;
+    }
+    & > select {
+        height: 2em;
+        margin-left: 2px;
     }
     & > input[type='file'] {
         width: 20em;
     }
     & > input[type='submit'] {
         width: 3em;
+    }
+    & > .radio-buttonset > label  {
+        width: 5em;
+        .ui-button-text {
+            padding: 0.4em 0;
+        }
     }
 }
 
@@ -59,6 +69,18 @@ fieldset {
         width: 10em;
     }
 }
+
+.information-table {
+    float: right;
+    min-width: 60%;
+    height: 11em;
+    overflow-y: auto;
+    border: 1px solid #333;
+    & .count, & .incomming, & .outgoing, & .net_total {
+        text-align: right;
+    }
+}
+
 .toggled {
     display: none !important;
 }
@@ -100,7 +122,7 @@ table {
     td.credit {
         color: darkgreen;
     }
-    td.amount, td.bank_code, td.chq_number,
+    td.amount, td.bank_code, td.bank_number,
     th.button, td.button{
         text-align: right;
         padding-left: 0.5em;
