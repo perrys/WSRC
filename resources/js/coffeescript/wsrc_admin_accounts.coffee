@@ -18,7 +18,16 @@ class WSRC_admin_accounts
         @handle_category_order_updated.call(this)
     ).disableSelection()
     @add_category_rows(category_list)
-    @add_transaction_rows()
+    @jq_summary_tbody.sortable(
+      items: "> #{ @data_row_selector }"
+      placeholder: "ui-state-highlight"
+    ).disableSelection()
+
+    balance = 0
+    for transaction in @transaction_list
+      balance += transaction.amount
+      transaction.balance = balance
+      
     @set_transaction_summary()
 
   update_category_map: (category_list) ->
@@ -43,6 +52,7 @@ class WSRC_admin_accounts
     @jq_summary_tbody.children().remove()
     for category in category_list
       jq_row = $("<tr data-id='#{ category.id }'><td class='category'><input type='checkbox'> #{ category.description }</td><td class='count'> <td class='incoming'> <td class='outgoing'> <td class='net_total'> </tr>")
+      jq_row.find("input[type='checkbox']").on("change", () => @add_transaction_rows.call(this))
       if alt
         jq_row.addClass('alt')
         alt = false
@@ -174,6 +184,24 @@ class WSRC_admin_accounts
         if found
           break
 
+  get_transaction_filter: () ->
+    start_date = $("#transactions_start_date_input").datepicker("getDate")
+    end_date = $("#transactions_end_date_input").datepicker("getDate")
+    date_type = $("input[name='transactions_date_type']:checked").val()
+    categories = []
+    @jq_summary_tbody.children().each (idx, elt) ->
+      jq_row = $(elt)
+      if jq_row.find("td.category input[type='checkbox']").prop('checked')
+        categories.push(parseInt(jq_row.data('id')))
+    return (transaction) ->
+      date = transaction[date_type]
+      if date
+        date = wsrc.utils.iso_to_js_date(date)
+        if date <= end_date and date >= start_date
+          if categories.length == 0 or transaction.category in categories
+            return true
+      return false
+
   set_transaction_summary: () ->
     start_date = $("#transactions_start_date_input").datepicker("getDate")
     end_date = $("#transactions_end_date_input").datepicker("getDate")
@@ -194,19 +222,39 @@ class WSRC_admin_accounts
         jq_net_total.addClass('debit').removeClass('credit')
       else
         jq_net_total.removeClass('debit').removeClass('credit')
+    @add_transaction_rows()
 
   add_transaction_rows: () ->
     alt_row = false
-    for record in @transaction_list
-      jq_row = @transaction_record_to_row(record)
+    @jq_account_transactions_tbody.children().remove()
+    date_type = $("input[name='transactions_date_type']:checked").val()
+    date_order = $("input[name='transactions_date_ordering']:checked").val()
+    filter = @get_transaction_filter()
+    record_list = (rec for rec in @transaction_list when filter(rec))
+    if date_type == 'date_issued'
+      record_list.sort (lhs, rhs) =>
+        cmp = wsrc.utils.iso_to_js_date(lhs.date_issued) - wsrc.utils.iso_to_js_date(rhs.date_issued)
+        if cmp == 0
+          cmp = @categories[lhs.category].ordering - @categories[rhs.category].ordering
+        return cmp
+    
+    for record in record_list
+      jq_row = @transaction_record_to_row(record, date_type == 'date_cleared')
       if alt_row
         jq_row.addClass('alt')
         alt_row = false
       else
         alt_row = true
       @jq_account_transactions_tbody.append(jq_row)
-      
-  transaction_record_to_row: (record) ->
+    container = @jq_account_transactions_tbody.parents("div.container")
+    outer_container1 = container.parent()
+    outer_container2 = outer_container1.parent()
+    tab_bar = outer_container2.find("ul.ui-tabs-nav")
+    fieldset = outer_container1.find("fieldset")
+    calc = -30 + outer_container2.height() - tab_bar.outerHeight(true) - fieldset.outerHeight(true) 
+    container.css("max-height", "#{ calc }px")
+    
+  transaction_record_to_row: (record, with_balance) ->
     toBritish = (record, field) ->
       str = record[field]
       unless str
@@ -225,17 +273,18 @@ class WSRC_admin_accounts
     category_name = (record, field) =>
       id = parseInt(record[field])
       @categories[id].description
-      
     mapping = [
       ['date_issued',  toBritish]
       ['date_cleared', toBritish]
-      ['amount',       ccy, credit_or_debit]
       ['bank_code',    str]
       ['bank_number',  str]
       ['bank_memo',    str]
       ['comment',      str]
       ['category',     category_name]
+      ['amount',       ccy, credit_or_debit]
     ]
+    if with_balance
+      mapping.push(['balance', ccy])
     jq_row = $("<tr></tr>")
     for data in mapping
       field = data[0]
