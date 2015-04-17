@@ -36,7 +36,7 @@ jQuery(document).ready(function(){
               <thead>
                 <tr class="header">
                   <th>Category</th>
-                  <th># Transactions</th>
+                  <th>#&nbsp;Transactions</th>
                   <th>Incoming</th>
                   <th>Outgoing</th>
                   <th>Net</th>
@@ -53,8 +53,8 @@ jQuery(document).ready(function(){
 {% endfor %}
             </select>
           </div>
-          {% usekwacro createfield_adhoc "Start Date" "start_date" "transactions_start_date_input" "datepicker" "wsrc.admin.accounts.on('set_transaction_summary')" %}
-          {% usekwacro createfield_adhoc "End Date"   "end_date"   "transactions_end_date_input"   "datepicker" "wsrc.admin.accounts.on('set_transaction_summary')" %}
+          {% usekwacro createfield_adhoc "Start Date" "start_date" "transactions_start_date_input" "datepicker datepicker-three-months" "wsrc.admin.accounts.on('set_transaction_summary')" %}
+          {% usekwacro createfield_adhoc "End Date"   "end_date"   "transactions_end_date_input"   "datepicker datepicker-today" "wsrc.admin.accounts.on('set_transaction_summary')" %}
           <div class="ui-field-contain">
             <label>Date Type:</label>
             <div class="radio-buttonset">
@@ -186,5 +186,45 @@ jQuery(document).ready(function(){
       </table>
     </div>
   </div>
+
+  <div id="swing-transaction-dialog" title="Balancing Transaction">
+    <form>
+      <fieldset class="ui-corner-all">
+        <div class="ui-field-contain">
+          <label for="swing_from_selector">From:</label>
+          <select name="from" id="swing_from_selector">
+            <option value="">-</option>
+            {% for category in categories %}
+            <option value="{{ category.id }}">{{ category.description }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="ui-field-contain">
+          <label for="swing_to_selector">To:</label>
+          <select name="to" id="swing_to_selector">
+            <option value="">-</option>
+            {% for category in categories %}
+            <option value="{{ category.id }}">{{ category.description }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="ui-field-contain">
+          <label for="swing_date">Date:</label>
+          <input class="datepicker datepicker-today" name="date" id="swing_date">
+        </div>        
+        <div class="ui-field-contain">
+          <label for="swing_amount">Amount:</label>
+          <input type="number" name="amount" id="swing_amount" value="0.00">
+        </div>        
+        <div class="ui-field-contain">
+          <label for="swing_comment">Comment:</label>
+          <input name="comment" id="swing_comment">
+        </div>        
+        <!-- Allow form submission with keyboard without duplicating the dialog button -->
+        <input type="submit" tabindex="-1" style="position:absolute; top:-1000px">
+      </fieldset>
+    </form>
+  </div>
+
 </body>
 </html>
