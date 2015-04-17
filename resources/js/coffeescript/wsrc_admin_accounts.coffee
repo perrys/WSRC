@@ -275,6 +275,11 @@ class WSRC_admin_accounts
       else
         alt_row = true
       @jq_account_transactions_tbody.append(jq_row)
+      jq_row.dblclick( (e) =>
+        jq_row = $(e.delegateTarget)
+        url = "/admin/accounts/transaction/#{ jq_row.data('id') }"
+        window.open(url, "_blank")
+      )
     container = @jq_account_transactions_tbody.parents("div.container")
     outer_container1 = container.parent()
     outer_container2 = outer_container1.parent()
@@ -314,7 +319,7 @@ class WSRC_admin_accounts
     ]
     if with_balance
       mapping.push(['balance', ccy])
-    jq_row = $("<tr></tr>")
+    jq_row = $("<tr data-id='#{ record.id }'></tr>")
     for data in mapping
       field = data[0]
       value = data[1](record, field)
