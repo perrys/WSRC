@@ -30,6 +30,35 @@ class WSRC_admin_accounts
       
     @set_transaction_summary()
 
+    
+    dialog = $( "#swing-transaction-dialog" ).dialog(
+      autoOpen: false
+      height: "auto"
+      width: "32em"
+      modal: true
+      buttons: 
+        Create: () =>
+          @create_swing_transaction.call(this)
+        Cancel: () ->
+          dialog.dialog("close")
+    )
+ 
+    form = dialog.find("form").on("submit", (event) ->
+      event.preventDefault()
+      @create_swing_transaction()
+    )
+
+    $(document).keydown( (e) ->
+      if e.ctrlKey and e.which == 66 # 'b' key 
+        e.preventDefault()
+        dialog.find("select").val("")
+        dialog.find("input[name='amount']").val("0.0")
+        dialog.find("input[name='comment']").val('')
+        dialog.dialog("open")
+        return false
+    )
+
+
   update_category_map: (category_list) ->
     @categories = {}
     for category in category_list
@@ -424,11 +453,11 @@ class WSRC_admin_accounts
     @instance[method].apply(@instance, args[1..])
 
   @onReady: (initial_categories, initial_transactions) ->
-    $("input[class='datepicker']").datepicker().datepicker("option", "dateFormat", "dd/mm/yy")
+    $("input.datepicker").datepicker().datepicker("option", "dateFormat", "dd/mm/yy")
     today = new Date()
     three_months_back = new Date(today.getYear() + 1900, today.getMonth()-3, today.getDate())
-    $("#transactions_start_date_input").datepicker("setDate", three_months_back)
-    $("#transactions_end_date_input").datepicker("setDate", today)
+    $("input.datepicker-three-months").datepicker("setDate", three_months_back)
+    $("input.datepicker-today").datepicker("setDate", today)
 
     @instance = new WSRC_admin_accounts(initial_categories, initial_transactions)
     @instance.apply_categories()
