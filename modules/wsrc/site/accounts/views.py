@@ -41,7 +41,7 @@ class AccountListView(rest_generics.ListCreateAPIView):
 class TransactionSerializer(serializers.ModelSerializer):
     class Meta:
         model = Transaction
-        fields = ["account", "date_issued", "date_cleared", "amount", "category", "bank_transaction_category", "bank_number", "bank_memo", "comment"]
+        fields = ["id", "account", "date_issued", "date_cleared", "amount", "category", "bank_transaction_category", "bank_number", "bank_memo", "comment"]
 
 class TransactionView(rest_generics.ListAPIView):
     permission_classes = (rest_permissions.IsAuthenticated,)
