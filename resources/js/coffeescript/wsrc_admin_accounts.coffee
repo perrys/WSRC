@@ -1,4 +1,6 @@
 
+
+  
 class WSRC_admin_accounts 
 
 
@@ -295,6 +297,7 @@ class WSRC_admin_accounts
         return ""
       chop = (start, len) -> str.substr(start, len)
       "#{ chop(8,2) }/#{ chop(5,2) }/#{ chop(0,4) }"
+    blank = () -> return ""
     credit_or_debit = (record, field) ->
       val = parseFloat(record[field])
       if val < 0 then "debit" else "credit"
@@ -308,8 +311,8 @@ class WSRC_admin_accounts
       id = parseInt(record[field])
       @categories[id].description
     mapping = [
-      ['date_issued',  toBritish]
-      ['date_cleared', toBritish]
+      ['date_issued',  toBritish, blank, str]
+      ['date_cleared', toBritish, blank, str]
       ['bank_code',    str]
       ['bank_number',  str]
       ['bank_memo',    str]
@@ -324,9 +327,13 @@ class WSRC_admin_accounts
       field = data[0]
       value = data[1](record, field)
       extra_classes = ""
-      if data.length == 3
+      if data.length > 2
         extra_classes = data[2](record, field)
-      jq_row.append("<td class='#{ field } #{ extra_classes }'>#{ value }</td>")
+      sortable = ""
+      if data.length > 3
+        sortvalue = data[3](record, field)
+        sortable = "data-sortvalue='#{ sortvalue }'"
+      jq_row.append("<td class='#{ field } #{ extra_classes }' #{ sortable }>#{ value }</td>")
     return jq_row
     
   row_to_transaction_record: (jq_row) ->
@@ -481,6 +488,37 @@ class WSRC_admin_accounts
     $("#upload_start_date_input").datepicker("setDate", summary.min_date)
     $("#upload_end_date_input").datepicker("setDate", summary.max_date)
     @instance.handle_upload_data_changed(summary)
+
+    $(".sortable").each (idx, elt) ->
+      jq_elt = $(elt)
+      jq_root = jq_elt.parents(".sortable-root")
+      jq_parent = jq_root.find(".sortable-parent")
+      selector = jq_elt.data("selector")
+
+      sorter_func = wsrc.utils[jq_elt.data("sorter")]
+      sorter = (lhs, rhs) ->
+        mapper = (row) ->
+          jq_td = $(row).find(selector)
+          sortval = jq_td.data("sortvalue")
+          unless sortval
+            sortval = jq_td.text()
+          return sortval
+        sorter_func(lhs, rhs, mapper)
+        
+      jq_elt.on("click", (evt) ->
+        jq_elt = $(this)
+        elts = jq_parent.children().remove()
+        sorted_elts = wsrc.utils.jq_stable_sort(elts, sorter)
+        if jq_elt.data("reverse")
+          sorted_elts.reverse()
+          jq_elt.data("reverse", false)
+        else
+          jq_elt.data("reverse", true)
+        for child in sorted_elts
+          jq_parent.append(child)
+        wsrc.utils.apply_alt_class(jq_parent.children(), "alt")
+      )
+        
     return null
     
 admin = wsrc.utils.add_object_if_unset(window.wsrc, "admin")

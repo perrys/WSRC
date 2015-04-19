@@ -32,17 +32,17 @@ jQuery(document).ready(function(){
         <legend>Summary</legend>
         <form action="#" method="GET">{% csrf_token %}
           <div class="information-table ui-corner-all">
-            <table>
+            <table class="sortable-root">
               <thead>
                 <tr class="header">
-                  <th>Category</th>
+                  <th class="sortable" data-selector="td.category" data-sorter="lexical_sorter">Category</th>
                   <th>#&nbsp;Transactions</th>
                   <th>Incoming</th>
                   <th>Outgoing</th>
-                  <th>Net</th>
+                  <th class="sortable" data-selector="td.net_total" data-sorter="numeric_sorter">Net</th>
                 </tr>
               </thead>
-              <tbody></tbody>
+              <tbody class="sortable-parent"></tbody>
             </table>
           </div>
           <div class="ui-field-contain">
@@ -72,7 +72,7 @@ jQuery(document).ready(function(){
         </form>
       </fieldset>
       <div class="container">
-        <table class="transactions" id="transaction-upload-table">
+        <table class="transactions sortable-root" id="transaction-upload-table">
           <thead>
             <tr class="header">
               <th>Date Issued</th>
@@ -86,7 +86,7 @@ jQuery(document).ready(function(){
               <th>Balance</th>
             </tr>
           </thead>
-          <tbody>
+          <tbody class="sortable-parent">
           </tbody>
         </table>
       </div>
