@@ -22,6 +22,20 @@ class WSRC_utils
       obj[prop_name] = val
     return val
     
+  @numeric_sorter: (lhs, rhs, mapper) ->
+    if mapper
+      lhs = mapper(lhs)
+      rhs = mapper(rhs)
+    lhs = parseFloat(lhs)
+    rhs = parseFloat(rhs)
+    if isNaN(lhs)
+      if isNaN(rhs)
+        return 0
+      return -1
+    if isNaN(rhs)
+      return 1
+    return lhs - rhs
+
   @lexical_sorter: (lhs, rhs, mapper) ->
     if mapper
       lhs = mapper(lhs)
@@ -159,5 +173,14 @@ class WSRC_utils
       filtered:   filtered
       unfiltered: unfiltered
     }
-    
+
+  @apply_alt_class: (jq_rows, alt_class) ->
+    odd = false
+    jq_rows.each (idx, elt) ->
+      jq_row = $(elt)
+      if odd then jq_row.addClass(alt_class) else jq_row.removeClass(alt_class)
+      odd = not odd
+      return null
+
+        
 WSRC_utils.add_to_namespace("utils", WSRC_utils)
