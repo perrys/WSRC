@@ -6,7 +6,7 @@
 class WSRC_admin_accounts_model
 
   constructor: (category_list, @account_map) ->
-    @category_map = wsrc.utils.map_by_id(category_list)
+    @set_categories(category_list)
     for id, transactions of @account_map
       WSRC_admin_accounts_model.set_balances(transactions)
 
@@ -22,6 +22,10 @@ class WSRC_admin_accounts_model
 
   has_category: (id) ->
     return @category_map[id]?
+
+  set_categories: (category_list) ->
+    @category_map = wsrc.utils.map_by_id(category_list)
+    return null
 
   get_id_category_pairs: () ->
     cat_list = ([parseInt(id), cat] for id, cat of @category_map)
@@ -86,6 +90,7 @@ class WSRC_admin_accounts_model
     return {
       incoming: incoming
       outgoing: outgoing * -1.0
+      net_total: incoming + outgoing 
       count: count
       category_totals: category_totals
       max_date: max_date
@@ -104,6 +109,7 @@ class WSRC_admin_accounts_view
     @jq_account_transactions_tbody = $('#transactions_tab table.transactions tbody')
     @jq_upload_transactions_tbody = $('#upload_tab table.transactions tbody')
     @jq_summary_tbody = $("#transactions_tab .information-table tbody")
+    @jq_summary_tfoot = $("#transactions_tab .information-table tfoot")
     @jq_category_tbody = $('table.categories tbody')
     @data_row_selector = 'tr:not(.header)'
 
@@ -184,7 +190,7 @@ class WSRC_admin_accounts_view
         if idx > 0 # skip blank option
           unless cat_exists(parseInt(elt.value))
             elt.parentElement.removeChild(elt)
-      for category in category_list
+      for [cat_id, category] in category_list
         unless jq_select.find("option[value='#{ category.id }']").length > 0
           jq_select.append("<option value='#{ category.id }'>#{ category.description }</option>")
     return null
@@ -235,12 +241,7 @@ class WSRC_admin_accounts_view
     return null
 
   set_transaction_summary: (summary) ->
-    @jq_summary_tbody.children().each (idx, elt) ->
-      jq_row = $(elt)
-      cat_id = parseInt(jq_row.data('id'))
-      cat_summary = summary.category_totals[cat_id]
-      unless cat_summary
-        cat_summary = {count: 0, incoming: 0, outgoing: 0, net_total: 0}
+    set_row = (jq_row, cat_summary) ->
       jq_row.find("td.count").text(cat_summary.count)
       jq_row.find("td.incoming").text(cat_summary.incoming.toFixed(2))
       jq_row.find("td.outgoing").text(cat_summary.outgoing.toFixed(2))
@@ -251,6 +252,15 @@ class WSRC_admin_accounts_view
         jq_net_total.addClass('debit').removeClass('credit')
       else
         jq_net_total.removeClass('debit').removeClass('credit')
+      
+    @jq_summary_tbody.children().each (idx, elt) ->
+      jq_row = $(elt)
+      cat_id = parseInt(jq_row.data('id'))
+      cat_summary = summary.category_totals[cat_id]
+      unless cat_summary
+        cat_summary = {count: 0, incoming: 0, outgoing: 0, net_total: 0}
+      set_row(jq_row, cat_summary)
+    set_row(@jq_summary_tfoot.children(), summary)
     return null
 
   get_account_id: () ->
@@ -399,10 +409,12 @@ class WSRC_admin_accounts_view
     rows = @jq_upload_transactions_tbody.find(@data_row_selector)
     transactions = []
     rows.each (idx, elt) =>
-      transaction = @row_to_transaction_record($(elt))
-      date = wsrc.utils.iso_to_js_date(transaction.date_issued)
-      if date >= start_date and date <= end_date  
-        transactions.push(transaction)
+      jq_elt = $(elt)
+      if jq_elt.find("input[name='duplicate']:checked").length != 1
+        transaction = @row_to_transaction_record($(elt))
+        date = wsrc.utils.iso_to_js_date(transaction.date_issued)
+        if date >= start_date and date <= end_date  
+          transactions.push(transaction)
     return transactions    
 
 ################################################################################
@@ -437,7 +449,7 @@ class WSRC_admin_accounts
       if e.ctrlKey and e.which == 66 # 'b' key 
         e.preventDefault()
         @view.open_swing_dialog()
-      if e.ctrlKey and e.which == 190 # 'b' key 
+      if e.altKey and e.which == 82 # 'r' key 
         e.preventDefault()
         @reload_account()
     )
@@ -470,6 +482,22 @@ class WSRC_admin_accounts
           callback.apply(this)
     jqmask.mask("Updating...")
     wsrc.ajax.ajax_bare_helper("/data/accounts/category/", records, opts, "PUT")
+
+  refresh_categories: () ->
+    csrf_token = $("input[name='csrfmiddlewaretoken']").val()
+    jqmask = $("body")
+    opts =
+      csrf_token:  $("input[name='csrfmiddlewaretoken']").val()
+      failureCB: (xhr, status) -> 
+        jqmask.unmask()
+        alert("ERROR #{ xhr.status }: #{ xhr.statusText }\nResponse: #{ xhr.responseText }\n\Update failed.")
+      successCB: (data, status, jq_xhr) =>
+        jqmask.unmask()
+        @model.set_categories(data)
+        @handle_categories_updated()
+        @apply_categories()
+    jqmask.mask("Refreshing...")
+    wsrc.ajax.ajax_bare_helper("/data/accounts/category/", null, opts, "GET")
 
   save_category: (ui) ->
     row = $(ui).parents('tr')
@@ -644,7 +672,7 @@ class WSRC_admin_accounts
     $("#upload_transaction_count_input").val(summary.count)
     $("#upload_incoming_input").val(summary.incoming.toFixed(2))
     $("#upload_outgoing_input").val(summary.outgoing.toFixed(2))
-    uncategorized = summary.category_totals["undefined"]?.count
+    uncategorized = summary.category_totals[null]?.count
     if uncategorized
       $("#upload_uncategorized_count_input").val(uncategorized)
       $("#upload_uncategorized_count_input").parents("div.ui-field-contain").show()
