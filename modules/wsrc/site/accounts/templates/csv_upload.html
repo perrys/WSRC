@@ -9,8 +9,12 @@
   <script type="text/javascript">
 jQuery(document).ready(function(){
   var categories = {{ categories_data|safe }};
-  var transactions = {{ transaction_data|safe }};
-  wsrc.admin.accounts.onReady(categories, transactions)
+  var accounts = {
+{% for id, transaction_data in account_data.items %}
+  {{ id }}: {{ transaction_data|safe }},
+{% endfor %}
+  };
+  wsrc.admin.accounts.onReady(categories, accounts)
 });
   </script>
 
@@ -42,7 +46,17 @@ jQuery(document).ready(function(){
                   <th class="sortable" data-selector="td.net_total" data-sorter="numeric_sorter">Net</th>
                 </tr>
               </thead>
-              <tbody class="sortable-parent"></tbody>
+              <tbody class="sortable-parent">
+{% for category in categories %}
+                <tr data-id='{{ category.id }}'>
+                  <td class='category'><input type='checkbox' onclick="wsrc.admin.accounts.on('update_transactions_table')"> {{ category.description }}</td>
+                  <td class='count'> <td class='incoming'></td>
+                  <td class='outgoing'></td>
+                  <td class='net_total'></td>
+                </tr>
+{% endfor %}
+
+              </tbody>
             </table>
           </div>
           <div class="ui-field-contain">
@@ -53,20 +67,20 @@ jQuery(document).ready(function(){
 {% endfor %}
             </select>
           </div>
-          {% usekwacro createfield_adhoc "Start Date" "start_date" "transactions_start_date_input" "datepicker datepicker-three-months" "wsrc.admin.accounts.on('set_transaction_summary')" %}
-          {% usekwacro createfield_adhoc "End Date"   "end_date"   "transactions_end_date_input"   "datepicker datepicker-today" "wsrc.admin.accounts.on('set_transaction_summary')" %}
+          {% usekwacro createfield_adhoc "Start Date" "start_date" "transactions_start_date_input" "datepicker datepicker-three-months" "wsrc.admin.accounts.on('update_transaction_and_summary_tables')" %}
+          {% usekwacro createfield_adhoc "End Date"   "end_date"   "transactions_end_date_input"   "datepicker datepicker-today" "wsrc.admin.accounts.on('update_transaction_and_summary_tables')" %}
           <div class="ui-field-contain">
             <label>Date Type:</label>
             <div class="radio-buttonset">
-              <input name="transactions_date_type" id="transactions_cleared" type="radio" value="date_cleared" checked="checked"><label for="transactions_cleared">Cleared</label>
-              <input name="transactions_date_type" id="transactions_issued"  type="radio" value="date_issued"><label for="transactions_issued">Issued</label>
+              <input name="transactions_date_type" id="transactions_cleared" type="radio" value="date_cleared" checked="checked" onchange="wsrc.admin.accounts.on('update_transaction_and_summary_tables')"><label for="transactions_cleared">Cleared</label>
+              <input name="transactions_date_type" id="transactions_issued"  type="radio" value="date_issued" onchange="wsrc.admin.accounts.on('update_transaction_and_summary_tables')"><label for="transactions_issued">Issued</label>
             </div>
           </div>
           <div class="ui-field-contain">
             <label>First Date:</label>
             <div class="radio-buttonset">
-              <input name="transactions_date_ordering" id="dates_descending" type="radio" value="descending" checked="checked"><label for="dates_descending">Newest</label>
-              <input name="transactions_date_ordering" id="dates_ascending"  type="radio" value="ascending"><label for="dates_ascending">Oldest</label>
+              <input name="transactions_date_ordering" id="dates_descending" type="radio" value="descending" onchange="wsrc.admin.accounts.on('update_transaction_and_summary_tables')" checked="checked"><label for="dates_descending">Newest</label>
+              <input name="transactions_date_ordering" id="dates_ascending"  type="radio" value="ascending" onchange="wsrc.admin.accounts.on('update_transaction_and_summary_tables')"><label for="dates_ascending">Oldest</label>
             </div>
           </div>
         </form>
@@ -170,8 +184,8 @@ jQuery(document).ready(function(){
       <div class="button-bar">      
         <input type='button' value="New Row" onclick="wsrc.admin.accounts.on('add_category_row', null, true)" class="edit" style="display: none;"/>
         <div class="radio-buttonset">
-          <input type="radio" id="radio_view_mode" name="radio" value="view" onchange="wsrc.admin.accounts.on('toggle_category_edit_mode', this)" checked="checked"><label for="radio_view_mode">View</label>
-          <input type="radio" id="radio_edit_mode" name="radio" value="edit" onchange="wsrc.admin.accounts.on('toggle_category_edit_mode', this)"><label for="radio_edit_mode">Edit</label>
+          <input type="radio" id="radio_view_mode" name="category_view_mode" value="view" onchange="wsrc.admin.accounts.on('toggle_category_edit_mode', this)" checked="checked"><label for="radio_view_mode">View</label>
+          <input type="radio" id="radio_edit_mode" name="category_view_mode" value="edit" onchange="wsrc.admin.accounts.on('toggle_category_edit_mode', this)"><label for="radio_edit_mode">Edit</label>
         </div>
       </div>
       <table class="categories">
