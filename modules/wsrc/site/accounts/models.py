@@ -11,6 +11,7 @@ class Category(models.Model):
   description  = models.CharField(('Expense/Income Description'), max_length=128)
   regex  = models.CharField(('Matching (Regular) Expression'), max_length=512)
   ordering = models.IntegerField(unique=True)
+  is_reconciling = models.BooleanField(default=False) 
   last_updated = models.DateTimeField(auto_now=True)
   last_updated_by = models.ForeignKey(User)
   def __unicode__(self):
