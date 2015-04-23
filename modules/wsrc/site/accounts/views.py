@@ -66,6 +66,8 @@ class TransactionView(rest_generics.ListAPIView):
             tran['account'] = account
             tran['category'] = categories[int(tran['category'])]
             tran['last_updated_by'] = request.user
+            if 'date_cleared' in tran and len(tran['date_cleared']) < 10:
+                tran['date_cleared'] = None
             models.append(Transaction(**tran))
         with transaction.atomic():
             for model in models:
@@ -151,25 +153,27 @@ def accounts_view(request, account_name=None):
         for cvt in [("Outgoing", "Amount", -1.0), ("Income", "Amount", 1.0), ("Transfers", "Amount", -1.0), ("Item", "Comment"), ("Chq No", "Number")]:
             convert(*cvt)
         return row
-    account = None
-    if account_name is not None:
-        account = Account.objects.get(name==account_name)
-    def isduplicate(row):
-        if account is None:
-            return False
-        matches = account.transaction_set.filter(date_issued = row["Date"])
-        if row["Amount"]:
-            matches = matches.filter(amount = row["Amount"])
-        return len(matches) == 1
 
     if request.method == 'POST':
         form = UploadFileForm(request.POST, request.FILES)
         if form.is_valid():
+            account = Account.objects.get(pk=request.POST['account'])
+            def isduplicate(row):
+                if account is None:
+                    return False
+                if "Amount" not in row:
+                    return False
+                datestr = row["Date"]
+                datestr = datestr[6:10] + "-" + datestr[3:5] + "-" + datestr[0:2]
+                matches = account.transaction_set.filter(date_issued = datestr)
+                matches = matches.filter(amount = float(row["Amount"]))
+                return len(matches) == 1
+        
             reader = csv.DictReader(gen(request.FILES['file']))
             data = [preprocess_row(row) for row in reader]
             for row in data:
-                if isduplicate(row):
-                    print "** duplicate: " + str(row)
+                row["x_duplicate"] = isduplicate(row)
+
 
     else:
         form = UploadFileForm()
