@@ -1,98 +1,196 @@
 
-
+################################################################################
+# Model - contains a local copy of the accounts database
+################################################################################
   
-class WSRC_admin_accounts 
+class WSRC_admin_accounts_model
+
+  constructor: (category_list, @account_map) ->
+    @category_map = wsrc.utils.map_by_id(category_list)
+    for id, transactions of @account_map
+      WSRC_admin_accounts_model.set_balances(transactions)
+
+  get_transaction_list: (account_id) ->  
+    transactions = @account_map[account_id]
+
+  set_transaction_list: (account_id, transactions) ->
+    WSRC_admin_accounts_model.set_balances(transactions)
+    @account_map[account_id] = transactions
+    
+  get_category: (id) ->
+    return @category_map[id]
+
+  has_category: (id) ->
+    return @category_map[id]?
+
+  get_id_category_pairs: () ->
+    cat_list = ([parseInt(id), cat] for id, cat of @category_map)
+    mapper = (pair) ->
+      pair[1].description
+    cat_list.sort (lhs, rhs) ->
+      wsrc.utils.lexical_sort(lhs, rhs, mapper)
+    return cat_list
+
+  get_catetory_regex_test_pairs: () ->
+    test_list = []
+    for id, category_object of @category_map
+      try
+        test_list.push([id, new RegExp(category_object.regex), category_object.ordering])
+      catch error
+        alert(error)
+    test_list.sort((lhs, rhs) -> lhs[2] - rhs[2])
+    return test_list
+    
+  @set_balances = (transactions) ->
+    balance = 0
+    for transaction in transactions
+      unless transaction.date_cleared
+        continue
+      balance += transaction.amount
+      transaction.balance = balance
+
+  @summarise_transactions: (transactions, start_date, end_date, use_cleared_date) ->
+    incoming = 0.0
+    outgoing = 0.0
+    count = 0
+    min_date = end_date
+    max_date = start_date
+    category_totals = {}
+    get_category = (cat_id) ->
+      return wsrc.utils.get_or_add_property(category_totals, cat_id, () ->
+        {count: 0, incoming: 0, outgoing: 0, net_total: 0.0}
+      )
+    for transaction in transactions    
+      date = if use_cleared_date then transaction.date_cleared else transaction.date_issued
+      unless date
+        continue
+      date = wsrc.utils.iso_to_js_date(date)
+      if date >= start_date and date <= end_date
+        if date > max_date
+          max_date = date
+        if date < min_date
+          min_date = date
+        if transaction.category.length == 0
+          transaction.category = null
+        cat_summary = get_category(transaction.category)
+        cat_summary.count += 1
+        if not isNaN(transaction.amount)
+          cat_summary.net_total += transaction.amount
+          if transaction.amount > 0
+            incoming += transaction.amount
+            cat_summary.incoming += transaction.amount
+          else 
+            outgoing += transaction.amount
+            cat_summary.outgoing += transaction.amount * -1.0
+        count += 1
+    return {
+      incoming: incoming
+      outgoing: outgoing * -1.0
+      count: count
+      category_totals: category_totals
+      max_date: max_date
+      min_date: min_date
+    }
 
 
-  constructor: (category_list, @transaction_list) ->
+################################################################################
+# View - JQuery interactions with the html
+################################################################################
+
+class WSRC_admin_accounts_view
+  
+  constructor: (callbacks) ->
+    
     @jq_account_transactions_tbody = $('#transactions_tab table.transactions tbody')
     @jq_upload_transactions_tbody = $('#upload_tab table.transactions tbody')
     @jq_summary_tbody = $("#transactions_tab .information-table tbody")
     @jq_category_tbody = $('table.categories tbody')
     @data_row_selector = 'tr:not(.header)'
-    
-    @update_category_map(category_list)
+
+    # configure datepickers:
+    $("input.datepicker").datepicker().datepicker("option", "dateFormat", "dd/mm/yy")
+    today = new Date()
+    three_months_back = new Date(today.getYear() + 1900, today.getMonth()-3, today.getDate())
+    $("input.datepicker-three-months").datepicker("setDate", three_months_back)
+    $("input.datepicker-today").datepicker("setDate", today)
+
+    # configure other UI elements:
+    $("#tabs")
+      .tabs()
+      .removeClass("initiallyHidden")
+    $(".radio-buttonset").buttonset()
+    $(".button-bar > input[type='button']").button()
+    $('.information-set input').attr('readonly', true)    
+
+
+    @jq_summary_tbody.sortable(
+      items: @jq_summary_tbody.children()
+      placeholder: "ui-state-highlight"
+      update: () ->
+        wsrc.utils.apply_alt_class(@jq_summary_tbody.children(), "alt")
+    ).disableSelection()
+
     @jq_category_tbody.sortable(
       disabled: true
-      items: "> #{ @data_row_selector }"
+      items: @jq_category_tbody.children()
       placeholder: "ui-state-highlight"
-      update: () =>
-        @handle_category_order_updated.call(this)
-    ).disableSelection()
-    @add_category_rows(category_list)
-    @jq_summary_tbody.sortable(
-      items: "> #{ @data_row_selector }"
-      placeholder: "ui-state-highlight"
+      update: () ->
+       @jq_category_tbody.children().each (idx, elt) ->
+         $(elt).find('td.order').text(idx+1)
     ).disableSelection()
 
-    balance = 0
-    for transaction in @transaction_list
-      balance += transaction.amount
-      transaction.balance = balance
-      
-    @set_transaction_summary()
-
-    
-    dialog = $( "#swing-transaction-dialog" ).dialog(
+    @swing_dialog = $( "#swing-transaction-dialog" ).dialog(
       autoOpen: false
       height: "auto"
       width: "32em"
       modal: true
       buttons: 
         Create: () =>
-          @create_swing_transaction.call(this)
-        Cancel: () ->
-          dialog.dialog("close")
+          callbacks.create_swing_transaction(@swing_dialog)
+        Cancel: () =>
+          @swing_dialog.dialog("close")
     )
- 
-    form = dialog.find("form").on("submit", (event) ->
+    @swing_dialog.find("form").on("submit", (event) ->
       event.preventDefault()
-      @create_swing_transaction()
+      callbacks.create_swing_transaction(@swing_dialog)
     )
 
-    $(document).keydown( (e) ->
-      if e.ctrlKey and e.which == 66 # 'b' key 
-        e.preventDefault()
-        dialog.find("select").val("")
-        dialog.find("input[name='amount']").val("0.0")
-        dialog.find("input[name='comment']").val('')
-        dialog.dialog("open")
-        return false
-    )
+  # Open the dialog to swing balances from one category to another
+  open_swing_dialog: () -> 
+    @swing_dialog.find("select").val("")
+    @swing_dialog.find("input[name='amount']").val("0.0")
+    @swing_dialog.find("input[name='comment']").val('')
+    @swing_dialog.dialog("open")
+    return null
 
+  close_swing_dialog: () -> 
+    @swing_dialog.dialog("close")
+    return null
 
-  update_category_map: (category_list) ->
-    @categories = {}
-    for category in category_list
-      @categories[category.id] = category
-    category_list.sort (lhs, rhs) ->
-      wsrc.utils.lexical_sorter(lhs, rhs, (x) -> x.description)
+  # Set options in the combos in the upload transactions screen
+  update_category_options: (category_list) ->
+    cat_exists = (id) ->
+      for [cat_id, cat] in category_list
+        if id == cat_id
+          return true
+      return false
+    # add new categories and remove obsolete ones, but leave existing
+    # as they may have been manually selected
     jq_selects = @jq_upload_transactions_tbody.find(@data_row_selector).find("select[name='category']")
-    # add new categories and remove obsolete ones, but leave existing as they may have been manually selected
     jq_selects.each (idx, elt) =>
       jq_select = $(elt)
       options = jq_select.children()      
       options.each (idx, elt) =>
         if idx > 0 # skip blank option
-          unless @categories[parseInt(elt.value)]
+          unless cat_exists(parseInt(elt.value))
             elt.parentElement.removeChild(elt)
       for category in category_list
         unless jq_select.find("option[value='#{ category.id }']").length > 0
           jq_select.append("<option value='#{ category.id }'>#{ category.description }</option>")
-    alt = false
-    @jq_summary_tbody.children().remove()
-    for category in category_list
-      jq_row = $("<tr data-id='#{ category.id }'><td class='category'><input type='checkbox'> #{ category.description }</td><td class='count'> <td class='incoming'> <td class='outgoing'> <td class='net_total'> </tr>")
-      jq_row.find("input[type='checkbox']").on("change", () => @add_transaction_rows.call(this))
-      if alt
-        jq_row.addClass('alt')
-        alt = false
-      else
-        alt = true
-      @jq_summary_tbody.append(jq_row)
-      
-  toggle_category_edit_mode: (elt) ->
-    mode = $(elt).parent().find("input[name='#{ elt.name }']:checked").val()
+    return null
+
+  # Draw blank rows for the category summary table
+  toggle_category_edit_mode: (mode) ->
     button_selector = "#categories_tab .button-bar "
     if mode == "edit"
       @jq_category_tbody.find('.edit').add(button_selector + ".edit").show()
@@ -102,141 +200,41 @@ class WSRC_admin_accounts
       @jq_category_tbody.find('.edit').add(button_selector + ".edit").hide()
       @jq_category_tbody.find('.view').add(button_selector + ".view").show()
       @jq_category_tbody.sortable('disable')
-      @reset_categories(@apply_categories)
+    return null
 
-  handle_category_order_updated: () ->
-    jq_rows = @jq_category_tbody.find(@data_row_selector)
-    jq_rows.each (idx, elt) ->
-      $(elt).find('td.order').text(idx+1)
-
+  add_category_rows: (records, clear) ->
+    if clear
+      @jq_category_tbody.find(@data_row_selector).remove()
+    records.sort (lhs, rhs) ->
+      return lhs.ordering - rhs.ordering
+    for record in records
+      @add_category_row(record)
+    wsrc.utils.apply_alt_class(@jq_category_tbody.find(@data_row_selector), "alt")
+    return null
+    
   add_category_row: (row, edit_mode) ->
-    idx = @jq_category_tbody.find(@data_row_selector).length
+    len = @jq_category_tbody.find(@data_row_selector).length
     unless row
       row = {}
       row.name = row.description = row.regex = ''
-      row.ordering = idx+1
-    cls = if (idx & 1) == 1 then "alt" else ""
+      row.ordering = len+1
     jq_row_elt = $("""
-          <tr data-id='#{ row.id }' class='#{ cls }'>
-            <td class='order'>#{ row.ordering } <button class='edit' onclick='wsrc.admin.accounts.on('remove_category_row', this);'></button></td>
-            <td class='name'><span class='view'>#{ row.name }</span>        <input name='name'        value='#{ row.name }'        class='edit'/></td>
-            <td class='desc'><span class='view'>#{ row.description }</span> <input name='description' value='#{ row.description }' class='edit'/></td>
-            <td class='regex'><span class='view'>#{ row.regex }</span>       <input name='regex'       value='#{ row.regex }'       class='edit'/></td>
-          </tr>
-            """)
-
+      <tr data-id='#{ row.id }'>
+      <td class='order'>#{ row.ordering } <button class='edit' onclick='wsrc.admin.accounts.on('remove_category_row', this);'></button></td>
+      <td class='name'><span class='view'>#{ row.name }</span>        <input name='name'        value='#{ row.name }'        class='edit'/></td>
+      <td class='desc'><span class='view'>#{ row.description }</span> <input name='description' value='#{ row.description }' class='edit'/></td>
+      <td class='regex'><span class='view'>#{ row.regex }</span>       <input name='regex'       value='#{ row.regex }'       class='edit'/></td>
+      </tr>
+      """)
     if edit_mode    
       jq_row_elt.find('.view').hide()
     else
       jq_row_elt.find('.edit').hide()
     jq_row_elt.find("button").button({icons: {primary: 'ui-icon-close'}})
     @jq_category_tbody.append(jq_row_elt)
+    return null
 
-  add_category_rows: (records, clear) ->
-    if clear
-      @jq_category_tbody.find(@data_row_selector).remove()
-
-    records.sort (lhs, rhs) ->
-      return lhs.ordering - rhs.ordering
-    for record in records
-      @add_category_row(record)
-     
-  reset_categories: (callback) ->
-    rows = @jq_category_tbody.find(@data_row_selector)
-    records = []
-    for row in rows
-      record = {}
-      for field in ["name", "description", "regex"]
-        record[field] = $(row).find("input[name='#{ field }']").val()
-      record.id = parseInt($(row).data('id'))
-      record.ordering = parseInt($(row).find('td.order').text())
-      records.push(record)
-    csrf_token = $("input[name='csrfmiddlewaretoken']").val()
-    jqmask = $("body")
-    opts =
-      csrf_token:  $("input[name='csrfmiddlewaretoken']").val()
-      failureCB: (xhr, status) -> 
-        jqmask.unmask()
-        alert("ERROR #{ xhr.status }: #{ xhr.statusText }\nResponse: #{ xhr.responseText }\n\Update failed.")
-      successCB: (data, status, jq_xhr) =>
-        jqmask.unmask()
-        @update_category_map(data)
-        @add_category_rows(data, true)
-        if callback
-          callback.apply(this)
-    jqmask.mask("Updating...")
-    wsrc.ajax.ajax_bare_helper("/data/accounts/category/", records, opts, "PUT")
-
-  save_category: (ui) ->
-    row = $(ui).parents('tr')
-    id = parseInt(row.data("id"))
-    record = @categories[id]
-    for field in ["name", "description", "regex"]
-      input = row.find("input[name='#{ field }']")
-      value = input.val()
-      record[field] = value
-      input.siblings("span").text(value)
-    csrf_token = $("input[name='csrfmiddlewaretoken']").val()
-    jqmask = $("body")
-    opts =
-      csrf_token:  $("input[name='csrfmiddlewaretoken']").val()
-      failureCB: (xhr, status) -> 
-        jqmask.unmask()
-        alert("ERROR #{ xhr.status }: #{ xhr.statusText }\nResponse: #{ xhr.responseText }\n\Update failed.")
-      successCB: (xhr, status) =>
-        jqmask.unmask()
-        wsrc.utils.toggle({target:ui})
-    jqmask.mask("Updating...")
-    wsrc.ajax.ajax_bare_helper("/data/accounts/category/#{ id }/", record, opts, "PATCH")
-
-  apply_categories: () ->
-    test_list = []
-    for id, category_object of @categories
-      try
-        test_list.push([id, new RegExp(category_object.regex), category_object.ordering])
-      catch error
-        alert(error)
-    test_list.sort((lhs, rhs) -> lhs[2] - rhs[2])
-    rows = @jq_upload_transactions_tbody.find(@data_row_selector)
-    set_category = (row, id) ->
-      row.find('select').val(id)
-    for row in rows
-      row = $(row)
-      for [id, regex] in test_list
-        found = false
-        for field in ['bank_memo', 'comment']
-          td_field = row.find("td.#{ field }")
-          input = td_field.find("input")
-          text = if input.length > 0 then input.val() else td_field.text()
-          if regex.test(text) 
-            set_category(row, id)
-            found = true
-            break
-        if found
-          break
-
-  get_transaction_filter: () ->
-    start_date = $("#transactions_start_date_input").datepicker("getDate")
-    end_date = $("#transactions_end_date_input").datepicker("getDate")
-    date_type = $("input[name='transactions_date_type']:checked").val()
-    categories = []
-    @jq_summary_tbody.children().each (idx, elt) ->
-      jq_row = $(elt)
-      if jq_row.find("td.category input[type='checkbox']").prop('checked')
-        categories.push(parseInt(jq_row.data('id')))
-    return (transaction) ->
-      date = transaction[date_type]
-      if date
-        date = wsrc.utils.iso_to_js_date(date)
-        if date <= end_date and date >= start_date
-          if categories.length == 0 or transaction.category in categories
-            return true
-      return false
-
-  set_transaction_summary: () ->
-    start_date = $("#transactions_start_date_input").datepicker("getDate")
-    end_date = $("#transactions_end_date_input").datepicker("getDate")
-    summary = @summarise_transactions(@transaction_list, start_date, end_date)
+  set_transaction_summary: (summary) ->
     @jq_summary_tbody.children().each (idx, elt) ->
       jq_row = $(elt)
       cat_id = parseInt(jq_row.data('id'))
@@ -253,35 +251,58 @@ class WSRC_admin_accounts
         jq_net_total.addClass('debit').removeClass('credit')
       else
         jq_net_total.removeClass('debit').removeClass('credit')
-    @add_transaction_rows()
+    return null
 
-  add_transaction_rows: () ->
-    alt_row = false
-    @jq_account_transactions_tbody.children().remove()
-    date_type = $("input[name='transactions_date_type']:checked").val()
-    date_order = $("input[name='transactions_date_ordering']:checked").val()
-    filter = @get_transaction_filter()
-    record_list = (rec for rec in @transaction_list when filter(rec))
-    if date_type == 'date_issued'
-      record_list.sort (lhs, rhs) =>
-        cmp = wsrc.utils.iso_to_js_date(lhs.date_issued) - wsrc.utils.iso_to_js_date(rhs.date_issued)
-        if cmp == 0
-          cmp = @categories[lhs.category].ordering - @categories[rhs.category].ordering
-        return cmp
+  get_account_id: () ->
+    parseInt($("#transactions_account_selector").val())
     
-    for record in record_list
-      jq_row = @transaction_record_to_row(record, date_type == 'date_cleared')
-      if alt_row
-        jq_row.addClass('alt')
-        alt_row = false
-      else
-        alt_row = true
-      @jq_account_transactions_tbody.append(jq_row)
+  get_category_data_from_dom: () ->
+    rows = @jq_category_tbody.find(@data_row_selector)
+    records = []
+    for row in rows
+      record = {}
+      for field in ["name", "description", "regex"]
+        record[field] = $(row).find("input[name='#{ field }']").val()
+      record.id = parseInt($(row).data('id'))
+      record.ordering = parseInt($(row).find('td.order').text())
+      records.push(record)
+    return records    
+
+  get_category_edit_mode: () ->
+    return $("#categories_tab input[name='category_view_mode']:checked").val()
+        
+  get_transaction_start_date: () ->
+    start_date = $("#transactions_start_date_input").datepicker("getDate")
+    
+  get_transaction_end_date: () ->
+    end_date = $("#transactions_end_date_input").datepicker("getDate")
+    
+  get_transaction_date_type: () ->
+    date_type = $("input[name='transactions_date_type']:checked").val()
+    
+  get_transaction_date_order: () ->
+    date_order = $("input[name='transactions_date_ordering']:checked").val()
+    
+  get_transaction_selected_category_ids: () ->
+    categories = []
+    @jq_summary_tbody.children().each (idx, elt) ->
+      jq_row = $(elt)
+      if jq_row.find("td.category input[type='checkbox']").prop('checked')
+        categories.push(parseInt(jq_row.data('id')))
+    return categories
+
+  add_transaction_rows: (transaction_list, date_type, category_mapper) ->
+    @jq_account_transactions_tbody.children().remove()
+    for record in transaction_list
+      jq_row = @transaction_record_to_row(record, date_type == 'date_cleared', category_mapper)
       jq_row.dblclick( (e) =>
         jq_row = $(e.delegateTarget)
         url = "/admin/accounts/transaction/#{ jq_row.data('id') }"
         window.open(url, "_blank")
       )
+      @jq_account_transactions_tbody.append(jq_row)
+    wsrc.utils.apply_alt_class(@jq_account_transactions_tbody.children(), "alt")
+    
     container = @jq_account_transactions_tbody.parents("div.container")
     outer_container1 = container.parent()
     outer_container2 = outer_container1.parent()
@@ -290,7 +311,7 @@ class WSRC_admin_accounts
     calc = -30 + outer_container2.height() - tab_bar.outerHeight(true) - fieldset.outerHeight(true) 
     container.css("max-height", "#{ calc }px")
     
-  transaction_record_to_row: (record, with_balance) ->
+  transaction_record_to_row: (record, with_balance, category_mapper) ->
     toBritish = (record, field) ->
       str = record[field]
       unless str
@@ -309,7 +330,7 @@ class WSRC_admin_accounts
       val.toFixed(2)
     category_name = (record, field) =>
       id = parseInt(record[field])
-      @categories[id].description
+      category_mapper(id).description
     mapping = [
       ['date_issued',  toBritish, blank, str]
       ['date_cleared', toBritish, blank, str]
@@ -383,12 +404,171 @@ class WSRC_admin_accounts
       if date >= start_date and date <= end_date  
         transactions.push(transaction)
     return transactions    
+
+################################################################################
+# Controller - initialize and respond to events
+################################################################################
+
+class WSRC_admin_accounts 
+
+  constructor: (@model) ->
+
+    # create the view object:
+    callbacks = 
+      create_swing_transaction: (dialog) =>
+        @create_swing_transaction(dialog.find("form"))
+        
+    @view = new WSRC_admin_accounts_view(callbacks)
+
+    # configure display of any upload data which was returned in the DOM:
+    start_date = new Date(0)
+    end_date   = new Date(2099, 1, 1)
+    upload_transactions = @view.get_upload_transaction_data(start_date, end_date)
+    if upload_transactions.length > 0
+      summary = WSRC_admin_accounts_model.summarise_transactions(upload_transactions, start_date, end_date)
+      $("#upload_start_date_input").datepicker("setDate", summary.min_date)
+      $("#upload_end_date_input").datepicker("setDate", summary.max_date)
+      @handle_upload_data_changed(summary)
+      @apply_categories()
+
+    @handle_categories_updated()    
+
+    $(document).keydown( (e) =>
+      if e.ctrlKey and e.which == 66 # 'b' key 
+        e.preventDefault()
+        @view.open_swing_dialog()
+      if e.ctrlKey and e.which == 190 # 'b' key 
+        e.preventDefault()
+        @reload_account()
+    )
+    @update_transaction_and_summary_tables()
+
+  handle_categories_updated: () ->
+    category_list = @model.get_id_category_pairs()
+    @view.update_category_options(category_list)
+    return null
+
+  toggle_category_edit_mode: () ->
+    mode = @view.get_category_edit_mode()
+    @view.toggle_category_edit_mode(mode)
+    unless mode == "edit"
+      @reset_categories(@apply_categories)
+     
+  reset_categories: (callback) ->
+    records = @view.get_category_data_from_dom()
+    csrf_token = $("input[name='csrfmiddlewaretoken']").val()
+    jqmask = $("body")
+    opts =
+      csrf_token:  $("input[name='csrfmiddlewaretoken']").val()
+      failureCB: (xhr, status) -> 
+        jqmask.unmask()
+        alert("ERROR #{ xhr.status }: #{ xhr.statusText }\nResponse: #{ xhr.responseText }\n\Update failed.")
+      successCB: (data, status, jq_xhr) =>
+        jqmask.unmask()
+        @handle_categories_updated()
+        if callback
+          callback.apply(this)
+    jqmask.mask("Updating...")
+    wsrc.ajax.ajax_bare_helper("/data/accounts/category/", records, opts, "PUT")
+
+  save_category: (ui) ->
+    row = $(ui).parents('tr')
+    id = parseInt(row.data("id"))
+    record = @model.get_category(id)
+    for field in ["name", "description", "regex"]
+      input = row.find("input[name='#{ field }']")
+      value = input.val()
+      record[field] = value
+      input.siblings("span").text(value)
+    csrf_token = $("input[name='csrfmiddlewaretoken']").val()
+    jqmask = $("body")
+    opts =
+      csrf_token:  $("input[name='csrfmiddlewaretoken']").val()
+      failureCB: (xhr, status) -> 
+        jqmask.unmask()
+        alert("ERROR #{ xhr.status }: #{ xhr.statusText }\nResponse: #{ xhr.responseText }\n\Update failed.")
+      successCB: (xhr, status) =>
+        jqmask.unmask()
+        wsrc.utils.toggle({target:ui})
+    jqmask.mask("Updating...")
+    wsrc.ajax.ajax_bare_helper("/data/accounts/category/#{ id }/", record, opts, "PATCH")
+
+  apply_categories: () ->
+    test_list = @model.get_catetory_regex_test_pairs()
+    jq_upload_transactions_tbody = $('#upload_tab table.transactions tbody')
+    rows = jq_upload_transactions_tbody.children()
+    set_category = (row, id) ->
+      row.find('select').val(id)
+    for row in rows
+      row = $(row)
+      for [id, regex] in test_list
+        found = false
+        for field in ['bank_memo', 'comment']
+          td_field = row.find("td.#{ field }")
+          input = td_field.find("input")
+          text = if input.length > 0 then input.val() else td_field.text()
+          if regex.test(text) 
+            set_category(row, id)
+            found = true
+            break
+        if found
+          break
+
+  get_transaction_filter: () ->
+    start_date = @view.get_transaction_start_date()
+    end_date   = @view.get_transaction_end_date()
+    date_type  = @view.get_transaction_date_type()
+    categories = @view.get_transaction_selected_category_ids()
+    return (transaction) ->
+      date = transaction[date_type]
+      if date
+        date = wsrc.utils.iso_to_js_date(date)
+        if date <= end_date and date >= start_date
+          if categories.length == 0 or transaction.category in categories
+            return true
+      return false
+
+  update_transaction_and_summary_tables: () ->
+    start_date = @view.get_transaction_start_date()
+    end_date   = @view.get_transaction_end_date()
+    date_type  = @view.get_transaction_date_type()
+    transaction_list = @model.get_transaction_list(@view.get_account_id())
+    summary    = WSRC_admin_accounts_model.summarise_transactions(transaction_list, start_date, end_date, date_type=='date_cleared')
+    @view.set_transaction_summary(summary)
+    @update_transactions_table(transaction_list)
+    return null
+
+  update_transactions_table: (transaction_list) ->
+    unless transaction_list?
+      transaction_list = @model.get_transaction_list(@view.get_account_id())
+    date_type = @view.get_transaction_date_type()   
+    date_order = @view.get_transaction_date_order()   
+    filter = @get_transaction_filter()
+    transactions = (rec for rec in transaction_list when filter(rec))
+    if date_type == 'date_issued'
+      temp = []
+      for rec in transactions
+        copy = {}
+        for k,v of rec
+          if k != 'balance'
+            copy[k] = v
+        temp.push(copy)
+      transactions = temp
+      transactions.sort (lhs, rhs) =>
+        cmp = wsrc.utils.iso_to_js_date(lhs.date_issued) - wsrc.utils.iso_to_js_date(rhs.date_issued)
+        if cmp == 0
+          cmp = @model.get_category(lhs.category).ordering - @model.get_category(rhs.category).ordering
+        return cmp
+    if date_order == 'descending'
+      transactions.reverse()
+    @view.add_transaction_rows(transactions, date_type, (id) => @model.get_category(id))
+    return null        
         
   upload_transactions: () ->
     start_date = $("#upload_start_date_input").datepicker("getDate")
     end_date   = $("#upload_end_date_input").datepicker("getDate")
     data =
-      transactions: @get_upload_transaction_data(start_date, end_date)
+      transactions: @view.get_upload_transaction_data(start_date, end_date)
       account: parseInt($("#upload_account_selector").val())
     csrf_token = $("input[name='csrfmiddlewaretoken']").val()
     jqmask = $("body")
@@ -402,52 +582,65 @@ class WSRC_admin_accounts
     jqmask.mask("Updating...")
     account = $("#upload_account_selector").val()
     wsrc.ajax.ajax_bare_helper("/data/accounts/account/#{ account }/transactions/", data, opts, "PUT")
-    
-  summarise_transactions: (transactions, start_date, end_date, use_cleared_date) ->
-    incoming = 0.0
-    outgoing = 0.0
-    count = 0
-    min_date = end_date
-    max_date = start_date
-    category_totals = {}
-    get_category = (cat_id) ->
-      return wsrc.utils.get_or_add_property(category_totals, cat_id, () -> {count: 0, incoming: 0, outgoing: 0, net_total: 0.0})
-    for transaction in transactions    
-      date = if use_cleared_date then transaction.date_cleared else transaction.date_issued
-      date = wsrc.utils.iso_to_js_date(date)
-      if date >= start_date and date <= end_date
-        if date > max_date
-          max_date = date
-        if date < min_date
-          min_date = date
-        if transaction.category.length == 0
-          transaction.category = "undefined"
-        cat_summary = get_category(transaction.category)
-        cat_summary.count += 1
-        if not isNaN(transaction.amount)
-          cat_summary.net_total += transaction.amount
-          if transaction.amount > 0
-            incoming += transaction.amount
-            cat_summary.incoming += transaction.amount
-          else 
-            outgoing += transaction.amount
-            cat_summary.outgoing += transaction.amount * -1.0
-        count += 1
-    return {
-      incoming: incoming
-      outgoing: outgoing * -1.0
-      count: count
-      category_totals: category_totals
-      max_date: max_date
-      min_date: min_date
-    }
+
+  reload_account: (account_id) ->
+    unless account_id
+      account_id = @view.get_account_id()
+    jqmask = $("body")
+    opts =
+      csrf_token:  $("input[name='csrfmiddlewaretoken']").val()
+      failureCB: (xhr, status) -> 
+        jqmask.unmask()
+        alert("ERROR #{ xhr.status }: #{ xhr.statusText }\nResponse: #{ xhr.responseText }\n\Update failed.")
+      successCB: (data, status, jq_xhr) =>
+        jqmask.unmask()
+        @model.set_transaction_list(account_id, data)
+        @update_transaction_and_summary_tables()
+    jqmask.mask("Reloading...")
+    wsrc.ajax.ajax_bare_helper("/data/accounts/account/#{ account_id }/transactions/", null, opts, "GET")
+
+  create_swing_transaction: (form) ->
+    account_id = @view.get_account_id()
+    from_category = form.find("select[name='from']").val()        
+    to_category   = form.find("select[name='from']").val()
+    date    = form.find("input[name='date']").datepicker("getDate")
+    amount  = form.find("input[name='amount']").val()
+    comment = form.find("input[name='comment']").val()
+    date = date.toISOString().substr(0,10)
+    data =      
+      account: account_id
+      transactions: [
+        category: from_category
+        date_issued: date
+        date_cleared: date
+        amount: -1.0 * amount
+        comment: comment
+      ,
+        category: to_category
+        date_issued: date
+        date_cleared: date
+        amount: 1.0 * amount
+        comment: comment
+      ]
+    jqmask = $("body")
+    opts =
+      csrf_token:  $("input[name='csrfmiddlewaretoken']").val()
+      failureCB: (xhr, status) -> 
+        jqmask.unmask()
+        alert("ERROR #{ xhr.status }: #{ xhr.statusText }\nResponse: #{ xhr.responseText }\n\Update failed.")
+      successCB: (data, status, jq_xhr) =>
+        jqmask.unmask()
+        @view.close_swing_dialog()
+        @reload_account(account_id)
+    wsrc.ajax.ajax_bare_helper("/data/accounts/account/#{ account_id }/transactions/", data, opts, "PUT")
+      
 
   handle_upload_data_changed: (summary) ->
     unless summary
       start_date = $("#upload_start_date_input").datepicker("getDate")
       end_date   = $("#upload_end_date_input").datepicker("getDate")
-      transactions = @get_upload_transaction_data(start_date, end_date)
-      summary = @summarise_transactions(transactions, start_date, end_date)
+      transactions = @view.get_upload_transaction_data(start_date, end_date)
+      summary = WSRC_admin_accounts_model.summarise_transactions(transactions, start_date, end_date)
     $("#upload_transaction_count_input").val(summary.count)
     $("#upload_incoming_input").val(summary.incoming.toFixed(2))
     $("#upload_outgoing_input").val(summary.outgoing.toFixed(2))
@@ -464,61 +657,10 @@ class WSRC_admin_accounts
     args = $.fn.toArray.call(arguments)
     @instance[method].apply(@instance, args[1..])
 
-  @onReady: (initial_categories, initial_transactions) ->
-    $("input.datepicker").datepicker().datepicker("option", "dateFormat", "dd/mm/yy")
-    today = new Date()
-    three_months_back = new Date(today.getYear() + 1900, today.getMonth()-3, today.getDate())
-    $("input.datepicker-three-months").datepicker("setDate", three_months_back)
-    $("input.datepicker-today").datepicker("setDate", today)
-
-    @instance = new WSRC_admin_accounts(initial_categories, initial_transactions)
-    @instance.apply_categories()
-    
-    $("#tabs")
-      .tabs()
-      .removeClass("initiallyHidden")
-    $(".radio-buttonset").buttonset()
-    $(".button-bar > input[type='button']").button()
-    $('.information-set input').attr('readonly', true)    
-
-    start_date = new Date(0)
-    end_date   = new Date(2099, 1, 1)
-    upload_transactions = @instance.get_upload_transaction_data(start_date, end_date)
-    summary = @instance.summarise_transactions(upload_transactions, start_date, end_date)
-    $("#upload_start_date_input").datepicker("setDate", summary.min_date)
-    $("#upload_end_date_input").datepicker("setDate", summary.max_date)
-    @instance.handle_upload_data_changed(summary)
-
-    $(".sortable").each (idx, elt) ->
-      jq_elt = $(elt)
-      jq_root = jq_elt.parents(".sortable-root")
-      jq_parent = jq_root.find(".sortable-parent")
-      selector = jq_elt.data("selector")
-
-      sorter_func = wsrc.utils[jq_elt.data("sorter")]
-      sorter = (lhs, rhs) ->
-        mapper = (row) ->
-          jq_td = $(row).find(selector)
-          sortval = jq_td.data("sortvalue")
-          unless sortval
-            sortval = jq_td.text()
-          return sortval
-        sorter_func(lhs, rhs, mapper)
-        
-      jq_elt.on("click", (evt) ->
-        jq_elt = $(this)
-        elts = jq_parent.children().remove()
-        sorted_elts = wsrc.utils.jq_stable_sort(elts, sorter)
-        if jq_elt.data("reverse")
-          sorted_elts.reverse()
-          jq_elt.data("reverse", false)
-        else
-          jq_elt.data("reverse", true)
-        for child in sorted_elts
-          jq_parent.append(child)
-        wsrc.utils.apply_alt_class(jq_parent.children(), "alt")
-      )
-        
+  @onReady: (initial_categories, initial_accounts) ->
+    model = new WSRC_admin_accounts_model(initial_categories, initial_accounts)
+    @instance = new WSRC_admin_accounts(model)
+    wsrc.utils.configure_sortables()
     return null
     
 admin = wsrc.utils.add_object_if_unset(window.wsrc, "admin")
