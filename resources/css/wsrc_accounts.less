@@ -1,6 +1,7 @@
 /* -*- mode: css;-*- */
 
 @color-alt-row: #eee;
+@color-ignore-row: #ee0;
 
 html, body{
   margin:0;
@@ -119,10 +120,17 @@ table {
     tr.alt td {
         background-color: @color-alt-row;
     }
+    tr.ignored td {
+        background-color: @color-ignore-row;
+    }
     th {
         text-align: left;
         padding: 0 2em 0.5em 0 ;
         border-bottom: #333 1px solid;
+    }
+    tfoot td {
+        padding-top: 0.5em;
+        border-top: #333 1px solid;
     }
     td {
         text-align: left;
