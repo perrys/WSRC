@@ -4,6 +4,7 @@
 <head>
   <link rel="stylesheet" href="/static/css/all_accounts.css">
   <script src="/static/js/all_admin_accounts.js"></script>
+  <script type="text/javascript" src="https://www.google.com/jsapi"></script>
   <title>Account Management - Woking Squash Rackets Club</title>
 
   <script type="text/javascript">
@@ -16,6 +17,8 @@ jQuery(document).ready(function(){
   };
   wsrc.admin.accounts.onReady(categories, accounts)
 });
+  google.load("visualization", "1.1", {packages:["line"]});
+//  google.setOnLoadCallback(drawChart);
   </script>
 
 </head>
@@ -27,7 +30,7 @@ jQuery(document).ready(function(){
   <div id="tabs" class="initiallyHidden">
     <ul>
       <li><a href="#transactions_tab">Transactions</a></li>
-      <li><a href="#categories_tab">Categories</a></li>
+      <li><a href="#analysis_tab">Anaysis</a></li>
       <li><a href="#upload_tab">Upload</a></li>
     </ul>
 
@@ -48,12 +51,14 @@ jQuery(document).ready(function(){
               </thead>
               <tbody class="sortable-parent">
 {% for category in categories %}
+{% if not category.is_reconciling %}
                 <tr data-id='{{ category.id }}'>
                   <td class='category'><input type='checkbox' onclick="wsrc.admin.accounts.on('update_transactions_table')"> {{ category.description }}</td>
                   <td class='count'> <td class='incoming'></td>
                   <td class='outgoing'></td>
                   <td class='net_total'></td>
                 </tr>
+{% endif %}
 {% endfor %}
               </tbody>
               <tfoot>
@@ -69,7 +74,7 @@ jQuery(document).ready(function(){
           </div>
           <div class="ui-field-contain">
             <label for="transactions_account_selector">Account:</label>
-            <select name="account" id="transactions_account_selector" class="ui-corner-all">
+            <select name="account" id="transactions_account_selector" class="ui-corner-all" onchange="wsrc.admin.accounts.on('update_transaction_and_summary_tables')">
 {% for acc in accounts %}
               <option value="{{ acc.id }}" {% if account.id == acc.id %}selected="selected"{% endif %}>{{ acc.name }}</option>
 {% endfor %}
@@ -94,7 +99,7 @@ jQuery(document).ready(function(){
         </form>
       </fieldset>
       <div class="container">
-        <table class="transactions sortable-root" id="transaction-upload-table">
+        <table class="transactions sortable-root">
           <thead>
             <tr class="header">
               <th>Date Issued</th>
@@ -112,6 +117,39 @@ jQuery(document).ready(function(){
           </tbody>
         </table>
       </div>
+    </div>
+
+    <div id="analysis_tab">
+ <script type="text/javascript">
+    function drawChart() {
+      var data = google.visualization.arrayToDataTable([
+        ["Element", "Density", { role: "style" } ],
+        ["Copper", 8.94, "#b87333"],
+        ["Silver", 10.49, "silver"],
+        ["Gold", 19.30, "gold"],
+        ["Platinum", 21.45, "color: #e5e4e2"]
+      ]);
+
+      var view = new google.visualization.DataView(data);
+      view.setColumns([0, 1,
+                       { calc: "stringify",
+                         sourceColumn: 1,
+                         type: "string",
+                         role: "annotation" },
+                       2]);
+
+      var options = {
+        title: "Density of Precious Metals, in g/cm^3",
+        width: 600,
+        height: 400,
+        bar: {groupWidth: "95%"},
+        legend: { position: "none" },
+      };
+      var chart = new google.visualization.BarChart(document.getElementById("chart_div"));
+      chart.draw(view, options);
+  }
+  </script>
+      <div id="chart_div"></div>
     </div>
 
     <div id="upload_tab" class="fixed-height-wrapper">
@@ -155,7 +193,7 @@ jQuery(document).ready(function(){
         </fieldset>
       </form>
 {% endif %}
-  <div class="container">
+    <div class="container">
       <table class="transactions" id="transaction-upload-table">
         <thead>
           <tr class="header">
@@ -175,7 +213,7 @@ jQuery(document).ready(function(){
 {% if row.Amount or row.Number %}
           <tr class="{% cycle '' 'alt' %} {% if  row.x_duplicate %}ignored{% endif %}">
             <td class="date_issued">{{ row.Date }}</td>
-            <td class="date_cleared">{% if row.Cleared|lower == "y" %}{{ row.Date }}{% endif %}</td>
+            <td class="date_cleared">{% if "Cleared" in row %}{% if row.Cleared|lower == "y" %}{{ row.Date }}{% endif %}{% else %}{{ row.Date }}{% endif %}</td>
             <td class="amount {% if row.Amount|parse_float < 0.0 %}debit{% else %}credit{% endif %}" >{{ row.Amount }}</td>
             <td class="bank_code">{{ row.Subcategory }}</td>
             <td class="bank_number">{{ row.Number }}</td>
@@ -194,26 +232,6 @@ jQuery(document).ready(function(){
           </tr>
 {% endif %}
 {% endfor %}
-        </tbody>
-      </table>
-      </div>
-    </div>
-    <div id="categories_tab">
-      <div class="button-bar">      
-        <input type='button' value="New Row" onclick="wsrc.admin.accounts.on('add_category_row', null, true)" class="edit" style="display: none;"/>
-        <div class="radio-buttonset">
-          <input type="radio" id="radio_view_mode" name="category_view_mode" value="view" onchange="wsrc.admin.accounts.on('toggle_category_edit_mode', this)" checked="checked"><label for="radio_view_mode">View</label>
-          <input type="radio" id="radio_edit_mode" name="category_view_mode" value="edit" onchange="wsrc.admin.accounts.on('toggle_category_edit_mode', this)"><label for="radio_edit_mode">Edit</label>
-        </div>
-      </div>
-      <table class="categories">
-        <tbody>
-          <tr class="header">
-            <th class='order'>Order</th>
-            <th class='name'>Name</th>
-            <th class='desc'>Description</th>
-            <th>Regular Expression</th>
-          </tr>
         </tbody>
       </table>
     </div>
