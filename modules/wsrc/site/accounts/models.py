@@ -35,5 +35,5 @@ class Transaction(models.Model):
     return "[{account}] {date} {amount} {category}".format(account=self.account.name, date=self.date_issued, amount=self.amount, category=self.category.name)
   
   class Meta:
-    ordering=["date_cleared", "category__ordering", "date_issued", "-amount", "bank_memo", "comment"]
+    ordering=["date_cleared", "category__ordering", "date_issued", "amount", "bank_memo", "comment"]
 
