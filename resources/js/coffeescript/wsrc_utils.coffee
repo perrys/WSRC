@@ -174,6 +174,12 @@ class WSRC_utils
       unfiltered: unfiltered
     }
 
+  @map_by_id: (alist) ->
+    amap = {}
+    for item in alist
+      amap[item.id] = item
+    return amap
+
   @apply_alt_class: (jq_rows, alt_class) ->
     odd = false
     jq_rows.each (idx, elt) ->
@@ -182,5 +188,36 @@ class WSRC_utils
       odd = not odd
       return null
 
+  @configure_sortables: () ->
+    $(".sortable").each (idx, elt) ->
+      jq_elt = $(elt)
+      jq_root = jq_elt.parents(".sortable-root")
+      jq_parent = jq_root.find(".sortable-parent")
+      selector = jq_elt.data("selector")
+
+      sorter_func = wsrc.utils[jq_elt.data("sorter")]
+      sorter = (lhs, rhs) ->
+        mapper = (row) ->
+          jq_td = $(row).find(selector)
+          sortval = jq_td.data("sortvalue")
+          unless sortval
+            sortval = jq_td.text()
+          return sortval
+        sorter_func(lhs, rhs, mapper)
+        
+      jq_elt.on("click", (evt) ->
+        jq_elt = $(this)
+        elts = jq_parent.children().remove()
+        sorted_elts = wsrc.utils.jq_stable_sort(elts, sorter)
+        if jq_elt.data("reverse")
+          sorted_elts.reverse()
+          jq_elt.data("reverse", false)
+        else
+          jq_elt.data("reverse", true)
+        for child in sorted_elts
+          jq_parent.append(child)
+        wsrc.utils.apply_alt_class(jq_parent.children(), "alt")
+      )
+        
         
 WSRC_utils.add_to_namespace("utils", WSRC_utils)
