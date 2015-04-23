@@ -55,8 +55,16 @@ jQuery(document).ready(function(){
                   <td class='net_total'></td>
                 </tr>
 {% endfor %}
-
               </tbody>
+              <tfoot>
+                <tr data-id='total'>
+                  <td class='category'><input type='checkbox' checked="checked" disabled="disabled"> All</td>
+                  <td class='count'>
+                  <td class='incoming'></td>
+                  <td class='outgoing'></td>
+                  <td class='net_total'></td>
+                </tr>
+              </tfoot>
             </table>
           </div>
           <div class="ui-field-contain">
@@ -136,6 +144,14 @@ jQuery(document).ready(function(){
         <fieldset name="file_upload" class="ui-corner-all">
           <legend>File Upload</legend>
 {% usekwacro createfield form.file True %}
+          <div class="ui-field-contain">
+            <label for="upload_account_selector">Account:</label>
+            <select name="account" id="upload_account_selector" >
+{% for acc in accounts %}
+              <option value="{{ acc.id }}">{{ acc.name }}</option>
+{% endfor %}
+            </select>
+          </div>
         </fieldset>
       </form>
 {% endif %}
@@ -151,14 +167,15 @@ jQuery(document).ready(function(){
             <th>Bank Memo</th>
             <th>Comment</th>
             <th>Category</th>
+            <th>Ignore</th>
           </tr>
         </thead>
         <tbody>
 {% for row in csv_data %}
 {% if row.Amount or row.Number %}
-          <tr class="{% cycle '' 'alt' %}">
+          <tr class="{% cycle '' 'alt' %} {% if  row.x_duplicate %}ignored{% endif %}">
             <td class="date_issued">{{ row.Date }}</td>
-            <td class="date_cleared">{% if row.Date_Cleared|default:"undef" == "undef" %}{{ row.Date }}{% else %}{{ row.Date_Cleared }}{% endif %}</td>
+            <td class="date_cleared">{% if row.Cleared|lower == "y" %}{{ row.Date }}{% endif %}</td>
             <td class="amount {% if row.Amount|parse_float < 0.0 %}debit{% else %}credit{% endif %}" >{{ row.Amount }}</td>
             <td class="bank_code">{{ row.Subcategory }}</td>
             <td class="bank_number">{{ row.Number }}</td>
@@ -173,6 +190,7 @@ jQuery(document).ready(function(){
 {% endfor %}
               </select>
             </td>
+            <td class="duplicate"><input type="checkbox" name="duplicate" {% if  row.x_duplicate %}checked="checked"{% endif %}  onchange="wsrc.admin.accounts.on('handle_upload_data_changed')"></td>
           </tr>
 {% endif %}
 {% endfor %}
