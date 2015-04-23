@@ -151,11 +151,26 @@ def accounts_view(request, account_name=None):
         for cvt in [("Outgoing", "Amount", -1.0), ("Income", "Amount", 1.0), ("Transfers", "Amount", -1.0), ("Item", "Comment"), ("Chq No", "Number")]:
             convert(*cvt)
         return row
+    account = None
+    if account_name is not None:
+        account = Account.objects.get(name==account_name)
+    def isduplicate(row):
+        if account is None:
+            return False
+        matches = account.transaction_set.filter(date_issued = row["Date"])
+        if row["Amount"]:
+            matches = matches.filter(amount = row["Amount"])
+        return len(matches) == 1
+
     if request.method == 'POST':
         form = UploadFileForm(request.POST, request.FILES)
         if form.is_valid():
             reader = csv.DictReader(gen(request.FILES['file']))
             data = [preprocess_row(row) for row in reader]
+            for row in data:
+                if isduplicate(row):
+                    print "** duplicate: " + str(row)
+
     else:
         form = UploadFileForm()
 
@@ -163,12 +178,12 @@ def accounts_view(request, account_name=None):
     categories_serialiser = CategorySerializer(categories, many=True)
     categories_data = JSON_RENDERER.render(categories_serialiser.data)
     accounts = Account.objects.all().order_by('name')
-    if account_name is None:
-        account_name = "Community"
-    account = Account.objects.all().get(name=account_name)
-    transactions = account.transaction_set.all()
-    transaction_serializer = TransactionSerializer(transactions, many=True)
-    transaction_data = JSON_RENDERER.render(transaction_serializer.data)
+    account_data = {}
+    for account in accounts:
+        transactions = account.transaction_set.all()
+        transaction_serializer = TransactionSerializer(transactions, many=True)
+        transaction_data = JSON_RENDERER.render(transaction_serializer.data)
+        account_data[account.id] = transaction_data
 
     return render(request, 'csv_upload.html', {
         'form': form,
@@ -176,8 +191,7 @@ def accounts_view(request, account_name=None):
         'categories': categories,
         'categories_data': categories_data,
         'accounts': accounts,
-        'account': account,
-        'transaction_data': transaction_data,
+        'account_data': account_data,
     })        
         
         
