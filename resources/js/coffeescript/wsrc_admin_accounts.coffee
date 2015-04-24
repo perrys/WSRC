@@ -11,7 +11,13 @@ class WSRC_admin_accounts_model
       WSRC_admin_accounts_model.set_balances(transactions)
 
   get_transaction_list: (account_id) ->  
-    transactions = @account_map[account_id]
+    transactions = @account_map[account_id].transaction_set
+
+  get_account_name: (account_id) ->  
+    transactions = @account_map[account_id].name
+
+  get_account_ids: () ->
+    return (id for id, transactions of @account_map)
 
   set_transaction_list: (account_id, transactions) ->
     WSRC_admin_accounts_model.set_balances(transactions)
@@ -53,7 +59,7 @@ class WSRC_admin_accounts_model
       balance += transaction.amount
       transaction.balance = balance
 
-  summarise_transactions: (transactions, start_date, end_date, use_cleared_date) ->
+  summarise_transactions: (transactions, start_date, end_date, use_cleared_date, include_reconciling_categories) ->
     incoming = 0.0
     outgoing = 0.0
     count = 0
@@ -68,9 +74,10 @@ class WSRC_admin_accounts_model
       date = if use_cleared_date then transaction.date_cleared else transaction.date_issued
       unless date
         continue
-      category = @get_category(transaction.category)
-      if category.is_reconciling
-        continue
+      unless include_reconciling_categories
+        category = @get_category(transaction.category)
+        if category.is_reconciling
+          continue
       date = wsrc.utils.iso_to_js_date(date)
       if date >= start_date and date <= end_date
         if date > max_date
@@ -370,7 +377,7 @@ class WSRC_admin_accounts
     end_date   = new Date(2099, 1, 1)
     upload_transactions = @view.get_upload_transaction_data(start_date, end_date)
     if upload_transactions.length > 0
-      summary = @model.summarise_transactions(upload_transactions, start_date, end_date)
+      summary = @model.summarise_transactions(upload_transactions, start_date, end_date, false, true)
       $("#upload_start_date_input").datepicker("setDate", summary.min_date)
       $("#upload_end_date_input").datepicker("setDate", summary.max_date)
       @handle_upload_data_changed(summary)
@@ -555,7 +562,7 @@ class WSRC_admin_accounts
       start_date = $("#upload_start_date_input").datepicker("getDate")
       end_date   = $("#upload_end_date_input").datepicker("getDate")
       transactions = @view.get_upload_transaction_data(start_date, end_date)
-      summary = @model.summarise_transactions(transactions, start_date, end_date)
+      summary = @model.summarise_transactions(transactions, start_date, end_date, false, true)
     $("#upload_transaction_count_input").val(summary.count)
     $("#upload_incoming_input").val(summary.incoming.toFixed(2))
     $("#upload_outgoing_input").val(summary.outgoing.toFixed(2))
@@ -567,7 +574,54 @@ class WSRC_admin_accounts
     else
       $("#upload_uncategorized_count_input").parents("div.ui-field-contain").hide()
       $("#upload_go_button").attr('disabled', false)
-        
+
+  draw_line_chart: () ->
+    account_ids = @model.get_account_ids()
+    factory = () ->
+      o = {}
+      for i in account_ids
+        o[i] = null
+      return o
+    date_to_datum_map = {}
+    for id in account_ids
+      transactions = @model.get_transaction_list(id)
+      for transaction in transactions
+        date = transaction.date_cleared
+        if date
+          obj = wsrc.utils.get_or_add_property(date_to_datum_map, date, factory)
+          obj[id] = transaction.balance
+          obj.date = date
+    list = (obj for date, obj of date_to_datum_map)
+    list.sort (lhs, rhs) -> wsrc.utils.lexical_sorter(lhs, rhs, (x) -> x.date)
+    data = new google.visualization.DataTable();
+    data.addColumn('date', 'Date');
+    for i in account_ids
+      data.addColumn('number', 'Community');
+      data.addColumn('number', 'Savings');
+    last_values = [list[0][1], list[0][2]]
+    for item in list
+      values = []
+      for i in [0,1]
+        val = item[i+1]
+        if val
+          last_values[i] = val
+        else
+          val = last_values[i]
+        values.push(val)
+      date = wsrc.utils.iso_to_js_date(date)        
+      data.addRow([item.date, values[0], values[1]])
+    options =
+      chart: 
+        title: 'Account Balances'
+        subtitle: '£'
+      width: 800
+      height: 500
+
+    chart = new google.charts.Line($('#analysis_tab .chart_div')[0])
+    chart.draw(data, options)
+    
+
+            
   @on: (method) ->
     args = $.fn.toArray.call(arguments)
     @instance[method].apply(@instance, args[1..])
