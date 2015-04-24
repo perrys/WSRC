@@ -18,11 +18,17 @@ import csv
 
 JSON_RENDERER = JSONRenderer()
 
+class TransactionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Transaction
+        fields = ["id", "account", "date_issued", "date_cleared", "amount", "category", "bank_transaction_category", "bank_number", "bank_memo", "comment"]
+
 class AccountSerializer(serializers.ModelSerializer):
-    transaction_set = serializers.PrimaryKeyRelatedField(many=True, queryset = Transaction.objects.all())
+#    transaction_set = serializers.PrimaryKeyRelatedField(many=True, queryset = Transaction.objects.all())
+    transaction_set = TransactionSerializer(many=True)
     class Meta:
         model = Account
-        depth = 1
+        depth = 2
         fields = ["name", "transaction_set"]
 
 class AccountListSerializer(serializers.ModelSerializer):
@@ -38,11 +44,6 @@ class AccountListView(rest_generics.ListCreateAPIView):
     queryset = Account.objects.all()
     serializer_class = AccountListSerializer
                                                    
-class TransactionSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Transaction
-        fields = ["id", "account", "date_issued", "date_cleared", "amount", "category", "bank_transaction_category", "bank_number", "bank_memo", "comment"]
-
 class TransactionView(rest_generics.ListAPIView):
     permission_classes = (rest_permissions.IsAuthenticated,)
     serializer_class = TransactionSerializer
@@ -184,10 +185,8 @@ def accounts_view(request, account_name=None):
     accounts = Account.objects.all().order_by('name')
     account_data = {}
     for account in accounts:
-        transactions = account.transaction_set.all()
-        transaction_serializer = TransactionSerializer(transactions, many=True)
-        transaction_data = JSON_RENDERER.render(transaction_serializer.data)
-        account_data[account.id] = transaction_data
+        account_serializer = AccountSerializer(account)
+        account_data[account.id] = JSON_RENDERER.render(account_serializer.data)
 
     return render(request, 'csv_upload.html', {
         'form': form,
