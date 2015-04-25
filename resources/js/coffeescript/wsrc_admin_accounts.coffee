@@ -7,8 +7,8 @@ class WSRC_admin_accounts_model
 
   constructor: (category_list, @account_map) ->
     @set_categories(category_list)
-    for id, transactions of @account_map
-      WSRC_admin_accounts_model.set_balances(transactions)
+    for id, account of @account_map
+      WSRC_admin_accounts_model.set_balances(account.transaction_set)
 
   get_transaction_list: (account_id) ->  
     transactions = @account_map[account_id].transaction_set
@@ -17,11 +17,11 @@ class WSRC_admin_accounts_model
     transactions = @account_map[account_id].name
 
   get_account_ids: () ->
-    return (id for id, transactions of @account_map)
+    return (id for id, account of @account_map)
 
   set_transaction_list: (account_id, transactions) ->
     WSRC_admin_accounts_model.set_balances(transactions)
-    @account_map[account_id] = transactions
+    @account_map[account_id].transaction_set = transactions
     
   get_category: (id) ->
     return @category_map[id]
@@ -50,7 +50,41 @@ class WSRC_admin_accounts_model
         alert(error)
     test_list.sort((lhs, rhs) -> lhs[2] - rhs[2])
     return test_list
-    
+
+  # return a list of data tuples - (date, acc_balance_1, acc_balance_2...)
+  get_merged_transaction_datapoints: () ->
+    account_ids = @get_account_ids()
+    factory = () ->
+      o = {}
+      for i in account_ids
+        o[i] = null
+      return o
+    date_to_datum_map = {}
+    # update the date dictionary with the latest balance for each day for each account
+    for id in account_ids
+      transactions = @get_transaction_list(id)
+      for transaction in transactions
+        date = transaction.date_cleared
+        if date
+          obj = wsrc.utils.get_or_add_property(date_to_datum_map, date, factory)
+          obj[id] = transaction.balance
+          obj.date = date
+    # convert dicionary to a date-sorted list:
+    list = (obj for date, obj of date_to_datum_map)
+    list.sort (lhs, rhs) -> wsrc.utils.lexical_sorter(lhs, rhs, (x) -> x.date)
+    # backfill blank values in all accounts:
+    last_values = {}
+    for id in account_ids
+        last_values[id] = null
+    for item in list
+      for id in account_ids
+        val = item[id]
+        if val
+          last_values[id] = val
+        else
+          item[id] = last_values[id]
+    return list
+        
   @set_balances = (transactions) ->
     balance = 0
     for transaction in transactions
@@ -58,6 +92,19 @@ class WSRC_admin_accounts_model
         continue
       balance += transaction.amount
       transaction.balance = balance
+
+  get_quarter_summaries: (transactions, years, quarter) ->
+    result = {}
+    for year in years
+      if quarter
+        month = (quarter-1) * 3
+        start_date = new Date(year, month, 1)
+        end_date = new Date(year, month+3, 0)
+      else
+        start_date = new Date(year, 0, 1)
+        end_date = new Date(year, 12, 0)
+      result[year] = @summarise_transactions(transactions, start_date, end_date, true)
+    return result
 
   summarise_transactions: (transactions, start_date, end_date, use_cleared_date, include_reconciling_categories) ->
     incoming = 0.0
@@ -245,12 +292,12 @@ class WSRC_admin_accounts_view
     @jq_account_transactions_tbody.children().remove()
     for record in transaction_list
       jq_row = @transaction_record_to_row(record, date_type == 'date_cleared', category_mapper)
+      @jq_account_transactions_tbody.append(jq_row)
       jq_row.dblclick( (e) =>
         jq_row = $(e.delegateTarget)
         url = "/admin/accounts/transaction/#{ jq_row.data('id') }"
         window.open(url, "editor")
       )
-      @jq_account_transactions_tbody.append(jq_row)
     wsrc.utils.apply_alt_class(@jq_account_transactions_tbody.children(), "alt")
     
     container = @jq_account_transactions_tbody.parents("div.container")
@@ -575,49 +622,62 @@ class WSRC_admin_accounts
       $("#upload_uncategorized_count_input").parents("div.ui-field-contain").hide()
       $("#upload_go_button").attr('disabled', false)
 
-  draw_line_chart: () ->
+  draw_quarterlies_chart: (years, quarter) ->
+    transactions = @model.get_transaction_list(1)
+    results = @model.get_quarter_summaries(transactions, years, quarter)
+    data = new google.visualization.DataTable();
+    data.addColumn('string', 'Category');
+    for year in years
+      data.addColumn('number', year)
+    for [id, cat] in @model.get_id_category_pairs()
+      if cat.is_reconciling
+        continue
+      row = [cat.description]
+      for year in years
+        summary = results[year]
+        amount = summary.category_totals[id]
+        unless amount
+          amount = 0.0
+        else
+          amount = amount.net_total
+        row.push(amount)
+      data.addRow(row)
+    options = 
+      chart: 
+        title: 'Quarterly Income and Expenditure'
+        subtitle: '£'
+      width: 800
+      height: 500
+      bars: 'horizontal'
+    chart = new google.charts.Bar($('#chart_pnl_tab .chart_div')[0])
+    chart.draw(data, options)
+      
+    
+  draw_balances_chart: (total_mode) ->
     account_ids = @model.get_account_ids()
-    factory = () ->
-      o = {}
-      for i in account_ids
-        o[i] = null
-      return o
-    date_to_datum_map = {}
-    for id in account_ids
-      transactions = @model.get_transaction_list(id)
-      for transaction in transactions
-        date = transaction.date_cleared
-        if date
-          obj = wsrc.utils.get_or_add_property(date_to_datum_map, date, factory)
-          obj[id] = transaction.balance
-          obj.date = date
-    list = (obj for date, obj of date_to_datum_map)
-    list.sort (lhs, rhs) -> wsrc.utils.lexical_sorter(lhs, rhs, (x) -> x.date)
+    list = @model.get_merged_transaction_datapoints()
     data = new google.visualization.DataTable();
     data.addColumn('date', 'Date');
-    for i in account_ids
-      data.addColumn('number', 'Community');
-      data.addColumn('number', 'Savings');
-    last_values = [list[0][1], list[0][2]]
+    if total_mode
+      data.addColumn('number', 'Total');
+    else
+      for id in account_ids
+        data.addColumn('number', @model.get_account_name(id));
     for item in list
-      values = []
-      for i in [0,1]
-        val = item[i+1]
-        if val
-          last_values[i] = val
-        else
-          val = last_values[i]
-        values.push(val)
-      date = wsrc.utils.iso_to_js_date(date)        
-      data.addRow([item.date, values[0], values[1]])
+      values = [wsrc.utils.iso_to_js_date(item.date)]
+      for id in account_ids
+        values.push(item[id])
+      if total_mode
+        data.addRow([values[0], wsrc.utils.sum(values[1..])])
+      else
+        data.addRow(values)
     options =
       chart: 
         title: 'Account Balances'
         subtitle: '£'
       width: 800
       height: 500
-
-    chart = new google.charts.Line($('#analysis_tab .chart_div')[0])
+    chart = new google.charts.Line($('#chart_balances_tab .chart_div')[0])
     chart.draw(data, options)
     
 
@@ -631,6 +691,11 @@ class WSRC_admin_accounts
     @instance = new WSRC_admin_accounts(model)
     wsrc.utils.configure_sortables()
     return null
+
+  @onGraphsReady: () ->
+    instance = WSRC_admin_accounts.instance
+#    if instance
+#      instance.draw_balances_chart(true)
     
 admin = wsrc.utils.add_object_if_unset(window.wsrc, "admin")
 admin.accounts = WSRC_admin_accounts
