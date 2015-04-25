@@ -17,8 +17,8 @@ jQuery(document).ready(function(){
   };
   wsrc.admin.accounts.onReady(categories, accounts)
 });
-  google.load("visualization", "1.1", {packages:["line"]});
-//  google.setOnLoadCallback(drawChart);
+  google.load("visualization", "1.1", {packages:["line", "bar"]});
+  google.setOnLoadCallback(wsrc.admin.accounts.onGraphsReady);
   </script>
 
 </head>
@@ -30,7 +30,8 @@ jQuery(document).ready(function(){
   <div id="tabs" class="initiallyHidden">
     <ul>
       <li><a href="#transactions_tab">Transactions</a></li>
-      <li><a href="#analysis_tab">Anaysis</a></li>
+      <li><a href="#chart_balances_tab">Balances</a></li>
+      <li><a href="#chart_pnl_tab">Profit and Loss</a></li>
       <li><a href="#upload_tab">Upload</a></li>
     </ul>
 
@@ -119,7 +120,10 @@ jQuery(document).ready(function(){
       </div>
     </div>
 
-    <div id="analysis_tab">
+    <div id="chart_balances_tab">
+      <div class="chart_div"></div>
+    </div>
+    <div id="chart_pnl_tab">
       <div class="chart_div"></div>
     </div>
 
