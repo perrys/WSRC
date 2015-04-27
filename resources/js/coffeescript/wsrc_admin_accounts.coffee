@@ -575,7 +575,7 @@ class WSRC_admin_accounts
     date    = form.find("input[name='date']").datepicker("getDate")
     amount  = form.find("input[name='amount']").val()
     comment = form.find("input[name='comment']").val()
-    date = date.toISOString().substr(0,10)
+    date = wsrc.utils.js_to_iso_date_str(date)
     data =      
       account: account_id
       transactions: [
@@ -675,8 +675,8 @@ class WSRC_admin_accounts
       chart: 
         title: 'Account Balances'
         subtitle: '£'
-      width: 800
-      height: 500
+      width: 1000
+      height: 600
     chart = new google.charts.Line($('#chart_balances_tab .chart_div')[0])
     chart.draw(data, options)
     
