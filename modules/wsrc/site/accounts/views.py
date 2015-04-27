@@ -188,7 +188,7 @@ def accounts_view(request, account_name=None):
         account_serializer = AccountSerializer(account)
         account_data[account.id] = JSON_RENDERER.render(account_serializer.data)
 
-    return render(request, 'csv_upload.html', {
+    return render(request, 'accounts.html', {
         'form': form,
         'csv_data': data,
         'categories': categories,
