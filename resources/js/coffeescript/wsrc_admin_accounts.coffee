@@ -195,6 +195,7 @@ class WSRC_admin_accounts_view
     three_months_back = new Date(today.getYear() + 1900, today.getMonth()-3, today.getDate())
     $("input.datepicker-three-months").datepicker("setDate", three_months_back)
     $("input.datepicker-today").datepicker("setDate", today)
+    $("input.datepicker-2000").datepicker("setDate", new Date(2000, 0, 1))
 
     # configure other UI elements:
     $("#tabs")
@@ -648,7 +649,7 @@ class WSRC_admin_accounts
     results = @model.get_quarter_summaries(years, quarter)
     data = new google.visualization.DataTable();
     data.addColumn('string', 'Category');
-    table = $("#chart_pnl_tab table")
+    table = $("#chart_comparables_tab table")
     thead_row = table.find("thead tr")
     thead_row.find("th:not('.category')").remove()
     tbody = table.find("tbody")
@@ -693,7 +694,7 @@ class WSRC_admin_accounts
       chartArea:
         width: 600
         height: 490
-    chart = new google.charts.Bar($('#chart_pnl_tab .chart_div')[0])
+    chart = new google.charts.Bar($('#chart_comparables_tab .chart_div')[0])
     @comparables_chart =
       chart: chart
       data: data
@@ -703,8 +704,8 @@ class WSRC_admin_accounts
   draw_comparables_chart: () ->
     c = @comparables_chart
     dataview = new google.visualization.DataView(c.data)
-    thead = $("#chart_pnl_tab table thead")
-    tbody = $("#chart_pnl_tab table tbody")
+    thead = $("#chart_comparables_tab table thead")
+    tbody = $("#chart_comparables_tab table tbody")
     visible_rows = []
     index = 0
     for [id, cat] in @model.get_id_category_pairs()
@@ -747,6 +748,9 @@ class WSRC_admin_accounts
         subtitle: '£'
       width: 1000
       height: 600
+      chartArea:
+        width: 400
+        height: 600
     chart = new google.charts.Line($('#chart_balances_tab .chart_div')[0])
     chart.draw(data, options)
     
@@ -764,8 +768,8 @@ class WSRC_admin_accounts
 
   @onGraphsReady: () ->
     instance = WSRC_admin_accounts.instance
-#    if instance
-#      instance.draw_balances_chart(true)
+    if instance
+      instance.draw_balances_chart()
     
 admin = wsrc.utils.add_object_if_unset(window.wsrc, "admin")
 admin.accounts = WSRC_admin_accounts

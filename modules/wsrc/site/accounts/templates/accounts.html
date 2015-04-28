@@ -31,6 +31,7 @@ jQuery(document).ready(function(){
     <ul>
       <li><a href="#transactions_tab">Transactions</a></li>
       <li><a href="#chart_balances_tab">Balances</a></li>
+      <li><a href="#chart_comparables_tab">Historic Analysis</a></li>
       <li><a href="#chart_pnl_tab">Profit and Loss</a></li>
       <li><a href="#upload_tab">Upload</a></li>
     </ul>
@@ -121,9 +122,27 @@ jQuery(document).ready(function(){
     </div>
 
     <div id="chart_balances_tab">
+      <fieldset name="transactions" class="ui-corner-all">
+        <legend>Chart Controls</legend>
+        <form action="#" method="GET">
+          <div class="ui-field-contain datepicker-range">
+            <label>Date Range: </label>
+            <input name="start_date" class="datepicker datepicker-2000"  onchange="wsrc.admin.accounts.on('draw_balances_table')"> &ndash;
+            <input name="end_date"   class="datepicker datepicker-today" onchange="wsrc.admin.accounts.on('draw_balances_table')">
+            
+          </div>
+          <div class="ui-field-contain">
+            <label>Balances:</label>
+            <div class="radio-buttonset">
+              <input name="balance_display_type" id="balances_separate" type="radio" value="balances_separate" checked="checked" onchange="wsrc.admin.accounts.on(draw_balances_table')"><label for="balances_separate">Separate</label>
+              <input name="balance_display_type" id="balances_combined"  type="radio" value="balances_combined" onchange="wsrc.admin.accounts.on('draw_balances_table')"><label for="balances_combined">Combined</label>
+            </div>
+          </div>
+        </form>
+      </fieldset>
       <div class="chart_div"></div>
     </div>
-    <div id="chart_pnl_tab">
+    <div id="chart_comparables_tab">
       <div class="chart_div"></div>
       <table class="summary-table">
         <thead>
