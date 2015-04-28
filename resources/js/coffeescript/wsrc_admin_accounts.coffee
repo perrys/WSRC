@@ -38,7 +38,7 @@ class WSRC_admin_accounts_model
     mapper = (pair) ->
       pair[1].description
     cat_list.sort (lhs, rhs) ->
-      wsrc.utils.lexical_sort(lhs, rhs, mapper)
+      wsrc.utils.lexical_sorter(lhs, rhs, mapper)
     return cat_list
 
   get_catetory_regex_test_pairs: () ->
@@ -93,7 +93,7 @@ class WSRC_admin_accounts_model
       balance += transaction.amount
       transaction.balance = balance
 
-  get_quarter_summaries: (transactions, years, quarter) ->
+  get_quarter_summaries: (years, quarter) ->
     result = {}
     for year in years
       if quarter
@@ -103,16 +103,36 @@ class WSRC_admin_accounts_model
       else
         start_date = new Date(year, 0, 1)
         end_date = new Date(year, 12, 0)
-      result[year] = @summarise_transactions(transactions, start_date, end_date, true)
+      yearly_category_totals = {}
+      incoming = outgoing = 0
+      for acc_id in @get_account_ids()             
+        transactions = @get_transaction_list(acc_id)
+        summary = @summarise_transactions(transactions, start_date, end_date, true, false, yearly_category_totals)
+        incoming += summary.incoming
+        outgoing += summary.outgoing
+      for id, cat_summary of yearly_category_totals      
+        cat_summary.is_significant = if cat_summary.is_significant then true else false
+        tollerance = 4
+        cat_summary.outgoing_pct = cat_summary.incoming_pct = 0.0
+        if cat_summary.outgoing > 0
+          cat_summary.outgoing_pct = 100 * cat_summary.outgoing/outgoing
+          if cat_summary.outgoing_pct  > tollerance
+            cat_summary.is_significant = true
+        if cat_summary.incoming > 0
+          cat_summary.incoming_pct = 100 * cat_summary.incoming/incoming
+          if cat_summary.incoming_pct  > tollerance
+            cat_summary.is_significant = true
+        console.log("#{ @get_category(id).description } - #{ cat_summary.is_significant } - #{ cat_summary.incoming } - #{ incoming }")
+      result[year] = yearly_category_totals
     return result
 
-  summarise_transactions: (transactions, start_date, end_date, use_cleared_date, include_reconciling_categories) ->
+  summarise_transactions: (transactions, start_date, end_date, use_cleared_date, include_reconciling_categories, existing_category_totals) ->
     incoming = 0.0
     outgoing = 0.0
     count = 0
     min_date = end_date
     max_date = start_date
-    category_totals = {}
+    category_totals = if existing_category_totals then existing_category_totals else {}
     get_category = (cat_id) ->
       return wsrc.utils.get_or_add_property(category_totals, cat_id, () ->
         {count: 0, incoming: 0, outgoing: 0, net_total: 0.0}
@@ -341,6 +361,7 @@ class WSRC_admin_accounts_view
     if with_balance
       mapping.push(['balance', ccy])
     jq_row = $("<tr data-id='#{ record.id }'></tr>")
+    innerHTML = ""
     for data in mapping
       field = data[0]
       value = data[1](record, field)
@@ -351,7 +372,8 @@ class WSRC_admin_accounts_view
       if data.length > 3
         sortvalue = data[3](record, field)
         sortable = "data-sortvalue='#{ sortvalue }'"
-      jq_row.append("<td class='#{ field } #{ extra_classes }' #{ sortable }>#{ value }</td>")
+      innerHTML += "<td class='#{ field } #{ extra_classes }' #{ sortable }>#{ value }</td>"
+    jq_row.html(innerHTML)
     return jq_row
     
   row_to_transaction_record: (jq_row) ->
@@ -623,34 +645,82 @@ class WSRC_admin_accounts
       $("#upload_go_button").attr('disabled', false)
 
   draw_quarterlies_chart: (years, quarter) ->
-    transactions = @model.get_transaction_list(1)
-    results = @model.get_quarter_summaries(transactions, years, quarter)
+    results = @model.get_quarter_summaries(years, quarter)
     data = new google.visualization.DataTable();
     data.addColumn('string', 'Category');
-    for year in years
+    table = $("#chart_pnl_tab table")
+    thead_row = table.find("thead tr")
+    thead_row.find("th:not('.category')").remove()
+    tbody = table.find("tbody")
+    tbody.find("td:not('.category')").remove()    
+    tbody.find("input[type='checkbox']").prop("checked", false)
+    for year, idx in years
       data.addColumn('number', year)
+      header = $("<th colspan='2' data-id='#{ year }'><input type='checkbox'> #{ year }</th>")
+      thead_row.append(header)
+      if idx > 0 and idx < (years.length - 1)
+        header.find('input').prop('checked', true)
+      header.find('input').on('change', () => @draw_comparables_chart())
     for [id, cat] in @model.get_id_category_pairs()
       if cat.is_reconciling
         continue
       row = [cat.description]
+      table_row = tbody.find("tr[data-id='#{ id }']")
+      is_significant = false
       for year in years
         summary = results[year]
-        amount = summary.category_totals[id]
-        unless amount
-          amount = 0.0
+        cat_summary = summary[id]
+        unless cat_summary
+          amount = pct = 0.0
         else
-          amount = amount.net_total
+          amount = cat_summary.net_total
+          pct = if cat_summary.net_total > 0 then cat_summary.incoming_pct else cat_summary.outgoing_pct
+#          console.log("#{ year } - #{ cat.description } - #{ cat_summary.is_significant }")
+          is_significant = is_significant || cat_summary.is_significant
         row.push(amount)
+        table_row.append("<td class='amount'>#{ amount.toFixed(2) }</td><td class='percent'>#{ pct.toFixed(0) }%</td>")
       data.addRow(row)
+      if is_significant
+        table_row.find("input[type='checkbox']").prop("checked", true)
+    period = if quarter == 0 then "Annual" else "Quarter #{ quarter }" 
     options = 
       chart: 
-        title: 'Quarterly Income and Expenditure'
+        title: "#{ period } Income and Expenditure"
         subtitle: '£'
       width: 800
       height: 500
       bars: 'horizontal'
+      chartArea:
+        width: 600
+        height: 490
     chart = new google.charts.Bar($('#chart_pnl_tab .chart_div')[0])
-    chart.draw(data, options)
+    @comparables_chart =
+      chart: chart
+      data: data
+      options: options
+    @draw_comparables_chart()
+    
+  draw_comparables_chart: () ->
+    c = @comparables_chart
+    dataview = new google.visualization.DataView(c.data)
+    thead = $("#chart_pnl_tab table thead")
+    tbody = $("#chart_pnl_tab table tbody")
+    visible_rows = []
+    index = 0
+    for [id, cat] in @model.get_id_category_pairs()
+      if cat.is_reconciling
+        continue
+      if tbody.find("tr[data-id='#{ id }'] input[type='checkbox']:checked").length > 0
+        visible_rows.push(index)
+      ++index
+    visible_columns = [0]
+    for index in [1...c.data.getNumberOfColumns()]
+      year = c.data.getColumnLabel(index)
+      if thead.find("th[data-id='#{ year }'] input[type='checkbox']:checked").length > 0
+        visible_columns.push(index)
+    dataview.setRows(visible_rows)
+    dataview.setColumns(visible_columns)
+    c.chart.draw(dataview, c.options)
       
     
   draw_balances_chart: (total_mode) ->
