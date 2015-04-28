@@ -24,6 +24,10 @@ fieldset {
     color: red;
 }
 
+#tabs.ui-widget-content {
+    border: 0;
+}
+
 .ui-field-contain {
     padding: 0;
     margin: 0.5em 0;
@@ -148,6 +152,14 @@ table {
         padding-left: 0.5em;
         padding-right: 0;
     }
+    td.percent {
+        text-align: right;
+        padding-left: 0;
+        padding-right: 0;
+        color: #555;
+        font-size: 0.9em;
+        font-style: oblique;
+    }
     &.transactions {
         margin-top: 1em;
         height: 100%;
@@ -190,3 +202,10 @@ div.button-bar {
     }
 }
 
+#chart_pnl_tab {
+    .chart_div {
+      width: 800px;
+      height: 500px;
+      padding-bottom: 1em;
+    }
+}
