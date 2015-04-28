@@ -125,6 +125,23 @@ jQuery(document).ready(function(){
     </div>
     <div id="chart_pnl_tab">
       <div class="chart_div"></div>
+      <table class="summary-table">
+        <thead>
+          <tr>
+            <th class='category'>Category</th>
+          </tr>
+        </thead>
+        <tbody>
+{% for category in categories %}
+{% if not category.is_reconciling %}
+          <tr data-id='{{ category.id }}'>
+            <td class='category'><input type='checkbox' onclick="wsrc.admin.accounts.on('draw_comparables_chart')"> {{ category.description }}</td>
+          </tr>
+{% endif %}
+{% endfor %}
+
+        </tbody>
+      </table>
     </div>
 
     <div id="upload_tab" class="fixed-height-wrapper">
