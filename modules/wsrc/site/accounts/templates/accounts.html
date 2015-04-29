@@ -17,8 +17,6 @@ jQuery(document).ready(function(){
   };
   wsrc.admin.accounts.onReady(categories, accounts)
 });
-  google.load("visualization", "1.1", {packages:["line", "bar"]});
-  google.setOnLoadCallback(wsrc.admin.accounts.onGraphsReady);
   </script>
 
 </head>
@@ -127,15 +125,15 @@ jQuery(document).ready(function(){
         <form action="#" method="GET">
           <div class="ui-field-contain datepicker-range">
             <label>Date Range: </label>
-            <input name="start_date" class="datepicker datepicker-2000"  onchange="wsrc.admin.accounts.on('draw_balances_table')"> &ndash;
-            <input name="end_date"   class="datepicker datepicker-today" onchange="wsrc.admin.accounts.on('draw_balances_table')">
+            <input name="start_date" class="datepicker datepicker-2000"  onchange="wsrc.admin.accounts.on('draw_balances_chart')"> &ndash;
+            <input name="end_date"   class="datepicker datepicker-today" onchange="wsrc.admin.accounts.on('draw_balances_chart')">
             
           </div>
           <div class="ui-field-contain">
             <label>Balances:</label>
             <div class="radio-buttonset">
-              <input name="balance_display_type" id="balances_separate" type="radio" value="balances_separate" checked="checked" onchange="wsrc.admin.accounts.on(draw_balances_table')"><label for="balances_separate">Separate</label>
-              <input name="balance_display_type" id="balances_combined"  type="radio" value="balances_combined" onchange="wsrc.admin.accounts.on('draw_balances_table')"><label for="balances_combined">Combined</label>
+              <input name="balance_display_type" id="balances_separate" type="radio" value="separate" onchange="wsrc.admin.accounts.on('draw_balances_chart')" checked="checked"><label for="balances_separate">Separate</label>
+              <input name="balance_display_type" id="balances_combined" type="radio" value="combined" onchange="wsrc.admin.accounts.on('draw_balances_chart')"><label for="balances_combined">Combined</label>
             </div>
           </div>
         </form>
