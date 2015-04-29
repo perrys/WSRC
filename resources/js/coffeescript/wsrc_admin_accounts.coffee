@@ -51,8 +51,18 @@ class WSRC_admin_accounts_model
     test_list.sort((lhs, rhs) -> lhs[2] - rhs[2])
     return test_list
 
+  get_transaction_min_max_dates: () ->
+    max_date = "1970-01-01"
+    min_date = wsrc.utils.js_to_iso_date_str(new Date())
+    for account_id in @get_account_ids()
+      for transaction in @get_transaction_list(account_id)
+        min_date = if transaction.date_issued < min_date then transaction.date_issued else min_date
+        max_date = if transaction.date_issued > max_date then transaction.date_issued else max_date
+    return [min_date, max_date]
+      
   # return a list of data tuples - (date, acc_balance_1, acc_balance_2...)
-  get_merged_transaction_datapoints: () ->
+  get_merged_transaction_datapoints: (start_date, end_date) ->
+    [start_date, end_date] = (wsrc.utils.js_to_iso_date_str(d) for d in [start_date, end_date])
     account_ids = @get_account_ids()
     factory = () ->
       o = {}
@@ -83,7 +93,7 @@ class WSRC_admin_accounts_model
           last_values[id] = val
         else
           item[id] = last_values[id]
-    return list
+    return (x for x in list when x.date >= start_date and x.date <= end_date)
         
   @set_balances = (transactions) ->
     balance = 0
@@ -425,8 +435,16 @@ class WSRC_admin_accounts_view
         date = wsrc.utils.iso_to_js_date(transaction.date_issued)
         if date >= start_date and date <= end_date  
           transactions.push(transaction)
-    return transactions    
+    return transactions
 
+  get_balance_chart_mode: () ->
+    $("#chart_balances_tab input[name='balance_display_type']:checked").val()
+    
+  get_balance_chart_date_range: () ->
+    start = $("#chart_balances_tab input[name='start_date']").datepicker("getDate")
+    end   = $("#chart_balances_tab input[name='end_date']").datepicker("getDate")
+    return [start, end]
+    
 ################################################################################
 # Controller - initialize and respond to events
 ################################################################################
@@ -646,6 +664,7 @@ class WSRC_admin_accounts
       $("#upload_go_button").attr('disabled', false)
 
   draw_quarterlies_chart: (years, quarter) ->
+    [min_date, max_date] = @model.get_transaction_min_max_dates()
     results = @model.get_quarter_summaries(years, quarter)
     data = new google.visualization.DataTable();
     data.addColumn('string', 'Category');
@@ -724,16 +743,21 @@ class WSRC_admin_accounts
     c.chart.draw(dataview, c.options)
       
     
-  draw_balances_chart: (total_mode) ->
-    account_ids = @model.get_account_ids()
-    list = @model.get_merged_transaction_datapoints()
+  draw_balances_chart: () ->
+    
+    total_mode = @view.get_balance_chart_mode() == "combined"
+    date_range = @view.get_balance_chart_date_range()
+    list = @model.get_merged_transaction_datapoints(date_range[0], date_range[1])
+    
     data = new google.visualization.DataTable();
     data.addColumn('date', 'Date');
+    account_ids = @model.get_account_ids()
     if total_mode
       data.addColumn('number', 'Total');
     else
       for id in account_ids
         data.addColumn('number', @model.get_account_name(id));
+        
     for item in list
       values = [wsrc.utils.iso_to_js_date(item.date)]
       for id in account_ids
@@ -742,16 +766,18 @@ class WSRC_admin_accounts
         data.addRow([values[0], wsrc.utils.sum(values[1..])])
       else
         data.addRow(values)
+        
     options =
-      chart: 
-        title: 'Account Balances'
-        subtitle: '£'
+      title: 'Account Balances (£)'
       width: 1000
-      height: 600
+      height: 500
       chartArea:
-        width: 400
-        height: 600
-    chart = new google.charts.Line($('#chart_balances_tab .chart_div')[0])
+        left: 80
+        top:  40
+        width:  750
+        height: 400
+        
+    chart = new google.visualization.LineChart($('#chart_balances_tab .chart_div')[0])
     chart.draw(data, options)
     
 
@@ -764,12 +790,14 @@ class WSRC_admin_accounts
     model = new WSRC_admin_accounts_model(initial_categories, initial_accounts)
     @instance = new WSRC_admin_accounts(model)
     wsrc.utils.configure_sortables()
-    return null
 
-  @onGraphsReady: () ->
-    instance = WSRC_admin_accounts.instance
-    if instance
-      instance.draw_balances_chart()
+    google.load("visualization", "1.1",
+      packages: ["corechart", "line", "bar"]
+      callback: () =>
+        @instance.draw_balances_chart()
+    )    
+
+    return null
     
 admin = wsrc.utils.add_object_if_unset(window.wsrc, "admin")
 admin.accounts = WSRC_admin_accounts
