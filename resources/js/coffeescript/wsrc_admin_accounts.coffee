@@ -58,7 +58,7 @@ class WSRC_admin_accounts_model
       for transaction in @get_transaction_list(account_id)
         min_date = if transaction.date_issued < min_date then transaction.date_issued else min_date
         max_date = if transaction.date_issued > max_date then transaction.date_issued else max_date
-    return [min_date, max_date]
+    return (wsrc.utils.iso_to_js_date(x) for x in [min_date, max_date])
       
   # return a list of data tuples - (date, acc_balance_1, acc_balance_2...)
   get_merged_transaction_datapoints: (start_date, end_date) ->
@@ -132,7 +132,6 @@ class WSRC_admin_accounts_model
           cat_summary.incoming_pct = 100 * cat_summary.incoming/incoming
           if cat_summary.incoming_pct  > tollerance
             cat_summary.is_significant = true
-        console.log("#{ @get_category(id).description } - #{ cat_summary.is_significant } - #{ cat_summary.incoming } - #{ incoming }")
       result[year] = yearly_category_totals
     return result
 
@@ -202,7 +201,7 @@ class WSRC_admin_accounts_view
     # configure datepickers:
     $("input.datepicker").datepicker().datepicker("option", "dateFormat", "dd/mm/yy")
     today = new Date()
-    three_months_back = new Date(today.getYear() + 1900, today.getMonth()-3, today.getDate())
+    three_months_back = new Date(today.getFullYear(), today.getMonth()-3, today.getDate())
     $("input.datepicker-three-months").datepicker("setDate", three_months_back)
     $("input.datepicker-today").datepicker("setDate", today)
     $("input.datepicker-2000").datepicker("setDate", new Date(2000, 0, 1))
@@ -444,7 +443,26 @@ class WSRC_admin_accounts_view
     start = $("#chart_balances_tab input[name='start_date']").datepicker("getDate")
     end   = $("#chart_balances_tab input[name='end_date']").datepicker("getDate")
     return [start, end]
-    
+
+  set_comparables_table_headers: (years, change_cb) ->
+    thead_row = $("#chart_comparables_tab table thead tr")
+    thead_row.find("th:not('.category')").remove()
+    for year, idx in years
+      header = $("<th colspan='2' data-id='#{ year }'><input type='checkbox'> #{ year }</th>")
+      thead_row.append(header)
+      if idx > 0 and idx < (years.length - 1)
+        header.find('input').prop('checked', true)
+      header.find('input').on('change', change_cb)
+    return null
+
+  add_comparables_table_row: (id, data, is_significant) ->
+    table_row = $("#chart_comparables_tab tbody tr[data-id='#{ id }']")
+    table_row.find("td:not('.category')").remove()    
+    for col_data in data
+      table_row.append("<td class='amount'>#{ col_data.amount.toFixed(2) }</td><td class='percent'>#{ col_data.pct.toFixed(0) }%</td>")
+    table_row.find("input[type='checkbox']").prop("checked", is_significant)
+    return null
+             
 ################################################################################
 # Controller - initialize and respond to events
 ################################################################################
@@ -663,29 +681,28 @@ class WSRC_admin_accounts
       $("#upload_uncategorized_count_input").parents("div.ui-field-contain").hide()
       $("#upload_go_button").attr('disabled', false)
 
-  draw_quarterlies_chart: (years, quarter) ->
+  init_and_draw_charts: () ->      
+    @draw_balances_chart()
+    @init_comparables_chart(0)
+    @draw_comparables_chart()
+    
+  init_comparables_chart: (quarter) ->
+    
     [min_date, max_date] = @model.get_transaction_min_max_dates()
+    years = [min_date.getFullYear()..max_date.getFullYear()]
     results = @model.get_quarter_summaries(years, quarter)
     data = new google.visualization.DataTable();
+    
     data.addColumn('string', 'Category');
-    table = $("#chart_comparables_tab table")
-    thead_row = table.find("thead tr")
-    thead_row.find("th:not('.category')").remove()
-    tbody = table.find("tbody")
-    tbody.find("td:not('.category')").remove()    
-    tbody.find("input[type='checkbox']").prop("checked", false)
-    for year, idx in years
+    for year in years
       data.addColumn('number', year)
-      header = $("<th colspan='2' data-id='#{ year }'><input type='checkbox'> #{ year }</th>")
-      thead_row.append(header)
-      if idx > 0 and idx < (years.length - 1)
-        header.find('input').prop('checked', true)
-      header.find('input').on('change', () => @draw_comparables_chart())
+    @view.set_comparables_table_headers(years, () => @draw_comparables_chart())
+    
     for [id, cat] in @model.get_id_category_pairs()
       if cat.is_reconciling
         continue
       row = [cat.description]
-      table_row = tbody.find("tr[data-id='#{ id }']")
+      table_row = []
       is_significant = false
       for year in years
         summary = results[year]
@@ -695,27 +712,29 @@ class WSRC_admin_accounts
         else
           amount = cat_summary.net_total
           pct = if cat_summary.net_total > 0 then cat_summary.incoming_pct else cat_summary.outgoing_pct
-#          console.log("#{ year } - #{ cat.description } - #{ cat_summary.is_significant }")
           is_significant = is_significant || cat_summary.is_significant
         row.push(amount)
-        table_row.append("<td class='amount'>#{ amount.toFixed(2) }</td><td class='percent'>#{ pct.toFixed(0) }%</td>")
+        table_row.push
+          amount: amount
+          pct: pct
       data.addRow(row)
-      if is_significant
-        table_row.find("input[type='checkbox']").prop("checked", true)
+      @view.add_comparables_table_row(id, table_row, is_significant)
+      
     period = if quarter == 0 then "Annual" else "Quarter #{ quarter }" 
     options = 
       chart: 
         title: "#{ period } Income and Expenditure"
         subtitle: '£'
-      width: 800
+      width: 1000
       height: 500
       bars: 'horizontal'
       chartArea:
-        width: 600
+        left: 150
+        width: 700
         height: 490
-    chart = new google.charts.Bar($('#chart_comparables_tab .chart_div')[0])
+
     @comparables_chart =
-      chart: chart
+      chart: new google.visualization.BarChart($('#chart_comparables_tab .chart_div')[0])
       data: data
       options: options
     @draw_comparables_chart()
@@ -741,8 +760,7 @@ class WSRC_admin_accounts
     dataview.setRows(visible_rows)
     dataview.setColumns(visible_columns)
     c.chart.draw(dataview, c.options)
-      
-    
+
   draw_balances_chart: () ->
     
     total_mode = @view.get_balance_chart_mode() == "combined"
@@ -794,7 +812,7 @@ class WSRC_admin_accounts
     google.load("visualization", "1.1",
       packages: ["corechart", "line", "bar"]
       callback: () =>
-        @instance.draw_balances_chart()
+        @instance.init_and_draw_charts()
     )    
 
     return null
