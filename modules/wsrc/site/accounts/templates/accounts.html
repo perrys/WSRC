@@ -29,7 +29,7 @@ jQuery(document).ready(function(){
     <ul>
       <li><a href="#transactions_tab">Transactions</a></li>
       <li><a href="#chart_balances_tab">Balances</a></li>
-      <li><a href="#chart_comparables_tab">Historic Analysis</a></li>
+      <li><a href="#chart_comparables_tab">YoY Comparison</a></li>
       <li><a href="#chart_pnl_tab">Profit and Loss</a></li>
       <li><a href="#upload_tab">Upload</a></li>
     </ul>
@@ -141,7 +141,19 @@ jQuery(document).ready(function(){
       <div class="chart_div"></div>
     </div>
     <div id="chart_comparables_tab">
-      <div class="chart_div"></div>
+      <fieldset class="ui-corner-all">
+        <legend>Categories and Intervals</legend>
+        <form>
+          <div class="ui-field-contain datepicker-range">
+            <label>Interval Type: </label>
+            <select name="interval_type" onchange="wsrc.admin.accounts.on('init_comparables_chart')">
+              <option value="0">Annual</option>
+              <option value="1">Quarter 1</option>
+              <option value="2">Quarter 2</option>
+              <option value="3">Quarter 3</option>
+              <option value="4">Quarter 4</option>
+            </select>
+        </form>
       <table class="summary-table">
         <thead>
           <tr>
@@ -151,14 +163,24 @@ jQuery(document).ready(function(){
         <tbody>
 {% for category in categories %}
 {% if not category.is_reconciling %}
-          <tr data-id='{{ category.id }}'>
+          <tr class="{% cycle '' 'alt' %}" data-id='{{ category.id }}'>
             <td class='category'><input type='checkbox' onclick="wsrc.admin.accounts.on('draw_comparables_chart')"> {{ category.description }}</td>
           </tr>
 {% endif %}
 {% endfor %}
 
         </tbody>
+        <tfoot>
+          <tr data-id='_in_subtotal' ><th class='category'><input type='checkbox' disabled='disabled'> Income (selected)</th></tr>
+          <tr data-id='_out_subtotal' class="alt"><th class='category'><input type='checkbox' disabled='disabled'> Expenditure (selected)</th></tr>
+          <tr data-id='_net_subtotal'><th class='category'><input type='checkbox' disabled='disabled'> Net (selected)</th></tr>
+          <tr data-id='_in_total' class='separated'><th class='category'><input type='checkbox' disabled='disabled'> Income (total)</th></tr>
+          <tr data-id='_out_total' class="alt"><th class='category'><input type='checkbox' disabled='disabled'> Expenditure (total)</th></tr>
+          <tr data-id='_net_total'><th class='category'><input type='checkbox' disabled='disabled'> Net Total</th></tr>
+        </tfoot>
       </table>
+      </fieldset>
+      <div class="chart_div"></div>
     </div>
 
     <div id="upload_tab" class="fixed-height-wrapper">
