@@ -3,8 +3,8 @@ from django.contrib import admin
 from .models import Account, Category, Transaction
 
 class CategoryAdmin(admin.ModelAdmin):
-    list_display = ("id", "name", "ordering", "description", "regex")
-    list_editable = ("name", "ordering", "description", "regex",)
+    list_display = ("id", "name", "ordering", "description", "regex", "is_reconciling",)
+    list_editable = ("name", "ordering", "description", "regex", "is_reconciling",)
 
 class TransactionAdmin(admin.ModelAdmin):
     list_display = ("account", "date_issued", "date_cleared", "bank_number", "amount", "bank_memo", "comment", "category")
