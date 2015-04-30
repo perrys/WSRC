@@ -132,7 +132,10 @@ class WSRC_admin_accounts_model
           cat_summary.incoming_pct = 100 * cat_summary.incoming/incoming
           if cat_summary.incoming_pct  > tollerance
             cat_summary.is_significant = true
-      result[year] = yearly_category_totals
+      result[year] =
+        category_totals: yearly_category_totals
+        incoming: incoming
+        outgoing: outgoing
     return result
 
   summarise_transactions: (transactions, start_date, end_date, use_cleared_date, include_reconciling_categories, existing_category_totals) ->
@@ -444,15 +447,17 @@ class WSRC_admin_accounts_view
     end   = $("#chart_balances_tab input[name='end_date']").datepicker("getDate")
     return [start, end]
 
+  get_comparables_interval: () ->
+    return parseInt($("#chart_comparables_tab select[name='interval_type']").val())
+
   set_comparables_table_headers: (years, change_cb) ->
     thead_row = $("#chart_comparables_tab table thead tr")
     thead_row.find("th:not('.category')").remove()
     for year, idx in years
-      header = $("<th colspan='2' data-id='#{ year }'><input type='checkbox'> #{ year }</th>")
-      thead_row.append(header)
-      if idx > 0 and idx < (years.length - 1)
-        header.find('input').prop('checked', true)
+      checked = if idx > 0 and idx < (years.length - 1) then "checked='checked'" else ""
+      header = $("<th colspan='2' data-id='#{ year }'><input type='checkbox' #{checked}> #{ year }</th>")
       header.find('input').on('change', change_cb)
+      thead_row.append(header)
     return null
 
   add_comparables_table_row: (id, data, is_significant) ->
@@ -462,7 +467,34 @@ class WSRC_admin_accounts_view
       table_row.append("<td class='amount'>#{ col_data.amount.toFixed(2) }</td><td class='percent'>#{ col_data.pct.toFixed(0) }%</td>")
     table_row.find("input[type='checkbox']").prop("checked", is_significant)
     return null
-             
+
+  set_comparables_totals: (summary_map, years) ->
+    table_footer = $("#chart_comparables_tab tfoot")
+    table_footer.find("td:not('.category')").remove()
+    for year in years
+      summary = summary_map[year]
+      total = (summary.incoming - summary.outgoing)
+      pnlclass = if total > 0 then "profit" else if total < 0 then "loss"
+      table_footer.find("tr[data-id='_in_total']").append("<td class='amount'>#{ summary.incoming.toFixed(2) }</td><td class='percent'>100%</td>")
+      table_footer.find("tr[data-id='_out_total']").append("<td class='amount'>#{ -1 * summary.outgoing.toFixed(2) }</td><td class='percent'>100%</td>")
+      table_footer.find("tr[data-id='_net_total']").append("<td class='amount #{ pnlclass }'>#{ total.toFixed(2) }</td><td></td>")
+      
+  set_comparables_subtotals: (subtotal_map) ->
+    table_footer = $("#chart_comparables_tab tfoot")
+    years = (year for year, subtotals of subtotal_map)
+    years.sort()
+    table_footer.find("tr[data-id='_in_subtotal'] td:not('.category')").remove()
+    table_footer.find("tr[data-id='_out_subtotal'] td:not('.category')").remove()
+    table_footer.find("tr[data-id='_net_subtotal'] td:not('.category')").remove()
+    for year in years
+      summary = subtotal_map[year]
+      total = (summary.in + summary.out)
+      pnlclass = if total > 0 then "profit" else if total < 0 then "loss"
+      table_footer.find("tr[data-id='_in_subtotal']").append("<td class='amount'>#{ summary.in.toFixed(2) }</td><td class='percent'>#{ summary.in_pct.toFixed(0) }%</td>")
+      table_footer.find("tr[data-id='_out_subtotal']").append("<td class='amount'>#{ summary.out.toFixed(2) }</td><td class='percent'>#{ summary.out_pct.toFixed(0) }%</td>")
+      table_footer.find("tr[data-id='_net_subtotal']").append("<td class='amount #{ pnlclass }'>#{ total.toFixed(2) }</td><td></td>")
+    return null
+                             
 ################################################################################
 # Controller - initialize and respond to events
 ################################################################################
@@ -684,10 +716,11 @@ class WSRC_admin_accounts
   init_and_draw_charts: () ->      
     @draw_balances_chart()
     @init_comparables_chart(0)
-    @draw_comparables_chart()
     
-  init_comparables_chart: (quarter) ->
-    
+  init_comparables_chart: () ->
+
+    quarter = @view.get_comparables_interval()
+            
     [min_date, max_date] = @model.get_transaction_min_max_dates()
     years = [min_date.getFullYear()..max_date.getFullYear()]
     results = @model.get_quarter_summaries(years, quarter)
@@ -706,7 +739,7 @@ class WSRC_admin_accounts
       is_significant = false
       for year in years
         summary = results[year]
-        cat_summary = summary[id]
+        cat_summary = summary.category_totals[id]
         unless cat_summary
           amount = pct = 0.0
         else
@@ -719,19 +752,18 @@ class WSRC_admin_accounts
           pct: pct
       data.addRow(row)
       @view.add_comparables_table_row(id, table_row, is_significant)
+    @view.set_comparables_totals(results, years)  
       
     period = if quarter == 0 then "Annual" else "Quarter #{ quarter }" 
     options = 
-      chart: 
-        title: "#{ period } Income and Expenditure"
-        subtitle: '£'
+      title: "#{ period } Income and Expenditure (£)"
       width: 1000
-      height: 500
+      height: 600
       bars: 'horizontal'
       chartArea:
-        left: 150
+        left: 200
+        top: 50
         width: 700
-        height: 490
 
     @comparables_chart =
       chart: new google.visualization.BarChart($('#chart_comparables_tab .chart_div')[0])
@@ -753,11 +785,32 @@ class WSRC_admin_accounts
         visible_rows.push(index)
       ++index
     visible_columns = [0]
+    yearly_subtotals = {}
     for index in [1...c.data.getNumberOfColumns()]
-      year = c.data.getColumnLabel(index)
+      in_total = out_total = in_subtotal = out_subtotal = 0
+      year = parseInt(c.data.getColumnLabel(index))
       if thead.find("th[data-id='#{ year }'] input[type='checkbox']:checked").length > 0
         visible_columns.push(index)
-    dataview.setRows(visible_rows)
+      for rowidx in [0...c.data.getNumberOfRows()]
+        val = c.data.getValue(rowidx, index)
+        if val > 0
+          in_total += val
+          unless visible_rows.indexOf(rowidx) < 0
+            in_subtotal += val
+        else
+          out_total += val
+          unless visible_rows.indexOf(rowidx) < 0
+            out_subtotal += val
+      yearly_subtotals[year] =
+        in: in_subtotal
+        out: out_subtotal
+        in_pct:  if in_total > 0  then 100.0 * in_subtotal/in_total else 0.0
+        out_pct: if out_total < 0 then 100.0 * out_subtotal/out_total else 0.0
+    @view.set_comparables_subtotals(yearly_subtotals)
+    height = visible_rows.length * (0 + 8 * visible_columns.length)
+    c.options.height = height + 100
+    c.options.chartArea.height = height
+    dataview.setRows(visible_rows)    
     dataview.setColumns(visible_columns)
     c.chart.draw(dataview, c.options)
 
