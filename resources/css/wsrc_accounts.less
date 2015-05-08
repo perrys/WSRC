@@ -125,18 +125,24 @@ table {
     tr {
         line-height: 1.8em;
     }
+    th {
+        text-align: left;
+    }
+    tr.alt th,
     tr.alt td {
         background-color: @color-alt-row;
     }
     tr.ignored td {
         background-color: @color-ignore-row;
     }
-    th {
-        text-align: left;
+    thead tr:first-child th {
         padding: 0 2em 0.5em 0 ;
         border-bottom: #333 1px solid;
     }
-    tfoot td {
+    tfoot tr:first-child td, 
+    tfoot tr:first-child th,
+    tfoot tr.separated th,
+    tfoot tr.separated td {
         padding-top: 0.5em;
         border-top: #333 1px solid;
     }
@@ -144,10 +150,12 @@ table {
         text-align: left;
         padding: 0 0.5em 0 0;
     }
-    td.debit {
+    td.debit,
+    td.loss {
         color: red;
     }
-    td.credit {
+    td.credit,
+    td.profit {
         color: darkgreen;
     }
     td.amount, td.balance, td.bank_code, td.bank_number,
@@ -206,10 +214,3 @@ div.button-bar {
     }
 }
 
-#chart_pnl_tab {
-    .chart_div {
-      width: 800px;
-      height: 500px;
-      padding-bottom: 1em;
-    }
-}
