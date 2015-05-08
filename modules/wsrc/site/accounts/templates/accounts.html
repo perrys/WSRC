@@ -140,6 +140,7 @@ jQuery(document).ready(function(){
       </fieldset>
       <div class="chart_div"></div>
     </div>
+
     <div id="chart_comparables_tab">
       <fieldset class="ui-corner-all">
         <legend>Categories and Intervals</legend>
@@ -153,6 +154,7 @@ jQuery(document).ready(function(){
               <option value="3">Quarter 3</option>
               <option value="4">Quarter 4</option>
             </select>
+          </div>
         </form>
       <table class="summary-table">
         <thead>
@@ -181,6 +183,52 @@ jQuery(document).ready(function(){
       </table>
       </fieldset>
       <div class="chart_div"></div>
+    </div>
+
+    <div id="chart_pnl_tab">
+      <div class="chart_div" style="float: right"></div>
+      <fieldset class="ui-corner-all">
+        <legend>Summary</legend>
+        <form>
+          <div class="ui-field-contain datepicker-range">
+            <label>Date Range: </label>
+            <input name="start_date" class="datepicker datepicker-three-months"  onchange="wsrc.admin.accounts.on('init_pnl_chart')"> &ndash;
+            <input name="end_date"   class="datepicker datepicker-today"         onchange="wsrc.admin.accounts.on('init_pnl_chart')">
+          </div>
+        </form>
+        <table class="summary-table sortable-root">
+          <thead>
+            <tr data-id='profit'>
+              <th class='category'>Category</th>
+              <th class='category'>Net Profit</th>
+              <th class='category'>Net Loss</th>
+            </tr>
+          </thead>
+          <tbody class="sortable-parent">
+{% for category in categories %}
+{% if not category.is_reconciling %}
+            <tr class="{% cycle '' 'alt' %}" data-id='{{ category.id }}'>
+              <th class='category'><input type='checkbox' onclick="wsrc.admin.accounts.on('draw_comparables_chart')"> {{ category.description }}</th>
+              <td class='amount'></td>
+              <td class='amount'></td>
+            </tr>
+{% endif %}
+{% endfor %}
+          </tbody>
+          <tfoot>
+            <tr data-id='_subtotal' >
+              <th class='category'><input type='checkbox' disabled='disabled'> Total (selected)</th>
+              <td class='amount profit'></td>
+              <td class='amount loss'></td>
+            </tr>
+            <tr data-id='_total'>
+              <th class='category'><input type='checkbox' disabled='disabled'> Net Total</th>
+              <td class='amount profit'></td>
+              <td class='amount loss'></td>
+            </tr>
+          </tfoot>
+        </table>
+      </fieldset>
     </div>
 
     <div id="upload_tab" class="fixed-height-wrapper">
