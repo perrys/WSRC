@@ -103,6 +103,33 @@ class WSRC_admin_accounts_model
       balance += transaction.amount
       transaction.balance = balance
 
+  # summarize this period over all accounts
+  get_period_summary: (start_date, end_date) ->
+    period_category_totals = {}
+    incoming = outgoing = 0
+    for acc_id in @get_account_ids()             
+      transactions = @get_transaction_list(acc_id)
+      summary = @summarise_transactions(transactions, start_date, end_date, true, false, period_category_totals)
+      incoming += summary.incoming
+      outgoing += summary.outgoing
+    for id, cat_summary of period_category_totals      
+      cat_summary.is_significant = if cat_summary.is_significant then true else false
+      tollerance = 4
+      cat_summary.outgoing_pct = cat_summary.incoming_pct = 0.0
+      if cat_summary.outgoing > 0
+        cat_summary.outgoing_pct = 100 * cat_summary.outgoing/outgoing
+        if cat_summary.outgoing_pct  > tollerance
+          cat_summary.is_significant = true
+      if cat_summary.incoming > 0
+        cat_summary.incoming_pct = 100 * cat_summary.incoming/incoming
+        if cat_summary.incoming_pct  > tollerance
+          cat_summary.is_significant = true
+    return {
+      category_totals: period_category_totals
+      incoming: incoming
+      outgoing: outgoing
+    }
+      
   get_quarter_summaries: (years, quarter) ->
     result = {}
     for year in years
@@ -113,29 +140,7 @@ class WSRC_admin_accounts_model
       else
         start_date = new Date(year, 0, 1)
         end_date = new Date(year, 12, 0)
-      yearly_category_totals = {}
-      incoming = outgoing = 0
-      for acc_id in @get_account_ids()             
-        transactions = @get_transaction_list(acc_id)
-        summary = @summarise_transactions(transactions, start_date, end_date, true, false, yearly_category_totals)
-        incoming += summary.incoming
-        outgoing += summary.outgoing
-      for id, cat_summary of yearly_category_totals      
-        cat_summary.is_significant = if cat_summary.is_significant then true else false
-        tollerance = 4
-        cat_summary.outgoing_pct = cat_summary.incoming_pct = 0.0
-        if cat_summary.outgoing > 0
-          cat_summary.outgoing_pct = 100 * cat_summary.outgoing/outgoing
-          if cat_summary.outgoing_pct  > tollerance
-            cat_summary.is_significant = true
-        if cat_summary.incoming > 0
-          cat_summary.incoming_pct = 100 * cat_summary.incoming/incoming
-          if cat_summary.incoming_pct  > tollerance
-            cat_summary.is_significant = true
-      result[year] =
-        category_totals: yearly_category_totals
-        incoming: incoming
-        outgoing: outgoing
+      result[year] = @get_period_summary(start_date, end_date)
     return result
 
   summarise_transactions: (transactions, start_date, end_date, use_cleared_date, include_reconciling_categories, existing_category_totals) ->
@@ -296,6 +301,7 @@ class WSRC_admin_accounts_view
         cat_summary = {count: 0, incoming: 0, outgoing: 0, net_total: 0}
       set_row(jq_row, cat_summary)
     set_row(@jq_summary_tfoot.children(), summary)
+    wsrc.utils.apply_alt_class(@jq_summary_tbody.children(), 'alt')
     return null
 
   get_account_id: () ->
@@ -495,6 +501,62 @@ class WSRC_admin_accounts_view
       table_footer.find("tr[data-id='_net_subtotal']").append("<td class='amount #{ pnlclass }'>#{ total.toFixed(2) }</td><td></td>")
     return null
                              
+  get_pnl_chart_date_range: () ->
+    start = $("#chart_pnl_tab input[name='start_date']").datepicker("getDate")
+    end   = $("#chart_pnl_tab input[name='end_date']").datepicker("getDate")
+    return [start, end]
+
+  get_pnl_chart_selected_rows: () ->
+    selected = []
+    $("#chart_pnl_tab table.summary-table tbody tr th input[type='checkbox']").each (idx, elt) ->
+      if $(elt).prop("checked")
+        selected.push(idx)
+    return selected
+
+  set_pnl_table_data: (data, selected_rows_change_callback) ->
+    tbody = $("#chart_pnl_tab table.summary-table tbody")
+    tfoot = $("#chart_pnl_tab table.summary-table tfoot")
+    tbody.empty()
+    profit = loss = 0
+    for row in data
+      net = row.incoming - row.outgoing
+      if net > 0
+        profit += net
+      else
+        loss += net
+      tr = """<tr>
+        <th class='category'><input type='checkbox' checked='checked'> #{ row.description }</th>
+        <td class='amount profit'>#{ if net > 0 then net.toFixed(2) else "" }</td>
+        <td class='amount loss'>#{ if net < 0 then net.toFixed(2) else "" }</td>
+        </th>"""
+      tbody.append(tr)
+    tbody.find("input[type='checkbox']").on("change", selected_rows_change_callback) 
+    wsrc.utils.apply_alt_class(tbody.children(), "alt")
+    total_row = tfoot.find("tr[data-id='_total']")
+    total_row.find("td.profit").text(profit.toFixed(2))
+    total_row.find("td.loss").text(loss.toFixed(2))
+    return null
+
+  update_pnl_table_subtotals: (selected_row_indices) ->  
+
+    tbody = $("#chart_pnl_tab table.summary-table tbody")
+    tfoot = $("#chart_pnl_tab table.summary-table tfoot")
+    subtotals =
+      profit: 0
+      loss: 0
+
+    jq_rows = tbody.children()
+    for idx in selected_row_indices
+      jq_row = jq_rows.eq(idx)
+      for type in ["profit", "loss"]
+        val = jq_row.find("td.#{ type }").text()
+        if val != ""
+          subtotals[type] += parseFloat(val)
+    total_row = tfoot.find("tr[data-id='_subtotal']")
+    total_row.find("td.profit").text(subtotals.profit.toFixed(2))
+    total_row.find("td.loss").text(subtotals.loss.toFixed(2))
+    return null
+
 ################################################################################
 # Controller - initialize and respond to events
 ################################################################################
@@ -716,6 +778,7 @@ class WSRC_admin_accounts
   init_and_draw_charts: () ->      
     @draw_balances_chart()
     @init_comparables_chart(0)
+    @init_pnl_chart()
     
   init_comparables_chart: () ->
 
@@ -851,7 +914,71 @@ class WSRC_admin_accounts
     chart = new google.visualization.LineChart($('#chart_balances_tab .chart_div')[0])
     chart.draw(data, options)
     
+  init_pnl_chart: () ->
+    
+    date_range = @view.get_pnl_chart_date_range()
+    data = @model.get_period_summary(date_range[0], date_range[1])
 
+    category_totals = (
+      for cat_id, summary of data.category_totals
+        summary.id = cat_id
+        summary.description = @model.get_category(cat_id).description
+        summary
+    )
+    category_totals.sort (lhs, rhs) ->
+      [lhs, rhs] = (x.outgoing - x.incoming for x in [lhs, rhs])
+      return lhs - rhs
+
+    @view.set_pnl_table_data(category_totals, () => @draw_pnl_chart())
+    category_totals.reverse()
+
+    datatable = new google.visualization.DataTable();
+    datatable.addColumn('string', 'P or L')
+    for cat in category_totals
+      datatable.addColumn('number', @model.get_category(cat.id).description)
+    row = ["Profit"]
+    for cat in category_totals
+      net = cat.incoming - cat.outgoing
+      row.push(if net > 0 then net else 0.0)
+    datatable.addRow(row)
+    row = ["Loss"]
+    for cat in category_totals
+      net = cat.incoming - cat.outgoing
+      row.push(if net < 0 then -1.0 * net else 0.0)
+    datatable.addRow(row)
+
+    options =
+      title: 'Profit and Loss (£)'
+      width: 800
+      height: 650
+      isStacked: true
+      chartArea:
+        left: 80
+        top:  40
+        width:  400
+        height: 550
+        
+    @pnl_chart =
+      data: datatable
+      options: options
+      chart: new google.visualization.ColumnChart($('#chart_pnl_tab .chart_div')[0])
+    @draw_pnl_chart()
+
+  draw_pnl_chart: () ->
+
+    visible_rows = @view.get_pnl_chart_selected_rows()
+    @view.update_pnl_table_subtotals(visible_rows)
+    c = @pnl_chart    
+    dataview = new google.visualization.DataView(c.data)
+    ncolumns = c.data.getNumberOfColumns()
+    for i in [0...visible_rows.length]
+      visible_rows[i] = ncolumns - visible_rows[i] - 1
+    visible_rows.push(0)
+    visible_rows.sort (x,y) -> x-y
+    dataview.setColumns(visible_rows)    
+    c.chart.draw(dataview, c.options)
+    
+    
             
   @on: (method) ->
     args = $.fn.toArray.call(arguments)
