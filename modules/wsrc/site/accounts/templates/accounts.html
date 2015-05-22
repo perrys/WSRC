@@ -53,7 +53,7 @@ jQuery(document).ready(function(){
 {% for category in categories %}
 {% if not category.is_reconciling %}
                 <tr data-id='{{ category.id }}'>
-                  <td class='category'><input type='checkbox' onclick="wsrc.admin.accounts.on('update_transactions_table')"> {{ category.description }}</td>
+                  <td class='category'><label><input type='checkbox' onclick="wsrc.admin.accounts.on('update_transactions_table')"> {{ category.description }}</label></td>
                   <td class='count'> <td class='incoming'></td>
                   <td class='outgoing'></td>
                   <td class='net_total'></td>
@@ -166,7 +166,7 @@ jQuery(document).ready(function(){
 {% for category in categories %}
 {% if not category.is_reconciling %}
           <tr class="{% cycle '' 'alt' %}" data-id='{{ category.id }}'>
-            <td class='category'><input type='checkbox' onclick="wsrc.admin.accounts.on('draw_comparables_chart')"> {{ category.description }}</td>
+            <td class='category'><label><input type='checkbox' onclick="wsrc.admin.accounts.on('draw_comparables_chart')"> {{ category.description }}</label></td>
           </tr>
 {% endif %}
 {% endfor %}

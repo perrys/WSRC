@@ -461,7 +461,7 @@ class WSRC_admin_accounts_view
     thead_row.find("th:not('.category')").remove()
     for year, idx in years
       checked = if idx > 0 and idx < (years.length - 1) then "checked='checked'" else ""
-      header = $("<th colspan='2' data-id='#{ year }'><input type='checkbox' #{checked}> #{ year }</th>")
+      header = $("<th colspan='2' data-id='#{ year }'><label><input type='checkbox' #{checked}> #{ year }</label></th>")
       header.find('input').on('change', change_cb)
       thead_row.append(header)
     return null
@@ -525,7 +525,7 @@ class WSRC_admin_accounts_view
       else
         loss += net
       tr = """<tr>
-        <th class='category'><input type='checkbox' checked='checked'> #{ row.description }</th>
+        <th class='category'><label><input type='checkbox' checked='checked'> #{ row.description }</label></th>
         <td class='amount profit'>#{ if net > 0 then net.toFixed(2) else "" }</td>
         <td class='amount loss'>#{ if net < 0 then net.toFixed(2) else "" }</td>
         </th>"""
