@@ -724,7 +724,7 @@ class WSRC_admin_accounts
   create_swing_transaction: (form) ->
     account_id = @view.get_account_id()
     from_category = form.find("select[name='from']").val()        
-    to_category   = form.find("select[name='from']").val()
+    to_category   = form.find("select[name='to']").val()
     date    = form.find("input[name='date']").datepicker("getDate")
     amount  = form.find("input[name='amount']").val()
     comment = form.find("input[name='comment']").val()
