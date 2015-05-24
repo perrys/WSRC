@@ -164,10 +164,16 @@ def accounts_view(request, account_name=None):
                     return False
                 if "Amount" not in row:
                     return False
+                comment = row.get("Comment")
+                bank_memo = row.get("Memo")
                 datestr = row["Date"]
                 datestr = datestr[6:10] + "-" + datestr[3:5] + "-" + datestr[0:2]
                 matches = account.transaction_set.filter(date_issued = datestr)
                 matches = matches.filter(amount = float(row["Amount"]))
+                if comment is not None and len(comment) > 0:
+                    matches = matches.filter(comment = comment)
+                if bank_memo is not None and len(bank_memo) > 0:
+                    matches = matches.filter(bank_memo = bank_memo)
                 return len(matches) == 1
         
             reader = csv.DictReader(gen(request.FILES['file']))
