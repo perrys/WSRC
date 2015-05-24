@@ -200,15 +200,15 @@ jQuery(document).ready(function(){
           <thead>
             <tr data-id='profit'>
               <th class='category'>Category</th>
-              <th class='category'>Net Profit</th>
-              <th class='category'>Net Loss</th>
+              <th class='category'>Income</th>
+              <th class='category'>Expenditure</th>
             </tr>
           </thead>
           <tbody class="sortable-parent">
 {% for category in categories %}
 {% if not category.is_reconciling %}
             <tr class="{% cycle '' 'alt' %}" data-id='{{ category.id }}'>
-              <th class='category'><input type='checkbox' onclick="wsrc.admin.accounts.on('draw_comparables_chart')"> {{ category.description }}</th>
+              <th class='category'><label><input type='checkbox' onclick="wsrc.admin.accounts.on('draw_comparables_chart')"> {{ category.description }}</label></th>
               <td class='amount'></td>
               <td class='amount'></td>
             </tr>
@@ -222,7 +222,7 @@ jQuery(document).ready(function(){
               <td class='amount loss'></td>
             </tr>
             <tr data-id='_total'>
-              <th class='category'><input type='checkbox' disabled='disabled'> Net Total</th>
+              <th class='category'><input type='checkbox' disabled='disabled'> Total</th>
               <td class='amount profit'></td>
               <td class='amount loss'></td>
             </tr>
