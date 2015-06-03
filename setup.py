@@ -41,7 +41,8 @@ setup(name='WSRC',
                      },
       package_data = {'wsrc': ['jinja2_templates/*.html', 'jinja2_templates/*.jinja2'],
                       'wsrc.site': ['templates/*.html'],
-                      'wsrc.site.competitions': ['templates/*.html']
+                      'wsrc.site.competitions': ['templates/*.html'],
+                      'wsrc.site.accounts': ['templates/*.html']
                       },
       scripts = ['scripts/wsrc'],
       data_files = [('etc', ['etc/notifier.json', 'etc/smtp.json']),
