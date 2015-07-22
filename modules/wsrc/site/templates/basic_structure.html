@@ -9,7 +9,7 @@
 {% block body_header %}{% endblock %}
     </div>
     <div id="page_wrapper">
-    <div data-role="page" data-pagetype="{% block pagetype %}{% endblock %}" {% block pageattrs %}{% endblock %} class="wsrc-site">
+    <div data-role="page" data-pagetype="{% block pagetype %}{% endblock %}" {% block pageattrs %}{% endblock %} class="wsrc-site {% block page_classes %}{% endblock %}">
       <div id="page_header" data-role="header" {% block page_header_attrs %}{% endblock %} class="{% block page_header_classes %}{% endblock %}">
 {% block page_header %}{% endblock %}
       </div>
