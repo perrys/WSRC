@@ -7,6 +7,7 @@ from django.core.exceptions import PermissionDenied
 from django.db import transaction
 from django.shortcuts import render
 from django.views.generic.list import ListView
+from django.http import HttpResponse
 
 import rest_framework.permissions as rest_permissions
 import rest_framework.generics    as rest_generics
@@ -202,5 +203,30 @@ def accounts_view(request, account_name=None):
         'accounts': accounts,
         'account_data': account_data,
     })        
-        
+
+from django.views.decorators.http import require_http_methods
+
+@require_http_methods(["GET"])
+def transaction_csv_view(request, account_name):
+    account = Account.objects.get(name__iexact=account_name)
+    queryset = Transaction.objects.filter(account__name=account_name) 
+    start_date = request.GET.get("start_date")
+    if start_date is not None:
+        queryset = queryset.filter(date_issued__gte = start_date)
+    end_date = request.GET.get("end_date")
+    if end_date is not None:
+        queryset = queryset.filter(date_issued__lt = end_date)
+    queryset = queryset.order_by("-date_issued")
+    response = HttpResponse(content_type='text/csv')
+    filename = "WSRC_%s.csv" % (account.name)
+    response['Content-Disposition'] = 'attachment; filename="%s"' % filename
+    csvwriter = csv.writer(response)
+    fields = ['date_issued', 'date_cleared', 'amount', 'bank_transaction_category', 'bank_number', 'bank_memo', 'category', 'comment']
+    csvwriter.writerow(fields)
+    for row in queryset:
+        print row.date_cleared
+        data = [getattr(row, field) for field in fields]
+        csvwriter.writerow(data)
+    return response
+            
         

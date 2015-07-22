@@ -54,6 +54,7 @@ urlpatterns = patterns('',
     url(r'^data/accounts/',  include(wsrc.site.accounts.data_urls)),
     url(r'^data/',    include(wsrc.site.competitions.data_urls)),
 
+    url(r'^accounts/download/(\w+)', wsrc.site.accounts.views.transaction_csv_view),
     url(r'^accounts/?', wsrc.site.accounts.views.accounts_view),
                        
 
