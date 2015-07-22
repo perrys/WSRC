@@ -18,7 +18,7 @@ $( document ).on( "pagecreate", ".wsrc-site", function( event ) {
 <div class="centered-content-wrapper">
     <div class="topicon menu-link">
       <a class="centered-icon" href="#"><img src="/static/css/images/bars-white.png" width="14" height="14" alt="Menu"></a>
-      <a href="#">menu</a>
+      <a href="#">Menu</a>
     </div>
     <div class="topicon login-link">
       <a class="centered-icon" href="{% if user.is_authenticated %}#logout_dialog{% else %}/login?next={{ request.get_full_path }}{% endif %}" {% if user.is_authenticated %}data-transition="none"{% else %}data-ajax="false"{% endif %}><img src="/static/css/images/user-white.png" width="14" height="14" alt="Login"></a>
