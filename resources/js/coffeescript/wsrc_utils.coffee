@@ -113,14 +113,26 @@ class WSRC_utils
 
   @iso_to_js_date: (str) ->
     # dateformat: 2001-12-31
-    toint = (start, len) -> parseInt(str.substr(start, len))
+    toint = (start, len) -> parseInt(str.substr(start, len), 10)
     new Date(toint(0,4), toint(5,2)-1, toint(8,2)) # gotcha - JS dates use 0-offset months...
 
   @british_to_js_date: (str) ->
     # dateformat: 31/12/2001
-    toint = (start, len) -> parseInt(str.substr(start, len))
+    toint = (start, len) -> parseInt(str.substr(start, len), 10)
     new Date(toint(6,4), toint(3,2)-1, toint(0,2)) # gotcha - JS dates use 0-offset months...
 
+  @js_to_iso_date_str: (dt) ->
+    # do not use toISOString() as it uses UTC and will introduce day offsets in summer time
+    pad_zeros = (n) ->
+      if n < 10 then "0#{ n }" else n
+    return "#{ dt.getFullYear() }-#{ pad_zeros(dt.getMonth()+1) }-#{ pad_zeros(dt.getDate()) }"
+
+  @sum: (l) ->
+    sum = 0.0
+    for a in l
+      sum += a
+    return sum
+    
   @get_day_humanized: (basedate, offset) ->
     switch offset
       when 0 then return "Today"
@@ -188,36 +200,41 @@ class WSRC_utils
       odd = not odd
       return null
 
+  @configure_sortable: (jq_elt) ->
+    jq_root = jq_elt.parents(".sortable-root")
+    jq_parent = jq_root.find(".sortable-parent")
+    selector = jq_elt.data("selector")
+
+    sorter_func = wsrc.utils[jq_elt.data("sorter")]
+    sorter = (lhs, rhs) ->
+      mapper = (row) ->
+        jq_td = $(row).find(selector)
+        sortval = jq_td.data("sortvalue")
+        unless sortval
+          sortval = jq_td.text()
+        return sortval
+      sorter_func(lhs, rhs, mapper)
+
+    handler = () ->    
+      elts = jq_parent.children().remove()
+      sorted_elts = wsrc.utils.jq_stable_sort(elts, sorter)
+      if jq_elt.data("reverse")
+        sorted_elts.reverse()
+        jq_elt.data("reverse", false)
+      else
+        jq_elt.data("reverse", true)
+      for child in sorted_elts
+        jq_parent.append(child)
+      wsrc.utils.apply_alt_class(jq_parent.children(), "alt")
+
+    jq_elt.on("click", (evt) ->
+      handler()
+    )
+
+    return handler
+
   @configure_sortables: () ->
     $(".sortable").each (idx, elt) ->
-      jq_elt = $(elt)
-      jq_root = jq_elt.parents(".sortable-root")
-      jq_parent = jq_root.find(".sortable-parent")
-      selector = jq_elt.data("selector")
-
-      sorter_func = wsrc.utils[jq_elt.data("sorter")]
-      sorter = (lhs, rhs) ->
-        mapper = (row) ->
-          jq_td = $(row).find(selector)
-          sortval = jq_td.data("sortvalue")
-          unless sortval
-            sortval = jq_td.text()
-          return sortval
-        sorter_func(lhs, rhs, mapper)
-        
-      jq_elt.on("click", (evt) ->
-        jq_elt = $(this)
-        elts = jq_parent.children().remove()
-        sorted_elts = wsrc.utils.jq_stable_sort(elts, sorter)
-        if jq_elt.data("reverse")
-          sorted_elts.reverse()
-          jq_elt.data("reverse", false)
-        else
-          jq_elt.data("reverse", true)
-        for child in sorted_elts
-          jq_parent.append(child)
-        wsrc.utils.apply_alt_class(jq_parent.children(), "alt")
-      )
-        
+      WSRC_utils.configure_sortable($(elt))  
         
 WSRC_utils.add_to_namespace("utils", WSRC_utils)

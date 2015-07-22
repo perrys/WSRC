@@ -110,11 +110,11 @@ window.WSRC =
     unless this.bxslider_inited
       $('.bxslider').bxSlider(
         mode: 'horizontal',
-        slideWidth: 599,
+        slideWidth: 460,
         captions: false,
         randomStart: true,
         controls: false,
-#        auto: true,
+        auto: true,
         pause: 7000,
         pager: false
       );
