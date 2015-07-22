@@ -2,8 +2,19 @@
 
 @breakpoint-widen-frontpage: 35em;
 @breakpoint-show-navmenu: 60em;
+
+@color-loser: #ed3338;
+@color-winner: #3eb249;
+@color-block-border: #eee;
+@color-header-border-bottom: #ddd;
+@color-body-background: #ffffff;
+@color-body: #333;
 @color-yellow-dot: #fccb30;
-@max-page-width: 1000px;
+@color-a-bar-border: #333;
+@color-a-bar-background: #6e6e6e;
+@color-a-bar: #ffffff;
+
+@max-page-width: 1200px;
 
 html, body {
     height: 100%;
@@ -15,7 +26,7 @@ body {
     font-size: 1em;
     margin: 0;
     padding: 0;
-    background-color: white;
+    background-color: @color-body-background;
 }
 
 .ui-btn,
@@ -126,7 +137,7 @@ div.centered-content-wrapper {
         .media-guard(@ruleset-largescreen, @breakpoint-show-navmenu);
         a {
             text-decoration: none;
-            color: white;
+            color: @color-a-bar;
             font-size: 0.6em;
             display:block;
         }
@@ -198,7 +209,7 @@ div.centered-content-wrapper {
 	    right: 15%;
 	    font-size: 1.2em;
 /*	    margin-top: -.625em; */
-            color: white;
+            color: @color-a-bar;
         };
         .media-guard(@ruleset-largescreen, @breakpoint-show-navmenu);
     }
@@ -221,7 +232,7 @@ div.centered-content-wrapper {
     font-family: 'Open Sans', sans-serif;
     font-weight: 400;
     text-shadow: none;
-    color: white;
+    color: @color-a-bar;
     background-color: black;
     div {
         position: relative;
@@ -267,7 +278,7 @@ div.centered-content-wrapper {
 }
 .wsrc-site .jqm-content > div > h2 {
     background-color: transparent;
-    border-bottom: 1px solid #ddd;
+    border-bottom: 1px solid @color-header-border-bottom;
     font-size: 1.6em;
     padding-bottom: .2em;
     margin: 0 0 .7375em;
@@ -322,8 +333,8 @@ div.centered-content-wrapper {
 .jqm-block-content {
     margin: .5em;
     padding: 1em;
-    background: white;
-    border: 1px solid #eee;
+    background: @color-body-background;
+    border: 1px solid @color-block-border;
     -webkit-border-radius: .3125em;
     border-radius: .3125em;
     font-family: 'Open Sans', sans-serif;
@@ -331,7 +342,7 @@ div.centered-content-wrapper {
 .jqm-block-content h3 {
     font-size: 1.5em;
     font-weight: 300;
-    border-bottom: 1px solid #ddd;
+    border-bottom: 1px solid @color-header-border-bottom;
     padding-bottom: .25em;
     margin: 0 0 .5em;
 }
@@ -368,10 +379,10 @@ div.centered-content-wrapper {
     font-size: 0.8em;
 }
 .jqm-block-content td.won {
-    color: #3eb249;
+    color: @color-winner;
 }
 .jqm-block-content td.lost {
-    color: #ed3338;
+    color: @color-loser;
 }
 .jqm-block-content td:last-child {
     text-align:right;
@@ -458,8 +469,8 @@ div.centered-content-wrapper {
 div.wsrc-membership {
     margin: .5em;
     padding: 1em;
-    background: white;
-    border: 1px solid #eee;
+    background: @color-body-background;
+    border: 1px solid @color-block-border;
     -webkit-border-radius: .3125em;
     border-radius: .3125em;
     font-family: 'Open Sans', sans-serif;
@@ -476,7 +487,7 @@ div.wsrc-membership {
     text-align: left;
     vertical-align: top;
     padding-right: 1em;
-    color: #333;
+    color: @color-body;
 }
 .wsrc-membership th, .wsrc-membership td {
     border-bottom: 1px solid;
@@ -512,10 +523,10 @@ span.field-error {
     font-size: 0.8em;
 }
 .form_success_message {
-    color: #3eb249;
+    color: @color-winner;
 }
 .form_error_message {
-    color: #ed3338
+    color: @color-loser
 }
 .form_error_message:after {
     left: inherit;
@@ -556,13 +567,25 @@ div.right-control-box form > * {
 div#boxDetailDialog {
     min-width: 350px;
 }
-table.boxes a.ui-link,
-div.boxes a.ui-link {
-    text-decoration: none;
-    color: #333;
+div.boxes {
+    a.ui-link {
+        text-decoration: none;
+        color: @color-body;
+    }
+    .box-header.ui-header {
+        border-width: 1px 1px 0 1px;
+        border-color: @color-a-bar-border;
+    }
 }
+
+table.boxes {
+    font-size: 0.95em;
+    font-color: @color-body;
+}
+
 table.boxes th {
     font-weight:300;
+    color: #000;
     overflow: hidden;
     max-width: 100px;
     text-overflow: ellipsis;
@@ -573,10 +596,10 @@ table.boxes th {
 table.boxes td {
     max-width: 6px;
     text-align: center;
-    border: #ddd 1px solid; /* Should come from a-bar-border in ui theme */
+    border: @color-a-bar-border  1px solid; /* Should come from a-bar-border in ui theme */
 }
 table.boxes td.points {
-    background: white;
+    background: @color-body-background;
 }
 div.boxes {
     max-width:  500px;
@@ -620,11 +643,8 @@ div#league-results-div div.date {
 }
 /* tournaments */
 div.competition-wrapper {
-    padding: 1em .5em 1em .5em;
-    background: white;
-    border: 1px solid #eee;
-    -webkit-border-radius: .3125em;
-    border-radius: .3125em;
+    padding: 1em 0;
+    background: @color-body-background;
     overflow-x: auto;
     font-family: 'Open Sans', sans-serif;
 }
@@ -884,7 +904,7 @@ div.coaching ul {
 	left: 0;
 	clip: initial;
 	float: left;
-	width: 18%;
+	width: 20%;
 	background: none;
 	-webkit-transition: none !important;
 	-moz-transition: none !important;
@@ -913,7 +933,7 @@ div.coaching ul {
 	padding-right: 0;
     }
     .wsrc-site .nonmenu-content {
-        width: 79%;
+        width: 77%;
         float: right;
         padding-right:0.8em;
     }
