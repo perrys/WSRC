@@ -51,6 +51,8 @@ $( document ).on( "pagecreate", ".wsrc-site", function( event ) {
       <li data-icon="calendar"><a href="http://court-booking.co.uk/WokingSquashClub/" data-ajax="false" onclick="$.mobile.loading('show')">Court Booking</a></li>
 {% if user.is_authenticated %}
       <li data-icon="phone"><a href="{% url 'member_list' %}">Members' Details</a></li>
+      <li><a href="/committee">Committee</a></li>
+      <li data-icon="shop"><a href="/merchandise">Merchandise</a></li>
       <li data-icon="gear"><a href="{% url 'settings' %}">Settings</a></li>
       <li data-icon="qmark"><a href="/help">Help</a></li>
 {% endif %}
