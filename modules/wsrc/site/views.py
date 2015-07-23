@@ -81,7 +81,6 @@ def get_pagecontent_ctx(page):
             "content": markdown.markdown(data.markup),
             "last_updated": data.last_updated,
             },
-        "debug": True,
         }
     return result
 
