@@ -13,7 +13,7 @@ from wsrc.utils.timezones import UK_TZINFO
 import wsrc.utils.url_utils as url_utils
 
 # installation:
-# pip install --upgrade google-api-python-client
+# sudo pip install --upgrade google-api-python-client
 # (not needed?) sudo apt-get install python-gflags
 
 import apiclient.discovery
