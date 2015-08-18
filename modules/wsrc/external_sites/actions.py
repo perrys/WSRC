@@ -1,10 +1,16 @@
 #!/usr/bin/python
 
-from jinja2 import Environment, PackageLoader
+import datetime
 import re
+import os
+import logging
+import sys
+
+sys.path.append("/home/stu/dev/WSRC/modules")
 
 import wsrc.utils.email_utils
 import wsrc.utils.text
+import wsrc.external_sites.evt_filters as evt_filters
 
 class Notifier:
   def __init__(self, config, smtp_config):
@@ -14,6 +20,33 @@ class Notifier:
     self.testEvent = config.filter
     self.templateEnv = Environment(loader=PackageLoader("wsrc", "jinja2_templates"))
     self.events = []
+
+  @staticmethod
+  def configs_from_DB(current_time=None):
+    from wsrc.site.usermodel.models import Player
+    from wsrc.site.models import EventFilter
+    userfilters = dict()
+    def get_or_create(id):
+      ulist = userfilters.get(id)
+      if ulist is None:
+        userfilters[id] = ulist = []
+      return ulist
+    filters = EventFilter.objects.filter(player__user__is_active=True)
+    # populate map with lists of event filters keyed by player id
+    for filter in filters:
+      timefilt = evt_filters.TimeOfDay(filter.earliest, filter.latest)
+      days = [o.day for o in filter.days.all()]
+      dayfilt = evt_filters.DaysOfWeek(days)
+      futurefilt = evt_filters.IsFutureEvent(delay=datetime.timedelta(minutes=filter.notice_period_minutes))
+      combined_filter = evt_filters.And([timefilt, dayfilt, futurefilt])
+      get_or_create(filter.player.id).append(combined_filter)
+    # for each id, convert event filter list into combined filter:
+    for id, filters in userfilters.iteritems():
+      player = Player.objects.get(pk=id)
+      not_userfilt = evt_filters.Not(evt_filters.IsPerson(player.get_full_name()))
+      playerfilt = evt_filters.And([not_userfilt, evt_filters.Or(filters)])
+      userfilters[id] = playerfilt
+    return userfilters
 
   def __call__(self, evt):
     if self.testEvent(evt):
@@ -57,3 +90,21 @@ class Notifier:
 
     sender = "stewart.c.perry@gmail.com"
     wsrc.utils.email.send_mixed_mail(sender, self.email, subject, render(False), render(True), self.smtp_config)
+
+if __name__ == "__main__":
+  os.environ.setdefault("DJANGO_SETTINGS_MODULE", "wsrc.site.settings.settings")
+  logging.basicConfig(format='%(asctime)-10s [%(levelname)s] %(message)s',datefmt="%Y-%m-%d %H:%M:%S")
+
+  import django
+  if hasattr(django, "setup"):
+    django.setup()
+
+  import pprint
+  from wsrc.utils.timezones import UK_TZINFO
+  configs = Notifier.configs_from_DB()
+  myconfig = configs[1017]
+  from wsrc.external_sites.cal_events import Event
+  evt = Event("Stewart Perry", None, datetime.datetime(2015, 8, 3, 19, 0, tzinfo=UK_TZINFO), datetime.timedelta(minutes=15))
+  assert(not myconfig(evt))
+  evt.name = "Foo Bar"
+  assert(myconfig(evt))

@@ -56,6 +56,12 @@ class Or:
         return True
     return False
 
+class Not:
+  def __init__(self, filter):
+    self.filter = filter
+  def __call__(self, evt):
+    return not self.filter(evt)
+
 class Tester(unittest.TestCase):
   class TimeEvt:
     def __init__(self, d):
@@ -124,6 +130,12 @@ class Tester(unittest.TestCase):
     self.assertFalse(And([f])(None))
     self.assertFalse(And([f, t])(None))
     self.assertFalse(And([t, f])(None))
+
+  def testNot(self):
+    t = lambda(x): True
+    f = lambda(x): False
+    self.assertTrue(Not(f)(None))
+    self.assertFalse(Not(t)(None))
 
 if __name__ == '__main__':
     unittest.main()
