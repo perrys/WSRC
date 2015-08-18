@@ -4,14 +4,14 @@
 {% loadkwacros 'form_macros.html' %}
 {% block centered_page_content %}
 
-<form method="post" action="{% url 'wsrc.site.views.settings_view' %}" data-ajax="false" class="settings-form">
+<form id="settings_form" method="post" action="{% url 'wsrc.site.views.settings_view' %}" data-ajax="false" class="settings-form">
 {% csrf_token %}
 
 {% if form_saved %}
 <span class="form_success_message">Settings saved.</span>
 {% endif %}
 
-{% if user_form.errors or player_form.errors %}
+{% if user_form.errors or player_form.errors or evt_filter_form.errors %}
 <span class="form_error_message ui-btn-icon ui-btn-icon-left ui-icon-alert">Validation Error. Please correct the problem(s) below and resubmit.</span>
 
 {% for err in user_form.non_field_errors %}
@@ -19,6 +19,10 @@
 {% endfor %}
 
 {% for err in player_form.non_field_errors %}
+  <div class="form_error_message">{{ err }}</div>
+{% endfor %}
+
+{% for err in evt_filter_form.non_field_errors %}
   <div class="form_error_message">{{ err }}</div>
 {% endfor %}
 
@@ -49,6 +53,24 @@
 {% usekwacro createfield player_form.prefs_receive_email %}
 </fieldset>
 
+<fieldset name="court_booking" class="toggle-root" >
+<legend>Court Booking</legend>
+<div class="ui-field-contain">
+  <label for="notifier_active">Cancel Notifier:</label>
+  <select name="notifier_active" id="notifier_active" onchange="wsrc.settings.on('toggle_notifier_inputs')">
+    <option value="off">Off</option>
+    <option value="on" {% if notifier_active %}selected="selected"{% endif %}>On</option>
+  </select>
+</div>
+<div id="court_notifier_inputs" {% if notifier_active %}class="toggleable"{% else %}class="toggled"{% endif %}>
+{% usekwacro createfield evt_filter_form.earliest %}
+{% usekwacro createfield evt_filter_form.latest %}
+{% usekwacro createradiofield evt_filter_form.days %}
+{% usekwacro createfield evt_filter_form.notice_period_minutes %}
+</div>
+
+</fieldset>
+
 <fieldset name="information">
 <legend>Information</legend>
 {% usekwacro createfield info_form.membership_type %}
@@ -59,4 +81,9 @@
 <input id="submit_button" type="submit" value="Update" data-theme="b" />
 
 </form>
+
+<script>
+  wsrc.settings.onReady(null)
+</script>
+
 {% endblock %}

@@ -14,13 +14,14 @@
 # You should have received a copy of the GNU General Public License
 # along with WSRC.  If not, see <http://www.gnu.org/licenses/>.
 
-from wsrc.site.models import PageContent, SquashLevels, LeagueMasterFixtures, BookingSystemEvent
+from wsrc.site.models import PageContent, SquashLevels, LeagueMasterFixtures, BookingSystemEvent, EventFilter
 from wsrc.site.competitions.models import CompetitionGroup
 from wsrc.site.usermodel.models import Player
 import wsrc.site.settings.settings as settings
 from wsrc.utils import timezones
 
 from django.contrib.auth.forms import PasswordChangeForm
+from django.forms.widgets import Select, CheckboxSelectMultiple
 from django.contrib.auth.models import User
 from django.core.exceptions import PermissionDenied
 from django.core.urlresolvers import reverse as reverse_url
@@ -277,6 +278,44 @@ class PlayerForm(ModelForm):
         model = Player
         fields = ["cell_phone", "other_phone", "short_name", "prefs_receive_email"]
         exclude = ('user',)
+   
+class NotifierEventFilterForm(ModelForm):
+    class Meta:
+        time_choices = [
+                ("08:00:00", "8am"),
+                ("10:00:00", "10am"),
+                ("12:00:00", "12pm"),
+                ("14:00:00", "2pm"),
+                ("16:00:00", "4pm"),
+                ("17:00:00", "5pm"),
+                ("18:00:00", "6pm"),
+                ("18:30:00", "6:30pm"),
+                ("19:00:00", "7pm"),
+                ("19:30:00", "7:30pm"),
+                ("20:00:00", "8pm"),
+                ("21:00:00", "9pm"),
+                ("22:00:00", "10pm"),
+                ]
+        notice_period_choices = [
+            (30, "30 minutes"),
+            (60, "1 hour"),
+            (120, "2 hours"),
+            (180, "3 hours"),
+            (240, "4 hours"),
+            (300, "5 hours"),
+            (360, "6 hours"),
+            (720, "12 hours"),
+            (1440, "1 day"),
+        ]
+        model = EventFilter
+        fields = ["earliest", "latest", "notice_period_minutes", "days"]
+        exclude = ('user',)
+        widgets = {
+            "earliest": Select(choices=time_choices),
+            "latest": Select(choices=time_choices),
+            "notice_period_minutes": Select(choices=notice_period_choices),
+            "days": CheckboxSelectMultiple(),
+        }
 
 class InfoForm(ModelForm):
     def __init__(self, *args, **kwargs):
@@ -300,6 +339,7 @@ def settings_view(request):
         return redirect(reverse_url("django.contrib.auth.views.login") + '?next=%s' % request.path)
 
     success = False
+    events = EventFilter.objects.filter(player=request.user.player)
     if request.method == 'POST': 
         pform = PlayerForm(request.POST, instance=request.user.player)
         uform = UserForm(request.POST, instance=request.user)
@@ -308,17 +348,29 @@ def settings_view(request):
                 pform.save()
                 uform.save()
             success = True
+        if len(events) > 0:
+            eform = NotifierEventFilterForm(request.POST, instance=events[0])
+        else:
+            eform = NotifierEventFilterForm(request.POST)
+        if eform.is_valid():
+            eform.save()
+        
     else:
         pform = PlayerForm(instance=request.user.player)
         uform = UserForm(instance=request.user)
+        if len(events) > 0:
+            eform = NotifierEventFilterForm(instance=events[0])
+        else:
+            eform = NotifierEventFilterForm()
 
     iform = InfoForm(instance=request.user.player)
 
     return render(request, 'settings.html', {
-        'player_form': pform,
-        'user_form':   uform,
-        'info_form':   iform,
-        'form_saved': success,
+        'player_form':     pform,
+        'user_form':       uform,
+        'info_form':       iform,
+        'evt_filter_form': eform,
+        'form_saved':      success,
     })
 
 class DateTimeTzAwareField(serializers.DateTimeField):
