@@ -7,8 +7,8 @@ import os.path
 import re
 
 from bs4 import BeautifulSoup
-from cal_events import Event
 from wsrc.utils.timezones import GBEireTimeZone
+import wsrc.utils.url_utils as url_utils
 
 UK_TZINFO = GBEireTimeZone()
 LOGGER = logging.getLogger(__name__)
@@ -49,6 +49,10 @@ def get_tag_content(c):
 def count_backwards_tds(tag):
   return len([x for x in tag_generator(tag, next_func=lambda(x): x.previous_sibling, filt=CellPredicate('td'))])
   
+def extract_id(link):
+  if link is None:
+    return None
+  return url_utils.get_url_params(str(link)).get("id")
 
 def process_booking(cell):
   """Parse the cell contents into a either a string (in the case of
@@ -56,14 +60,15 @@ def process_booking(cell):
   object. The Event contains just the description (i.e. member name)
   and link. The time fields are added later as part of row/page
   processing"""
+  from wsrc.site.models import BookingSystemEvent
   link = cell.a
   if link is None:
     return get_tag_content(cell)
-  return Event(get_tag_content(link), 'http://www.court-booking.co.uk/WokingSquashClub/' + link['href'], description=link.get("title"))
+  return BookingSystemEvent(name = get_tag_content(link), description=link.get("title"), event_id=extract_id(link.get("href")))
 
 def process_week_row(row):
   """Parse a 15-minute row in the weekly timetable, returning a time
-  string and a list of 7 Event objects, or None if the cell is empty"""
+  string and a list of 7 BookingSystemEvent objects, or None if the cell is empty"""
   class Result:
     def __init__(self, time, bookings):
       time = datetime.datetime.strptime(time, '%H:%M')
@@ -102,7 +107,7 @@ def process_week_page(soup) :
   objects representing the 15-minute slots, in time order. Each object
   contains the fields "time" and "bookings", which are respectively
   the time (as a string) and a list of 7 objects representing the cell
-  content, either an Event object, a string, or None."""
+  content, either an BookingSystemEvent object, a string, or None."""
   first_col_cell = soup.find('td', class_='red')
   if first_col_cell is None:
     html = soup.prettify("utf-8")
@@ -121,6 +126,8 @@ def extract_events(time_list, first_date, court_number):
   TIME_LIST is the list of 15-minute slots representing the court bookings for a week at that time.
   FIRST_DATE is the date of the first column (which should be a Monday)
   LOCATION is a description of the court"""
+
+  from wsrc.site.models import BookingSystemEvent
   quarterHour = datetime.timedelta(minutes=15)
 
   result = []
@@ -131,23 +138,23 @@ def extract_events(time_list, first_date, court_number):
     for j,row in enumerate(time_list):
       booking = row.bookings[i]
       if booking is not None:
-        if isinstance(booking, Event):
-          booking.time = datetime.datetime.combine(today, row.time)
-          booking.duration = quarterHour
-          booking.location = "Court %d, Woking Squash Rackets Club, Horsell Moor, Woking, Surrey GU21 4NQ" % court_number
+        if isinstance(booking, BookingSystemEvent):
+          booking.start_time = datetime.datetime.combine(today, row.time)
+          booking.end_time = booking.start_time + quarterHour
+          booking.court = court_number
           day_bookings.append(booking)
         elif isinstance(booking, unicode) and booking.strip() == '"': # Process dittos
           if len(day_bookings) == 0:
             raise Exception("encountered ditto before a booking at time {time} for day {i}".format(time=str(row.time), i=i))
           booking = day_bookings[-1] 
-          booking.duration = booking.duration + quarterHour
+          booking.end_time += quarterHour
         else:
           raise Exception("unable to parse cell at time {time} for day {i}, text=\"{text}\"".format(time=str(row.time), i=i, text=booking))
 
   def flatten(l):
     return [item for sublist in l for item in sublist]
-
-  return flatten(result)
+  result = flatten(result)
+  return result
 
 def process_box_header(tag):
   """Parse a box from the old site's league table page"""
@@ -178,7 +185,8 @@ def process_box_header(tag):
 def scrape_week_events(eventData, first_date, court_number):
   soup = BeautifulSoup(eventData, "lxml")
   time_list = process_week_page(soup)
-  return extract_events(time_list, first_date, court_number)
+  events = extract_events(time_list, first_date, court_number)
+  return events
 
 def scrape_old_league_table(data):
   soup = BeautifulSoup(data, "lxml")
@@ -213,10 +221,12 @@ def scrape_fixtures_table(data):
 
 
 if __name__ == "__main__":
+  import wsrc.external_sites
+
   infile = sys.stdin
   if len(sys.argv) > 1:
     infile = open(os.path.expanduser(sys.argv[1]))
-  entries = scrape_week_events(infile, datetime.date(2014,9,22), "WSRC Court 1")
+  entries = scrape_week_events(infile, datetime.date(2014,9,22), 1)
   for e in entries:
-      print e.__dict__
+      print e
   
