@@ -1,12 +1,10 @@
 #!/usr/bin/python
 
 import datetime
-import httplib2
 import logging
 import os.path
 import sys
 import traceback
-import urllib
 import re
 
 import cal_events
@@ -14,12 +12,11 @@ import scrape_page
 import evt_filters
 import actions
 
-from wsrc.utils import jsonutils, timezones
+from wsrc.utils import jsonutils, timezones, url_utils
 from wsrc.site.usermodel.models import Player
 
 from django.db import transaction
 
-WSRC_CALENDAR_ID = "2pa40689s076sldnb8genvsql8@group.calendar.google.com"
 LOGGER = logging.getLogger(__name__)
 LOGGER.setLevel(logging.INFO)
 
@@ -30,13 +27,6 @@ NAME_PAIRS = [
   ("Philip", "Phil"),
   ("Patrick", "Paddy"),
 ]
-
-def get_content(url, params):
-  url +=  "?" + urllib.urlencode(params)
-  LOGGER.info("Fetching {url}".format(**locals()))
-  h = httplib2.Http()
-  (resp_headers, content) = h.request(url, "GET")
-  return content
 
 def get_squashlevels_rankings():
   WOKING_SQUASH_CLUB_ID = 60
@@ -52,7 +42,7 @@ def get_squashlevels_rankings():
     "limit_confidence": 1,
     }
   URL = 'http://www.squashlevels.com/players.php'
-  return get_content(URL, PARAMS)
+  return url_utils.get_content(URL, PARAMS)
 
 def get_club_fixtures_and_results():
   WOKING_SQUASH_CLUB_ID=16
@@ -62,24 +52,12 @@ def get_club_fixtures_and_results():
     "club": WOKING_SQUASH_CLUB_NAME,
     }
   URL = 'http://county.leaguemaster.co.uk/cgi-county/icounty.exe/showclubfixtures'
-  return get_content(URL, PARAMS)
+  return url_utils.get_content(URL, PARAMS)
 
 def get_old_leage_data(date):
   datefmt = date.strftime("%d%m%y")
   URL = 'http://wokingsquashclub.org/Leagues_%(datefmt)s.htm' % locals()  
-  return get_content(URL, {})
-
-def get_week_view(year, month, day, court):
-  "Retrieve the week view for a given court from the online booking system"
-  params = {
-    'year': str(year),
-    'month': "%02d" % month,
-    'day': "%02d" % day,
-    'area': '1',
-    'room': str(court)
-    }
-  URL = 'http://www.court-booking.co.uk/WokingSquashClub/week.php?%s'
-  return get_content(URL, params)
+  return url_utils.get_content(URL, {})
 
 class PointsTable:
 
@@ -167,72 +145,6 @@ def match_player_name(name):
   LOGGER.error("Unable to find a player matching %(name)s" % locals())
   return None
 
-def update_google_calendar(bookingSystemEvents, clearExistingCalendarEvents=False):
-
-  cal_events.LOGGER.setLevel(logging.DEBUG)
-
-  configDir = os.path.join(os.path.dirname(sys.argv[0]), "..", "etc")
-  notifierConfig = jsonutils.deserializeFromFile(open(os.path.join(configDir, "notifier.json")))
-  smtpConfig = jsonutils.deserializeFromFile(open(os.path.join(configDir, "smtp.json"))).gmail
-
-  # Obtain all events in the Google calendar starting from the previous Monday:
-  date = timezones.nearest_last_monday()
-  cal = cal_events.CalendarWrapper(WSRC_CALENDAR_ID)
-#  cal.testing = True
-  LOGGER.debug("Fetching calendar \"{0}\"".format(WSRC_CALENDAR_ID))
-  existingGCalEvents = cal.list_events(date)
-  LOGGER.info("Found {0} event(s) in Google calendar".format(len(existingGCalEvents)))
-
-  if clearExistingCalendarEvents:
-    for evt in existingGCalEvents:
-      cal.delete_event(evt)
-    existingGCalEvents = []
-
-  # Convert the list of Google calendar events to a dictionary. Events are keyed by start date and location.
-  existingGCalEvents = dict([(evt,evt) for evt in existingGCalEvents])
-
-  # For each event in the booking system, insert/update in the Google calendar as necessary:
-  for (evt, court) in bookingSystemEvents:
-    try:
-      existingEvent = existingGCalEvents.get(evt) # lookup is by start time and location only
-      if existingEvent is None:
-        # the event does not exist in Google calendar, so add it: 
-        cal.add_event(evt, court) # court number is used for colour ID
-      else:
-        # an event for the time/location exists, check if it needs updating: 
-        if not evt.identical_to(existingEvent): 
-          existingEvent.merge_from(evt)
-          cal.update_event(existingEvent)
-        del existingGCalEvents[evt] # remove this event from the list as we have processed it
-    except Exception:
-      LOGGER.exception("Error processing event %s", evt.__dict__)
-
-  # unprocessed Google calendar events must have been removed from the booking system since the last sync
-  removedEvents = existingGCalEvents
-
-  # process removed events through the cancelled event notifier:
-  for userCfg in notifierConfig.config:
-    notifier = actions.Notifier(userCfg, smtpConfig)
-    for evt in removedEvents:
-      notifier(evt)
-    notifier.process_all_events()
-
-  for evt in removedEvents:
-    cal.delete_event(evt)
-
-@transaction.atomic
-def update_booking_events(events):
-  from wsrc.site.models import BookingSystemEvent
-  BookingSystemEvent.objects.all().delete()
-  for (evt, court) in events:
-    entry = BookingSystemEvent(
-      start_time = evt.time,
-      end_time   = evt.time + evt.duration,
-      description = evt.name,
-      court = court,
-      )
-    entry.save()
-  
 @transaction.atomic
 def update_squash_levels_data(data):
   from wsrc.site.models import SquashLevels
@@ -419,26 +331,16 @@ def add_old_league_data(boxes_data, end_date):
       match_record.save()
       group.save()
 
-  
 def cmdline_sync_bookings():
 
-  bookingSystemEvents = []
-  date = timezones.nearest_last_monday()
+  import wsrc.external_sites.booking_manager as booking_manager
 
-  # Loop over this week and next week:
-  for td in (datetime.timedelta(0), datetime.timedelta(days=7)):
-    date = date + td
-    # Loop over courts 1..3
-    for court in range(1,4):
-      # Get data from the bookings system for this week and court:
-      bookingSystemEventData = get_week_view(date.year, date.month, date.day, court)
-      events = scrape_page.scrape_week_events(bookingSystemEventData, date, court)
-      LOGGER.info("Found {0} court booking(s) for court {1} week starting {2}".format(len(bookingSystemEvents), court, date.isoformat()))
-      bookingSystemEvents.extend([(event, court) for event in events])
-
-  update_booking_events(bookingSystemEvents)
-  update_google_calendar(bookingSystemEvents)
-
+  session = booking_manager.BookingSystemSession()
+  events, start_date_used = session.get_booked_courts()
+  (new_events, modified_events, removed_events) = booking_manager.sync_db_booking_events(start_date_used, start_date_used + datetime.timedelta(days=14))
+  notifier = Notifier()
+  notifier.process_removed_events(removed_events)
+  
 def cmdline_sync_squashlevels(*args):
 
   if len(args) > 0:
