@@ -15,7 +15,7 @@ class IsFutureEvent:
     if now is None: 
       now = datetime.datetime.now(UK_TZINFO)
     starttime = now + self.delay
-    return evt.time > starttime
+    return evt.start_time > starttime
 
 class IsPerson:
   def __init__(self, person):
@@ -28,15 +28,15 @@ class DaysOfWeek:
     """DAYS is a list of day indices, where 1 is Monday and 7 is Sunday"""
     self.days = days
   def __call__(self, evt):
-    return evt.time.isoweekday() in  self.days
+    return evt.start_time.isoweekday() in  self.days
 
 class TimeOfDay:
   def __init__(self, starttime, endtime=datetime.time(23, 59, 59)):
     self.starttime = starttime
     self.endtime = endtime
   def __call__(self, evt):
-    timeofday = evt.time.time()
-    return timeofday >= self.starttime and timeofday < self.endtime 
+    timeofday = evt.start_time.time()
+    return timeofday >= self.starttime and timeofday <= self.endtime 
 
 class And:
   def __init__(self, filters):
@@ -65,7 +65,7 @@ class Not:
 class Tester(unittest.TestCase):
   class TimeEvt:
     def __init__(self, d):
-      self.time = d
+      self.start_time = d
   class PersonEvt:
     def __init__(self, p):
       self.name = p
