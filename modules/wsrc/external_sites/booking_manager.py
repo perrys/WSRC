@@ -13,53 +13,21 @@
 # You should have received a copy of the GNU General Public License
 # along with WSRC.  If not, see <http://www.gnu.org/licenses/>.
 
-import cookielib
 import datetime
 import logging
 import httplib
 import sys
-import urllib
-import urllib2
+from django.db import transaction
 
 import wsrc.utils.timezones as time_utils
+import wsrc.utils.url_utils as url_utils
 import scrape_page
 
 LOGGER = logging.getLogger(__name__)
 LOGGER.setLevel(logging.INFO)
+import wsrc.utils.url_utils as url_utils
 
-class MyHTTPRedirectHandler(urllib2.HTTPRedirectHandler):
-    def __init__(self):
-      self.redirections = []
-    def redirect_request(self, req, fp, code, msg, headers, newurl):
-      self.redirections.append([code, msg, headers, newurl])
-      return urllib2.HTTPRedirectHandler.redirect_request(self, req, fp, code, msg, headers, newurl)
-    def clear(self):
-      self.redirections = []
-
-class SimpleHttpClient:
-  "Simple httpclient which keeps session cookies and does not follow redirect requests"
-  def __init__(self, base_url):
-    self.base_url = base_url
-    self.cookiejar = cookielib.CookieJar()
-    self.redirect_recorder = MyHTTPRedirectHandler()
-    self.opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(self.cookiejar), self.redirect_recorder)
-
-  def request(self, selector, params=None, timeout=None):
-    """Make a request for the given selector. This method returns a file like object as specified by urllib2.urlopen()"""
-    url = self.base_url + selector
-    if params is not None:
-      params = urllib.urlencode(params)
-    LOGGER.debug("opening url %(url)s, params: %(params)s" % locals())
-    self.redirect_recorder.clear()
-    fh = self.opener.open(url, params, timeout)
-    return fh
-
-  def get(self, selector, params=None, timeout=None):
-    """Make a GET request for the given selector. This method returns a file like object as specified by urllib2.urlopen()"""
-    if params is not None:
-      params = urllib.urlencode(params)
-      selector = "%s?%s" % (selector, params)
-    return self.request(selector, None, timeout)
+UK_TZINFO = time_utils.GBEireTimeZone()
 
 class BookingSystemSession:
 
@@ -70,7 +38,7 @@ class BookingSystemSession:
   WEEK_VIEW_PAGE      = '/WokingSquashClub/week.php'
 
   def __init__(self, username=None, password=None):
-    self.client = SimpleHttpClient(BookingSystemSession.BASE_URL)
+    self.client = url_utils.SimpleHttpClient(BookingSystemSession.BASE_URL)
 
     if username is None: # don't attempt to log in if no username supplied.
       return
@@ -171,63 +139,186 @@ class BookingSystemSession:
       raise Exception("failed to retrieve week view, status: %(status)d, body: %(body)s" % locals())
     return body
     
-def get_week_view(year, month, day, court, session=None):
-  if session is None:
-    session = BookingSystemSession()
-  return session.get_week_view(year, month, day, court)
+  def get_booked_courts(self, start_date=None):
+    bookingSystemEvents = []
+    date = time_utils.nearest_last_monday(start_date)
+    # Loop over this week and next week:
+    for td in (datetime.timedelta(0), datetime.timedelta(days=7)):
+      date = date + td
+      # Loop over courts 1..3
+      for court in range(1,4):
+        # Get data from the bookings system for this week and court:
+        bookingSystemEventData = self.get_week_view(date.year, date.month, date.day, court)
+        events = scrape_page.scrape_week_events(bookingSystemEventData, date, court)
+        LOGGER.info("Found {} court booking(s) for court {} week starting {}".format(len(events), court, date.isoformat()))
+        bookingSystemEvents.extend([event for event in events])
+    return bookingSystemEvents, start_date
+  
+@transaction.atomic
+def sync_db_booking_events(events, start_date, end_date):
+  """Sync the db's view of booking events with the given list (usually
+     the current state of the booking system) within the range
+     START_DATE <= event.start_time < END_DATE. Returns a 3 lists of
+     events - newly added events, events which were modified, and
+     events which were removed from the booking system since the last
+     sync.
 
-def get_booked_courts(session=None):
-  if session is None:
-    session = BookingSystemSession()
-  bookingSystemEvents = []
-  date = time_utils.nearest_last_monday()
-  # Loop over this week and next week:
-  for td in (datetime.timedelta(14),): # (datetime.timedelta(0), datetime.timedelta(days=7)):
-    date = date + td
-    # Loop over courts 1..3
-    for court in range(1,4):
-      # Get data from the bookings system for this week and court:
-      bookingSystemEventData = session.get_week_view(date.year, date.month, date.day, court)
-      events = scrape_page.scrape_week_events(bookingSystemEventData, date, court)
-      LOGGER.info("Found {0} court booking(s) for court {1} week starting {2}".format(len(bookingSystemEvents), court, date.isoformat()))
-      bookingSystemEvents.extend([(event, court) for event in events])
-  return bookingSystemEvents
+  """
 
-def make_booking(self, username, password, starttime, court, description=None, name=None):
-  session = BookingSystemSession(username, password)
-  session.make_booking(starttime, court, description, name)
+  from wsrc.site.models import BookingSystemEvent
 
-def delete_booking(self, username, password, event_id):
-  session = BookingSystemSession(username, password)
-  session.delete_booking(event_id)
+  midnight = datetime.time(0, 0, 0, tzinfo=UK_TZINFO)
+  existing_events_qs = BookingSystemEvent.objects.all()
+  existing_events_qs = existing_events_qs.filter(start_time__gte = datetime.datetime.combine(start_date, midnight))
+  existing_events_qs = existing_events_qs.filter(start_time__lt  = datetime.datetime.combine(end_date, midnight))
+  existing_events = set(existing_events_qs)
 
+  new_events = []
+  modified_events = []
 
+  for evt in events:
+    matching_qs = existing_events_qs.filter(start_time=evt.start_time, court=evt.court)
+    n_existing = matching_qs.count()
+    if n_existing == 0:
+      evt.save()
+      new_events.append(evt)
+    elif n_existing == 1:
+      existing_event = matching_qs.first()
+      dirty = False
+      for prop in ("end_time", "name", "description"):
+        if getattr(evt, prop) != getattr(existing_event, prop):
+          setattr(existing_event, prop, getattr(evt, prop))
+          dirty = True
+      if dirty:
+        existing_event.save()
+        modified_events.append(existing_event)
+      existing_events.remove(existing_event)
+    else:
+      raise Exception("Unexpected duplicate entries with same court/start_time" + str(evt))
 
-def test_create_and_delete_booking():
-  # quick test
+  # at the end of the loop, any entries remaining in the
+  # existing_events list are ones that have been removed from the
+  # booking system
+  for evt in existing_events:
+    evt.delete()
 
-  session = BookingSystemSession(sys.argv[1], sys.argv[2])
-  for cookie in session.client.cookiejar:
-    print cookie
-
-  if len(sys.argv) > 3:
-    event_id = int(sys.argv[3])
-    session.delete_booking(event_id)
-  else:
-    # book a court 1 year from today
-    today = datetime.date.today()
-    court_time = datetime.datetime(today.year+1, today.month, today.day, 19, 0, 0) # may fail on a leap day ??
-    session.make_booking(court_time, 1, description="*** Test booking description. ***", name="** TEST NAME **")
-
-def test_get_booked_courts():
-
-  bookings = get_booked_courts()
-  for (evt, court) in bookings:
-    print evt.name, evt.time, court, evt.get_booking_id(), evt.description
+  return new_events, modified_events, list(existing_events)
 
 if __name__ == "__main__":
+  import wsrc.external_sites # call __init__.py
+  import unittest
 
-  logging.basicConfig(format='%(asctime)-10s [%(levelname)s] %(message)s',datefmt="%Y-%m-%d %H:%M:%S")
+  class MockHttpClient:
+    def get(self, selector, params):
+      filename = "wsrc/external_sites/test_data/wsrc_{year}-{month}-{day}_court_{room}.html".format(**params)
+      class Response():
+        def getcode(self):
+          return httplib.OK
+        def read(self):
+          return open(filename).read()
+      return Response()
 
-  test_process_events()
+  class Tester(unittest.TestCase):
+
+    def clean_db(self):
+      from wsrc.site.models import BookingSystemEvent
+      # this test will use the DB. Clear all data before 2000, which we will use for our testing
+      old_events = BookingSystemEvent.objects.filter(start_time__lt=datetime.datetime(2000,1,1,0,0))
+      old_events.delete()
+      self.assertEqual(0, BookingSystemEvent.objects.filter(start_time__lt=datetime.datetime(2000,1,1,0,0)).count())
+
+    def setUp(self):
+      self.clean_db()
+
+    def tearDown(self):
+      self.clean_db()
+
+    def test_GIVEN_mock_http_client_WHEN_getting_week_view_THEN_something_returned(self):
+      session = BookingSystemSession()
+      session.client = MockHttpClient()
+      html = session.get_week_view(2015, 11, 9, 1)
+      self.assertTrue(len(html) > 0)
+
+    def test_GIVEN_mock_http_client_WHEN_scraping_booked_courts_THEN_events_returned_within_date_range(self):
+      session = BookingSystemSession()
+      session.client = MockHttpClient()
+      start_date = datetime.date(2015, 11, 9)
+      events, start_date_used = session.get_booked_courts(start_date)
+      self.assertTrue(len(events) > 0)
+      self.assertEqual(start_date, start_date_used)
+      for event in events:
+        self.assertTrue(event.start_time.date() >= start_date)
+        self.assertTrue(event.start_time.date() <= (start_date + datetime.timedelta(days=14)))
+        self.assertTrue(event.end_time >= event.start_time)
+        self.assertTrue(event.end_time <= (event.start_time + datetime.timedelta(minutes=180)))
+        self.assertTrue(event.court >= 1)
+        self.assertTrue(event.court <= 3)
+
+    def test_GIVEN_events_in_db_WHEN_syncing_new_events_THEN_matching_added_modified_removed_returned(self):
+      from wsrc.site.models import BookingSystemEvent
+
+      start_date = datetime.date(1999, 1, 4) # 4th Jan 1999 was a monday
+      end_date   = datetime.date(1999, 1, 18)
+      existing_events = set(BookingSystemEvent.objects.all())
+      if len(existing_events) == 0:
+        sys.stderr.write("Events DB is empty")
+
+      def create_evt(year, month, day, start_hour, start_minute, duration, court, name, description=None):
+        start = datetime.datetime(year, month, day, start_hour, start_minute, tzinfo=UK_TZINFO)
+        return BookingSystemEvent(start_time=start, end_time=start+datetime.timedelta(minutes=duration), court=court, name=name, description=description) 
+
+      evt1 = create_evt(1999, 1, 5, 19, 0, 45, 2, "Foo Bar") 
+      
+      def sync_and_test_expected_numbers(evt_list, expected_added, expected_modified, expected_removed):
+        (added, modified, removed) = sync_db_booking_events(evt_list, start_date, end_date)
+        self.assertEqual(expected_added,    len(added))
+        self.assertEqual(expected_modified, len(modified))
+        self.assertEqual(expected_removed,  len(removed))
+        return (added, modified, removed)
+
+      # happy day addition test
+      (added, modified, removed) = sync_and_test_expected_numbers([evt1], 1, 0, 0)
+      self.assertEqual([evt1], added)
+      self.assertEqual(len(existing_events)+1, BookingSystemEvent.objects.all().count())
+
+      # do nothing test
+      (added, modified, removed) = sync_and_test_expected_numbers([evt1], 0, 0, 0)
+
+      # modification tests
+
+      def test_same_key(modified):
+        # The modified event returned is one constructed from the DB
+        # copy, so the primary key will be the same but it is a
+        # different object from evt1
+        self.assertEqual(evt1.pk, modified[0].pk)
+        mod_evt = BookingSystemEvent.objects.get(pk=evt1.pk)
+        self.assertEqual([mod_evt], modified)
+
+      evt2 = create_evt(1999, 1, 5, 19, 0, 45, 2, "Bar Foo") 
+      (added, modified, removed) = sync_and_test_expected_numbers([evt2], 0, 1, 0)
+      test_same_key(modified)
+
+      evt3 = create_evt(1999, 1, 5, 19, 0, 90, 2, "Bar Foo") 
+      (added, modified, removed) = sync_and_test_expected_numbers([evt3], 0, 1, 0)
+      test_same_key(modified)
+
+      evt4 = create_evt(1999, 1, 5, 19, 0, 90, 2, "Bar Foo", description="testing") 
+      (added, modified, removed) = sync_and_test_expected_numbers([evt4], 0, 1, 0)
+      test_same_key(modified)
+
+      del_evt = BookingSystemEvent.objects.get(pk=evt1.pk)
+
+      # removal test
+      (added, modified, removed) = sync_and_test_expected_numbers([], 0, 0, 1)
+      for prop in "name", "description", "court", "start_time":        
+        self.assertEqual(getattr(del_evt, prop), getattr(removed[0], prop))
+
+  unittest.main()
+      
+# Local Variables:
+# mode: Python
+# python-indent-offset: 2
+
+
+  
   
