@@ -142,6 +142,7 @@ class BookingSystemSession:
   def get_booked_courts(self, start_date=None):
     bookingSystemEvents = []
     date = time_utils.nearest_last_monday(start_date)
+    start_date = date
     # Loop over this week and next week:
     for td in (datetime.timedelta(0), datetime.timedelta(days=7)):
       date = date + td
