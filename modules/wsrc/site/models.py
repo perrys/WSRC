@@ -32,7 +32,14 @@ class BookingSystemEvent(models.Model):
   start_time = models.DateTimeField()
   end_time = models.DateTimeField()
   court = models.SmallIntegerField()
-  description = models.CharField(max_length=64, blank=True, null=True)
+  name = models.CharField(max_length=64)
+  event_id = models.IntegerField(blank=True, null=True)
+  description = models.CharField(max_length=128, blank=True, null=True)
+
+  def __unicode__(self):
+    if self.start_time is None or self.end_time is None:
+      return "Invalid event"
+    return "{event_id} Court {court} {start_time:%Y-%m-%d %H:%M}-{end_time:%H:%M} {name} \"{description}\"".format(**self.__dict__)
 
 class SquashLevels(models.Model):
   player = models.ForeignKey(user_models.Player, blank=True, null=True)
@@ -70,7 +77,7 @@ class EventFilter(models.Model):
   player = models.ForeignKey(user_models.Player)
   earliest = models.TimeField()
   latest = models.TimeField()
-  days = models.ManyToManyField(DayOfWeek)
+  days = models.ManyToManyField(DayOfWeek, blank=True)
   notice_period_minutes = models.IntegerField("Minimum Notice")
   def __unicode__(self):
     return "EventFilter <%s %s-%s [%s] notice: %s" % (self.player.user.username, self.earliest, self.latest, ",".join([str(d) for d in self.days.all()]), self.notice_period_minutes)
