@@ -10,7 +10,7 @@ import re
 import cal_events
 import scrape_page
 import evt_filters
-import actions
+import cancel_notifier
 
 from wsrc.utils import jsonutils, timezones, url_utils
 from wsrc.site.usermodel.models import Player
@@ -174,13 +174,13 @@ def update_squash_levels_data(data):
       if player is not None:
         player.squashlevels_id = player_id
         player.save()
-
+    level = row["Level"].text.replace(",", "")
     datum = SquashLevels(player          = player,
                          name            = player_cell.text, 
                          num_events      = row["Events"].text,
                          last_match_date = last_match_date, 
                          last_match_id   = last_match_id,
-                         level           = row["Level"].text) 
+                         level           = level) 
     datum.save()
 
 @transaction.atomic
@@ -337,8 +337,8 @@ def cmdline_sync_bookings():
 
   session = booking_manager.BookingSystemSession()
   events, start_date_used = session.get_booked_courts()
-  (new_events, modified_events, removed_events) = booking_manager.sync_db_booking_events(start_date_used, start_date_used + datetime.timedelta(days=14))
-  notifier = Notifier()
+  (new_events, modified_events, removed_events) = booking_manager.sync_db_booking_events(events, start_date_used, start_date_used + datetime.timedelta(days=14))
+  notifier = cancel_notifier.Notifier()
   notifier.process_removed_events(removed_events)
   
 def cmdline_sync_squashlevels(*args):
