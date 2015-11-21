@@ -338,6 +338,8 @@ def cmdline_sync_bookings():
   session = booking_manager.BookingSystemSession()
   events, start_date_used = session.get_booked_courts()
   (new_events, modified_events, removed_events) = booking_manager.sync_db_booking_events(events, start_date_used, start_date_used + datetime.timedelta(days=14))
+  LOGGER.info("{} new bookings, {} modified, {} cancelled".format(len(new_events), len(modified_events), len(removed_events)))
+
   notifier = cancel_notifier.Notifier()
   notifier.process_removed_events(removed_events)
   
