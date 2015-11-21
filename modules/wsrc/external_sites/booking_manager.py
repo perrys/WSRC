@@ -151,7 +151,7 @@ class BookingSystemSession:
         # Get data from the bookings system for this week and court:
         bookingSystemEventData = self.get_week_view(date.year, date.month, date.day, court)
         events = scrape_page.scrape_week_events(bookingSystemEventData, date, court)
-        LOGGER.info("Found {} court booking(s) for court {} week starting {}".format(len(events), court, date.isoformat()))
+        LOGGER.info("Found {0} court booking(s) for court {1} week starting {2}".format(len(events), court, date.isoformat()))
         bookingSystemEvents.extend([event for event in events])
     return bookingSystemEvents, start_date
   

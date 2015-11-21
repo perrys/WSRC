@@ -31,11 +31,11 @@ class Notifier:
   def process_removed_events(self, removedEvents):
 
     for event in removedEvents:
-      LOGGER.debug("processing {}".format(event))
+      LOGGER.debug("processing {0}".format(event))
       id_list = []  
       # process removed events through the cancelled event notifier:
       for id, userfilter in self.userfilters.iteritems():
-        LOGGER.debug("testing filters for player {}".format(id))
+        LOGGER.debug("testing filters for player {0}".format(id))
         if userfilter(event):
           LOGGER.debug("matched".format(id))
           id_list.append(id)
@@ -55,7 +55,7 @@ class Notifier:
     context["content_type"] = "text/plain"
     text_body = self.email_template.render(context)
     to_list = [p.user.email for p in players if '@' in p.user.email]
-    LOGGER.debug("sending email to {}".format(to_list))
+    LOGGER.debug("sending email to {0}".format(to_list))
     try:
       self.send_email(subject, text_body, html_body, from_address, to_list)
     except:
