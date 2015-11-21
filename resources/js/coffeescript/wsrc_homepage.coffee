@@ -84,7 +84,7 @@ window.WSRC_homepage =
             start_time:  date_prefix + totimestr start
             end_time:    date_prefix + totimestr (start + COURT_SLOT_LENGTH)
             court:       court
-            description: "_"
+            name:        "_"
         start += COURT_SLOT_LENGTH
 
     return bookings.concat(newlist)
@@ -125,14 +125,14 @@ window.WSRC_homepage =
           t.substring(start, start+len)
         getTime = (t) ->
           getTimeElt(11, 5, t)
-        description = booking.description
-        if booking.description == "_"
+        name = booking.name
+        if booking.name == "_"
           if addLinks
-            description = "<a href='http://www.court-booking.co.uk/WokingSquashClub/edit_entry_fixed.php?room=#{ booking.court }&area=1&hour=#{ getTimeElt(11,2) }&minute=#{ getTimeElt(14,2) }&year=#{ getTimeElt(0,4) }&month=#{ getTimeElt(5,2) }&day=#{ getTimeElt(8,2) }'>(available)</a>"
+            name = "<a href='http://www.court-booking.co.uk/WokingSquashClub/edit_entry_fixed.php?room=#{ booking.court }&area=1&hour=#{ getTimeElt(11,2) }&minute=#{ getTimeElt(14,2) }&year=#{ getTimeElt(0,4) }&month=#{ getTimeElt(5,2) }&day=#{ getTimeElt(8,2) }'>(available)</a>"
         else
-          description = booking.description
+          name = booking.name
         cls = if parseInt(getTimeElt(11,2)) < 17 then toggleclass else ""
-        row = $("<tr class='#{ cls }'><td>#{ getTime(t1) }&ndash;#{ getTime(t2) }</td><td>#{ description }</td><td>ct.&nbsp;#{ booking.court }</td></tr>")
+        row = $("<tr class='#{ cls }'><td>#{ getTime(t1) }&ndash;#{ getTime(t2) }</td><td>#{ name }</td><td>ct.&nbsp;#{ booking.court }</td></tr>")
         row.addClass(if odd then "odd" else "even")
         odd = not odd
         table.append(row)
