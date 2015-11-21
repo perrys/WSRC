@@ -1,6 +1,7 @@
 #!/usr/bin/python
 
 import datetime
+import logging
 
 from django.template import Template, Context
 import markdown
@@ -9,6 +10,9 @@ from wsrc.utils import timezones, email_utils
 from wsrc.external_sites import evt_filters
 
 FUTURE_CUTTOFF = datetime.timedelta(days=7)
+
+LOGGER = logging.getLogger(__name__)
+LOGGER.setLevel(logging.DEBUG)
 
 class Notifier:
   """Emails players when a booking has been cancelled, to allow them to
@@ -27,12 +31,16 @@ class Notifier:
   def process_removed_events(self, removedEvents):
 
     for event in removedEvents:
+      LOGGER.debug("processing {}".format(event))
       id_list = []  
       # process removed events through the cancelled event notifier:
       for id, userfilter in self.userfilters.iteritems():
+        LOGGER.debug("testing filters for player {}".format(id))
         if userfilter(event):
+          LOGGER.debug("matched".format(id))
           id_list.append(id)
-      self.notify(event, id_list)
+      if len(id_list) > 0:
+        self.notify(event, id_list)
 
   def notify(self, event, id_list):
     from wsrc.site.usermodel.models import Player
@@ -42,11 +50,12 @@ class Notifier:
       "content_type": "text/html"
     })
     subject = "Court Cancellation"
-    from_address = "webmaster@wokingsquashclub.org"
+    from_address = "court-cancellations@wokingsquashclub.org"
     html_body = markdown.markdown(self.email_template.render(context))
     context["content_type"] = "text/plain"
     text_body = self.email_template.render(context)
     to_list = [p.user.email for p in players if '@' in p.user.email]
+    LOGGER.debug("sending email to ".format(to_list))
     try:
       self.send_email(subject, text_body, html_body, from_address, to_list)
     except:
@@ -272,7 +281,7 @@ if __name__ == "__main__":
         self.assertTrue(expected_link in text_body)
         self.assertTrue(expected_link in html_body)
         self.assertEqual("Court Cancellation", subject)
-        self.assertEqual("webmaster@wokingsquashclub.org", from_address)
+        self.assertEqual("court-cancellations@wokingsquashclub.org", from_address)
         self.assertEqual([self.player1.user.email], to_list)
       notifier.send_email = send_email
       notifier.notify(removed_event, [self.player1.id])
