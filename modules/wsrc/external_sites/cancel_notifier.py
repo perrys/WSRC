@@ -18,8 +18,7 @@ class Notifier:
   """
 
   def __init__(self, current_time=None):
-    from wsrc.site.usermodel.models import Player
-    from wsrc.site.models import EventFilter, EmailContent
+    from wsrc.site.models import EmailContent
     self.userfilters = self.get_configs_from_db(current_time)
     template_obj = EmailContent.objects.get(name="CancellationNotifier")
     self.email_template = Template(template_obj.markup)
@@ -36,6 +35,7 @@ class Notifier:
       self.notify(event, id_list)
 
   def notify(self, event, id_list):
+    from wsrc.site.usermodel.models import Player
     players = [Player.objects.get(pk=id) for id in id_list]
     context = Context({
       "event": event,
@@ -54,6 +54,8 @@ class Notifier:
       traceback.print_exc()
   
   def get_configs_from_db(self, current_time):
+    from wsrc.site.usermodel.models import Player
+    from wsrc.site.models import EventFilter
     userfilters = dict()
     cuttoff_filter = evt_filters.Not(evt_filters.IsFutureEvent(delay=FUTURE_CUTTOFF, now=current_time))
     def get_or_create(id):
