@@ -7,7 +7,7 @@
 window.WSRC_today_bookings = [
 {% for row in bookings %}
 {% if forloop.counter0 > 0 %},{% endif %}
-{ start_time: "{{ row.start_time|date:'c' }}", end_time: "{{ row.end_time|date:'c' }}", description: "{{ row.description }}", court: {{ row.court }} }
+{ start_time: "{{ row.start_time|date:'c' }}", end_time: "{{ row.end_time|date:'c' }}", name: "{{ row.name }}", court: {{ row.court }} }
 {% endfor %}
 ];
 </script>
