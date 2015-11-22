@@ -42,7 +42,8 @@ def get_squashlevels_rankings():
     "limit_confidence": 1,
     }
   URL = 'http://www.squashlevels.com/players.php'
-  return url_utils.get_content(URL, PARAMS)
+  AGENT = "SL-client/Woking (+http://www.wokingsquashclub.org)"  
+  return url_utils.get_content(URL, PARAMS, {"User-Agent": AGENT})
 
 def get_club_fixtures_and_results():
   WOKING_SQUASH_CLUB_ID=16
