@@ -28,11 +28,11 @@ def get_url_params(url):
   params = query.split("&")
   return dict([urllib.splitvalue(p) for p in params])
 
-def get_content(url, params):
+def get_content(url, params, headers=None):
   url +=  "?" + urllib.urlencode(params)
   LOGGER.info("Fetching {url}".format(**locals()))
   h = httplib2.Http()
-  (resp_headers, content) = h.request(url, "GET")
+  (resp_headers, content) = h.request(url, "GET", headers=headers)
   return content
 
 class MyHTTPRedirectHandler(urllib2.HTTPRedirectHandler):
