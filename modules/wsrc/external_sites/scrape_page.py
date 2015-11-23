@@ -207,12 +207,6 @@ def scrape_table_generic(headerrow):
   result = [r for r in result if len(r) == len(headers)]
   return [dict(zip(headers, row)) for row in result]
 
-def scrape_squashlevels_table(data):
-  soup = BeautifulSoup(data, "lxml")
-  table = soup.find('table', class_='ranking')
-  headerrow = table.find('tr')
-  return scrape_table_generic(headerrow)
-
 def scrape_fixtures_table(data):
   soup = BeautifulSoup(data, "lxml")
   toprowheader = soup.find('th', class_='boxtopmain')

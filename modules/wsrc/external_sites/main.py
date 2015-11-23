@@ -1,9 +1,11 @@
 #!/usr/bin/python
 
 import datetime
+import json
 import logging
 import os.path
 import sys
+import time
 import traceback
 import re
 
@@ -40,6 +42,7 @@ def get_squashlevels_rankings():
     "playertype": "all",
     "check": 1,
     "limit_confidence": 1,
+    "format": "json",
     }
   URL = 'http://www.squashlevels.com/players.php'
   AGENT = "SL-client/Woking (+http://www.wokingsquashclub.org)"  
@@ -151,34 +154,27 @@ def update_squash_levels_data(data):
   from wsrc.site.models import SquashLevels
 
   SquashLevels.objects.all().delete()
-  last_match_expr = re.compile("match=(\d+)")
-  player_expr = re.compile("player=(\d+)")
   for row in data:
-    last_match = row["Last match"]
-    last_match_date = datetime.datetime.strptime(last_match.text, "%d %b %Y").date()
-    m = last_match_expr.search(last_match.link)
-    if m is None:
-      raise Exception("unable to find match id in " + last_match.link)
-    last_match_id = m.groups()[0]
+    last_match_date = row["lastmatch_date"]
+    last_match_date = time.strftime("%Y-%m-%d", time.localtime(last_match_date))
+    last_match_id   = row["lastmatchid"]
+    player_id       = row["playerid"]
+    player_name     = row["player"]
+    events          = row["events"]
+    level           = row["level"]
 
-    player_cell = row["Player"]
-    m = player_expr.search(player_cell.link)
-    if m is None:
-      raise Exception("unable to find player id in " + player_cell.link)
-    player_id = m.groups()[0]
     try:
       player = Player.objects.get(squashlevels_id=player_id)
     except Player.MultipleObjectsReturned:
       raise Exception("more than one player with same squashlevels id: %d" % player_id)
     except Player.DoesNotExist:
-      player = match_player_name(player_cell.text)
+      player = match_player_name(player_name)
       if player is not None:
         player.squashlevels_id = player_id
         player.save()
-    level = row["Level"].text.replace(",", "")
     datum = SquashLevels(player          = player,
-                         name            = player_cell.text, 
-                         num_events      = row["Events"].text,
+                         name            = player_name, 
+                         num_events      = events,
                          last_match_date = last_match_date, 
                          last_match_id   = last_match_id,
                          level           = level) 
@@ -351,12 +347,16 @@ def cmdline_sync_squashlevels(*args):
   else:
     data = get_squashlevels_rankings()
 
-  data = scrape_page.scrape_squashlevels_table(data)
+  json_data = json.loads(data)
+  status = json_data.get("status")
+  if status is None or status != "good":
+    raise Exception("unable to obtain data from squashlevels, status: {0}, json_data: {1}".format(status, str(json_data)))
 
-  LOGGER.info("Obtained {0} players from SquashLevels".format(len(data)))
+  player_data = json_data["data"]
+  LOGGER.info("Obtained {0} players from SquashLevels".format(len(player_data)))
 
-  if len(data) > 0:
-    update_squash_levels_data(data)
+  if len(player_data) > 0:
+    update_squash_levels_data(player_data)
 
 def cmdline_sync_leaguemaster(*args):
 
