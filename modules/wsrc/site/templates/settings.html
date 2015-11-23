@@ -11,7 +11,8 @@
 <span class="form_success_message">Settings saved.</span>
 {% endif %}
 
-{% if user_form.errors or player_form.errors or evt_filter_form.errors %}
+{% if user_form.errors or player_form.errors or notify_formset.total_error_count %}
+
 <span class="form_error_message ui-btn-icon ui-btn-icon-left ui-icon-alert">Validation Error. Please correct the problem(s) below and resubmit.</span>
 
 {% for err in user_form.non_field_errors %}
@@ -22,9 +23,6 @@
   <div class="form_error_message">{{ err }}</div>
 {% endfor %}
 
-{% for err in evt_filter_form.non_field_errors %}
-  <div class="form_error_message">{{ err }}</div>
-{% endfor %}
 
 {% endif %}
 
@@ -56,18 +54,34 @@
 <fieldset name="court_booking" class="toggle-root" >
 <legend>Court Booking</legend>
 <div class="ui-field-contain">
-  <label for="notifier_active">Cancel Notifier:</label>
-  <select name="notifier_active" id="notifier_active" onchange="wsrc.settings.on('toggle_notifier_inputs')">
-    <option value="off">Off</option>
-    <option value="on" {% if notifier_active %}selected="selected"{% endif %}>On</option>
-  </select>
+  <label for="notifier_active">Cancellations:</label>
+  <span class="label">You have {{ n_notifiers }} notifier{{ n_notifiers|pluralize }} set up.</span>
+  <button class="ui-btn ui-btn-inline ui-corner-all" id="add-notifier-button">Add</button>
+  <button class="ui-btn ui-btn-inline ui-corner-all" id="remove-notifier-button">Remove</button>
 </div>
-<div id="court_notifier_inputs" {% if notifier_active %}class="toggleable"{% else %}class="toggled"{% endif %}>
-{% usekwacro createfield evt_filter_form.earliest %}
-{% usekwacro createfield evt_filter_form.latest %}
-{% usekwacro createradiofield evt_filter_form.days %}
-{% usekwacro createfield evt_filter_form.notice_period_minutes %}
+
+{% if notify_formset.total_error_count > 0 %}
+<-- {{ notify_formset.errors }} -->
+{% endif %}
+
+{{ notify_formset.management_form }}
+{% for form in notify_formset %}
+<div class="notifier_fieldset toggle-root {% if forloop.counter > n_notifiers and form.errors|length == 0 %}toggled{% else %}togglable{% endif %}">
+ <h4>Notifier {{ forloop.counter }}</h4>
+
+{% for err in form.non_field_errors %}
+  <div class="form_error_message">{{ err }}</div>
+{% endfor %}
+
+ {{ form.id }}
+ {% usekwacro createfield form.earliest %}
+ {% usekwacro createfield form.latest %}
+ {% usekwacro createradiofield form.days %}
+ {% usekwacro createfield form.notice_period_minutes %}
+ <input id="{{ form.DELETE.id_for_label }}" name="{{ form.DELETE.html_name }}" type="hidden" class="delete"></input>
+ {{ form.player }}
 </div>
+{% endfor %}
 
 </fieldset>
 
@@ -83,7 +97,7 @@
 </form>
 
 <script>
-  wsrc.settings.onReady(null)
+  wsrc.settings.onReady()
 </script>
 
 {% endblock %}

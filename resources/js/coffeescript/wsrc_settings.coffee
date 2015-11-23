@@ -1,50 +1,58 @@
 
-class WSRC_settings_model
-
-  constructor: (@user_event_filters) ->
-
 class WSRC_settings_view
 
   constructor: () ->
     @form = $('#settings_form')
 
-  toggle_notifier_inputs: () ->
-    target = @form.find('#court_notifier_inputs')
-    wsrc.utils.toggle(target)
+  get_last_notifier: () ->
+    fieldsets = @form.find("div.notifier_fieldset")
+    visible=0
+    fieldsets.each (idx, elt) ->
+      if $(elt).hasClass("toggled")
+        return false
+      ++visible
+    return visible
 
-  get_notifier_uidays: () ->
-    days = @form.find("input[name='ui-days']:checked")
-    l = []
-    days.each (idx, elt) ->
-      l.push($(elt).val())
-    return l
+  set_notifier_visibility: (n, isvisible) ->
+    fieldset = @form.find("div.notifier_fieldset").eq(n-1)
+    if isvisible
+      fieldset.addClass("togglable").removeClass("toggled")
+    else
+      fieldset.removeClass("togglable").addClass("toggled")
+      
 
-  set_notifier_days_input: (days) ->
-    @form.find("input[name='days']").val(days.toString())
+  get_initial_notifiers: () ->
+    wsrc.utils.to_int(@form.find("input[name='form-INITIAL_FORMS']").val())
+    
+  set_notifier_deleted: (n, val) ->
+    fieldset = @form.find("div.notifier_fieldset").eq(n-1)
+    fieldset.find("input.delete").val(val)
       
 class WSRC_settings_controller
 
-  constructor: (@model) ->
+  constructor: () ->
     @view = new WSRC_settings_view()
-    @view.form.find("input[name='ui-days']").on("change", () =>
-      @notifier_days_changed()
-    )
+    @view.form.find("#add-notifier-button").on("click", (evt) => @add_notifier(evt))
+    @view.form.find("#remove-notifier-button").on("click", (evt) => @remove_notifier(evt))
 
-  toggle_notifier_inputs: () ->
-    @view.toggle_notifier_inputs()
+  add_notifier: (evt) ->
+    evt.stopPropagation()
+    last_notifier_number = @view.get_last_notifier()
+    @view.set_notifier_visibility(last_notifier_number+1, true)
+    @view.set_notifier_deleted(last_notifier_number+1, "")
+    return false
       
-  notifier_days_changed: () ->
-    days = @view.get_notifier_uidays()
-    @view.set_notifier_days_input(days)
+  remove_notifier: (evt) ->
+    evt.stopPropagation()
+    last_notifier_number = @view.get_last_notifier()
+    @view.set_notifier_visibility(last_notifier_number, false)
+    if last_notifier_number <= @view.get_initial_notifiers()
+      @view.set_notifier_deleted(last_notifier_number, "on")
+    return false
       
-  @onReady: (user_event_filters) ->
-    model = new WSRC_settings_model(user_event_filters)
-    @instance = new WSRC_settings_controller(model)
+  @onReady: () ->
+    @instance = new WSRC_settings_controller()
     
-  @on: (method) ->
-    args = $.fn.toArray.call(arguments)
-    @instance[method].apply(@instance, args[1..])
-
 
 wsrc.settings = WSRC_settings_controller
 

@@ -14,6 +14,8 @@
 # You should have received a copy of the GNU General Public License
 # along with WSRC.  If not, see <http://www.gnu.org/licenses/>.
 
+import sys
+
 from wsrc.site.models import PageContent, SquashLevels, LeagueMasterFixtures, BookingSystemEvent, EventFilter
 from wsrc.site.competitions.models import CompetitionGroup
 from wsrc.site.usermodel.models import Player
@@ -21,7 +23,8 @@ import wsrc.site.settings.settings as settings
 from wsrc.utils import timezones
 
 from django.contrib.auth.forms import PasswordChangeForm
-from django.forms.widgets import Select, CheckboxSelectMultiple
+from django.forms.widgets import Select, CheckboxSelectMultiple, HiddenInput
+from django.forms.models import modelformset_factory
 from django.contrib.auth.models import User
 from django.core.exceptions import PermissionDenied
 from django.core.urlresolvers import reverse as reverse_url
@@ -278,44 +281,50 @@ class PlayerForm(ModelForm):
         model = Player
         fields = ["cell_phone", "other_phone", "short_name", "prefs_receive_email"]
         exclude = ('user',)
-   
-class NotifierEventFilterForm(ModelForm):
-    class Meta:
-        time_choices = [
-                ("08:00:00", "8am"),
-                ("10:00:00", "10am"),
-                ("12:00:00", "12pm"),
-                ("14:00:00", "2pm"),
-                ("16:00:00", "4pm"),
-                ("17:00:00", "5pm"),
-                ("18:00:00", "6pm"),
-                ("18:30:00", "6:30pm"),
-                ("19:00:00", "7pm"),
-                ("19:30:00", "7:30pm"),
-                ("20:00:00", "8pm"),
-                ("21:00:00", "9pm"),
-                ("22:00:00", "10pm"),
+ 
+def create_notifier_filter_formset_factory(max_number):
+    time_choices = [
+        (None, "Please Select"),
+        ("08:00:00", "8am"),
+        ("10:00:00", "10am"),
+        ("12:00:00", "12pm"),
+        ("14:00:00", "2pm"),
+        ("16:00:00", "4pm"),
+        ("17:00:00", "5pm"),
+        ("18:00:00", "6pm"),
+        ("18:30:00", "6:30pm"),
+        ("19:00:00", "7pm"),
+        ("19:30:00", "7:30pm"),
+        ("20:00:00", "8pm"),
+        ("21:00:00", "9pm"),
+        ("22:00:00", "10pm"),
                 ]
-        notice_period_choices = [
-            (30, "30 minutes"),
-            (60, "1 hour"),
-            (120, "2 hours"),
-            (180, "3 hours"),
-            (240, "4 hours"),
-            (300, "5 hours"),
-            (360, "6 hours"),
-            (720, "12 hours"),
-            (1440, "1 day"),
+    notice_period_choices = [
+        (None, "Please Select"),
+        (30, "30 minutes"),
+        (60, "1 hour"),
+        (120, "2 hours"),
+        (180, "3 hours"),
+        (240, "4 hours"),
+        (300, "5 hours"),
+        (360, "6 hours"),
+        (720, "12 hours"),
+        (1440, "1 day"),
         ]
-        model = EventFilter
-        fields = ["earliest", "latest", "notice_period_minutes", "days"]
-        exclude = ('user',)
+    return modelformset_factory(
+        EventFilter, 
+        can_delete = True,
+        extra=max_number,
+        max_num=max_number,
+        fields = ["earliest", "latest", "notice_period_minutes", "days", "player"],
         widgets = {
             "earliest": Select(choices=time_choices),
             "latest": Select(choices=time_choices),
             "notice_period_minutes": Select(choices=notice_period_choices),
             "days": CheckboxSelectMultiple(),
+            "player": HiddenInput(),
         }
+    )
 
 class InfoForm(ModelForm):
     def __init__(self, *args, **kwargs):
@@ -338,30 +347,35 @@ def settings_view(request):
     if not request.user.is_authenticated():
         return redirect(reverse_url("django.contrib.auth.views.login") + '?next=%s' % request.path)
 
+    max_filters = 7
     success = False
-    events = EventFilter.objects.filter(player=request.user.player)
+    player = request.user.player
+    events = EventFilter.objects.filter(player=player)
+    filter_formset_factory = create_notifier_filter_formset_factory(max_filters)
+    initial = [{'player': player.id}] * (max_filters)
     if request.method == 'POST': 
         pform = PlayerForm(request.POST, instance=request.user.player)
         uform = UserForm(request.POST, instance=request.user)
-        if pform.is_valid() and uform.is_valid(): 
+        eformset = filter_formset_factory(request.POST, queryset=events, initial=initial)
+        if pform.is_valid() and uform.is_valid() and eformset.is_valid(): 
             with transaction.atomic():
-                pform.save()
-                uform.save()
-            success = True
-        if len(events) > 0:
-            eform = NotifierEventFilterForm(request.POST, instance=events[0])
-        else:
-            eform = NotifierEventFilterForm(request.POST)
-        if eform.is_valid():
-            eform.save()
-        
+                if pform.has_changed():
+                    pform.save()
+                if uform.has_changed():
+                    uform.save()
+                for form in eformset:
+                    if form.has_changed():
+                        if form.cleaned_data['player'] != player:
+                            raise PermissionDenied()
+                if eformset.has_changed():
+                    eformset.save()
+                    events = EventFilter.objects.filter(player=player)
+                    eformset = filter_formset_factory(queryset=events, initial=initial)
+                success = True
     else:
         pform = PlayerForm(instance=request.user.player)
         uform = UserForm(instance=request.user)
-        if len(events) > 0:
-            eform = NotifierEventFilterForm(instance=events[0])
-        else:
-            eform = NotifierEventFilterForm()
+        eformset = filter_formset_factory(queryset=events, initial=initial)
 
     iform = InfoForm(instance=request.user.player)
 
@@ -369,7 +383,8 @@ def settings_view(request):
         'player_form':     pform,
         'user_form':       uform,
         'info_form':       iform,
-        'evt_filter_form': eform,
+        'notify_formset':  eformset,
+        'n_notifiers':     len(events),
         'form_saved':      success,
     })
 
