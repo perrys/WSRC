@@ -284,7 +284,7 @@ class PlayerForm(ModelForm):
  
 def create_notifier_filter_formset_factory(max_number):
     time_choices = [
-        (None, "Please Select"),
+        ("", "Please Select"),
         ("08:00:00", "8am"),
         ("10:00:00", "10am"),
         ("12:00:00", "12pm"),
@@ -300,7 +300,7 @@ def create_notifier_filter_formset_factory(max_number):
         ("22:00:00", "10pm"),
                 ]
     notice_period_choices = [
-        (None, "Please Select"),
+        ("", "Please Select"),
         (30, "30 minutes"),
         (60, "1 hour"),
         (120, "2 hours"),
@@ -352,7 +352,7 @@ def settings_view(request):
     player = request.user.player
     events = EventFilter.objects.filter(player=player)
     filter_formset_factory = create_notifier_filter_formset_factory(max_filters)
-    initial = [{'player': player.id}] * (max_filters)
+    initial = [{'player': player}] * (max_filters)
     if request.method == 'POST': 
         pform = PlayerForm(request.POST, instance=request.user.player)
         uform = UserForm(request.POST, instance=request.user)
