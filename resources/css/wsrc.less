@@ -1,5 +1,6 @@
 /* -*- mode: css;-*- */
 
+@breakpoint-jqm-ui-field: 28em;
 @breakpoint-widen-frontpage: 35em;
 @breakpoint-show-navmenu: 60em;
 
@@ -513,6 +514,11 @@ form.settings-form fieldset > legend {
 form.settings-form fieldset div.ui-field-contain {
     border-bottom-width:0px;
 }
+.ui-field-contain span.label::after {
+    content: "";
+    display: block;
+}    
+
 div.field-error input {
     -webkit-box-shadow: 0px 0px 2px 2px #ed3338;
     -moz-box-shadow: 0px 0px 2px 2px #ed3338;
@@ -838,6 +844,17 @@ div.coaching ul {
 }
 };
 
+.media-guard(@jqm-ui-field-ruleset, @breakpoint-jqm-ui-field);
+@jqm-ui-field-ruleset: {
+    .ui-field-contain span.label {
+	float: left;
+	font-size: 0.9em;
+	margin: .5em 2% 0 0;
+    }    
+    .ui-field-contain span.label::after {
+	display: none;
+    }    
+};
 
 /* larger than a small phone screen in portrait mode 
    - switch to front page square boxes with scrolling */
