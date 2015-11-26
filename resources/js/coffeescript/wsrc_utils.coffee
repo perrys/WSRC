@@ -116,12 +116,12 @@ class WSRC_utils
 
   @iso_to_js_date: (str) ->
     # dateformat: 2001-12-31
-    toint = (start, len) -> @to_int(str.substr(start, len))
+    toint = (start, len) => @to_int(str.substr(start, len))
     new Date(toint(0,4), toint(5,2)-1, toint(8,2)) # gotcha - JS dates use 0-offset months...
 
   @british_to_js_date: (str) ->
     # dateformat: 31/12/2001
-    toint = (start, len) -> @to_int(str.substr(start, len))
+    toint = (start, len) => @to_int(str.substr(start, len))
     new Date(toint(6,4), toint(3,2)-1, toint(0,2)) # gotcha - JS dates use 0-offset months...
 
   @js_to_iso_date_str: (dt) ->
