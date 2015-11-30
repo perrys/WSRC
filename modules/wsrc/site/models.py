@@ -1,5 +1,6 @@
 
 import wsrc.site.usermodel.models as user_models
+import wsrc.utils.text as text_utils
 
 from django.db import models
 from django.contrib.auth.models import User
@@ -81,4 +82,27 @@ class EventFilter(models.Model):
   notice_period_minutes = models.IntegerField("Minimum Notice")
   def __unicode__(self):
     return "EventFilter <%s %s-%s [%s] notice: %s" % (self.player.user.username, self.earliest, self.latest, ",".join([str(d) for d in self.days.all()]), self.notice_period_minutes)
+
+class MaintenanceIssue(models.Model):
+  STATUS_VALUES = (
+    ("ar", "Awaiting Review"),
+    ("aa", "Awaiting Action"),
+    ("c", "Complete"),
+    ("ni", "Non-issue"),
+    )
+  reporter = models.ForeignKey(user_models.Player, blank=True, null=True)
+  description = models.TextField()
+  reported_date = models.DateField(auto_now=True)
+  status  = models.CharField(max_length=2, choices=STATUS_VALUES, default="ar")
+  target_date = models.DateField(blank=True, null=True)
+  comment = models.TextField(blank=True, null=True)
+  def __unicode__(self):
+    return text_utils.shorten(self.description, 10)
+
+
+class Suggestion(models.Model):
+  player = models.ForeignKey(user_models.Player, blank=True, null=True)
+  date_submitted = models.DateField(auto_now=True)
+  date_reviewed = models.DateField(blank=True, null=True)
+  comment = models.TextField(blank=True, null=True)
 
