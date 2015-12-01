@@ -28,7 +28,7 @@ class Player(models.Model):
   short_name  = models.CharField(("Short Name"), max_length=32, blank=True)
 
   membership_type = models.CharField(("Membership Type"), max_length=8, choices=MEMBERSHIP_TYPES)
-  membership_id  = models.IntegerField(("Membership ID"), db_index=True, blank=True, null=True,
+  membership_id  = models.IntegerField(("Cardnumber"), db_index=True, blank=True, null=True,
                                        help_text="Your membership ID - this is normally the number on your door entry card")
   squashlevels_id  = models.IntegerField(("SquashLevels ID"), db_index=True, blank=True, null=True, 
                                          help_text="ID on the squashlevels website - it is not normally necessary to change this")
@@ -63,8 +63,3 @@ class Player(models.Model):
   class Meta:
     ordering=["user__first_name", "user__last_name"]
 
-def create_player_profile(sender, instance, created, **kwargs):  
-    if created:  
-       profile, created = Player.objects.get_or_create(user=instance)  
-
-post_save.connect(create_player_profile, sender=User) 
