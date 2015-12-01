@@ -467,34 +467,28 @@ div.centered-content-wrapper {
 ********************************************************************************/
 
 /* data tables */
-div.wsrc-membership {
-    margin: .5em;
-    padding: 1em;
-    background: @color-body-background;
-    border: 1px solid @color-block-border;
-    -webkit-border-radius: .3125em;
-    border-radius: .3125em;
-    font-family: 'Open Sans', sans-serif;
-}
-div.wsrc-membership {
-    margin: .5em;
-}
-.wsrc-membership table {
-    width: 100%;
-}
 
-.wsrc-member-list th, .wsrc-member-list td,
-.wsrc-membership th, .wsrc-membership td {
+.wsrc-member-list th, .wsrc-member-list td {
     text-align: left;
     vertical-align: top;
     padding-right: 1em;
     color: @color-body;
 }
-.wsrc-membership th, .wsrc-membership td {
-    border-bottom: 1px solid;
-}
+
 .wsrc-member-list th:last-child, .wsrc-member-list td:last-child {
     border-bottom: 1px solid;
+}
+
+.maintenance-table {
+    span.c, span.ni {
+        color: #339933;
+    }
+    span.ar {
+        color: #993333;
+    }
+    span.aa {
+        color: #666600;
+    }
 }
 tr.odd > td {
     background-color: #f9f9f9;
@@ -768,7 +762,17 @@ fieldset.match-type div.ui-radio {
 fieldset.match-type label.centered-text {
     text-align: center;
 }
-
+#main_popup_form {
+    width: 450px;
+    height: 250px;
+    form {
+        margin: 1em;
+        textarea.ui-input-text { height: inherit !important}
+        .ui-field-contain > .ui-input-btn {
+            margin-top: 0.5em;
+        }
+    }    
+}
 /* misc */
 div.coaching img.left-picture-block {
     float: none;
