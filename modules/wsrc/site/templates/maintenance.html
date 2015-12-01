@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block titleprefix %}Club Maintenence - {% endblock %}
+{% block pagetitle %}Club Maintenence{% endblock %}
+{% block pagetype %}maintenance{% endblock %}
+{% load kwacros %}
+{% loadkwacros 'form_macros.html' %}
+{% block centered_page_content %}
+
+<h1 class="mobile-hidden">Maintenence</h1> 
+
+<p>
+This page keeps track of maintenance issues at the club. To report a new problem, please click below. You will receive confirmation of receipt, and the log will be updated as the issue is reviewed and fixed.
+<br>
+<a href='#main_popup_form'  data-rel="popup" data-position-to="window" class="ui-btn ui-corner-all ui-shadow ui-btn-inline ui-icon-comment ui-btn-icon-left ui-btn-a" data-transition="pop">Report a Problem.</a>
+</p>
+      <table class="wsrc-member-list maintenance-table" data-role="table">
+        <thead>
+          <tr><th>Description</th><th>Reported By</th><th>Reported On</th><th>Status</th><th>Target Date</th><th>Comment</th></tr>
+        </thead>
+        <tbody>
+{% for row in data %}
+          <tr>
+            <td>{{ row.description }}</td>
+            <td>{{ row.reporter.get_full_name }}</td>
+            <td>{{ row.reported_date|date:'d M Y' }}</td>
+            <td><span class="{{ row.status }}">{{ row.get_status_display }}</span></td>
+            <td>{{ row.target_date|date:'d M Y' }}</td>
+            <td>{{ row.comment|default:"" }}</td>
+          </tr>
+{% endfor %}
+        </tbody>
+      </table>
+
+
+<div data-role="popup" id="main_popup_form">
+  <div data-role="header" data-theme="a">
+    <h2>Report A Problem</h2>
+    <a href="#" data-rel="back" class="ui-btn ui-corner-all ui-shadow ui-btn-a ui-icon-delete ui-btn-icon-notext ui-btn-right">Close</a>
+  </div>
+ <form method="post" action="{% url 'wsrc.site.views.maintenance_view' %}" data-ajax="false">{% csrf_token %}
+<!-- we don't bother to report errors from previous sumissions in this popup -->
+{% usekwacro createfield form.description True submit_button_value="Submit" %}
+ </form>
+</div>
+
+
+{% endblock %}
