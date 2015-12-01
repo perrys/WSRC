@@ -16,14 +16,14 @@
 
 import sys
 
-from wsrc.site.models import PageContent, SquashLevels, LeagueMasterFixtures, BookingSystemEvent, EventFilter
+from wsrc.site.models import PageContent, SquashLevels, LeagueMasterFixtures, BookingSystemEvent, EventFilter, MaintenanceIssue, Suggestion, EmailContent
 from wsrc.site.competitions.models import CompetitionGroup
 from wsrc.site.usermodel.models import Player
 import wsrc.site.settings.settings as settings
-from wsrc.utils import timezones
+from wsrc.utils import timezones, email_utils
 
 from django.contrib.auth.forms import PasswordChangeForm
-from django.forms.widgets import Select, CheckboxSelectMultiple, HiddenInput
+from django.forms.widgets import Select, CheckboxSelectMultiple, HiddenInput, Textarea
 from django.forms.models import modelformset_factory
 from django.contrib.auth.models import User
 from django.core.exceptions import PermissionDenied
@@ -34,6 +34,7 @@ from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
 from django.shortcuts import redirect
 from django.shortcuts import render
+from django.template import Template, Context
 from django.template.response import TemplateResponse
 from django.utils import timezone
 from django.views.decorators.http import require_safe
@@ -218,7 +219,20 @@ def change_password_view(request):
 def admin_mailshot_view(request):
     if not request.user.is_authenticated() or not request.user.is_staff:
         raise PermissionDenied()
-    from_email_addresses = ["chairman", "clubnight", "committee", "juniors", "membership", "secretary", "tournaments", "treasurer", "webmaster"]
+    from_email_addresses = ["chairman", 
+                            "clubnight", 
+                            "coach", 
+                            "committee", 
+                            "development",
+                            "juniors", 
+                            "leagues", 
+                            "maintenance", 
+                            "membership", 
+                            "secretary", 
+                            "social", 
+                            "tournaments", 
+                            "treasurer", 
+                            "webmaster"]
     def get_comp_entrants(group_type):
         group = CompetitionGroup.objects.filter(comp_type=group_type).get(active=True)
         player_ids = set()
@@ -387,6 +401,66 @@ def settings_view(request):
         'n_notifiers':     len(events),
         'form_saved':      success,
     })
+
+def data_view(request, template, kwargs):
+    if not request.user.is_authenticated():
+        return redirect(reverse_url("django.contrib.auth.views.login") + '?next=%s' % request.path)
+    return render(request, template, kwargs)
+
+class MaintenanceForm(ModelForm):
+    class Meta:
+        model = MaintenanceIssue
+        fields = ["description"]
+        exclude = ["reported_by"]
+        widgets = {
+            "description": Textarea(attrs={"rows": "3"})
+        }
+
+def notify(template_name, kwargs, subject, to_list, cc_list, from_address):
+    template_obj = EmailContent.objects.get(name=template_name)
+    email_template = Template(template_obj.markup)
+    context = Context(kwargs)
+    context["content_type"] = "text/html"
+    html_body = markdown.markdown(email_template.render(context))
+    context["content_type"] = "text/plain"
+    text_body = email_template.render(context)
+    email_utils.send_email(subject, text_body, html_body, from_address, to_list, cc_list=cc_list)
+
+def maintenance_view(request):
+    if not request.user.is_authenticated():
+        return redirect(reverse_url("django.contrib.auth.views.login") + '?next=%s' % request.path)
+    if request.method == 'POST': 
+        form = MaintenanceForm(request.POST)
+        if form.is_valid(): # if the form is invalid (i.e. empty) just do nothing
+            with transaction.atomic():
+                instance = form.save(commit=False)
+                instance.reporter = request.user.player
+                instance.save()
+                maintenance_officer_email = "maintenance@wokingsquashclub.org"
+                context = {"issue": instance}
+                to_list = (request.user.email, maintenance_officer_email)  
+                cc_list = ["committee@wokingsquashclub.org"]
+                notify("MaintenanceIssueReceipt", context, 
+                       subject="WSRC Maintenance", to_list=to_list,
+                       cc_list=cc_list, from_address=maintenance_officer_email)
+    form = MaintenanceForm()
+
+    issues = [issue for issue in MaintenanceIssue.objects.all().order_by('-reported_date')]
+    cmp_map = {'ar': 1, 'aa': 2, 'ni': 3, 'c': 3}
+    def status_cmp(x, y):
+        return cmp(cmp_map[x.status], cmp_map[y.status])
+    issues.sort(status_cmp)
+
+    kwargs = {
+        'data': issues,
+        'form': form
+    }
+    return data_view(request, "maintenance.html", kwargs)
+
+def suggestions_view(request):
+    suggestions = Suggestion.objects.all()
+    return data_view(request, suggestions, 'suggestions.html')
+
 
 class DateTimeTzAwareField(serializers.DateTimeField):
     def to_representation(self, value):
