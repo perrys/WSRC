@@ -10,21 +10,22 @@ import unittest
 from django.core.mail import EmailMessage, EmailMultiAlternatives
 
 LOGGER = logging.getLogger(__name__)
-LOGGER.setLevel(logging.INFO)
+LOGGER.setLevel(logging.DEBUG)
 
 EMAIL_DELAY_PERIOD = 2
 
-def send_email(subject, text_body, html_body, from_address, to_list, bcc_list=None, reply_to_address=None):
+def send_email(subject, text_body, html_body, from_address, to_list, bcc_list=None, reply_to_address=None, cc_list=None):
   headers = {}
   if reply_to_address is not None:
     headers['Reply-To'] = reply_to_address
   if html_body is not None:
     msg = EmailMultiAlternatives(subject, text_body, from_address,
-                                 to_list, bcc_list, headers=headers)
+                                 to_list, bcc_list, headers=headers, cc=cc_list)
     msg.attach_alternative(html_body, "text/html")
   else:
     msg = EmailMessage(subject, text_body, from_address,
-                       to_list, bcc_list, headers=headers)
+                       to_list, bcc_list, headers=headers, cc=cc_list)
+  LOGGER.debug("sending mail, subject=\"{subject}\", from={from_address}, to_list={to_list}, headers={headers}".format(**locals()))
   msg.send(fail_silently=False)
 
 def send_markdown_email(subject, markdown_body, from_address, to_list, bcc_list=None, reply_to_address=None):
