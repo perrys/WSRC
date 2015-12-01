@@ -37,6 +37,7 @@ urlpatterns = patterns('',
     url(r'^change_password/?$', wsrc.site.views.change_password_view),
 
     url(r'^memberlist/?$', wsrc.site.usermodel.views.MemberListView.as_view(), name="member_list"),
+    url(r'^maintenance/?$', wsrc.site.views.maintenance_view, name="maintenance"),
 
     url(r'^boxes/(\d{4}-\d{2}-\d{2})/?$', wsrc.site.competitions.views.boxes_view), # end-date based
     url(r'^boxes/?$',                     wsrc.site.competitions.views.boxes_view, name="boxes"), # most recent
