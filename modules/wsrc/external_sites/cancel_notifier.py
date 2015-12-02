@@ -6,7 +6,7 @@ import logging
 from django.template import Template, Context
 import markdown
 
-from wsrc.utils import timezones, email_utils
+from wsrc.utils import timezones, email_utils, text as text_utils
 from wsrc.external_sites import evt_filters
 
 FUTURE_CUTTOFF = datetime.timedelta(days=7)
@@ -45,9 +45,14 @@ class Notifier:
   def notify(self, event, id_list):
     from wsrc.site.usermodel.models import Player
     players = [Player.objects.get(pk=id) for id in id_list]
+    contact_details = [["Name", "E-Mail", "Mobile Phone", "Other Phone"]]
+    for player in players:
+      contact_details.append([player.get_full_name(), player.user.email, player.cell_phone, player.other_phone])
     context = Context({
       "event": event,
-      "content_type": "text/html"
+      "content_type": "text/html",
+      "notified_members": players,
+      "contact_details_table": text_utils.formatTable(contact_details, True)
     })
     subject = "Court Cancellation"
     from_address = "court-cancellations@wokingsquashclub.org"
@@ -114,13 +119,17 @@ if __name__ == "__main__":
     def setUp(self):
       user = User(username="foobar", first_name="Foo", last_name="Bar", email="foo@bar.com")
       user.save()
-      self.player1 = user.player
+      self.player1 = Player(user=user, cell_phone="07123 4567890", other_phone="01234 567890")
+      self.player1.save()
       user = User(username="foobaz", first_name="Foo", last_name="Baz", email="foo@baz.com")
       user.save()
-      self.player2 = user.player
+      self.player2 = Player(user=user)
+      self.player2.save()
     def tearDown(self):
       self.player1.user.delete()
       self.player2.user.delete()
+      self.player1.delete()
+      self.player2.delete()
 
     @staticmethod
     def create_filter(player, earliest, latest, notice, days):
