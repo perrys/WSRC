@@ -4,7 +4,7 @@ import os.path
 import unittest
 
 from operator import itemgetter
-
+from wsrc.site.usermodel.models import Player
 
 class ModelRecordWrapper:
   """Wrap a DB record for dictionary access. Supports joins via dotted syntax - e.g. 'player.user'"""
@@ -187,6 +187,98 @@ def report_differences(lhs, rhs, primary_key_field, data_fields):
     pass
 
   return lhs_only, rhs_only, differences
+
+def find_matching(lhs_records, rhs_records, comparer):
+  """Find rows in RHS_RECORDS which match those in LHS_RECORDS. Returns
+     an array of length len(LHS_RECORDS) with each element containing
+     the corresponding row from RHS_RECORDS if a match is found, or
+     None otherwise. Note that the first matching row is always
+     recorded, and rows will not match more than once.
+  """
+  rhs_copy = list(rhs_records)
+  result = list()
+  for lhs in lhs_records:
+    matched = None
+    for i, rhs in enumerate(rhs_copy):
+      if rhs is None:
+        continue
+      if comparer(lhs, rhs):
+        matched = rhs
+        rhs_copy[i] = None
+        break
+    result.append(matched)
+  return result
+
+def match_spreadsheet_with_db_record(ss_row, db_record):
+  def nontrivial_equals(lhs, rhs):
+    return lhs is not None and lhs == rhs
+  def safe_int(i):
+    try:
+      return i is not None and int(i) or None
+    except ValueError:
+      return None
+  if nontrivial_equals(ss_row["index"], db_record.wsrc_id):
+    return True
+  if nontrivial_equals(safe_int(ss_row["cardnumber"]), db_record.cardnumber) and db_record.cardnumber != 0:
+    return True
+  if nontrivial_equals(ss_row["surname"], db_record.user.last_name) and nontrivial_equals(ss_row["firstname"], db_record.user.first_name):
+    return True
+  return False
+
+class ComparisonSpec:
+  def __init__(self, lhs_col, rhs_col, lhs_converter=None, rhs_converter=None):
+    self.lhs_col = lhs_col
+    self.rhs_col = rhs_col
+    self.lhs_converter = lhs_converter
+    self.rhs_converter = rhs_converter
+  def __eval__(self, lhs, rhs):
+    lhs = lhs[self.lhs_field]
+    if self.lhs_converter is not None:
+      lhs = self.lhs_converter(lhs)
+    rhs = rhs[self.rhs_field]
+    if self.rhs_converter is not None:
+      rhs = self.rhs_converter(rhs)
+    return lhs == rhs
+  def key():
+    return self.rhs_col
+
+def compare_spreadsheet_with_db_record(ss_row, db_record):
+  diffs = dict()
+  db_record = ModelRecordWrapper(db_record)
+  def y_or_n(x):
+    if x is None:
+      return None
+    return x[:1].lower() == 'y'
+  def lower(x):
+    return (x is not None and x != '') and x.lower() or None
+  def categorize_and_lower(x):
+    return lower(Player.MEMBERSHIP_TYPES_MAP.get(x))
+  def safe_int(i):
+    return (i is not None and i != '') and int(i) or None
+  def nullify(s):
+    return s != '' and s or None
+  specs = [
+    ComparisonSpec('active', 'user.is_active', y_or_n),
+    ComparisonSpec('surname', 'user.last_name', nullify, nullify),
+    ComparisonSpec('firstname', 'user.first_name', nullify, nullify),
+    ComparisonSpec('category', 'membership_type', lower, categorize_and_lower),
+    ComparisonSpec('email', 'user.email', nullify, nullify),
+    ComparisonSpec('Data Prot email', 'prefs_receive_email', y_or_n),
+    ComparisonSpec('index', 'wsrc_id', safe_int),
+    ComparisonSpec('cardnumber', 'cardnumber', safe_int),
+    ComparisonSpec('mobile_phone', 'cell_phone', nullify, nullify),
+    ComparisonSpec('home_phone', 'other_phone', nullify, nullify),
+  ]
+  for spec in specs:    
+    lhs = ss_row[spec.lhs_col]
+    if spec.lhs_converter is not None:
+      lhs = spec.lhs_converter(lhs)
+    rhs = db_record[spec.rhs_col]
+    if spec.rhs_converter is not None:
+      rhs = spec.rhs_converter(rhs)
+    if lhs != rhs:
+      diffs[spec.rhs_col] = (lhs, rhs)
+  return diffs
 
 class Tester(unittest.TestCase):
   
