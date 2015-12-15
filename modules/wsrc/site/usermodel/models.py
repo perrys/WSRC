@@ -15,9 +15,11 @@ class Player(models.Model):
     ("full", "Full"),
     ("junior", "Junior"),
     ("off_peak", "Off-Peak"),
-    ("non_play", "Social"),
+    ("non_playing", "Non-Playing"),
     ("y_adult", "Young Adult"),
     )
+
+  MEMBERSHIP_TYPES_MAP = dict([x for x in MEMBERSHIP_TYPES])
 
   user = models.OneToOneField(User)
 
@@ -28,15 +30,14 @@ class Player(models.Model):
   short_name  = models.CharField(("Short Name"), max_length=32, blank=True)
 
   membership_type = models.CharField(("Membership Type"), max_length=8, choices=MEMBERSHIP_TYPES)
-  membership_id  = models.IntegerField(("Cardnumber"), db_index=True, blank=True, null=True,
-                                       help_text="Your membership ID - this is normally the number on your door entry card")
+  wsrc_id  = models.IntegerField(("WSRC ID"), db_index=True, blank=True, null=True,
+                                 help_text="Index in the membership spreadsheet")
+  cardnumber  = models.IntegerField(("Cardnumber"), db_index=True, blank=True, null=True,
+                                    help_text="The number on your door entry card")
   squashlevels_id  = models.IntegerField(("SquashLevels ID"), db_index=True, blank=True, null=True, 
                                          help_text="ID on the squashlevels website - it is not normally necessary to change this")
   prefs_receive_email  = models.NullBooleanField(("Receive Email"), default=True, null=True, blank=True,
                                                  help_text="Uncheck if you do *not* want to receive emails from the club&emdash; match reminders, social events etc.")
-
-#  def get_absolute_url(self):
-#      return "/users/%s/" % urlquote(self.user.email)
 
   def get_full_name(self):
       """
