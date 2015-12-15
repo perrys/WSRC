@@ -1,6 +1,7 @@
 
 from .models import Category, Transaction, Account
 from wsrc.utils.rest_framework_utils import LastUpdaterModelSerializer
+from wsrc.utils.upload_utils import UploadFileForm, upload_generator
 
 from django import forms
 from django.core.exceptions import PermissionDenied
@@ -126,21 +127,6 @@ class CategoryDetailView(rest_generics.RetrieveUpdateDestroyAPIView):
     serializer_class = CategorySerializer
     queryset = Category.objects.all()
 
-def gen(upload):
-    last_line = ""
-    for chunk in upload.chunks():
-        lines = (last_line + chunk).split("\n")
-        for i, line in enumerate(lines):
-            if i < (len(lines) -1):
-                yield line
-            else:
-                last_line = line
-    if len(last_line) > 0:
-        yield last_line
-
-class UploadFileForm(forms.Form):
-    file = forms.FileField()
-
 def accounts_view(request, account_name=None):
     data = None
     def preprocess_row(row):
@@ -177,7 +163,7 @@ def accounts_view(request, account_name=None):
                     matches = matches.filter(bank_memo = bank_memo)
                 return len(matches) == 1
         
-            reader = csv.DictReader(gen(request.FILES['file']))
+            reader = csv.DictReader(upload_generator(request.FILES['file']))
             data = [preprocess_row(row) for row in reader]
             for row in data:
                 row["x_duplicate"] = isduplicate(row)
