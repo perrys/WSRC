@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+
+{% load kwacros %}
+{% load wsrc_utils %}
+{% loadkwacros 'form_macros.html' %}
+
+<html class="memberlist_admin">
+<head>
+
+  <link rel="stylesheet" href="/static/css/all_admin_memberlist.css">
+  <script src="/static/js/all_admin_memberlist.js"></script>
+
+  <title>Membership List Admin Form - Woking Squash Rackets Club</title>
+  <script type="text/javascript">
+    jQuery(document).ready(function(){
+      window['wsrc_admin_memberlist_membership_types'] = {{ membership_types|safe }};
+      var db_memberlist  = {{ db_members_data|safe }};
+      var ss_memberlist  = {{ ss_members_data|safe }};
+      var ss_vs_db_diffs = {{ ss_vs_db_diffs|safe }};
+      wsrc.admin.memberlist.onReady(db_memberlist, ss_memberlist, ss_vs_db_diffs);
+    });
+  </script>
+</head>
+
+<body>
+  <div id="tabs" class="initiallyHidden">
+    <ul>
+      <li><a href="#db_memberlist">Website DB</a></li>
+      <li><a href="#ss_memberlist">Membership Spreadsheet</a></li>
+{% if not upload_form %}
+      <li><a href="#ss_vs_db_diff">Website vs Spreadsheet</a></li>
+{% endif %}
+      <li><a href="#booking_system_memberlist">Booking System</a></li>
+    </ul>
+
+    <div id="db_memberlist">
+      <div class="container">
+        <table class="sortable-root memberlist">
+          <thead>
+            <tr class="header">
+              <th class="sortable" data-selector="td.user_is_active" data-sorter="lexical_sorter">Active</th>
+              <th class="sortable" data-selector="td.user_last_name" data-sorter="lexical_sorter">Last Name</th>
+              <th class="sortable" data-selector="td.user_first_name" data-sorter="lexical_sorter">First Name</th>
+              <th class="sortable" data-selector="td.membership_type" data-sorter="lexical_sorter">Type</th>
+              <th class="sortable" data-selector="td.user_email" data-sorter="lexical_sorter">E-Mail</th>
+              <th class="sortable" data-selector="td.prefs_receive_email" data-sorter="lexical_sorter">Receive ?</th>
+              <th class="sortable" data-selector="td.wsrc_id" data-sorter="numeric_sorter">WSRC ID</th>
+              <th class="sortable" data-selector="td.cardnumber" data-sorter="numeric_sorter">Card #</th>
+              <th class="sortable" data-selector="td.squashlevels_id" data-sorter="numeric_sorter">SqLevel ID</th>
+              <th class="sortable" data-selector="td.cell_phone" data-sorter="lexical_sorter">Mobile</th>
+              <th class="sortable" data-selector="td.other_phone" data-sorter="lexical_sorter">Other Phone</th>
+            </tr>
+          </thead>
+          <tbody class="sortable-parent">
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div id="ss_memberlist" class="">
+
+{% if upload_form %}
+      <form action="{% url 'wsrc.site.usermodel.views.admin_memberlist_view' %}/#ss_memberlist" enctype="multipart/form-data" method="post">{% csrf_token %}
+        <fieldset name="file_upload" class="ui-corner-all">
+          <legend>File Upload</legend>
+{% usekwacro createfield upload_form.sheetname False %}
+{% usekwacro createfield upload_form.file True %}
+        </fieldset>
+      </form>
+{% endif %}
+      <div class="container">
+        <table class="sortable-root memberlist">
+          <thead>
+            <tr class="header">
+              <th class="sortable" data-selector="td.active" data-sorter="lexical_sorter">Active</th>
+              <th class="sortable" data-selector="td.surname" data-sorter="lexical_sorter">Last Name</th>
+              <th class="sortable" data-selector="td.firstname" data-sorter="lexical_sorter">First Name</th>
+              <th class="sortable" data-selector="td.category" data-sorter="lexical_sorter">Type</th>
+              <th class="sortable" data-selector="td.email" data-sorter="lexical_sorter">E-Mail</th>
+              <th class="sortable" data-selector="td.Data_Prot_email" data-sorter="lexical_sorter">Receive ?</th>
+              <th class="sortable" data-selector="td.index" data-sorter="numeric_sorter">WSRC ID</th>
+              <th class="sortable" data-selector="td.cardnumber" data-sorter="numeric_sorter">Card #</th>
+              <th class="sortable" data-selector="td.mobile_phone" data-sorter="lexical_sorter">Mobile</th>
+              <th class="sortable" data-selector="td.home_phone" data-sorter="lexical_sorter">Home Phone</th>
+            </tr>
+          </thead>
+          <tbody class="sortable-parent">
+          </tbody>
+        </table>
+      </div>
+
+    </div>
+
+{% if not upload_form %}
+    <div id="ss_vs_db_diff" class="">
+      <h2>Missing from Website DB</h2>
+      <p>Click the "Add" button to create a new record in the website database.</p>
+      <div class="container">
+        <table class="sortable-root memberlist missing_from_db">
+          <thead>
+              <th class="sortable" data-selector="td.active" data-sorter="lexical_sorter">Active</th>
+              <th class="sortable" data-selector="td.surname" data-sorter="lexical_sorter">Last Name</th>
+              <th class="sortable" data-selector="td.firstname" data-sorter="lexical_sorter">First Name</th>
+              <th class="sortable" data-selector="td.category" data-sorter="lexical_sorter">Category</th>
+              <th class="sortable" data-selector="td.email" data-sorter="lexical_sorter">E-Mail</th>
+              <th class="sortable" data-selector="td.Data_Prot_email" data-sorter="lexical_sorter">Receive ?</th>
+              <th class="sortable" data-selector="td.index" data-sorter="numeric_sorter">WSRC ID</th>
+              <th class="sortable" data-selector="td.cardnumber" data-sorter="numeric_sorter">Card #</th>
+              <th class="sortable" data-selector="td.mobile_phone" data-sorter="lexical_sorter">Mobile</th>
+              <th class="sortable" data-selector="td.home_phone" data-sorter="lexical_sorter">Home Phone</th>
+          </thead>
+          <tbody class="sortable-parent">
+          </tbody>
+        </table>
+      </div>
+      <h2>Missing from Membership Spreadsheet</h2>
+      <div class="container">
+        <table class="sortable-root memberlist missing_from_ss">
+          <thead>
+            <tr class="header">
+              <th class="sortable" data-selector="td.user_is_active" data-sorter="lexical_sorter">Active</th>
+              <th class="sortable" data-selector="td.user_last_name" data-sorter="lexical_sorter">Last Name</th>
+              <th class="sortable" data-selector="td.user_first_name" data-sorter="lexical_sorter">First Name</th>
+              <th class="sortable" data-selector="td.membership_type" data-sorter="lexical_sorter">Type</th>
+              <th class="sortable" data-selector="td.user_email" data-sorter="lexical_sorter">E-Mail</th>
+              <th class="sortable" data-selector="td.prefs_receive_email" data-sorter="lexical_sorter">Receive ?</th>
+              <th class="sortable" data-selector="td.wsrc_id" data-sorter="numeric_sorter">WSRC ID</th>
+              <th class="sortable" data-selector="td.cardnumber" data-sorter="numeric_sorter">Card #</th>
+              <th class="sortable" data-selector="td.squashlevels_id" data-sorter="numeric_sorter">SqLevel ID</th>
+              <th class="sortable" data-selector="td.cell_phone" data-sorter="lexical_sorter">Mobile</th>
+              <th class="sortable" data-selector="td.other_phone" data-sorter="lexical_sorter">Other Phone</th>
+            </tr>
+          </thead>
+          <tbody class="sortable-parent">
+          </tbody>
+        </table>
+      </div>
+      <h2>Differences</h2>
+      <p>Top value is website DB, bottom is membership spreadsheet. Right-click on a difference to set the spreadsheet value into the website db.</p>
+      <div class="container">
+        <table class="sortable-root memberlist differences">
+          <thead>
+          </thead>
+          <tbody>
+          </tbody>
+        </table>
+      </div>
+    </div>
+{% endif %}
+
+  </div>
+
+ <div id="new_member_form_dialog" title="New Member Form" class="ui-helper-hidden dialog-form">
+  <form method="get" action="#">{% csrf_token %}
+    <fieldset class="user">
+      <legend>New User Details</legend>
+{% usekwacro createfield new_user_form.username %}
+{% usekwacro createfield new_user_form.password %}
+{% usekwacro createfield new_user_form.first_name %}
+{% usekwacro createfield new_user_form.last_name %}
+{% usekwacro createfield new_user_form.email %}
+{% usekwacro createfield new_user_form.is_active %}
+    </fieldset>
+    <fieldset class="player">
+      <legend>Membership Details</legend>
+{% usekwacro createfield new_member_form.membership_type %}
+{% usekwacro createfield new_member_form.wsrc_id %}
+{% usekwacro createfield new_member_form.cardnumber %}
+{% usekwacro createfield new_member_form.cell_phone %}
+{% usekwacro createfield new_member_form.other_phone %}
+{% usekwacro createfield new_member_form.prefs_receive_email %}
+    </fieldset>
+    <input type="button" value="Create" onclick="wsrc.admin.memberlist.on('new_member_submit_handler')">
+  </form>
+ </div>
+
+ <div id="change_member_form_dialog" title="Update User Details" class="ui-helper-hidden dialog-form">
+  <form method="get" action="#">{% csrf_token %}
+    <fieldset>
+      <legend>User Details</legend>
+{% usekwacro createfield new_user_form.first_name %}
+{% usekwacro createfield new_user_form.last_name %}
+{% usekwacro createfield new_user_form.email %}
+{% usekwacro createfield new_member_form.membership_type %}
+{% usekwacro createfield new_member_form.wsrc_id %}
+{% usekwacro createfield new_member_form.cardnumber %}
+{% usekwacro createfield new_member_form.cell_phone %}
+{% usekwacro createfield new_member_form.other_phone %}
+{% usekwacro createfield new_member_form.prefs_receive_email %}
+    </fieldset>
+    <input type="button" value="Update" onclick="wsrc.admin.memberlist.on('change_member_submit_handler')">
+  </form>
+ </div>
+
+</body>
+</html>

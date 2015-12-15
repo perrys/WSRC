@@ -8,6 +8,7 @@ from django.shortcuts import redirect
 
 import wsrc.site.competitions.data_urls
 import wsrc.site.accounts.data_urls
+import wsrc.site.usermodel.data_urls
 
 import wsrc.site.views
 import wsrc.site.accounts.views
@@ -36,6 +37,7 @@ urlpatterns = patterns('',
     url(r'^password/change/done/$', auth_views.password_change_done, {'template_name': 'password_change_done.html'}, name='password_change_done'),
     url(r'^change_password/?$', wsrc.site.views.change_password_view),
 
+    url(r'^admin/memberlist/?', wsrc.site.usermodel.views.admin_memberlist_view),
     url(r'^memberlist/?$', wsrc.site.usermodel.views.MemberListView.as_view(), name="member_list"),
     url(r'^maintenance/?$', wsrc.site.views.maintenance_view, name="maintenance"),
 
@@ -53,6 +55,7 @@ urlpatterns = patterns('',
     url(r'^data/facebook$', wsrc.site.views.facebook_view),
     url(r'^data/bookings$', wsrc.site.views.BookingList.as_view()),
     url(r'^data/accounts/',  include(wsrc.site.accounts.data_urls)),
+    url(r'^data/memberlist/',  include(wsrc.site.usermodel.data_urls)),
     url(r'^data/',    include(wsrc.site.competitions.data_urls)),
 
     url(r'^accounts/download/(\w+)', wsrc.site.accounts.views.transaction_csv_view),
