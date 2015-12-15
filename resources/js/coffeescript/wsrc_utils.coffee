@@ -7,13 +7,28 @@ class WSRC_utils
   
   @DAYS_OF_WEEK: ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]
 
-  @list_lookup: (list, id, id_key) ->
+  @list_lookup: (list, id, id_key, converter) ->
     unless id_key?
       id_key = "id"
     for l in list
-      if l[id_key] == id
+      val = l[id_key]
+      if converter
+        val = converter(val)
+      if val == id
         return l
     return null
+
+  @list_of_tuples_to_map: (l) ->
+    amap = {}
+    reducer = (result, item) ->
+      result[item[0]] = item[1]
+      return result
+    window.wsrc_admin_memberlist_membership_types.reduce(reducer, amap)
+    return amap 
+
+  @get_property_list: (obj) ->
+    l = (k for k,v of obj)
+    return l
 
   @get_or_add_property: (obj, prop_name, factory) ->
     val = obj[prop_name]
@@ -47,7 +62,7 @@ class WSRC_utils
     array.sort (sorter)
     return null
 
-  @jq_stable_sort: (jq_list, sorter) ->
+  @jq_stable_sort: (jq_list, sorter, reverse) ->
     items = []
     jq_list.each((idx, elt) ->
       elt.setAttribute("data-idx", idx)
@@ -57,6 +72,8 @@ class WSRC_utils
       lhs = $(lhs)
       rhs = $(rhs)
       result = sorter(lhs, rhs)
+      if reverse
+        result = -result
       if result == 0
         result = lhs.data("idx") - rhs.data("idx")
       return result
@@ -220,9 +237,11 @@ class WSRC_utils
 
     handler = () ->    
       elts = jq_parent.children().remove()
-      sorted_elts = wsrc.utils.jq_stable_sort(elts, sorter)
-      if jq_elt.data("reverse")
-        sorted_elts.reverse()
+      reverse = jq_elt.data("reverse")
+      unless reverse?
+        reverse = true
+      sorted_elts = wsrc.utils.jq_stable_sort(elts, sorter, reverse)
+      if reverse
         jq_elt.data("reverse", false)
       else
         jq_elt.data("reverse", true)
