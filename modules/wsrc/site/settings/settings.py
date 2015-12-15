@@ -91,3 +91,9 @@ INTERNAL_IPS = "127.0.0.1"
 
 DEFAULT_FROM_EMAIL = "webmaster@wokingsquashclub.org"
 SERVER_EMAIL       = "admin@wokingsquashclub.org"
+
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework.authentication.SessionAuthentication',
+    )
+}
