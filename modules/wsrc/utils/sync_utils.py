@@ -4,9 +4,8 @@ import os.path
 import unittest
 
 from operator import itemgetter
-from wsrc.site.usermodel.models import Player
 
-class ModelRecordWrapper:
+class ModelRecordWrapper(object):
   """Wrap a DB record for dictionary access. Supports joins via dotted syntax - e.g. 'player.user'"""
   def __init__(self, record):
     self.record = record
@@ -23,38 +22,40 @@ class ModelRecordWrapper:
   def wrap_queryset(cls, queryset):
     return [cls(record) for record in queryset.all()]
 
-class FieldMappingWrapper:
-  """Allow fields in a record to be accessed by alternative names"""
-  def __init__(self, target, **field_mapping):
-    self.target = target
-    self.field_mapping = field_mapping
+class DisplayValueWrapper(ModelRecordWrapper):
+  def __init__(self, record, fields):
+    super(DisplayValueWrapper, self).__init__(record)
+    self.fields = fields
 
   def __getitem__(self, name):
-    if name in self.field_mapping:
-      name = self.field_mapping[name]
-    return self.target[name]
-
+    if name in self.fields:
+      return getattr(self.record, "get_{0}_display".format(name))()
+    return super(DisplayValueWrapper, self).__getitem__(name)
+    
   @classmethod
-  def wrap_records(cls, records, **field_mapping):
-    return [FieldMappingWrapper(r, **field_mapping) for r in records]
+  def wrap_records(cls, records, *fields, **kwargs):
+    return [cls(r, *fields, **kwargs) for r in records]
   
-class FieldJoiningWrapper:
-  """Create a new field by concatenating two existing fields. Useful for firstname + surname fields"""
-  def __init__(self, target, field_name, join_fields, separator):
+
+class NullifingWrapper:
+  """Return null if field is empty string"""
+  def __init__(self, target, *fields):
     self.target = target
-    self.field_name = field_name
-    self.join_fields = join_fields
-    self.separator = separator
+    self.fields = fields
 
   def __getitem__(self, name):
-    if name == self.field_name:
-      return self.separator.join([self.target[f] for f in self.join_fields])
-    return self.target[name]
+    val = self.target[name]
+    if name in self.fields and val == '':
+      return None
+    return val
+
+  def __setitem__(self, name, val):
+    self.target[name] = val
 
   @classmethod
-  def wrap_records(cls, records, field_name, join_fields, separator):
-    return [FieldJoiningWrapper(r, field_name, join_fields, separator) for r in records]
-
+  def wrap_records(cls, records, *fields):
+    return [NullifingWrapper(r, *fields) for r in records]
+  
 class BooleanFieldWrapper:
   """Convert a yes/no field into a truth value"""
   def __init__(self, target, *fields):
@@ -69,27 +70,13 @@ class BooleanFieldWrapper:
       return val.lower()[0] == "y"
     return val
 
+  def __setitem__(self, name, val):
+    self.target[name] = val
+
   @classmethod
   def wrap_records(cls, records, *fields):
     return [cls(r, *fields) for r in records]
-  
-class ValueTranslatingFieldWrapper:
-  def __init__(self, target, *fields, **translations):
-    self.target = target
-    self.fields = fields
-    self.translations = translations
 
-  def __getitem__(self, name):
-    val = self.target[name]
-    if name in self.fields:
-      for k,v in self.translations.iteritems():
-        val = val.replace(k,v)
-    return val
-
-  @classmethod
-  def wrap_records(cls, records, *fields, **kwargs):
-    return [cls(r, *fields, **kwargs) for r in records]
-  
 class IntegerFieldWrapper:
   """Return fields names with spaces when asked with underscores"""
   def __init__(self, target, *fields):
@@ -98,11 +85,17 @@ class IntegerFieldWrapper:
 
   def __getitem__(self, name):
     val = self.target[name]
-    if name in self.fields:
-      if len(val) > 0:
-        return int(val)
+    if name in self.fields and val is not None:
+      if isinstance(val, float) or len(val) > 0:
+        try:
+          return int(val)
+        except ValueError:
+          pass
       return None
     return val
+
+  def __setitem__(self, name, val):
+    self.target[name] = val
 
   @classmethod
   def wrap_records(cls, records, *fields):
@@ -116,9 +109,12 @@ class LowerCaseFieldWrapper:
 
   def __getitem__(self, name):
     val = self.target[name]
-    if name in self.fields:
+    if name in self.fields and val is not None:
       return val.lower()
     return val
+
+  def __setitem__(self, name, val):
+    self.target[name] = val
 
   @classmethod
   def wrap_records(cls, records, *fields):
@@ -129,64 +125,6 @@ def parse_csv(filename):
   fh = open(os.path.expanduser(filename))
   reader = csv.DictReader(fh)
   return [row for row in reader]
-
-def report_differences(lhs, rhs, primary_key_field, data_fields):
-
-  """Iterate over the two recordsets (which should be iterables of
-  dictionary-like objects) returning records which have unique
-  PRIMARY_KEY_FIELD values, and for common records return a dictionary
-  of differences in DATA_FIELDS."""
-
-  lhs_only = []
-  rhs_only = []
-  differences = {}
-
-  lhs_iter = sorted(lhs, key=itemgetter(primary_key_field)).__iter__()
-  rhs_iter = sorted(rhs, key=itemgetter(primary_key_field)).__iter__()
-
-  def next_item(it, other_it, overflow_container, already_popped=None):
-    try:
-      item = it.next()
-    except StopIteration, e:
-      if already_popped is not None:
-        overflow_container.append(already_popped)
-      for i in other_it:
-        overflow_container.append(i)
-      raise e;
-    return item;
-
-  def compare(key, this, that):
-    diff = {}
-    for f in data_fields:      
-      if this[f] != that[f]:
-        diff[f] = (this[f], that[f])
-    if len(diff) > 0:
-      differences[key] = diff, this, that
-
-  try:
-
-    lhs_item = next_item(lhs_iter, rhs_iter, rhs_only)
-    rhs_item = next_item(rhs_iter, lhs_iter, lhs_only)
-
-    while True:
-
-      lhs_key, rhs_key = [x[primary_key_field] for x in lhs_item, rhs_item]
-    
-      if lhs_key < rhs_key:
-        lhs_only.append(lhs_item)
-        lhs_item = next_item(lhs_iter, rhs_iter, rhs_only)
-      elif lhs_key > rhs_key:
-        rhs_only.append(rhs_item)
-        rhs_item = next_item(rhs_iter, lhs_iter, lhs_only)
-      else:
-        compare(lhs_key, lhs_item, rhs_item)
-        lhs_item = next_item(lhs_iter, rhs_iter, rhs_only)
-        rhs_item = next_item(rhs_iter, lhs_iter, lhs_only, lhs_item)
-    
-  except StopIteration:
-    pass
-
-  return lhs_only, rhs_only, differences
 
 def find_matching(lhs_records, rhs_records, comparer):
   """Find rows in RHS_RECORDS which match those in LHS_RECORDS. Returns
@@ -209,152 +147,188 @@ def find_matching(lhs_records, rhs_records, comparer):
     result.append(matched)
   return result
 
+def get_differences(rows, db_rows, matcher, differ):
+  mapping_array = find_matching(rows, db_rows, matcher)
+  differences = {}
+  for i, db_row in enumerate(mapping_array):
+    if db_row is not None:
+      other_row = rows[i]
+      other_row["db_id"] = db_row["id"]
+      diffs = differ(other_row, db_row)
+      if len(diffs) > 0:
+        differences[db_row["id"]] = diffs
+
+  return differences
+
 def match_spreadsheet_with_db_record(ss_row, db_record):
   def nontrivial_equals(lhs, rhs):
     return lhs is not None and lhs == rhs
-  def safe_int(i):
-    try:
-      return i is not None and int(i) or None
-    except ValueError:
-      return None
-  if nontrivial_equals(ss_row["index"], db_record.wsrc_id):
+  if nontrivial_equals(ss_row["index"], db_record["wsrc_id"]):
     return True
-  if nontrivial_equals(safe_int(ss_row["cardnumber"]), db_record.cardnumber) and db_record.cardnumber != 0:
+  if nontrivial_equals(ss_row["cardnumber"], db_record["cardnumber"]) and db_record["cardnumber"] != 0:
     return True
-  if nontrivial_equals(ss_row["surname"], db_record.user.last_name) and nontrivial_equals(ss_row["firstname"], db_record.user.first_name):
+  if nontrivial_equals(ss_row["surname"], db_record["user.last_name"]) and nontrivial_equals(ss_row["firstname"], db_record["user.first_name"]):
     return True
   return False
 
+def match_booking_system_contact_with_db_record(bs_row, db_record):
+  return bs_row["Name"] == db_record.get_full_name()
+
 class ComparisonSpec:
-  def __init__(self, lhs_col, rhs_col, lhs_converter=None, rhs_converter=None):
+  def __init__(self, lhs_col, rhs_col):
     self.lhs_col = lhs_col
     self.rhs_col = rhs_col
-    self.lhs_converter = lhs_converter
-    self.rhs_converter = rhs_converter
-  def __eval__(self, lhs, rhs):
-    lhs = lhs[self.lhs_field]
-    if self.lhs_converter is not None:
-      lhs = self.lhs_converter(lhs)
-    rhs = rhs[self.rhs_field]
-    if self.rhs_converter is not None:
-      rhs = self.rhs_converter(rhs)
-    return lhs == rhs
-  def key():
+  def __call__(self, lhs, rhs):
+    lhs_val = lhs[self.lhs_col]
+    rhs_val = rhs[self.rhs_col]
+    if not lhs_val == rhs_val:
+      return (lhs_val, rhs_val)
+    return None
+  def key(self):
     return self.rhs_col
 
-def compare_spreadsheet_with_db_record(ss_row, db_record):
+
+def compare_booking_system_contact_with_db_record(bs_contact, db_record):
   diffs = dict()
   db_record = ModelRecordWrapper(db_record)
-  def y_or_n(x):
-    if x is None:
-      return None
-    return x[:1].lower() == 'y'
-  def lower(x):
-    return (x is not None and x != '') and x.lower() or None
-  def categorize_and_lower(x):
-    return lower(Player.MEMBERSHIP_TYPES_MAP.get(x))
-  def safe_int(i):
-    return (i is not None and i != '') and int(i) or None
-  def nullify(s):
-    return s != '' and s or None
+  
+def compare_spreadsheet_with_db_record(ss_row, db_record):
+  diffs = dict()
   specs = [
-    ComparisonSpec('active', 'user.is_active', y_or_n),
-    ComparisonSpec('surname', 'user.last_name', nullify, nullify),
-    ComparisonSpec('firstname', 'user.first_name', nullify, nullify),
-    ComparisonSpec('category', 'membership_type', lower, categorize_and_lower),
-    ComparisonSpec('email', 'user.email', nullify, nullify),
-    ComparisonSpec('Data Prot email', 'prefs_receive_email', y_or_n),
-    ComparisonSpec('index', 'wsrc_id', safe_int),
-    ComparisonSpec('cardnumber', 'cardnumber', safe_int),
-    ComparisonSpec('mobile_phone', 'cell_phone', nullify, nullify),
-    ComparisonSpec('home_phone', 'other_phone', nullify, nullify),
+    ComparisonSpec('active', 'user.is_active'),
+    ComparisonSpec('surname', 'user.last_name'),
+    ComparisonSpec('firstname', 'user.first_name'),
+    ComparisonSpec('category', 'membership_type'),
+    ComparisonSpec('email', 'user.email'),
+    ComparisonSpec('Data Prot email', 'prefs_receive_email'),
+    ComparisonSpec('index', 'wsrc_id'),
+    ComparisonSpec('cardnumber', 'cardnumber'),
+    ComparisonSpec('mobile_phone', 'cell_phone'),
+    ComparisonSpec('home_phone', 'other_phone'),
   ]
   for spec in specs:    
-    lhs = ss_row[spec.lhs_col]
-    if spec.lhs_converter is not None:
-      lhs = spec.lhs_converter(lhs)
-    rhs = db_record[spec.rhs_col]
-    if spec.rhs_converter is not None:
-      rhs = spec.rhs_converter(rhs)
-    if lhs != rhs:
-      diffs[spec.rhs_col] = (lhs, rhs)
+    diff = spec(ss_row, db_record)
+    if diff is not None:
+      diffs[spec.key()] = diff
   return diffs
+
+def get_differences_ss_vs_db(ss_records, db_records):
+  from wsrc.site.usermodel.models import Player
+
+  ss_records = BooleanFieldWrapper.wrap_records(ss_records, "active")
+  ss_records = BooleanFieldWrapper.wrap_records(ss_records, "Data Prot email")
+  ss_records = IntegerFieldWrapper.wrap_records(ss_records, "cardnumber", "index")
+  ss_records = LowerCaseFieldWrapper.wrap_records(ss_records, "category")
+  ss_records = NullifingWrapper.wrap_records(ss_records, "surname", "firstname", "email", "mobile_phone", "home_phone")
+
+  db_records = DisplayValueWrapper.wrap_records(Player.objects.all(), "membership_type")
+  db_records = LowerCaseFieldWrapper.wrap_records(db_records, "membership_type")
+  db_records = NullifingWrapper.wrap_records(db_records, "user.last_name", "user.first_name", "user.email", "cell_phone", "other_phone")
+
+  return get_differences(ss_records, db_records, match_spreadsheet_with_db_record, compare_spreadsheet_with_db_record)
 
 class Tester(unittest.TestCase):
   
-  def test_when_missing_elements_then_unique_elements_reported(self):
+  def setUp(self):
+    from django.contrib.auth.models import User
+    from wsrc.site.usermodel.models import Player
+    try:
+      user_instance = User.objects.get(username="xxx_test")
+      user_instance.delete()
+    except User.DoesNotExist:
+      pass
+    user_instance = User.objects.create_user("xxx_test", "xxx@xxx.xxx", "xxx_pw", first_name="Foo", last_name="Bar")
+    user_instance.save()
+    self.player_instance = Player.objects.create(cell_phone="07890 123456", other_phone="01234 567890", membership_type="full", 
+                                                 wsrc_id=123456, cardnumber=2345678, prefs_receive_email=True, user=user_instance)
+    self.player_instance.save()
+    self.ss_record = {
+      "active": "Y",
+      "surname": "Foo",
+      "firstname": "Bar",
+      "category": "full",
+      "email": "foo@bar.com",
+      "Data Prot email": "Yes",
+      "index": 123456,
+      "cardnumber": 123456,
+      "mobile_phone": "07890 123456",
+      "home_phone": "01234 567890",
+    }
+    self.bs_record = {"Email address": "foo@bar.baz", "Mobile": "07890 123456", "Telephone": "01234 567890", "Name": "Foo Bar"}
 
-    def mk_list(l):
-      return [{"id": x, "val": x} for x in l]
+  def tearDown(self):
+    self.player_instance.delete()
 
-    # no difference
-    lhs, rhs, diffs = report_differences(mk_list([1,2,3,4,5]), mk_list([1,2,3,4,5]), "id", ["val"])
-    self.assertEqual(0, len(lhs))
-    self.assertEqual(0, len(rhs))
-    self.assertEqual(0, len(diffs))
+  def common_ss_test(self, field, val, record, expected): 
+    self.ss_record[field] = val
+    self.assertEqual(expected, record[field])
 
-    # middle missing
-    lhs, rhs, diffs = report_differences(mk_list([1,2,4,5]), mk_list([1,2,3,4,5]), "id", ["val"])
-    self.assertEqual(0, len(lhs))
-    self.assertEqual(1, len(rhs))
-    self.assertEqual(0, len(diffs))
-    self.assertEqual({"id": 3, "val": 3}, rhs[0])
+  def common_db_test(self, field, record, expected): 
+    self.assertEqual(expected, record[field])
 
-    # first missing
-    lhs, rhs, diffs = report_differences(mk_list([2,3,4,5]), mk_list([1,2,3,4,5]), "id", ["val"])
-    self.assertEqual(0, len(lhs))
-    self.assertEqual(1, len(rhs))
-    self.assertEqual(0, len(diffs))
-    self.assertEqual({"id": 1, "val": 1}, rhs[0])
-    
-    # last missing
-    lhs, rhs, diffs = report_differences(mk_list([1,2,3,4]), mk_list([1,2,3,4,5]), "id", ["val"])
-    self.assertEqual(0, len(lhs))
-    self.assertEqual(1, len(rhs))
-    self.assertEqual(0, len(diffs))
-    self.assertEqual({"id": 5, "val": 5}, rhs[0])
+  def test_GIVEN_numeric_string_WHEN_integer_wraped_THEN_number_returned(self):
+    record = IntegerFieldWrapper(self.ss_record, "cardnumber", "index")
+    self.common_ss_test("index", "123", record, 123)
+    self.common_ss_test("index", "", record, None)
+    self.common_ss_test("index", None, record, None)
 
-    # middle rhs missing
-    lhs, rhs, diffs = report_differences(mk_list([1,2,3,4,5]), mk_list([1,2,4,5]), "id", ["val"])
-    self.assertEqual(1, len(lhs))
-    self.assertEqual(0, len(rhs))
-    self.assertEqual(0, len(diffs))
-    self.assertEqual({"id": 3, "val": 3}, lhs[0])
+  def test_GIVEN_mixed_string_WHEN_lowercase_wraped_THEN_lowercase_string_returned(self):
+    record = LowerCaseFieldWrapper(self.ss_record, "firstname", "surname")
+    self.common_ss_test("firstname", "AbC", record, "abc")
+    self.common_ss_test("surname", "AbC", record, "abc")
+    self.common_ss_test("firstname", "", record, "")
+    self.common_ss_test("surname", None, record, None)
 
-    # first missing
-    lhs, rhs, diffs = report_differences(mk_list([1,2,3,4,5]), mk_list([2,3,4,5]), "id", ["val"])
-    self.assertEqual(1, len(lhs))
-    self.assertEqual(0, len(rhs))
-    self.assertEqual(0, len(diffs))
-    self.assertEqual({"id": 1, "val": 1}, lhs[0])
-    
-    # last missing
-    lhs, rhs, diffs = report_differences(mk_list([1,2,3,4,5]), mk_list([1,2,3,4]), "id", ["val"])
-    self.assertEqual(1, len(lhs))
-    self.assertEqual(0, len(rhs))
-    self.assertEqual(0, len(diffs))
-    self.assertEqual({"id": 5, "val": 5}, lhs[0])
+  def test_GIVEN_empty_WHEN_nullify_wraped_THEN_None_returned(self):
+    record = NullifingWrapper(self.ss_record, "mobile_phone", "home_phone")
+    self.common_ss_test("mobile_phone", "123", record, "123")
+    self.common_ss_test("mobile_phone", "", record, None)
+    self.common_ss_test("home_phone", "123", record, "123")
+    self.common_ss_test("home_phone", "", record, None)
+    self.common_ss_test("home_phone", None, record, None)
 
-  def test_when_different_then_differences_reported(self):
-    lhs = [
-      {"id":1, "name": "Foo Bar", "widget": "Frobrinator"},
-      {"id":2, "name": "Foo Baz", "widget": "Frobrinator"},
-      ]
-    rhs = [
-      {"id":1, "name": "Foo Bar", "widget": "Frobrinator"},
-      {"id":2, "name": "Foo Baz", "widget": "Forbrinator"},
-      ]
-    lhs, rhs, diffs = report_differences(lhs, rhs, "id", ["name", "widget"])
-    self.assertEqual(0, len(lhs))
-    self.assertEqual(0, len(rhs))
-    self.assertEqual(1, len(diffs))
-    
-    self.assertIn(2, diffs)
+  def test_GIVEN_yesno_field_WHEN_boolean_wraped_THEN_true_false_returned(self):
+    record = BooleanFieldWrapper(self.ss_record, "active", "Data Prot email")
+    self.common_ss_test("active", "Yes", record, True)
+    self.common_ss_test("active", "yes", record, True)
+    self.common_ss_test("active", "Y", record, True)
+    self.common_ss_test("active", "No", record, False)
+    self.common_ss_test("active", "no", record, False)
+    self.common_ss_test("active", "n", record, False)
+    self.common_ss_test("active", "x", record, False)
+    self.common_ss_test("Data Prot email", "yes", record, True)
+    self.common_ss_test("Data Prot email", "no", record, False)
+    self.common_ss_test("Data Prot email", "zz", record, False)
+    self.common_ss_test("Data Prot email", "", record, None)
+    self.common_ss_test("Data Prot email", None, record, None)
 
-    diff = diffs[2]
-    self.assertIn("widget", diff)
+  def test_GIVEN_model_instance_WHEN_model_wraped_THEN_fields_returned_through_dict_lookup(self):
+    record = ModelRecordWrapper(self.player_instance)
+    self.common_db_test("user.username", record, "xxx_test")
+    self.common_db_test("user.first_name", record, "Foo")
+    self.common_db_test("cell_phone", record, "07890 123456")
 
-    self.assertEqual({"widget": ("Frobrinator", "Forbrinator")}, diff)
+  def test_GIVEN_model_instance_WHEN_display_wraped_THEN_display_value_returned(self):
+    record = DisplayValueWrapper(self.player_instance, "membership_type")
+    self.player_instance.membership_type = "full"
+    self.common_db_test("membership_type", record, "Full")
+    self.player_instance.membership_type = "y_adult"
+    self.common_db_test("membership_type", record, "Young Adult")
 
-if __name__ == '__main__':
-    unittest.main()
+    self.common_db_test("user.username", record, "xxx_test")
+    self.common_db_test("cell_phone", record, "07890 123456")
+
+
+if __name__ == "__main__":
+
+  import os
+  os.environ.setdefault("DJANGO_SETTINGS_MODULE", "wsrc.site.settings.settings")
+
+  import logging
+  logging.basicConfig(format='%(asctime)-10s [%(levelname)s] %(message)s',datefmt="%Y-%m-%d %H:%M:%S")
+
+  import django
+  if hasattr(django, "setup"):
+    django.setup()
+
+  unittest.main()
