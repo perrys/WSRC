@@ -213,6 +213,15 @@ def scrape_fixtures_table(data):
   headerrow = toprowheader.parent
   return scrape_table_generic(headerrow)
 
+def scrape_userlist(data):
+  soup = BeautifulSoup(data, "lxml")
+  toprowheader = soup.find_all('th')
+  for th in toprowheader:
+    if th.string == 'Rights':
+      headerrow = th.parent
+      break
+  return scrape_table_generic(headerrow)
+
 
 if __name__ == "__main__":
   import wsrc.external_sites
