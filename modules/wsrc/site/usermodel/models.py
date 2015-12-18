@@ -11,7 +11,7 @@ class Player(models.Model):
 
   MEMBERSHIP_TYPES = (
     ("coach", "Coach"),
-    ("compl", "Complementary"),
+    ("compl", "Complimentary"),
     ("full", "Full"),
     ("junior", "Junior"),
     ("off_peak", "Off-Peak"),
