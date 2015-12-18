@@ -309,114 +309,6 @@ def email_membership(argv):
   success_list = email_utils.bulk_email_membership(subject, message, from_address, member_list)
   print "Emailed %d members" % len(success_list)
   
-def sync_membership_records(csv_filename):
-
-  from wsrc.site.usermodel.models import Player, User
-
-  def is_valid_member_predicate(record):
-    return (len(record["surname"].strip()) > 0) and \
-        not "2099" in record["joiningdate"] and \
-        len(record["active"]) > 0 and \
-        record["active"].lower()[0] == "y" 
-
-  csv_records = sync_utils.parse_csv(csv_filename)
-  csv_records = [r for r in csv_records if is_valid_member_predicate(r)]
-  csv_records = sync_utils.FieldJoiningWrapper.wrap_records(csv_records, "name", ["firstname", "surname"], " ")
-  csv_records = sync_utils.BooleanFieldWrapper.wrap_records(csv_records, "active")
-  csv_records = sync_utils.BooleanFieldWrapper.wrap_records(csv_records, "Data Prot email")
-  csv_records = sync_utils.IntegerFieldWrapper.wrap_records(csv_records, "cardnumber")
-  translations = {
-    "complimenrtary": "compl",
-    "complementary":  "compl",
-    "non-playing":    "non_play",
-    "off-peak":       "off_peak",
-    "young adult":    "y_adult",
-    }
-  csv_records = sync_utils.LowerCaseFieldWrapper.wrap_records(csv_records, "category")
-  csv_records = sync_utils.ValueTranslatingFieldWrapper.wrap_records(csv_records, "category", **translations)
-
-  db_records = sync_utils.ModelRecordWrapper.wrap_queryset(Player.objects.all())
-  db_records = sync_utils.FieldMappingWrapper.wrap_records(db_records, 
-                                                           name="get_full_name", 
-                                                           email="user.email", 
-                                                           mobile_phone="cell_phone",
-                                                           home_phone="other_phone",
-                                                           cardnumber="membership_id",
-                                                           category="membership_type",
-                                                           active="user.is_active")
-  for f in db_records:
-    f.field_mapping["Data Prot email"] = "prefs_receive_email"
-
-
-  comparison_fields = ["email", "mobile_phone", "home_phone", "active", "cardnumber", "category", "Data Prot email"]
-  lhsonly, rhsonly, diffs  = sync_utils.report_differences(db_records, csv_records, "name", comparison_fields)
-
-  print "\n*** Members only in db:"
-  for record in lhsonly:
-    if not record["user.is_active"]:
-      continue
-    print record["name"]
-    def is_invalid_member_predicate(record):
-      return (len(record["surname"].strip()) > 0) and \
-          not "2099" in record["joiningdate"] and \
-          (len(record["active"]) == 0 or \
-             record["active"].lower()[0] != "y")
-    invalid_csv_records = [r for r in sync_utils.parse_csv(csv_filename) if is_invalid_member_predicate(r)]
-    invalid_csv_records = sync_utils.FieldJoiningWrapper.wrap_records(invalid_csv_records, "name", ["firstname", "surname"], " ")
-    for r in invalid_csv_records:
-      if r["name"] == record["get_full_name"]:
-        if settings._WSRC_SETTINGS["sync_updates"]:
-          print "Invalidating: " + r["name"]
-          player_record = Player.objects.get(pk=record["id"])
-          player_record.user.is_active = False
-          player_record.user.save()
-        else:
-          print "Should mark invalid: " + r["name"]
-        break
-
-  print "\n*** Members only in CSV file:"
-  for record in rhsonly:
-    existing_player = None
-    try:
-      if record["cardnumber"] is not None:
-        existing_player = Player.objects.get(membership_id=int(record["cardnumber"]))
-        print existing_player
-    except Player.DoesNotExist:
-      pass
-    if existing_player is not None:
-      continue
-    print record["name"]
-    possibles = Player.objects.filter(user__last_name__iexact=record["surname"])
-    if len(possibles) > 0:
-      print " possibles: " + str(possibles)
-
-    # update the DB with new members if necessary:
-    if settings._WSRC_SETTINGS["sync_updates"]:
-      username="_".join([record["firstname"].lower(), record["surname"].lower()])
-      # skip usernames in DB already - can arise when translating unicode names to ascii usernames 
-      matches = User.objects.filter(username=username) 
-      if len(matches) == 0:
-        persist_member_details(record)
-
-  print "\n*** Record differences:"
-  for name,v in diffs.iteritems():
-    diff, record, csv_record = v
-    player = record.target.record
-    print player, diff
-    if settings._WSRC_SETTINGS["sync_updates"]:
-      for field,vals in diff.iteritems():
-        def testAndSetField(csv_field, db_record, db_field):
-          if field == csv_field:
-            setattr(db_record, db_field, vals[1])
-        testAndSetField("mobile_phone",    player, "cell_phone")
-        testAndSetField("home_phone",      player, "other_phone")
-        testAndSetField("email",           player.user, "email")
-        testAndSetField("cardnumber",      player, "membership_id")
-        testAndSetField("category",        player, "membership_type")
-        testAndSetField("Data Prot email", player, "prefs_receive_email")
-        
-      player.save()
-      player.user.save()
 
 if __name__ == "__main__":
   prog = os.path.basename(sys.argv[0])
@@ -444,9 +336,6 @@ if __name__ == "__main__":
 
   elif command in ("sync-leaguemaster"):
     wsrc.external_sites.main.cmdline_sync_leaguemaster(*args)
-
-  elif command in ("sync-membership"):
-    sync_membership_records(args[0])
 
   elif command in ("email-membership"):
     email_membership(sys.argv)
