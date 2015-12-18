@@ -36,6 +36,7 @@ class BookingSystemSession:
   BOOKING_PAGE        = "/WokingSquashClub/edit_entry_handler_fixed.php"
   DELETE_BOOKING_PAGE = "/WokingSquashClub/del_entry.php"
   WEEK_VIEW_PAGE      = '/WokingSquashClub/week.php'
+  USER_LIST_PAGE      = '/WokingSquashClub/edit_users.php'
 
   def __init__(self, username=None, password=None):
     self.client = url_utils.SimpleHttpClient(BookingSystemSession.BASE_URL)
@@ -154,7 +155,16 @@ class BookingSystemSession:
         LOGGER.info("Found {0} court booking(s) for court {1} week starting {2}".format(len(events), court, date.isoformat()))
         bookingSystemEvents.extend([event for event in events])
     return bookingSystemEvents, start_date
-  
+
+  def get_memberlist(self):
+    response = self.client.get(BookingSystemSession.USER_LIST_PAGE)
+    status = response.getcode()
+    body = response.read()
+    if status != httplib.OK:
+      raise Exception("failed to user list, status: %(status)d, body: %(body)s" % locals())
+    return body
+    
+
 @transaction.atomic
 def sync_db_booking_events(events, start_date, end_date):
   """Sync the db's view of booking events with the given list (usually
