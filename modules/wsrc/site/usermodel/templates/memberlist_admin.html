@@ -28,12 +28,14 @@
       <li><a href="#db_memberlist">Website DB</a></li>
       <li><a href="#ss_memberlist">Membership Spreadsheet</a></li>
 {% if not upload_form %}
-      <li><a href="#ss_vs_db_diff">Website vs Spreadsheet</a></li>
+      <li><a href="#ss_vs_db_diffs">Website vs Spreadsheet</a></li>
 {% endif %}
-      <li><a href="#booking_system_memberlist">Booking System</a></li>
+      <li><a href="#bs_memberlist">Booking System</a></li>
+      <li class="ui-helper-hidden"><a href="#bs_vs_db_diffs">Website vs Booking System</a></li>
     </ul>
 
     <div id="db_memberlist">
+      <p>Full contents of the webiste database. Double-click on a row to open the corresponding admin page.</p>
       <div class="container">
         <table class="sortable-root memberlist">
           <thead>
@@ -67,6 +69,8 @@
 {% usekwacro createfield upload_form.file True %}
         </fieldset>
       </form>
+{% else %}
+      <p>Contents of the uploaded spreadsheet. See the next tab for comparison to the website database.</p>
 {% endif %}
       <div class="container">
         <table class="sortable-root memberlist">
@@ -92,8 +96,8 @@
     </div>
 
 {% if not upload_form %}
-    <div id="ss_vs_db_diff" class="">
-      <h2>Missing from Website DB</h2>
+    <div id="ss_vs_db_diffs" class="comparison_wrapper">
+      <h2>Missing from Website Database</h2>
       <p>Click the "Add" button to create a new record in the website database.</p>
       <div class="container">
         <table class="sortable-root memberlist missing_from_db">
@@ -114,8 +118,9 @@
         </table>
       </div>
       <h2>Missing from Membership Spreadsheet</h2>
+      <p>Double-click on a row to open the corresponding admin page.</p>
       <div class="container">
-        <table class="sortable-root memberlist missing_from_ss">
+        <table class="sortable-root memberlist missing_from_other">
           <thead>
             <tr class="header">
               <th class="sortable" data-selector="td.user_is_active" data-sorter="lexical_sorter">Active</th>
@@ -136,19 +141,101 @@
         </table>
       </div>
       <h2>Differences</h2>
-      <p>Top value is website DB, bottom is membership spreadsheet. Right-click on a difference to set the spreadsheet value into the website db.</p>
+      <p>Top value is website DB, bottom is membership spreadsheet. Right-click on a difference to set the spreadsheet value into the website DB. Double-click on a row to open the corresponding admin page.</p>
       <div class="container">
         <table class="sortable-root memberlist differences">
           <thead>
+            <tr></tr>
           </thead>
-          <tbody>
+          <tbody class="sortable-parent">
           </tbody>
         </table>
       </div>
     </div>
 {% endif %}
 
+    <div id="bs_memberlist" class="">
+
+      <form id="booking_system_credentials" action="#" method="get">{% csrf_token %}
+        <fieldset class="ui-corner-all">
+          <legend>Booking System</legend>
+          <p>Please supply credentials to retreive the contacts list from the booking system website (these are not stored on the server).</p>
+{% usekwacro createfield booking_credentials_form.username False %}
+{% usekwacro createfield booking_credentials_form.password True %}
+        </fieldset>
+      </form>
+      <div class="container">
+        <table class="sortable-root memberlist">
+          <thead>
+            <tr class="header">
+              <th class="sortable" data-selector="td.last_name" data-sorter="lexical_sorter">Last Name</th>
+              <th class="sortable" data-selector="td.first_name" data-sorter="lexical_sorter">First Name</th>
+              <th class="sortable" data-selector="td.Email_address" data-sorter="lexical_sorter">E-Mail</th>
+              <th class="sortable" data-selector="td.Mobile" data-sorter="lexical_sorter">Mobile</th>
+              <th class="sortable" data-selector="td.Telephone" data-sorter="lexical_sorter">Telephone</th>
+            </tr>
+          </thead>
+          <tbody class="sortable-parent">
+          </tbody>
+        </table>
+      </div>
+
+    </div>
+
+    <div id="bs_vs_db_diffs" class="ui-helper-hidden">
+      <h2>Missing from Website DB</h2>
+      <p>Ensure the website DB and membershp spreadsheet are in sync before taking any action. Bear in mind that because the data is only matched by name, "missing" records may just be due to minor name differences.</p>
+      <div class="container">
+        <table class="sortable-root memberlist missing_from_db">
+          <thead>
+              <th class="sortable" data-selector="td.surname" data-sorter="lexical_sorter">Last Name</th>
+              <th class="sortable" data-selector="td.firstname" data-sorter="lexical_sorter">First Name</th>
+              <th class="sortable" data-selector="td.email" data-sorter="lexical_sorter">E-Mail</th>
+              <th class="sortable" data-selector="td.mobile_phone" data-sorter="lexical_sorter">Mobile</th>
+              <th class="sortable" data-selector="td.home_phone" data-sorter="lexical_sorter">Home Phone</th>
+          </thead>
+          <tbody class="sortable-parent">
+          </tbody>
+        </table>
+      </div>
+      <h2>Missing from Booking System</h2>
+      <p>Double-click on a row to open the corresponding admin page.</p>
+      <div class="container">
+        <table class="sortable-root memberlist missing_from_other">
+          <thead>
+            <tr class="header">
+              <th class="sortable" data-selector="td.user_is_active" data-sorter="lexical_sorter">Active</th>
+              <th class="sortable" data-selector="td.user_last_name" data-sorter="lexical_sorter">Last Name</th>
+              <th class="sortable" data-selector="td.user_first_name" data-sorter="lexical_sorter">First Name</th>
+              <th class="sortable" data-selector="td.membership_type" data-sorter="lexical_sorter">Type</th>
+              <th class="sortable" data-selector="td.user_email" data-sorter="lexical_sorter">E-Mail</th>
+              <th class="sortable" data-selector="td.prefs_receive_email" data-sorter="lexical_sorter">Receive ?</th>
+              <th class="sortable" data-selector="td.wsrc_id" data-sorter="numeric_sorter">WSRC ID</th>
+              <th class="sortable" data-selector="td.cardnumber" data-sorter="numeric_sorter">Card #</th>
+              <th class="sortable" data-selector="td.squashlevels_id" data-sorter="numeric_sorter">SqLevel ID</th>
+              <th class="sortable" data-selector="td.cell_phone" data-sorter="lexical_sorter">Mobile</th>
+              <th class="sortable" data-selector="td.other_phone" data-sorter="lexical_sorter">Other Phone</th>
+            </tr>
+          </thead>
+          <tbody class="sortable-parent">
+          </tbody>
+        </table>
+      </div>
+      <h2>Differences</h2>
+      <p>Top value is website DB, bottom is booking system contact. Right-click on a difference to set the booking system value into the website DB. Double-click on a row to open the corresponding admin page.</p>
+      <div class="container">
+        <table class="sortable-root memberlist differences">
+          <thead>
+            <tr></tr>
+          </thead>
+          <tbody class="sortable-parent">
+          </tbody>
+        </table>
+      </div>
+    </div>
+
   </div>
+
 
  <div id="new_member_form_dialog" title="New Member Form" class="ui-helper-hidden dialog-form">
   <form method="get" action="#">{% csrf_token %}
