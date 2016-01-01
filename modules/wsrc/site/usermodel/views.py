@@ -1,5 +1,6 @@
 
 import tempfile
+import operator
 
 from django.contrib.auth.models import User
 from django.core.exceptions import PermissionDenied
@@ -11,11 +12,15 @@ from django.views.generic.list import ListView
 
 import rest_framework.generics    as rest_generics
 from rest_framework import serializers, status
+from rest_framework.authentication import SessionAuthentication
+from rest_framework.parsers import JSONParser
+from rest_framework.permissions import IsAuthenticated, DjangoModelPermissions
 from rest_framework.renderers import JSONRenderer
 from rest_framework.response import Response
-from rest_framework.authentication import SessionAuthentication
-from rest_framework.permissions import IsAuthenticated, DjangoModelPermissions
+from rest_framework.views import APIView
 
+from wsrc.external_sites.booking_manager import BookingSystemSession
+from wsrc.external_sites import scrape_page
 from wsrc.site.usermodel.models import Player
 from wsrc.site.competitions.views import get_competition_lists
 from wsrc.utils import xls_utils, sync_utils
@@ -75,9 +80,10 @@ class UserSerializer(serializers.ModelSerializer):
 
 class PlayerSerializer(serializers.ModelSerializer):
   user = UserSerializer()  
+  ordered_name = serializers.CharField(source="get_ordered_name")
   class Meta:
     model = Player
-    fields = ('id', 'user', 'cell_phone', 'other_phone', 'membership_type', 'wsrc_id', 'cardnumber', 'squashlevels_id', 'prefs_receive_email')
+    fields = ('id', 'ordered_name', 'user', 'cell_phone', 'other_phone', 'membership_type', 'wsrc_id', 'cardnumber', 'squashlevels_id', 'prefs_receive_email')
     depth = 1
 
 class PlayerView(rest_generics.RetrieveUpdateDestroyAPIView):
@@ -119,6 +125,11 @@ class UploadFileForm(forms.Form):
     file = forms.FileField(widget=forms.widgets.ClearableFileInput(attrs={'accept':'.csv,.xls'}))
     sheetname = forms.CharField(initial="masterfile")
 
+class BookingSystemCredentialsForm(forms.Form):
+    file = forms.FileField(widget=forms.widgets.ClearableFileInput(attrs={'accept':'.csv,.xls'}))
+    username = forms.CharField()
+    password = forms.CharField(widget=forms.widgets.PasswordInput)
+
 class UserForm(forms.ModelForm):
     class Meta:
         model = User
@@ -127,6 +138,32 @@ class PlayerForm(forms.ModelForm):
     prefs_receive_email = forms.fields.NullBooleanField(widget=MyNullBooleanSelect)
     class Meta:
         model = Player
+
+class BookingSystemMembersView(APIView):
+    authentication_classes = (SessionAuthentication,)
+    permission_classes = (IsAuthenticated,)
+    parser_classes = (JSONParser,)
+    def post(self, request, format="json"):
+        if request.user.groups.filter(name="Membership Editor").count() == 0:
+            raise PermissionDenied()
+        credentials = request.DATA
+        username = credentials["username"]
+        password = credentials["password"]
+#        booking_session = BookingSystemSession(username, password)
+#        bs_contacts = booking_session.get_memberlist()
+        bs_contacts = open("../docs/booking_system_memberlist.html").read()
+        bs_contacts = scrape_page.scrape_userlist(bs_contacts)
+        for row in bs_contacts:
+            for k,v in row.items():
+                v = row[k] = str(v)
+                if k == 'Name':
+                    (first, last) = sync_utils.split_first_and_last_names(v)
+                    row["first_name"] = first 
+                    row["last_name"] = last
+        bs_contacts = [c for c in bs_contacts if c["Name"] != '' and c["Rights"] == "User"]
+        bs_contacts.sort(key=operator.itemgetter("last_name", "first_name"))
+        bs_vs_db_diffs = sync_utils.get_differences_bs_vs_db(bs_contacts, Player.objects.all())
+        return Response({"contacts": bs_contacts, "diffs": bs_vs_db_diffs})
 
 def admin_memberlist_view(request):
     if not request.user.is_authenticated() or request.user.groups.filter(name="Membership Editor").count() == 0:
@@ -154,15 +191,7 @@ def admin_memberlist_view(request):
             else:
                 return HttpResponseBadRequest("<h1>Unknown file type</h1>")
             upload_form = None 
-            mapping_array = sync_utils.find_matching(ss_memberlist_rows, db_rows, sync_utils.match_spreadsheet_with_db_record)
-            assert(len(mapping_array) == len(ss_memberlist_rows))
-            for i, db_row in enumerate(mapping_array):
-                if db_row is not None:
-                    ss_row = ss_memberlist_rows[i]
-                    ss_row["db_id"] = db_row.id
-                    diffs = sync_utils.compare_spreadsheet_with_db_record(ss_row, db_row)
-                    if len(diffs) > 0:
-                        ss_vs_db_diffs[db_row.id] = diffs
+            ss_vs_db_diffs = sync_utils.get_differences_ss_vs_db(ss_memberlist_rows, db_rows)
         
 
     db_rows_serialiser = PlayerSerializer(db_rows, many=True)
@@ -177,5 +206,6 @@ def admin_memberlist_view(request):
         "new_member_form":     PlayerForm(auto_id='id_newmember_'),
         "change_user_form":    UserForm(auto_id='id_changeuser_'),
         "change_member_form":  PlayerForm(auto_id='id_changemember_'),
+        "booking_credentials_form":  BookingSystemCredentialsForm(),
     }
     return render(request, "memberlist_admin.html", kwargs)
