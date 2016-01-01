@@ -23,8 +23,17 @@ class WSRC_utils
     reducer = (result, item) ->
       result[item[0]] = item[1]
       return result
-    window.wsrc_admin_memberlist_membership_types.reduce(reducer, amap)
+    l.reduce(reducer, amap)
     return amap 
+
+  @list_to_map: (l, id_key) ->
+    amap = {}
+    reducer = (result, item) ->
+      result[item[id_key]] = item
+      return result
+    l.reduce(reducer, amap)
+    return amap 
+
 
   @get_property_list: (obj) ->
     l = (k for k,v of obj)
@@ -221,6 +230,8 @@ class WSRC_utils
       return null
 
   @configure_sortable: (jq_elt) ->
+    jq_elt.off("click")
+
     jq_root = jq_elt.parents(".sortable-root")
     jq_parent = jq_root.find(".sortable-parent")
     selector = jq_elt.data("selector")
@@ -252,11 +263,11 @@ class WSRC_utils
     jq_elt.on("click", (evt) ->
       handler()
     )
-
     return handler
 
   @configure_sortables: () ->
     $(".sortable").each (idx, elt) ->
-      WSRC_utils.configure_sortable($(elt))  
+      handler = WSRC_utils.configure_sortable($(elt))
+    
         
 WSRC_utils.add_to_namespace("utils", WSRC_utils)
