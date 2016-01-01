@@ -17,12 +17,14 @@ class WSRC_admin_memberlist_model
         cmp = wsrc.utils.lexical_sorter(lhs, rhs, (x) -> x.firstname)
       return cmp
 
-    @db_member_map = {}
-    reducer = (result, item) ->
-      result[item.id] = item
-      return result
-    @db_memberlist.reduce(reducer, @db_member_map)
+    @db_member_map = wsrc.utils.list_to_map(@db_memberlist, 'id')
 
+  set_bs_memberlist: (list, diffs) ->
+    bs_valid_filter = (row) ->
+      return true if row.Name and row.Rights == "User"
+    @bs_memberlist = (row for row in list when bs_valid_filter(row))
+    @bs_vs_db_diffs = diffs
+    
   @get_membership_type_display_name: (mem_type) ->
     # get a display name for the spreadsheet category
     tuple = wsrc.utils.list_lookup(window.wsrc_admin_memberlist_membership_types, mem_type, 0)
@@ -47,36 +49,41 @@ class WSRC_admin_memberlist_model
       f: false
     return choices[first] or null
     
-  get_ss_vs_db_missing_rows: () ->
-    ss_missing = []
+  get_missing_rows_vs_db: (other_list) ->
+    other_missing = []
     db_map = {}
     for k,v of @db_member_map
       db_map[k] = v
-    for ss_row in @ss_memberlist
-      id = ss_row.db_id
+    for other_row in other_list
+      id = other_row.db_id
       if id
         delete db_map[id]
       else
-        ss_missing.push(ss_row)
+        other_missing.push(other_row)
     db_missing = (item for id, item of db_map)
-    return [ss_missing, db_missing]
-      
+    wsrc.utils.lexical_sort(db_missing, "ordered_name")
+    return [other_missing, db_missing]
+
+  get_ss_vs_db_missing_rows: () ->
+    return @get_missing_rows_vs_db(@ss_memberlist)
+
+  get_bs_vs_db_missing_rows: () ->
+    return @get_missing_rows_vs_db(@bs_memberlist)
+                        
 ################################################################################
 # View - JQuery interactions with the html
 ################################################################################
 
 class WSRC_admin_memberlist_view
   
-  constructor: () ->
+  constructor: (@callbacks) ->
     $("#tabs")
       .tabs()
       .removeClass("initiallyHidden")
-    @db_member_table_body = $("#db_memberlist table.memberlist tbody")
-    @ss_member_table_body = $("#ss_memberlist table.memberlist tbody")
-    @ss_vs_db_table_head  = $("#ss_vs_db_diff table.differences thead")
-    @ss_vs_db_table_body  = $("#ss_vs_db_diff table.differences tbody")
-    @ss_vs_db_missing_from_db_body  = $("#ss_vs_db_diff table.missing_from_db tbody")
-    @ss_vs_db_missing_from_ss_body  = $("#ss_vs_db_diff table.missing_from_ss tbody")
+    @db_member_table = $("#db_memberlist table.memberlist")
+    @ss_member_table = $("#ss_memberlist table.memberlist")
+    @bs_member_table = $("#bs_memberlist table.memberlist")
+
     @db_membership_colspec = [
       ['text',   'Active', 'user.is_active', 'yes_or_no[row.user.is_active]']
       ['text',   'Last Name', 'user.last_name']
@@ -102,6 +109,13 @@ class WSRC_admin_memberlist_view
       ['number', 'Mobile', 'mobile_phone']
       ['number', 'Home Phone', 'home_phone']
     ]
+    @bs_membership_colspec = [
+      ['text',   'Last Name', 'last_name']
+      ['text',   'First Name', 'first_name']
+      ['text',   'EMail', 'Email address', 'row["Email address"]']
+      ['number', 'Mobile', 'Mobile']
+      ['number', 'Telephone', 'Telephone']
+    ]
 
   get_display_col: (db_field) ->
     cls = field = ''
@@ -111,8 +125,12 @@ class WSRC_admin_memberlist_view
         field = spec[1]
         break
     return [cls, field]
-    
-  add_to_table: (table_body, col_spec, row) ->
+
+  get_comparison_table: (tab_id, table_class) ->
+    return $("##{ tab_id } table.#{ table_class }")
+  
+  add_to_table: (table, col_spec, row) ->
+    table_body = table.find("tbody")
     yes_or_no =
       true: 'yes'
       false: 'no'
@@ -131,34 +149,81 @@ class WSRC_admin_memberlist_view
     table_body.append(table_row)
     return table_row
           
-  add_db_member: (member, table_body) ->
-    table_row = @add_to_table(table_body, @db_membership_colspec, member)
-    return true
+  add_db_member: (member) ->
+    table_row = @add_to_table(@db_member_table, @db_membership_colspec, member)
 
-  add_ss_member: (member, table_body, callback) ->
-    unless table_body
-      table_body = @ss_member_table_body
-    row = @add_to_table(table_body, @ss_membership_colspec, member)
-    if callback
-      callback(row)
-    return true
+  add_ss_member: (member) ->
+    table_row = @add_to_table(@ss_member_table, @ss_membership_colspec, member)
 
-  add_ss_vs_db_diff_col: (cls, field) ->
-    @ss_vs_db_table_head.append("<th class='#{ cls }'>#{ field }</th>")
-    return true
+  add_bs_member: (member) ->
+    table_row = @add_to_table(@bs_member_table, @bs_membership_colspec, member)
 
-  add_ss_vs_db_diff_row: (id, row) ->
-    new_row = ""
-    for val in row
-      if val
-        [cls, field, val] = val
-        new_row += "<td class='#{ cls }' data-field='#{ field }'>#{ val }</td>"
-      else
-        new_row += "<td></td>"
-    @ss_vs_db_table_body.append("<tr data-id='#{ id }'>#{ new_row }</tr>")
-    return true
+  populate_differences_tab: (tab_id, colspec, missing_from_db_list, missing_from_other_list, differences, add_button_callback) ->
+    for jq in [$("##{ tab_id }"), $("li[aria-controls='#{ tab_id }']")]
+      jq.removeClass('ui-helper-hidden')
+    missing_from_db_table    = @get_comparison_table(tab_id, "missing_from_db")
+    missing_from_other_table = @get_comparison_table(tab_id, "missing_from_other")
+    differences_table        = @get_comparison_table(tab_id, "differences")
     
-  show_change_member_details_form: (field, new_val, submit_path, id, row_id) ->
+    for member in missing_from_db_list
+      table_row = @add_to_table(missing_from_db_table, colspec, member)
+      if add_button_callback
+        add_button_callback(table_row)
+    for member in missing_from_other_list
+      @add_to_table(missing_from_other_table, @db_membership_colspec, member)
+
+    wsrc.utils.apply_alt_class(missing_from_db_table.find("tbody").children(), "alt")
+    wsrc.utils.apply_alt_class(missing_from_other_table.find("tbody").children(), "alt")
+    missing_from_other_table.find("tbody").children().dblclick(@callbacks.id_row_open_admin_click_handler)
+    
+    diff_cols = {}
+    for id, row of differences
+      for field, diff of row
+        diff_cols[field] = field
+    diff_cols = (c[2] for c in @db_membership_colspec when c[2] of diff_cols) # order cols consistently with main table
+    diff_cols = ([c, @get_display_col(c)[0], @get_display_col(c)[1]] for c in diff_cols)
+
+    add_col = (cls, field) ->
+      header = $("<th class='#{ cls }'>#{ field }</th>")
+      differences_table.find("thead tr").append(header)
+      return header
+
+    add_row = (id, row) ->
+      new_row = ""
+      for val in row
+        if val
+          [cls, field, val] = val
+          new_row += "<td class='#{ cls }' data-field='#{ field }'>#{ val }</td>"
+        else
+          new_row += "<td></td>"
+      differences_table.find("tbody").append("<tr data-id='#{ id }'>#{ new_row }</tr>")
+                      
+    header = add_col("sortable", "Record")
+    header.attr("data-selector", "td.id_field")
+    header.attr("data-sorter", "lexical_sorter")
+    header.data("reverse", false)
+    for [field, cls, display] in diff_cols
+      add_col('', display)
+
+    for id,row of differences
+      unless row
+        continue
+      db_record = @callbacks.lookup_db_member(id)
+      row_vals = [["text id_field", null, "<div>#{ db_record.user.last_name }, #{ db_record.user.first_name }</div>"]]
+      for [field, cls] in diff_cols
+        diff = row[field]
+        if diff          
+          row_vals.push(["#{ cls } diff_field", field, "<div class='from'>#{ row[field][1] }</div><div class='to'>#{ row[field][0] }</div>"])
+        else
+          row_vals.push(null)
+      add_row(id, row_vals)
+
+    handler = wsrc.utils.configure_sortable(differences_table.find("thead th.sortable"))
+    handler()
+    differences_table.find("td.diff_field").on('contextmenu', @callbacks.open_change_details_handler)    
+    differences_table.find("tbody").children().dblclick(@callbacks.id_row_open_admin_click_handler)
+            
+  show_change_member_details_form: (field, new_val, submit_path, id, row_id, source_div_id) ->
     jqdialog = $("#change_member_form_dialog")
     jqform = jqdialog.find("form")
     jqform.find("div.ui-field-contain").hide()
@@ -166,6 +231,7 @@ class WSRC_admin_memberlist_view
     jqform.data("path", submit_path)
     jqform.data("id", id)
     jqform.data("row_id", row_id)
+    jqform.data("source_div_id", source_div_id)
     
     jqinput = jqform.find("[name='#{ field }']")
     jqinput.val(new_val)
@@ -190,9 +256,10 @@ class WSRC_admin_memberlist_view
     path    = jqform.data("path")
     id      = jqform.data("id")
     row_id  = jqform.data("row_id")
+    source  = jqform.data("source_div_id")
     jqinput = jqform.find("[name='#{ field }']")
     val = jqinput.val()
-    return [field, val, path, id, row_id]
+    return [field, val, path, id, row_id, source]
     
   show_new_member_form: (user_obj, player_obj) ->
     jqdialog = $("#new_member_form_dialog")
@@ -212,6 +279,15 @@ class WSRC_admin_memberlist_view
   hide_new_member_form: () ->
     jqdialog = $("#new_member_form_dialog")
     jqdialog.dialog("close")
+
+  get_booking_system_credentials: () ->
+    jqform = $("form#booking_system_credentials")
+    credentials =
+      username: jqform.find("[name='username']").val()
+      password: jqform.find("[name='password']").val()
+
+  hide_booking_system_credentials_form: () ->
+    $("form#booking_system_credentials").hide()
 
   get_new_member_details: () ->
     jqdialog = $("#new_member_form_dialog")
@@ -245,10 +321,26 @@ class WSRC_admin_memberlist_view
 class WSRC_admin_memberlist 
 
   constructor: (@model) ->
-    callbacks =
-      save_member_details: (evt) =>
     
+    callbacks = 
+      id_row_open_admin_click_handler: (evt) =>
+        @id_row_open_admin_click_handler(evt)
+      open_change_details_handler: (evt) =>
+        evt.preventDefault();
+        @open_change_details_handler(evt)
+        return false;
+      lookup_db_member: (id) => @model.db_member_map[id]
+
     @view = new WSRC_admin_memberlist_view(callbacks)
+    
+    for member in @model.db_memberlist
+      @view.add_db_member(member)
+    for member in @model.ss_memberlist
+      @view.add_ss_member(member)
+      
+    wsrc.utils.apply_alt_class(@view.ss_member_table.find("tbody").children(), "alt")
+    wsrc.utils.apply_alt_class(@view.db_member_table.find("tbody").children(), "alt")
+    
     [missing_from_db, missing_from_ss] = model.get_ss_vs_db_missing_rows()
     missing_from_db = (x for x in missing_from_db when x.active?.toLowerCase()[0] == 'y')
     missing_from_ss = (x for x in missing_from_ss when x.user.is_active)
@@ -259,34 +351,27 @@ class WSRC_admin_memberlist
       if id
         table_row.attr("id", "added_member_#{ id }")
 
-    for member in @model.db_memberlist
-      @view.add_db_member(member, @view.db_member_table_body)
-    for member in missing_from_ss
-      @view.add_db_member(member, @view.ss_vs_db_missing_from_ss_body)
-      
-    for member in @model.ss_memberlist
-      @view.add_ss_member(member)
-    for member in missing_from_db
-      @view.add_ss_member(member, @view.ss_vs_db_missing_from_db_body, add_button_callback)
-      
-    wsrc.utils.apply_alt_class(@view.db_member_table_body.children(), "alt")
-    wsrc.utils.apply_alt_class(@view.ss_member_table_body.children(), "alt")
-    wsrc.utils.apply_alt_class(@view.ss_vs_db_missing_from_db_body.children(), "alt")
-    wsrc.utils.apply_alt_class(@view.ss_vs_db_missing_from_ss_body.children(), "alt")
-
-    dblclick_handler = (evt) =>
-      id = $(evt.target).parents("tr").data("id")
-      player = @model.db_member_map[id]
-      if player
-        url = "/admin/auth/user/#{ player.user.id }/"
-        window.open(url, "_blank")
-
-    @view.db_member_table_body.children().dblclick(dblclick_handler)
-    @view.ss_vs_db_missing_from_ss_body.children().dblclick(dblclick_handler)
+    @view.populate_differences_tab("ss_vs_db_diffs", @view.ss_membership_colspec, missing_from_db, missing_from_ss, @model.ss_vs_db_diffs, add_button_callback)
 
     wsrc.utils.configure_sortables()
-    @populate_diff_table()
-    @view.ss_vs_db_table_body.find("td.id_field").dblclick(dblclick_handler)
+
+    $("form#booking_system_credentials").on("submit", () => @booking_system_fetch_memberlist_handler())
+    @view.db_member_table.find("tbody td").dblclick(callbacks.id_row_open_admin_click_handler)
+        
+  booking_system_update_tables: (data) ->
+    @model.set_bs_memberlist(data.contacts, data.diffs)
+    
+    for member in @model.bs_memberlist
+      @view.add_bs_member(member)
+      
+    wsrc.utils.apply_alt_class(@view.bs_member_table.find("tbody").children(), "alt")
+    
+    [missing_from_db, missing_from_bs] = @model.get_bs_vs_db_missing_rows()
+    missing_from_bs = (x for x in missing_from_bs when x.user.is_active)
+    
+    @view.populate_differences_tab("bs_vs_db_diffs", @view.bs_membership_colspec, missing_from_db, missing_from_bs, @model.bs_vs_db_diffs)
+    wsrc.utils.configure_sortables()
+
 
   show_new_member_form: (elt) ->
 
@@ -317,11 +402,13 @@ class WSRC_admin_memberlist
     jqmask = $("body")
     opts =
       csrf_token:  $("input[name='csrfmiddlewaretoken']").val()
-      successCB: (xhr, status) =>
+      successCB: (data, status, jq_xhr) =>
         jqmask.unmask()
         @view.hide_new_member_form()
-        $("tr#added_member_#{ player_obj.wsrc_id }").remove()        
-        wsrc.utils.apply_alt_class(@view.ss_vs_db_missing_from_db_body.children(), "alt")
+        jrow = $("tr#added_member_#{ player_obj.wsrc_id }")
+        jtbody = jrow.parent()
+        jrow.remove()        
+        wsrc.utils.apply_alt_class(jtbody.children(), "alt")
       failureCB: (xhr, status) -> 
         jqmask.unmask()
         alert("ERROR #{ xhr.status }: #{ xhr.statusText }\nResponse: #{ xhr.responseText }\n\nUnable to add new user.")
@@ -329,7 +416,17 @@ class WSRC_admin_memberlist
     jqmask.mask("Creating new user...")
     wsrc.ajax.ajax_bare_helper("/data/memberlist/player/", player_obj, opts, "POST")
 
-  diff_right_click_handler: (evt) ->
+  open_user_admin_page: (id) ->
+    player = @model.db_member_map[id]
+    if player
+      url = "/admin/auth/user/#{ player.user.id }/"
+      window.open(url, "_blank")
+    
+  id_row_open_admin_click_handler: (evt) ->
+    id = $(evt.target).parents("tr").data("id")
+    @open_user_admin_page(id)
+
+  open_change_details_handler: (evt) ->
     jtarget = $(evt.target)
     jcell   = jtarget.parents("td")
     jrow    = jtarget.parents("tr")
@@ -337,6 +434,7 @@ class WSRC_admin_memberlist
     field   = jcell.data("field")
     from    = jcell.find("div.from").text()
     to      = jcell.find("div.to").text()
+    source  = jcell.parents("div.comparison_wrapper").attr("id")
     if field.startsWith("user.")
       player = @model.db_member_map[id]
       obj_id = player.user.id
@@ -345,61 +443,48 @@ class WSRC_admin_memberlist
     else
       path = "/data/memberlist/player/#{ id }"
       obj_id = id
-    @view.show_change_member_details_form(field, to, path, obj_id, id)
+    @view.show_change_member_details_form(field, to, path, obj_id, id, source)
 
   change_member_submit_handler: () ->
-    [field, val, path, id, row_id] = @view.get_changed_member_details()
+    [field, val, path, id, row_id, source_div_id] = @view.get_changed_member_details()
     data = {id: id}
     data[field] = val
-    jrow = @view.ss_vs_db_table_body.find("tr").filter (idx, elt) -> $(elt).data("id") == row_id
+    jtable = @view.get_comparison_table(source_div_id, "differences")
+    jrow = jtable.find("tbody tr").filter (idx, elt) -> $(elt).data("id") == row_id
     jcell = jrow.find("td").filter (idx, elt) -> $(elt).data("field") == field
     jqmask  = $("body")
     opts =
       csrf_token:  $("input[name='csrfmiddlewaretoken']").val()
-      successCB: (xhr, status) =>
+      successCB: (data, status, jq_xhr) =>
         @view.hide_change_member_form()
         jqmask.unmask()
         jcell.children().remove()
         jcell.off('contextmenu')
         if 0 == jrow.find("div.to").length
           jrow.remove()
-          wsrc.utils.apply_alt_class(@view.ss_vs_db_table_body.children(), "alt")
+          wsrc.utils.apply_alt_class(jtable.find("tbody").children(), "alt")
       failureCB: (xhr, status) -> 
         jqmask.unmask()
         alert("ERROR #{ xhr.status }: #{ xhr.statusText }\nResponse: #{ xhr.responseText }\n\nUnable to update user.")
     jqmask.mask("Updating user details...")
     wsrc.ajax.ajax_bare_helper(path, data, opts, "PATCH")
 
-  populate_diff_table: () ->
-    diff_cols = {}
-    for id, row of @model.ss_vs_db_diffs
-      for field, diff of row
-        diff_cols[field] = field
-    diff_cols = (c[2] for c in @view.db_membership_colspec when c[2] of diff_cols) # order cols consistently with main table
-    diff_cols = ([c, @view.get_display_col(c)[0], @view.get_display_col(c)[1]] for c in diff_cols)
-    @view.add_ss_vs_db_diff_col("", "Record")
-    for [field, cls, display] in diff_cols
-      @view.add_ss_vs_db_diff_col('', display)
-    for db_record in @model.db_memberlist
-      id = db_record.id
-      row = @model.ss_vs_db_diffs[id]
-      unless row
-        continue
-      row_vals = [["text id_field", null, "<div>#{ db_record.user.last_name }, #{ db_record.user.first_name }</div>"]]
-      for [field, cls] in diff_cols
-        diff = row[field]
-        if diff          
-          row_vals.push(["#{ cls } diff_field", field, "<div class='from'>#{ row[field][1] }</div><div class='to'>#{ row[field][0] }</div>"])
-        else
-          row_vals.push(null)
-      @view.add_ss_vs_db_diff_row(id, row_vals)
-    wsrc.utils.apply_alt_class(@view.ss_vs_db_table_body.children(), "alt")
-    @view.ss_vs_db_table_body.find("td.diff_field").on('contextmenu', (evt) =>
-      evt.preventDefault();
-      @diff_right_click_handler(evt)
-      return false;
-    )    
-      
+  booking_system_fetch_memberlist_handler: () ->
+    data = @view.get_booking_system_credentials()
+    jqmask  = $("body")
+    opts =
+      csrf_token:  $("input[name='csrfmiddlewaretoken']").val()
+      successCB: (data, status, jq_xhr) =>
+        jqmask.unmask()
+#        @view.hide_booking_system_credentials_form()
+        @booking_system_update_tables(data)
+      failureCB: (xhr, status) -> 
+        jqmask.unmask()
+        alert("ERROR #{ xhr.status }: #{ xhr.statusText }\nResponse: #{ xhr.responseText }\n\nUnable to fetch member list.")
+    jqmask.mask("Fetching contact details from booking system...")
+    wsrc.ajax.ajax_bare_helper("/data/memberlist/bookingsystem/", data, opts, "POST");
+    return false
+
   @on: (method) ->
     args = $.fn.toArray.call(arguments)
     @instance[method].apply(@instance, args[1..])
