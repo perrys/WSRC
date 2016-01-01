@@ -19,8 +19,8 @@ class ModelRecordWrapper(object):
     return item
 
   @classmethod
-  def wrap_queryset(cls, queryset):
-    return [cls(record) for record in queryset.all()]
+  def wrap_records(cls, records):
+    return [cls(record) for record in records]
 
 class DisplayValueWrapper(ModelRecordWrapper):
   def __init__(self, record, fields):
@@ -172,7 +172,20 @@ def match_spreadsheet_with_db_record(ss_row, db_record):
   return False
 
 def match_booking_system_contact_with_db_record(bs_row, db_record):
-  return bs_row["Name"] == db_record.get_full_name()
+  return bs_row["Name"] == u"{0} {1}".format(db_record["user.first_name"], db_record["user.last_name"])
+
+def split_first_and_last_names(name):
+  tokens = name.split(" ")
+  firstnames = []
+  surnames = []
+  for i,tok in enumerate(tokens):
+    if i==0:
+      firstnames.append(tok)
+    elif i==1 and len(tok) == 1:
+      firstnames.append(tok) # first initial
+    else:
+      surnames.append(tok)
+  return (" ".join(firstnames), " ".join(surnames))
 
 class ComparisonSpec:
   def __init__(self, lhs_col, rhs_col):
@@ -190,7 +203,18 @@ class ComparisonSpec:
 
 def compare_booking_system_contact_with_db_record(bs_contact, db_record):
   diffs = dict()
-  db_record = ModelRecordWrapper(db_record)
+  specs = [
+    ComparisonSpec('last_name', 'user.last_name'),
+    ComparisonSpec('first_name', 'user.first_name'),
+    ComparisonSpec('Email address', 'user.email'),
+    ComparisonSpec('Mobile', 'cell_phone'),
+    ComparisonSpec('Telephone', 'other_phone'),
+  ]
+  for spec in specs:    
+    diff = spec(bs_contact, db_record)
+    if diff is not None:
+      diffs[spec.key()] = diff
+  return diffs
   
 def compare_spreadsheet_with_db_record(ss_row, db_record):
   diffs = dict()
@@ -221,11 +245,21 @@ def get_differences_ss_vs_db(ss_records, db_records):
   ss_records = LowerCaseFieldWrapper.wrap_records(ss_records, "category")
   ss_records = NullifingWrapper.wrap_records(ss_records, "surname", "firstname", "email", "mobile_phone", "home_phone")
 
-  db_records = DisplayValueWrapper.wrap_records(Player.objects.all(), "membership_type")
+  db_records = DisplayValueWrapper.wrap_records(db_records, "membership_type")
   db_records = LowerCaseFieldWrapper.wrap_records(db_records, "membership_type")
   db_records = NullifingWrapper.wrap_records(db_records, "user.last_name", "user.first_name", "user.email", "cell_phone", "other_phone")
 
   return get_differences(ss_records, db_records, match_spreadsheet_with_db_record, compare_spreadsheet_with_db_record)
+
+def get_differences_bs_vs_db(bs_records, db_records):
+  from wsrc.site.usermodel.models import Player
+
+  db_records = ModelRecordWrapper.wrap_records(db_records)
+  db_records = NullifingWrapper.wrap_records(db_records, "user.last_name", "user.first_name", "user.email", "cell_phone", "other_phone")
+
+  bs_records = NullifingWrapper.wrap_records(bs_records, "last_name", "first_name", "Email address", "Mobile", "Telephone")
+
+  return get_differences(bs_records, db_records, match_booking_system_contact_with_db_record, compare_booking_system_contact_with_db_record)
 
 class Tester(unittest.TestCase):
   
