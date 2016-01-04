@@ -1,4 +1,5 @@
 
+  
 ################################################################################
 # Model - contains a local copy of the member databases
 ################################################################################
@@ -75,7 +76,11 @@ class WSRC_admin_memberlist_model
 ################################################################################
 
 class WSRC_admin_memberlist_view
-  
+
+  @yes_or_no_renderer: (data, type, row) ->
+    lookup = { true: 'yes', false: 'no', null: '' }
+    lookup[data]
+
   constructor: (@callbacks) ->
     $("#tabs")
       .tabs()
@@ -83,6 +88,68 @@ class WSRC_admin_memberlist_view
     @db_member_table = $("#db_memberlist table.memberlist")
     @ss_member_table = $("#ss_memberlist table.memberlist")
     @bs_member_table = $("#bs_memberlist table.memberlist")
+
+    alignment =
+      text: 'dt-body-left'
+      number: 'dt-body-right'
+    yesno   = WSRC_admin_memberlist_view.yes_or_no_renderer
+    memtype = WSRC_admin_memberlist_model.get_membership_type_display_name
+
+    db_membership_api_colspec = [
+      {className: alignment.text,   title: 'Last Name',       data: 'user.last_name'},
+      {className: alignment.text,   title: 'First Name',      data: 'user.first_name'},
+      {className: alignment.text,   title: 'Active',          data: 'user.is_active',  render: yesno,   searchable: false},
+      {className: alignment.text,   title: 'Mem. Type',       data: 'membership_type', render: memtype, searchable: false},
+      {className: alignment.text,   title: 'E-Mail',          data: 'user.email'},
+      {className: alignment.text,   title: 'Receive?',        data: 'prefs_receive_email', render: yesno, searchable: false},
+      {className: alignment.number, title: 'WSRC ID',         data: 'wsrc_id'},
+      {className: alignment.number, title: 'Door Card #',     data: 'cardnumber'},
+      {className: alignment.number, title: 'SquashLevels ID', data: 'squashlevels_id'},
+      {className: alignment.number, title: 'Mobile',          data: 'cell_phone'},
+      {className: alignment.number, title: 'Other Phone',     data: 'other_phone'},
+      {className: alignment.number, title: 'Id',              data: 'id', name: 'id', visible: false, searchable: false},
+    ]
+
+    ss_membership_api_colspec = [
+      {className: alignment.text,   title: 'Surname',    data: 'surname'},
+      {className: alignment.text,   title: 'First Name', data: 'firstname'},
+      {className: alignment.text,   title: 'Active',     data: 'active', searchable: false},
+      {className: alignment.text,   title: 'Category',   data: 'category', searchable: false},
+      {className: alignment.text,   title: 'E-Mail',     data: 'email'},
+      {className: alignment.text,   title: 'Receive?',   data: 'Data Prot email', searchable: false},
+      {className: alignment.number, title: 'WSRC ID',    data: 'index'},
+      {className: alignment.number, title: 'Cardnumber', data: 'cardnumber'},
+      {className: alignment.number, title: 'Mobile',     data: 'mobile_phone'},
+      {className: alignment.number, title: 'Home Phone', data: 'home_phone'},
+    ]
+
+    bs_membership_api_colspec = [
+      {className: alignment.text,   title: 'Last Name',   data: 'last_name'},
+      {className: alignment.text,   title: 'First Name',  data: 'first_name'},
+      {className: alignment.text,   title: 'EMail',       data: 'Email address'},
+      {className: alignment.number, title: 'Mobile',      data: 'Mobile'},
+      {className: alignment.number, title: 'Telephone',   data: 'Telephone'},
+    ]
+
+    spec_map =
+      "memberlist-db": db_membership_api_colspec 
+      "memberlist-ss": ss_membership_api_colspec
+      "memberlist-bs": bs_membership_api_colspec
+
+    fullpage_length_menu = [[-1, 10, 25, 50], ["All", 10, 25, 50]]
+    paged_length_menu    = [[10, 25, 50, -1], [10, 25, 50, "All"]]
+    for cls, spec of spec_map
+      $("table.#{ cls }").each (idx, elt) =>
+        jqtable = $(elt)
+        options =
+          lengthMenu: if jqtable.hasClass("fullpage") then fullpage_length_menu else paged_length_menu
+          jqueryUI: true
+          autoWidth: false
+          columns: spec
+        jqtable.DataTable(options)
+        if cls == "memberlist-db"
+          jqtable.find('tbody').on('dblclick', 'tr', @callbacks.id_row_open_admin_click_handler)
+        
 
     @db_membership_colspec = [
       ['text',   'Active', 'user.is_active', 'yes_or_no[row.user.is_active]']
@@ -97,25 +164,6 @@ class WSRC_admin_memberlist_view
       ['number', 'Mobile', 'cell_phone']
       ['number', 'Other Phone', 'other_phone']
     ]
-    @ss_membership_colspec = [
-      ['text',   'Active', 'active']
-      ['text',   'Surname', 'surname']
-      ['text',   'First Name', 'firstname']
-      ['text',   'Category', 'category']
-      ['text',   'EMail', 'email']
-      ['text',   'Receive?', 'Data Prot email', 'row["Data Prot email"]']
-      ['number', 'WSRC ID', 'index']
-      ['number', 'Cardnumber', 'cardnumber']
-      ['number', 'Mobile', 'mobile_phone']
-      ['number', 'Home Phone', 'home_phone']
-    ]
-    @bs_membership_colspec = [
-      ['text',   'Last Name', 'last_name']
-      ['text',   'First Name', 'first_name']
-      ['text',   'EMail', 'Email address', 'row["Email address"]']
-      ['number', 'Mobile', 'Mobile']
-      ['number', 'Telephone', 'Telephone']
-    ]
 
   get_display_col: (db_field) ->
     cls = field = ''
@@ -126,56 +174,27 @@ class WSRC_admin_memberlist_view
         break
     return [cls, field]
 
+  get_table_api: (tab_id, table_class) ->
+    jqtable = $("##{ tab_id } table.#{ table_class }")
+    return jqtable.DataTable({retrieve: true})
+
   get_comparison_table: (tab_id, table_class) ->
     return $("##{ tab_id } table.#{ table_class }")
-  
-  add_to_table: (table, col_spec, row) ->
-    table_body = table.find("tbody")
-    yes_or_no =
-      true: 'yes'
-      false: 'no'
-      null: ''
-    data_id = ""
-    if row.id
-      data_id = "data-id='#{ row.id }'"
-    table_row = "<tr #{ data_id }>"
-    for spec in col_spec
-      table_row += "<td class='#{ spec[0] } #{ spec[2].replace(".", "_").replace(" ", "_") }' data-col='#{ spec[2] }'>"
-      val = if spec.length > 3 then eval(spec[3]) else eval("row.#{ spec[2] }")
-      val = val ? ""
-      table_row += val + "</td>"
-    table_row += "</tr>"
-    table_row = $(table_row)
-    table_body.append(table_row)
-    return table_row
-          
-  add_db_member: (member) ->
-    table_row = @add_to_table(@db_member_table, @db_membership_colspec, member)
 
-  add_ss_member: (member) ->
-    table_row = @add_to_table(@ss_member_table, @ss_membership_colspec, member)
-
-  add_bs_member: (member) ->
-    table_row = @add_to_table(@bs_member_table, @bs_membership_colspec, member)
-
-  populate_differences_tab: (tab_id, colspec, missing_from_db_list, missing_from_other_list, differences, add_button_callback) ->
+  populate_differences_tab: (tab_id, missing_from_db_list, missing_from_other_list, differences, add_button_callback) ->
     for jq in [$("##{ tab_id }"), $("li[aria-controls='#{ tab_id }']")]
       jq.removeClass('ui-helper-hidden')
-    missing_from_db_table    = @get_comparison_table(tab_id, "missing_from_db")
-    missing_from_other_table = @get_comparison_table(tab_id, "missing_from_other")
+    missing_from_db_api    = @get_table_api(tab_id, "missing-from-db")
+    missing_from_other_api = @get_table_api(tab_id, "missing-from-other")
     differences_table        = @get_comparison_table(tab_id, "differences")
-    
-    for member in missing_from_db_list
-      table_row = @add_to_table(missing_from_db_table, colspec, member)
-      if add_button_callback
-        add_button_callback(table_row)
-    for member in missing_from_other_list
-      @add_to_table(missing_from_other_table, @db_membership_colspec, member)
 
-    wsrc.utils.apply_alt_class(missing_from_db_table.find("tbody").children(), "alt")
-    wsrc.utils.apply_alt_class(missing_from_other_table.find("tbody").children(), "alt")
-    missing_from_other_table.find("tbody").children().dblclick(@callbacks.id_row_open_admin_click_handler)
-    
+    missing_from_db_api.rows.add(missing_from_db_list).draw()    
+    if add_button_callback
+      missing_from_db_api.$("tbody tr").each (ix, elt) ->
+        add_button_callback($(elt))
+
+    missing_from_other_api.rows.add(missing_from_other_list).draw()
+
     diff_cols = {}
     for id, row of differences
       for field, diff of row
@@ -321,10 +340,13 @@ class WSRC_admin_memberlist_view
 class WSRC_admin_memberlist 
 
   constructor: (@model) ->
-    
+
+    me = this
     callbacks = 
-      id_row_open_admin_click_handler: (evt) =>
-        @id_row_open_admin_click_handler(evt)
+      id_row_open_admin_click_handler: (evt) ->
+        jqrow = $(this)
+        data = WSRC_admin_memberlist.get_data_for_jqrow(jqrow)
+        me.open_user_admin_page(data.id)
       open_change_details_handler: (evt) =>
         evt.preventDefault();
         @open_change_details_handler(evt)
@@ -332,14 +354,11 @@ class WSRC_admin_memberlist
       lookup_db_member: (id) => @model.db_member_map[id]
 
     @view = new WSRC_admin_memberlist_view(callbacks)
+
     
-    for member in @model.db_memberlist
-      @view.add_db_member(member)
-    for member in @model.ss_memberlist
-      @view.add_ss_member(member)
-      
-    wsrc.utils.apply_alt_class(@view.ss_member_table.find("tbody").children(), "alt")
-    wsrc.utils.apply_alt_class(@view.db_member_table.find("tbody").children(), "alt")
+    @view.get_table_api("db_memberlist", "memberlist-db").rows.add(@model.db_memberlist).draw()
+    if model.ss_memberlist
+      @view.get_table_api("ss_memberlist", "memberlist-ss").rows.add(@model.ss_memberlist).draw()
     
     [missing_from_db, missing_from_ss] = model.get_ss_vs_db_missing_rows()
     missing_from_db = (x for x in missing_from_db when x.active?.toLowerCase()[0] == 'y')
@@ -351,35 +370,28 @@ class WSRC_admin_memberlist
       if id
         table_row.attr("id", "added_member_#{ id }")
 
-    @view.populate_differences_tab("ss_vs_db_diffs", @view.ss_membership_colspec, missing_from_db, missing_from_ss, @model.ss_vs_db_diffs, add_button_callback)
+    @view.populate_differences_tab("ss_vs_db_diffs", missing_from_db, missing_from_ss, @model.ss_vs_db_diffs, add_button_callback)
 
     wsrc.utils.configure_sortables()
 
     $("form#booking_system_credentials").on("submit", () => @booking_system_fetch_memberlist_handler())
-    @view.db_member_table.find("tbody td").dblclick(callbacks.id_row_open_admin_click_handler)
         
   booking_system_update_tables: (data) ->
     @model.set_bs_memberlist(data.contacts, data.diffs)
     
-    for member in @model.bs_memberlist
-      @view.add_bs_member(member)
+    @view.get_table_api("bs_memberlist", "memberlist-bs").rows.add(@model.bs_memberlist).draw()
       
-    wsrc.utils.apply_alt_class(@view.bs_member_table.find("tbody").children(), "alt")
-    
     [missing_from_db, missing_from_bs] = @model.get_bs_vs_db_missing_rows()
     missing_from_bs = (x for x in missing_from_bs when x.user.is_active)
     
-    @view.populate_differences_tab("bs_vs_db_diffs", @view.bs_membership_colspec, missing_from_db, missing_from_bs, @model.bs_vs_db_diffs)
+    @view.populate_differences_tab("bs_vs_db_diffs", missing_from_db, missing_from_bs, @model.bs_vs_db_diffs)
     wsrc.utils.configure_sortables()
 
 
   show_new_member_form: (elt) ->
 
-    row = $(elt).parents("tr")
-    data_vals = {}
-    row.children().each (idx, elt) =>
-      elt = $(elt)
-      data_vals[elt.data("col")] = elt.text()
+    jqrow = $(elt).parents("tr")
+    data_vals = WSRC_admin_memberlist.get_data_for_jqrow(jqrow)
     user_obj =
       is_active:    data_vals["active"][0]?.toLowerCase() == "y"
       last_name:    data_vals["surname"]
@@ -422,10 +434,6 @@ class WSRC_admin_memberlist
       url = "/admin/auth/user/#{ player.user.id }/"
       window.open(url, "_blank")
     
-  id_row_open_admin_click_handler: (evt) ->
-    id = $(evt.target).parents("tr").data("id")
-    @open_user_admin_page(id)
-
   open_change_details_handler: (evt) ->
     jtarget = $(evt.target)
     jcell   = jtarget.parents("td")
@@ -493,6 +501,10 @@ class WSRC_admin_memberlist
     model = new WSRC_admin_memberlist_model(db_memberlist, ss_memberlist, ss_vs_db_diffs)
     @instance = new WSRC_admin_memberlist(model)
 
+  @get_data_for_jqrow: (jqrow) ->
+    api = jqrow.parents('table').DataTable({retrieve: true})
+    return api.row(jqrow).data();
+    
 
 admin = wsrc.utils.add_object_if_unset(window.wsrc, "admin")
 admin.memberlist = WSRC_admin_memberlist

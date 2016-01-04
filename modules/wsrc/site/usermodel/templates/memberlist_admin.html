@@ -37,23 +37,10 @@
     <div id="db_memberlist">
       <p>Full contents of the webiste database. Double-click on a row to open the corresponding admin page.</p>
       <div class="container">
-        <table class="sortable-root memberlist">
+        <table class="memberlist-db fullpage compact hover nowrap order-column row-border stripe" >
           <thead>
-            <tr class="header">
-              <th class="sortable" data-selector="td.user_is_active" data-sorter="lexical_sorter">Active</th>
-              <th class="sortable" data-selector="td.user_last_name" data-sorter="lexical_sorter">Last Name</th>
-              <th class="sortable" data-selector="td.user_first_name" data-sorter="lexical_sorter">First Name</th>
-              <th class="sortable" data-selector="td.membership_type" data-sorter="lexical_sorter">Type</th>
-              <th class="sortable" data-selector="td.user_email" data-sorter="lexical_sorter">E-Mail</th>
-              <th class="sortable" data-selector="td.prefs_receive_email" data-sorter="lexical_sorter">Receive ?</th>
-              <th class="sortable" data-selector="td.wsrc_id" data-sorter="numeric_sorter">WSRC ID</th>
-              <th class="sortable" data-selector="td.cardnumber" data-sorter="numeric_sorter">Card #</th>
-              <th class="sortable" data-selector="td.squashlevels_id" data-sorter="numeric_sorter">SqLevel ID</th>
-              <th class="sortable" data-selector="td.cell_phone" data-sorter="lexical_sorter">Mobile</th>
-              <th class="sortable" data-selector="td.other_phone" data-sorter="lexical_sorter">Other Phone</th>
-            </tr>
           </thead>
-          <tbody class="sortable-parent">
+          <tbody>
           </tbody>
         </table>
       </div>
@@ -73,22 +60,10 @@
       <p>Contents of the uploaded spreadsheet. See the next tab for comparison to the website database.</p>
 {% endif %}
       <div class="container">
-        <table class="sortable-root memberlist">
+        <table class="memberlist-ss fullpage compact hover nowrap order-column row-border stripe">
           <thead>
-            <tr class="header">
-              <th class="sortable" data-selector="td.active" data-sorter="lexical_sorter">Active</th>
-              <th class="sortable" data-selector="td.surname" data-sorter="lexical_sorter">Last Name</th>
-              <th class="sortable" data-selector="td.firstname" data-sorter="lexical_sorter">First Name</th>
-              <th class="sortable" data-selector="td.category" data-sorter="lexical_sorter">Type</th>
-              <th class="sortable" data-selector="td.email" data-sorter="lexical_sorter">E-Mail</th>
-              <th class="sortable" data-selector="td.Data_Prot_email" data-sorter="lexical_sorter">Receive ?</th>
-              <th class="sortable" data-selector="td.index" data-sorter="numeric_sorter">WSRC ID</th>
-              <th class="sortable" data-selector="td.cardnumber" data-sorter="numeric_sorter">Card #</th>
-              <th class="sortable" data-selector="td.mobile_phone" data-sorter="lexical_sorter">Mobile</th>
-              <th class="sortable" data-selector="td.home_phone" data-sorter="lexical_sorter">Home Phone</th>
-            </tr>
           </thead>
-          <tbody class="sortable-parent">
+          <tbody>
           </tbody>
         </table>
       </div>
@@ -100,43 +75,20 @@
       <h2>Missing from Website Database</h2>
       <p>Click the "Add" button to create a new record in the website database.</p>
       <div class="container">
-        <table class="sortable-root memberlist missing_from_db">
+        <table class="memberlist-ss missing-from-db compact hover nowrap order-column row-border stripe">
           <thead>
-              <th class="sortable" data-selector="td.active" data-sorter="lexical_sorter">Active</th>
-              <th class="sortable" data-selector="td.surname" data-sorter="lexical_sorter">Last Name</th>
-              <th class="sortable" data-selector="td.firstname" data-sorter="lexical_sorter">First Name</th>
-              <th class="sortable" data-selector="td.category" data-sorter="lexical_sorter">Category</th>
-              <th class="sortable" data-selector="td.email" data-sorter="lexical_sorter">E-Mail</th>
-              <th class="sortable" data-selector="td.Data_Prot_email" data-sorter="lexical_sorter">Receive ?</th>
-              <th class="sortable" data-selector="td.index" data-sorter="numeric_sorter">WSRC ID</th>
-              <th class="sortable" data-selector="td.cardnumber" data-sorter="numeric_sorter">Card #</th>
-              <th class="sortable" data-selector="td.mobile_phone" data-sorter="lexical_sorter">Mobile</th>
-              <th class="sortable" data-selector="td.home_phone" data-sorter="lexical_sorter">Home Phone</th>
           </thead>
-          <tbody class="sortable-parent">
+          <tbody>
           </tbody>
         </table>
       </div>
       <h2>Missing from Membership Spreadsheet</h2>
       <p>Double-click on a row to open the corresponding admin page.</p>
       <div class="container">
-        <table class="sortable-root memberlist missing_from_other">
+        <table class="memberlist-db missing-from-other compact hover nowrap order-column row-border stripe">
           <thead>
-            <tr class="header">
-              <th class="sortable" data-selector="td.user_is_active" data-sorter="lexical_sorter">Active</th>
-              <th class="sortable" data-selector="td.user_last_name" data-sorter="lexical_sorter">Last Name</th>
-              <th class="sortable" data-selector="td.user_first_name" data-sorter="lexical_sorter">First Name</th>
-              <th class="sortable" data-selector="td.membership_type" data-sorter="lexical_sorter">Type</th>
-              <th class="sortable" data-selector="td.user_email" data-sorter="lexical_sorter">E-Mail</th>
-              <th class="sortable" data-selector="td.prefs_receive_email" data-sorter="lexical_sorter">Receive ?</th>
-              <th class="sortable" data-selector="td.wsrc_id" data-sorter="numeric_sorter">WSRC ID</th>
-              <th class="sortable" data-selector="td.cardnumber" data-sorter="numeric_sorter">Card #</th>
-              <th class="sortable" data-selector="td.squashlevels_id" data-sorter="numeric_sorter">SqLevel ID</th>
-              <th class="sortable" data-selector="td.cell_phone" data-sorter="lexical_sorter">Mobile</th>
-              <th class="sortable" data-selector="td.other_phone" data-sorter="lexical_sorter">Other Phone</th>
-            </tr>
           </thead>
-          <tbody class="sortable-parent">
+          <tbody>
           </tbody>
         </table>
       </div>
@@ -165,17 +117,10 @@
         </fieldset>
       </form>
       <div class="container">
-        <table class="sortable-root memberlist">
+        <table class="memberlist-bs fullpage compact hover nowrap order-column row-border stripe">
           <thead>
-            <tr class="header">
-              <th class="sortable" data-selector="td.last_name" data-sorter="lexical_sorter">Last Name</th>
-              <th class="sortable" data-selector="td.first_name" data-sorter="lexical_sorter">First Name</th>
-              <th class="sortable" data-selector="td.Email_address" data-sorter="lexical_sorter">E-Mail</th>
-              <th class="sortable" data-selector="td.Mobile" data-sorter="lexical_sorter">Mobile</th>
-              <th class="sortable" data-selector="td.Telephone" data-sorter="lexical_sorter">Telephone</th>
-            </tr>
           </thead>
-          <tbody class="sortable-parent">
+          <tbody>
           </tbody>
         </table>
       </div>
@@ -186,38 +131,20 @@
       <h2>Missing from Website DB</h2>
       <p>Ensure the website DB and membershp spreadsheet are in sync before taking any action. Bear in mind that because the data is only matched by name, "missing" records may just be due to minor name differences.</p>
       <div class="container">
-        <table class="sortable-root memberlist missing_from_db">
+        <table class="memberlist-bs missing-from-db compact hover nowrap order-column row-border stripe">
           <thead>
-              <th class="sortable" data-selector="td.surname" data-sorter="lexical_sorter">Last Name</th>
-              <th class="sortable" data-selector="td.firstname" data-sorter="lexical_sorter">First Name</th>
-              <th class="sortable" data-selector="td.email" data-sorter="lexical_sorter">E-Mail</th>
-              <th class="sortable" data-selector="td.mobile_phone" data-sorter="lexical_sorter">Mobile</th>
-              <th class="sortable" data-selector="td.home_phone" data-sorter="lexical_sorter">Home Phone</th>
           </thead>
-          <tbody class="sortable-parent">
+          <tbody>
           </tbody>
         </table>
       </div>
       <h2>Missing from Booking System</h2>
       <p>Double-click on a row to open the corresponding admin page.</p>
       <div class="container">
-        <table class="sortable-root memberlist missing_from_other">
+        <table class="memberlist-db missing-from-other compact hover nowrap order-column row-border stripe">
           <thead>
-            <tr class="header">
-              <th class="sortable" data-selector="td.user_is_active" data-sorter="lexical_sorter">Active</th>
-              <th class="sortable" data-selector="td.user_last_name" data-sorter="lexical_sorter">Last Name</th>
-              <th class="sortable" data-selector="td.user_first_name" data-sorter="lexical_sorter">First Name</th>
-              <th class="sortable" data-selector="td.membership_type" data-sorter="lexical_sorter">Type</th>
-              <th class="sortable" data-selector="td.user_email" data-sorter="lexical_sorter">E-Mail</th>
-              <th class="sortable" data-selector="td.prefs_receive_email" data-sorter="lexical_sorter">Receive ?</th>
-              <th class="sortable" data-selector="td.wsrc_id" data-sorter="numeric_sorter">WSRC ID</th>
-              <th class="sortable" data-selector="td.cardnumber" data-sorter="numeric_sorter">Card #</th>
-              <th class="sortable" data-selector="td.squashlevels_id" data-sorter="numeric_sorter">SqLevel ID</th>
-              <th class="sortable" data-selector="td.cell_phone" data-sorter="lexical_sorter">Mobile</th>
-              <th class="sortable" data-selector="td.other_phone" data-sorter="lexical_sorter">Other Phone</th>
-            </tr>
           </thead>
-          <tbody class="sortable-parent">
+          <tbody>
           </tbody>
         </table>
       </div>

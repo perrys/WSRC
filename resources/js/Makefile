@@ -3,7 +3,7 @@
 COFFEECC = coffee -c
 MINIFY = minify --no-comments
 
-.SECONDARY: _jquery.js _jquery.mobile.js _jquery-ui.js
+.SECONDARY: _jquery.js _jquery.mobile.js _jquery-ui.js _jquery.dataTables.js
 
 all: all.min.js all_admin.js all_admin_mailshot.js all_admin_accounts.js all_admin_memberlist.js
 
@@ -27,8 +27,8 @@ all_admin_mailshot.js: _jquery.js _jquery-ui.js jquery.loadmask.js wsrc_utils.js
 all_admin_accounts.js: _jquery.js _jquery-ui.js jquery.loadmask.js wsrc_utils.js wsrc_ajax.js wsrc_admin_accounts.js
 	cat _jquery.js _jquery-ui.js jquery.loadmask.js wsrc_utils.js wsrc_ajax.js wsrc_admin_accounts.js > $@
 
-all_admin_memberlist.js: _jquery.js _jquery-ui.js jquery.loadmask.js wsrc_utils.js wsrc_ajax.js wsrc_admin_memberlist.js
-	cat _jquery.js _jquery-ui.js jquery.loadmask.js wsrc_utils.js wsrc_ajax.js wsrc_admin_memberlist.js > $@
+all_admin_memberlist.js: _jquery.js _jquery-ui.js _jquery.dataTables.js jquery.loadmask.js wsrc_utils.js wsrc_ajax.js wsrc_admin_memberlist.js
+	cat _jquery.js _jquery-ui.js _jquery.dataTables.js jquery.loadmask.js wsrc_utils.js wsrc_ajax.js wsrc_admin_memberlist.js > $@
 
 _jquery.js:
 	wget http://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.js -O $@
@@ -39,3 +39,6 @@ _jquery.mobile.js:
 
 _jquery-ui.js:
 	wget https://ajax.googleapis.com/ajax/libs/jqueryui/1.11.2/jquery-ui.js -O $@
+
+_jquery.dataTables.js:
+	wget https://cdn.datatables.net/1.10.10/js/jquery.dataTables.js -O $@
