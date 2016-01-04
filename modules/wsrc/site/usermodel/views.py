@@ -131,6 +131,7 @@ class BookingSystemCredentialsForm(forms.Form):
     password = forms.CharField(widget=forms.widgets.PasswordInput)
 
 class UserForm(forms.ModelForm):
+    is_active = forms.fields.BooleanField(widget=MyNullBooleanSelect)
     class Meta:
         model = User
 
