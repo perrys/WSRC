@@ -6,7 +6,7 @@ MINIFY = minify --no-comments
 CSS_TARGETS = all_html5.css all_legacy.css all_html5.min.css all_legacy.min.css all_admin.css all_mailshot.css all_accounts.css all_admin_memberlist.css
 
 .INTERMEDIATE: _wsrc_html5.css _wsrc_legacy.css _wsrc_accounts.css _wsrc_admin_memberlist.css
-.SECONDARY: _jquery.mobile.structure.css _jquery-ui.css
+.SECONDARY: _jquery.mobile.structure.css _jquery-ui.css _jquery.dataTables.css
 
 all: $(CSS_TARGETS)
 
@@ -25,14 +25,17 @@ all_mailshot.css: _jquery-ui.css jquery.loadmask.css wsrc_mailshot.css
 all_accounts.css: _jquery-ui.css jquery.loadmask.css _wsrc_accounts.css
 	cat _jquery-ui.css jquery.loadmask.css _wsrc_accounts.css > $@
 
-all_admin_memberlist.css: _jquery-ui.css jquery.loadmask.css _wsrc_admin_memberlist.css
-	cat _jquery-ui.css jquery.loadmask.css _wsrc_admin_memberlist.css > $@
+all_admin_memberlist.css: _jquery-ui.css _jquery.dataTables.css jquery.loadmask.css _wsrc_admin_memberlist.css
+	cat _jquery-ui.css _jquery.dataTables.css jquery.loadmask.css _wsrc_admin_memberlist.css > $@
 
 _jquery.mobile.structure.css:
 	wget http://ajax.googleapis.com/ajax/libs/jquerymobile/1.4.5/jquery.mobile.structure.css -O $@
 
 _jquery-ui.css:
 	wget http://ajax.googleapis.com/ajax/libs/jqueryui/1.11.2/themes/smoothness/jquery-ui.css -O $@
+
+_jquery.dataTables.css:
+	wget https://cdn.datatables.net/1.10.10/css/jquery.dataTables.css -O $@
 
 _wsrc_html5.css: wsrc.less
 	$(LESSC) --global-var='iemode=false' $< > $@
