@@ -95,11 +95,10 @@
       <h2>Differences</h2>
       <p>Top value is website DB, bottom is membership spreadsheet. Right-click on a difference to set the spreadsheet value into the website DB. Double-click on a row to open the corresponding admin page.</p>
       <div class="container">
-        <table class="sortable-root memberlist differences">
+        <table class="differences compact hover nowrap order-column row-border stripe">
           <thead>
-            <tr></tr>
           </thead>
-          <tbody class="sortable-parent">
+          <tbody>
           </tbody>
         </table>
       </div>
@@ -151,11 +150,10 @@
       <h2>Differences</h2>
       <p>Top value is website DB, bottom is booking system contact. Right-click on a difference to set the booking system value into the website DB. Double-click on a row to open the corresponding admin page.</p>
       <div class="container">
-        <table class="sortable-root memberlist differences">
+        <table class="differences compact hover nowrap order-column row-border stripe">
           <thead>
-            <tr></tr>
           </thead>
-          <tbody class="sortable-parent">
+          <tbody>
           </tbody>
         </table>
       </div>
@@ -192,15 +190,16 @@
   <form method="get" action="#">{% csrf_token %}
     <fieldset>
       <legend>User Details</legend>
-{% usekwacro createfield new_user_form.first_name %}
-{% usekwacro createfield new_user_form.last_name %}
-{% usekwacro createfield new_user_form.email %}
-{% usekwacro createfield new_member_form.membership_type %}
-{% usekwacro createfield new_member_form.wsrc_id %}
-{% usekwacro createfield new_member_form.cardnumber %}
-{% usekwacro createfield new_member_form.cell_phone %}
-{% usekwacro createfield new_member_form.other_phone %}
-{% usekwacro createfield new_member_form.prefs_receive_email %}
+{% usekwacro createfield change_user_form.first_name %}
+{% usekwacro createfield change_user_form.last_name %}
+{% usekwacro createfield change_user_form.email %}
+{% usekwacro createfield change_user_form.is_active %}
+{% usekwacro createfield change_member_form.membership_type %}
+{% usekwacro createfield change_member_form.wsrc_id %}
+{% usekwacro createfield change_member_form.cardnumber %}
+{% usekwacro createfield change_member_form.cell_phone %}
+{% usekwacro createfield change_member_form.other_phone %}
+{% usekwacro createfield change_member_form.prefs_receive_email %}
     </fieldset>
     <input type="button" value="Update" onclick="wsrc.admin.memberlist.on('change_member_submit_handler')">
   </form>
