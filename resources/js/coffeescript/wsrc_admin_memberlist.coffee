@@ -378,8 +378,6 @@ class WSRC_admin_memberlist
 
     @view.populate_differences_tab("ss_vs_db_diffs", missing_from_db, missing_from_ss, @model.ss_vs_db_diffs, add_button_callback)
 
-    wsrc.utils.configure_sortables()
-
     $("form#booking_system_credentials").on("submit", () => @booking_system_fetch_memberlist_handler())
         
   booking_system_update_tables: (data) ->
@@ -391,7 +389,6 @@ class WSRC_admin_memberlist
     missing_from_bs = (x for x in missing_from_bs when x.user.is_active)
     
     @view.populate_differences_tab("bs_vs_db_diffs", missing_from_db, missing_from_bs, @model.bs_vs_db_diffs)
-    wsrc.utils.configure_sortables()
 
 
   show_new_member_form: (elt) ->
