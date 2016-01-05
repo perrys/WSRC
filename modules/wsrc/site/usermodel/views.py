@@ -145,7 +145,7 @@ class BookingSystemMembersView(APIView):
     permission_classes = (IsAuthenticated,)
     parser_classes = (JSONParser,)
     def post(self, request, format="json"):
-        if request.user.groups.filter(name="Membership Editor").count() == 0:
+        if (request.user.groups.filter(name="Membership Editor").count() == 0 and not request.user.is_superuser):
             raise PermissionDenied()
         credentials = request.DATA
         username = credentials["username"]
@@ -167,7 +167,7 @@ class BookingSystemMembersView(APIView):
         return Response({"contacts": bs_contacts, "diffs": bs_vs_db_diffs})
 
 def admin_memberlist_view(request):
-    if not request.user.is_authenticated() or request.user.groups.filter(name="Membership Editor").count() == 0:
+    if not request.user.is_authenticated() or (request.user.groups.filter(name="Membership Editor").count() == 0  and not request.user.is_superuser):
         raise PermissionDenied()
 
     db_rows = Player.objects.order_by('user__last_name', 'user__first_name')
