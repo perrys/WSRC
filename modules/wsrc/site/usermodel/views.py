@@ -150,9 +150,9 @@ class BookingSystemMembersView(APIView):
         credentials = request.DATA
         username = credentials["username"]
         password = credentials["password"]
-#        booking_session = BookingSystemSession(username, password)
-#        bs_contacts = booking_session.get_memberlist()
-        bs_contacts = open("../docs/booking_system_memberlist.html").read()
+        booking_session = BookingSystemSession(username, password)
+        bs_contacts = booking_session.get_memberlist()
+#        bs_contacts = open("../docs/booking_system_memberlist.html").read()
         bs_contacts = scrape_page.scrape_userlist(bs_contacts)
         for row in bs_contacts:
             for k,v in row.items():
