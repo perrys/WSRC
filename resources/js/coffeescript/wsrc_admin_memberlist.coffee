@@ -181,6 +181,8 @@ class WSRC_admin_memberlist_view
         jqtable.DataTable(options)
         if cls == "memberlist-db"
           jqtable.find('tbody').on('dblclick',    "tr",      @callbacks.id_row_open_admin_click_handler)
+        if cls == "memberlist-ss" and jqtable.hasClass("missing-from-db")          
+          jqtable.find('tbody').on('contextmenu', "tr",      @callbacks.open_new_member_handler)
         else if cls == "differences"
           jqtable.find('tbody').on('dblclick',    "tr",       @callbacks.id_row_open_admin_click_handler)
           jqtable.find('tbody').on('contextmenu', "div.from", @callbacks.open_change_details_handler)    
@@ -193,7 +195,7 @@ class WSRC_admin_memberlist_view
   get_comparison_table: (tab_id, table_class) ->
     return $("##{ tab_id } table.#{ table_class }")
 
-  populate_differences_tab: (tab_id, missing_from_db_list, missing_from_other_list, differences, add_button_callback) ->
+  populate_differences_tab: (tab_id, missing_from_db_list, missing_from_other_list, differences) ->
     for jq in [$("##{ tab_id }"), $("li[aria-controls='#{ tab_id }']")]
       jq.removeClass('ui-helper-hidden')
     missing_from_db_api    = @get_table_api(tab_id, "missing-from-db")
@@ -201,10 +203,6 @@ class WSRC_admin_memberlist_view
     differences_api        = @get_table_api(tab_id, "differences")
 
     missing_from_db_api.rows.add(missing_from_db_list).draw()    
-    if add_button_callback
-      missing_from_db_api.$("tbody tr").each (ix, elt) ->
-        add_button_callback($(elt))
-
     missing_from_other_api.rows.add(missing_from_other_list).draw()
 
     diff_cols = {}
@@ -350,14 +348,20 @@ class WSRC_admin_memberlist
         jqrow = $(this)
         data = WSRC_admin_memberlist.get_data_for_jqrow(jqrow)
         me.open_user_admin_page(data.id)
-      open_change_details_handler: (evt) =>
-        evt.preventDefault();
-        @open_change_details_handler(evt)
-        return false;
+      open_change_details_handler: (evt) ->
+        jqsrc = $(this)
+        evt.preventDefault()
+        me.open_change_details_handler(jqsrc)
+        return false
+      open_new_member_handler: (evt) ->
+        jqrow = $(this)
+        evt.preventDefault()
+        me.show_new_member_form(jqrow)
+        return false
+        
       lookup_db_member: (id) => @model.db_member_map[id]
 
     @view = new WSRC_admin_memberlist_view(callbacks)
-
     
     @view.get_table_api("db_memberlist", "memberlist-db").rows.add(@model.db_memberlist).draw()
     if model.ss_memberlist
@@ -367,13 +371,7 @@ class WSRC_admin_memberlist
     missing_from_db = (x for x in missing_from_db when x.active?.toLowerCase()[0] == 'y')
     missing_from_ss = (x for x in missing_from_ss when x.user.is_active)
 
-    add_button_callback = (table_row) ->
-      table_row.append("<td><button onclick='wsrc.admin.memberlist.on(\"show_new_member_form\", this)'>Add</button></td>")
-      id = table_row.find("td.index").text()
-      if id
-        table_row.attr("id", "added_member_#{ id }")
-
-    @view.populate_differences_tab("ss_vs_db_diffs", missing_from_db, missing_from_ss, @model.ss_vs_db_diffs, add_button_callback)
+    @view.populate_differences_tab("ss_vs_db_diffs", missing_from_db, missing_from_ss, @model.ss_vs_db_diffs)
 
     $("form#booking_system_credentials").on("submit", () => @booking_system_fetch_memberlist_handler())
         
@@ -388,9 +386,7 @@ class WSRC_admin_memberlist
     @view.populate_differences_tab("bs_vs_db_diffs", missing_from_db, missing_from_bs, @model.bs_vs_db_diffs)
 
 
-  show_new_member_form: (elt) ->
-
-    jqrow     = $(elt).parents("tr")
+  show_new_member_form: (jqrow) ->
     source    = jqrow.parents("div.comparison_wrapper").attr("id")
     data_vals = WSRC_admin_memberlist.get_data_for_jqrow(jqrow)
     user_obj  =
@@ -437,8 +433,7 @@ class WSRC_admin_memberlist
       url = "/admin/auth/user/#{ player.user.id }/"
       window.open(url, "_blank")
     
-  open_change_details_handler: (evt) ->
-    jqtarget  = $(evt.target)
+  open_change_details_handler: (jqtarget) ->
     jqparent  = jqtarget.parent()
     jqrow     = jqtarget.parents("tr")
     data_row  = WSRC_admin_memberlist.get_data_for_jqrow(jqrow)
