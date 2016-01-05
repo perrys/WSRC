@@ -470,7 +470,8 @@ class WSRC_admin_memberlist
     jtable      = @view.get_comparison_table(source_div_id, "differences")
     table_api   = jtable.DataTable({retrieve: true})
     row         = table_api.row (idx, data, node) -> data.id == row_id
-    data_obj    = row.data()
+    row_data    = row.data()
+    data_obj    = row_data
     if path.startsWith("/data/memberlist/user")
       data_obj = data_obj.user
     
@@ -481,8 +482,8 @@ class WSRC_admin_memberlist
         @view.hide_change_member_form()
         jqmask.unmask()
         data_obj[field] = null
-        table_api.draw()
-        if WSRC_admin_memberlist_model.diff_row_blank_test(data_obj)
+        row.data(row_data).draw()
+        if WSRC_admin_memberlist_model.diff_row_blank_test(row_data)
           row.remove()
           table_api.draw()
       failureCB: (xhr, status) -> 
