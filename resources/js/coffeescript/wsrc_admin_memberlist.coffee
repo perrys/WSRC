@@ -99,9 +99,6 @@ class WSRC_admin_memberlist_view
     $("#tabs")
       .tabs()
       .removeClass("initiallyHidden")
-    @db_member_table = $("#db_memberlist table.memberlist")
-    @ss_member_table = $("#ss_memberlist table.memberlist")
-    @bs_member_table = $("#bs_memberlist table.memberlist")
 
     alignment =
       text: 'dt-body-left'
