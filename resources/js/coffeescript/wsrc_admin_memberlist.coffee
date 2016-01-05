@@ -411,7 +411,7 @@ class WSRC_admin_memberlist
     jqmask = $("body")
     jtable      = @view.get_comparison_table(source_div_id, "missing-from-db")
     table_api   = jtable.DataTable({retrieve: true})
-    row         = table_api.row (idx, data, node) -> data.id == player_obj.id
+    row         = table_api.row (idx, data, node) -> data.index == wsrc.utils.to_int(player_obj.wsrc_id)
     
     opts =
       csrf_token:  $("input[name='csrfmiddlewaretoken']").val()
