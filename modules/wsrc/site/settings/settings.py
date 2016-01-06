@@ -73,6 +73,10 @@ USE_TZ = True
 AUTH_USER_MODEL = 'auth.User'
 AUTH_PROFILE_MODULE = 'wsrc.site.usermodel.Player'
 
+LOGIN_URL = '/login'
+LOGOUT_URL = '/logout'
+LOGIN_REDIRECT_URL = '/settings'
+
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/1.6/howto/static-files/
 
