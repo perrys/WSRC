@@ -4,6 +4,7 @@ from wsrc.utils.rest_framework_utils import LastUpdaterModelSerializer
 from wsrc.utils.upload_utils import UploadFileForm, upload_generator
 
 from django import forms
+from django.contrib.auth.decorators import user_passes_test
 from django.core.exceptions import PermissionDenied
 from django.db import transaction
 from django.shortcuts import render
@@ -19,6 +20,9 @@ from rest_framework.response import Response
 import csv
 
 JSON_RENDERER = JSONRenderer()
+
+def is_staff_test(user):
+    return user.is_staff
 
 class TransactionSerializer(serializers.ModelSerializer):
     class Meta:
@@ -127,6 +131,7 @@ class CategoryDetailView(rest_generics.RetrieveUpdateDestroyAPIView):
     serializer_class = CategorySerializer
     queryset = Category.objects.all()
 
+@user_passes_test(is_staff_test)
 def accounts_view(request, account_name=None):
     data = None
     def preprocess_row(row):
