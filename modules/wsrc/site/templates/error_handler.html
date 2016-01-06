@@ -1,13 +1,11 @@
 {% extends "header_base.html" %}
 
-{% block body %}
+{% block page_header %}
+    <h1>{% block error_title %}{% endblock %}</h1>
+{% endblock %}
 
-<div id="outer_page_div" data-role="page" class="wsrc-site">
-  <div data-role="header" class="jqm-header">
-    <h2 class="ui-title" role="heading" aria-level="1"><a href="/home" data-ajax="false" class="ui-link"><img src="/static/images/WSRC-banner.jpg" alt="Woking Squash Club"></a></h2>
-    <p>{% block error_title %}{% endblock %}</p>
-  </div>
+{% block page_content %}
+
   <div class="error-handler-message">{% block error_message %}{% endblock %}</div>
-</div>
 
 {% endblock %}
