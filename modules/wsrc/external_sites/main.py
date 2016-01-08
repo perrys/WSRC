@@ -1,5 +1,6 @@
 #!/usr/bin/python
 
+import csv
 import datetime
 import json
 import logging
@@ -57,11 +58,6 @@ def get_club_fixtures_and_results():
   URL = 'http://county.leaguemaster.co.uk/cgi-county/icounty.exe/showclubfixtures'
   return url_utils.get_content(URL, PARAMS)
 
-def get_old_leage_data(date):
-  datefmt = date.strftime("%d%m%y")
-  URL = 'http://wokingsquashclub.org/Leagues_%(datefmt)s.htm' % locals()  
-  return url_utils.get_content(URL, {})
-
 class PointsTable:
 
   def __init__(self):
@@ -89,34 +85,27 @@ class PointsTable:
     return total
   
 
-def analyse_box(name, data):
-  if "PREMIER" in name.upper():
-    name = "Premier"
-  else:
-    name = "League " + name[-2:]
-
-  players = [d[0] for d in data if d[0]]
+def analyse_box(data, lookup_table):
+  players = [d[0] for d in data]
+  rows = [d[1] for d in data]
   matches = []
-  rowoffset = 0
-  coloffset = 1
-  table = PointsTable()
-  for (rowidx,player) in enumerate(players):
-    for colidx in range(rowidx+1,len(players)):
-      print players[rowidx] + " vs " + players[colidx]
-      mypoints = data[rowidx][colidx+coloffset]
+  for rowidx in range(0, len(rows)):
+    for colidx in range(rowidx+1,len(players)): # upper-right of triangle
+      print str(players[rowidx]) + " vs " + str(players[colidx])
+      mypoints = rows[rowidx][colidx]
       if mypoints == "-" or mypoints == "": 
         mypoints = None 
       if mypoints is not None:
-        theirpoints = data[colidx][rowidx+coloffset]
+        theirpoints = rows[colidx][rowidx]
         if theirpoints == "-" or theirpoints == "": 
           theirpoints = None 
         if theirpoints is not None:
           print " points: \"%(mypoints)s, %(theirpoints)s\"" % locals()
           matches.append({"player1": players[rowidx], "player2": players[colidx], 
                           "points": (mypoints, theirpoints),
-                          "scores": table(mypoints, theirpoints),
+                          "scores": lookup_table(mypoints, theirpoints),
                           })
-  return name, matches, players
+  return matches, players
 
 def match_player_name(name):
   toks = name.split()
@@ -249,71 +238,28 @@ def update_leaguemaster_data(data):
 
 @transaction.atomic
 def add_old_league_data(boxes_data, end_date):
-  from wsrc.site.competitions.models import CompetitionGroup, Competition, Match
-  from wsrc.site.usermodel.models import Player
 
-  existing = CompetitionGroup.objects.filter(comp_type="wsrc_boxes", end_date=end_date)
-  if len(existing) > 0:
-    raise Exception("ERROR - league ending " + end_date.isoformat() + " already exists, delete it first!")
+  from wsrc.site.competitions.models import CompetitionGroup, Competition, Match
 
   datefmt = end_date.strftime("%d %B %Y")
   group = CompetitionGroup(name='Leagues Ending %s' % datefmt, comp_type='wsrc_boxes', end_date=end_date, active=False)
   group.save()
   LOGGER.info("Saved CompetitionGroup {group.name} {group.id}".format(**locals()))
 
-  def split_name(name): # works correctly for "Herman van den Berg" :)
-    if name == "Diane Benford":
-      return "Diane J", "Benford"
-    if name == "Michael Davis":
-      return "Michael C", "Davis"
-
-    NAME_MAP = {
-      "Nick Hiley": "Nicholas Hiley",
-      "Phil Peakin": "Philip Peakin",
-      "Dave Wooldridge": "David Wooldridge",
-      }
-
-    name = name.replace("(jr)", "")
-    name = name.strip()
-    if name in NAME_MAP:
-      name = NAME_MAP[name]
-
-    names = name.split()
-    first = names[0]
-    last = " ".join(names[1:])
-    return first,last
-
-  boxes_data = [analyse_box(*d) for d in boxes_data]
-
-  # look up players first, throw if any are missing
-  for name, matches, players in boxes_data:
-    player_records = {}
-    for player in players:
-      first, last = split_name(player)
-      try:
-        player_records[player] = Player.objects.get(user__first_name=first, user__last_name=last)
-      except Exception, e:
-        sys.stderr.write("ERROR looking up %(first)s %(last)s - check they exist in DB\n" % locals())
-        raise e
-    # replace player names with their records:
-    del players[:]
-    players.extend([(player,record) for player,record in player_records.iteritems()])
-
   # create a competition for each box and insert players and match scores
+  ordering = 1
   for name, matches, players in boxes_data:
-    player_map = dict(players)
-    comp = Competition(name=name, end_date=end_date)
+    comp = Competition(name=name, end_date=end_date, ordering = ordering)
+    ordering += 1
     comp.save()
     LOGGER.info("Saved Competition {comp.name} {comp.id}".format(**locals()))
     group.competition_set.add(comp)
     order = 1
-    for player_name,record in players:
+    for record in players:
       comp.entrant_set.create(player=record, ordering=order)
       order += 1
     for match in matches:
-      player1 = player_map[match["player1"]]
-      player2 = player_map[match["player2"]]
-      match_record = Match(competition=comp, team1_player1=player1, team2_player1=player2)
+      match_record = Match(competition=comp, team1_player1=match["player1"], team2_player1=match["player2"])
       # we don't know the set scores so just assign 1-0 to the winner of each set
       set = 1
       for i in range(0, match["scores"][0]):
@@ -370,14 +316,57 @@ def cmdline_sync_leaguemaster(*args):
   if len(data) > 0:
     update_leaguemaster_data(data)
 
-def cmdline_add_old_league(*args):
-  if len(args) != 1:
-    sys.stderr.write("USAGE: %s %s <yyyy-mm-dd>\n" % sys.argv[:2])
+def cmdline_add_old_league(args):
+  if len(args) != 2:
+    sys.stderr.write("USAGE: {0} {1} <yyyy-mm-dd> <file.csv>\n".format(*sys.argv))
     sys.exit(1)
   end_date = timezones.parse_iso_date_to_naive(args[0])
-  data = get_old_leage_data(end_date)
-  boxes_data = scrape_page.scrape_old_league_table(data)
-  add_old_league_data(boxes_data, end_date)
+
+  from wsrc.site.competitions.models import CompetitionGroup
+  from wsrc.site.usermodel.models import Player
+
+  players = Player.objects.all()
+  players = dict([(p.get_full_name().lower(), p) for p in players])
+
+  existing = CompetitionGroup.objects.filter(comp_type="wsrc_boxes", end_date=end_date)
+  if len(existing) > 0:
+    raise Exception("ERROR - league ending " + end_date.isoformat() + " already exists, delete it first!")
+
+  fh = open(os.path.expanduser(args[1]), "r")
+  reader = csv.reader(fh)
+
+  boxes = []
+  def is_blank(row):
+    for item in row:
+      if len(item) != 0:
+        return False
+    return True
+
+  for row in reader:
+    if row[0]:
+      league_name = row[0]
+      if league_name == '#':
+        continue
+      current_box = []
+      boxes.append([league_name, current_box])
+    elif is_blank(row):
+      current_box = None
+    else:
+      player = players.get(row[1].lower())
+      if player is None:
+        raise Exception("ERROR - player {0} not found.".format(row[1]))
+      current_box.append((player, row[3:]))
+
+  LOOKUP_TABLE = PointsTable()
+        
+  for kv in boxes: 
+    [name, box] = kv
+    kv.pop()
+    matches, players = analyse_box(box, LOOKUP_TABLE)
+    kv.extend([matches, players])
+
+    
+  add_old_league_data(boxes, end_date)
               
         
 # Local Variables:
