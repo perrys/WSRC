@@ -9,7 +9,6 @@ import time
 import traceback
 import re
 
-import cal_events
 import scrape_page
 import evt_filters
 import cancel_notifier
