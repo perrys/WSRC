@@ -325,8 +325,15 @@ def cmdline_add_old_league(args):
   from wsrc.site.competitions.models import CompetitionGroup
   from wsrc.site.usermodel.models import Player
 
+  def convert(s): 
+    result = ''
+    for c in s:
+      if ord(c) < 127:
+        result += chr(ord(c))
+    return result.lower()
+
   players = Player.objects.all()
-  players = dict([(p.get_full_name().lower(), p) for p in players])
+  players = dict([(convert(p.get_full_name()), p) for p in players])
 
   existing = CompetitionGroup.objects.filter(comp_type="wsrc_boxes", end_date=end_date)
   if len(existing) > 0:
@@ -352,9 +359,10 @@ def cmdline_add_old_league(args):
     elif is_blank(row):
       current_box = None
     else:
-      player = players.get(row[1].lower())
+      name = convert(row[1])
+      player = players.get(name)
       if player is None:
-        raise Exception("ERROR - player {0} not found.".format(row[1]))
+        raise Exception("ERROR - player {0} not found.".format(name))
       current_box.append((player, row[3:]))
 
   LOOKUP_TABLE = PointsTable()
