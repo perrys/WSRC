@@ -12,40 +12,6 @@ from wsrc.utils import sync_utils
 import wsrc.utils.timezones as timezone_utils
 LOGGER = logging.getLogger(__name__)
 
-def make_username(csv_record):
-  return "_".join([csv_record["firstname"].lower(), csv_record["surname"].lower()])
-
-def persist_member_details(csv_record):
-  from wsrc.site.usermodel.models import User
-  user = User(first_name=csv_record["firstname"],
-              last_name=csv_record["surname"],
-              email=csv_record["email"],
-              is_active=csv_record["active"],
-              username=make_username(csv_record)
-              )
-  user.save()
-  user.set_password(settings._WSRC_SETTINGS["default_pw"])
-  user.save()
-  user.player.cell_phone=csv_record["mobile_phone"]
-  user.player.other_phone=csv_record["home_phone"]
-  user.player.prefs_receive_email=csv_record["Data Prot email"]
-  user.player.membership_id=csv_record["cardnumber"]
-  user.player.membership_type=csv_record["category"]
-  user.player.save()
-
-def add_former_member(csv_filename, first, last):
-
-  csv_records = sync_utils.parse_csv(csv_filename)
-  csv_records = sync_utils.BooleanFieldWrapper.wrap_records(csv_records, "active")
-
-  records = [r for r in csv_records if r["firstname"] == first and r["surname"] == last]
-  if len(records) == 0:
-    raise Exception("Could not find record of %(first)s %(last)s" % locals())
-  if len(records) > 1:
-    nrecords = len(records)
-    raise Exception("Expected one record of %(first)s %(last)s, got %(nrecords)d" % locals())
-
-  persist_member_details(records[0])
 
 def manage_tournament_bookings(username, password):
 
@@ -398,9 +364,6 @@ if __name__ == "__main__":
 
   elif command in ("add-old-league"):
     wsrc.external_sites.main.cmdline_add_old_league(args)
-
-  elif command in ("add-former-member"):
-    add_former_member(args[0], args[1], args[2])
 
             
 
