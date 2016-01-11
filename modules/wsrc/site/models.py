@@ -101,8 +101,9 @@ class MaintenanceIssue(models.Model):
 
 
 class Suggestion(models.Model):
-  player = models.ForeignKey(user_models.Player, blank=True, null=True)
-  date_submitted = models.DateField(auto_now=True)
-  date_reviewed = models.DateField(blank=True, null=True)
+  suggester = models.ForeignKey(user_models.Player, blank=True, null=True)
+  description = models.TextField()
+  submitted_date = models.DateField(auto_now=True)
+  reviewed_date = models.DateField(blank=True, null=True)
   comment = models.TextField(blank=True, null=True)
 
