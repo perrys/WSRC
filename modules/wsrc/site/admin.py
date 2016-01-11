@@ -2,7 +2,7 @@ from django import forms
 from django.db import models
 
 from django.contrib import admin
-from wsrc.site.models import PageContent, EmailContent, EventFilter, MaintenanceIssue
+from wsrc.site.models import PageContent, EmailContent, EventFilter, MaintenanceIssue, Suggestion
 
 class PageContentAdmin(admin.ModelAdmin):
     formfield_overrides = {
@@ -24,8 +24,15 @@ class MaintenanceIssueAdmin(admin.ModelAdmin):
         models.TextField: {'widget': forms.Textarea(attrs={'cols': 100, 'rows': 5})},
     }
 
+class SuggestionAdmin(admin.ModelAdmin):
+    list_display = ("description", "suggester", "submitted_date")
+    formfield_overrides = {
+        models.TextField: {'widget': forms.Textarea(attrs={'cols': 100, 'rows': 5})},
+    }
+
 
 admin.site.register(PageContent, PageContentAdmin)
 admin.site.register(EmailContent, EmailContentAdmin)
 admin.site.register(EventFilter, NotifierEventAdmin)
 admin.site.register(MaintenanceIssue, MaintenanceIssueAdmin)
+admin.site.register(Suggestion, SuggestionAdmin)
