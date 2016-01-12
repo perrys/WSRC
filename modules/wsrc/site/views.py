@@ -22,6 +22,7 @@ from wsrc.site.usermodel.models import Player
 import wsrc.site.settings.settings as settings
 from wsrc.utils import timezones, email_utils
 
+from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import PasswordChangeForm
 from django.forms.widgets import Select, CheckboxSelectMultiple, HiddenInput, Textarea
 from django.forms.models import modelformset_factory
@@ -57,6 +58,9 @@ FACEBOOK_GRAPH_ACCESS_TOKEN_URL = FACEBOOK_GRAPH_URL + "oauth/access_token"
 
 WSRC_FACEBOOK_PAGE_ID = 576441019131008
 COURT_SLOT_LENGTH = datetime.timedelta(minutes=45)
+
+COMMITTEE_EMAIL_ADDRESS = "committee@wokingsquashclub.org"
+MAINT_OFFIER_EMAIL_ADRESS = "maintenance@wokingsquashclub"
 
 HOME_TEAM_SHORT_NAMES = {
     u"Woking 1": "1sts",
@@ -216,8 +220,9 @@ def change_password_view(request):
     ctx = {"set_password_form": form}
     return TemplateResponse(request, 'change_password.html', ctx)
 
+@login_required
 def admin_mailshot_view(request):
-    if not request.user.is_authenticated() or not request.user.is_staff:
+    if not request.user.is_staff:
         raise PermissionDenied()
     from_email_addresses = ["chairman", 
                             "clubnight", 
@@ -355,9 +360,8 @@ class InfoForm(ModelForm):
         fields = ["membership_type",  "wsrc_id", "cardnumber",  "squashlevels_id"]
         exclude = ('user',)
 
+@login_required
 def settings_view(request):
-    if not request.user.is_authenticated():
-        return redirect(reverse_url("django.contrib.auth.views.login") + '?next=%s' % request.path)
 
     max_filters = 7
     success = False
@@ -400,11 +404,6 @@ def settings_view(request):
         'form_saved':      success,
     })
 
-def data_view(request, template, kwargs):
-    if not request.user.is_authenticated():
-        return redirect(reverse_url("django.contrib.auth.views.login") + '?next=%s' % request.path)
-    return render(request, template, kwargs)
-
 class MaintenanceForm(ModelForm):
     class Meta:
         model = MaintenanceIssue
@@ -412,6 +411,13 @@ class MaintenanceForm(ModelForm):
         exclude = ["reported_by"]
         widgets = {
             "description": Textarea(attrs={"rows": "3"})
+        }
+
+class SuggestionForm(ModelForm):
+    class Meta:
+        model = Suggestion
+        widgets = {
+            "description": Textarea(attrs={"rows": "6"})
         }
 
 def notify(template_name, kwargs, subject, to_list, cc_list, from_address):
@@ -424,9 +430,8 @@ def notify(template_name, kwargs, subject, to_list, cc_list, from_address):
     text_body = email_template.render(context)
     email_utils.send_email(subject, text_body, html_body, from_address, to_list, cc_list=cc_list)
 
+@login_required
 def maintenance_view(request):
-    if not request.user.is_authenticated():
-        return redirect(reverse_url("django.contrib.auth.views.login") + '?next=%s' % request.path)
     if request.method == 'POST': 
         form = MaintenanceForm(request.POST)
         if form.is_valid(): # if the form is invalid (i.e. empty) just do nothing
@@ -434,13 +439,12 @@ def maintenance_view(request):
                 instance = form.save(commit=False)
                 instance.reporter = request.user.player
                 instance.save()
-                maintenance_officer_email = "maintenance@wokingsquashclub.org"
                 context = {"issue": instance}
-                to_list = (request.user.email, maintenance_officer_email)  
-                cc_list = ["committee@wokingsquashclub.org"]
+                to_list = (request.user.email, MAINT_OFFIER_EMAIL_ADRESS)  
+                cc_list = [COMMITTEE_EMAIL_ADDRESS]
                 notify("MaintenanceIssueReceipt", context, 
                        subject="WSRC Maintenance", to_list=to_list,
-                       cc_list=cc_list, from_address=maintenance_officer_email)
+                       cc_list=cc_list, from_address=MAINT_OFFIER_EMAIL_ADRESS)
     form = MaintenanceForm()
 
     issues = [issue for issue in MaintenanceIssue.objects.all().order_by('-reported_date')]
@@ -453,11 +457,31 @@ def maintenance_view(request):
         'data': issues,
         'form': form
     }
-    return data_view(request, "maintenance.html", kwargs)
+    return render(request, "maintenance.html", kwargs)
 
+@login_required
 def suggestions_view(request):
-    suggestions = Suggestion.objects.all()
-    return data_view(request, suggestions, 'suggestions.html')
+    if request.method == 'POST': 
+        form = SuggestionForm(request.POST)
+        if form.is_valid(): # if the form is invalid (i.e. empty) just do nothing
+            with transaction.atomic():
+                instance = form.save(commit=False)
+                instance.suggester = request.user.player
+                instance.save()
+                email_target = COMMITTEE_EMAIL_ADDRESS
+                context = {"suggestion": instance}
+                to_list = (request.user.email, email_target)  
+                notify("SuggestionReceipt", context, 
+                       subject="WSRC New Suggestion", to_list=to_list,
+                       cc_list=None, from_address=COMMITTEE_EMAIL_ADDRESS)
+
+    suggestions = Suggestion.objects.all().order_by('-submitted_date')
+    form = SuggestionForm()
+    kwargs = {
+        'data': suggestions,
+        'form': form
+    }
+    return render(request, 'suggestions.html', kwargs)
 
 
 class DateTimeTzAwareField(serializers.DateTimeField):

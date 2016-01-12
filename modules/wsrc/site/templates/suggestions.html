@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block titleprefix %}Suggestion Box - {% endblock %}
+{% block pagetitle %}Suggestion Box{% endblock %}
+{% block pagetype %}suggestions{% endblock %}
+{% load kwacros %}
+{% loadkwacros 'form_macros.html' %}
+{% block centered_page_content %}
+
+<h1 class="mobile-hidden">Suggestions</h1> 
+
+<p>
+If you have a suggestion, please submit it using the form below. You will receive confirmation of receipt, and the committee will review all suggestions at the next meeting.
+<br>
+<a href='#suggestion_popup_form'  data-rel="popup" data-position-to="window" class="ui-btn ui-corner-all ui-shadow ui-btn-inline ui-icon-comment ui-btn-icon-left ui-btn-a" data-transition="pop">Make a Suggestion.</a>
+</p>
+      <table data-role="table" class="wsrc-member-list">
+        <thead>
+          <tr><th>Suggestions</th><th>Reported By</th><th>Reported On</th><th>Reviewed Date</th><th>Comment</th></tr>
+        </thead>
+        <tbody>
+{% for row in data %}
+          <tr>
+            <td style="text-align: justify;">{{ row.description }}</td>
+            <td>{{ row.suggester.get_full_name }}</td>
+            <td>{{ row.submitted_date|date:'d M Y' }}</td>
+            <td>{{ row.reviewed_date|date:'d M Y' }}</td>
+            <td>{{ row.comment|default:"" }}</td>
+          </tr>
+{% endfor %}
+        </tbody>
+      </table>
+
+
+<div data-role="popup" id="suggestion_popup_form">
+  <div data-role="header" data-theme="a">
+    <h2>Make a Suggestion</h2>
+    <a href="#" data-rel="back" class="ui-btn ui-corner-all ui-shadow ui-btn-a ui-icon-delete ui-btn-icon-notext ui-btn-right">Close</a>
+  </div>
+ <form method="post" action="{% url 'suggestions' %}" data-ajax="false">{% csrf_token %}
+<!-- we don't bother to report errors from previous sumissions in this popup -->
+{% usekwacro createfield form.description True submit_button_value="Submit" %}
+ </form>
+</div>
+
+
+{% endblock %}

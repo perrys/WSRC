@@ -40,6 +40,7 @@ urlpatterns = patterns('',
     url(r'^admin/memberlist/?', wsrc.site.usermodel.views.admin_memberlist_view),
     url(r'^memberlist/?$', wsrc.site.usermodel.views.MemberListView.as_view(), name="member_list"),
     url(r'^maintenance/?$', wsrc.site.views.maintenance_view, name="maintenance"),
+    url(r'^suggestions/?$', wsrc.site.views.suggestions_view, name="suggestions"),
 
     url(r'^boxes/(\d{4}-\d{2}-\d{2})/?$', wsrc.site.competitions.views.boxes_view), # end-date based
     url(r'^boxes/?$',                     wsrc.site.competitions.views.boxes_view, name="boxes"), # most recent
