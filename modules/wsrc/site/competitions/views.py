@@ -67,7 +67,8 @@ class CompetitionDetail(rest_generics.RetrieveUpdateDestroyAPIView):
     serializer_class = CompetitionSerializer
 
 class CompetitionGroupList(rest_generics.ListAPIView):
-    model = CompetitionGroup
+    queryset = CompetitionGroup.objects.all()
+    serializer_class = CompetitionGroupSerializer
 
 class CompetitionGroupDetail(rest_generics.RetrieveUpdateDestroyAPIView):
     queryset = CompetitionGroup.objects.all()
@@ -149,7 +150,7 @@ def get_competition_lists():
         "leagues": leagues,
         }
 
-def boxes_view(request, end_date=None):
+def boxes_view(request, end_date=None, template_name="boxes.html"):
     """Return a view of the Leagues for ending on END_DATE. If
     END_DATE is  negative, the current league is shown"""
 
@@ -192,7 +193,7 @@ def boxes_view(request, end_date=None):
     ctx["boxes"] = boxes
     ctx.update(get_competition_lists())
     ctx["box_data"] = box_data
-    return TemplateResponse(request, "boxes.html", ctx)
+    return TemplateResponse(request, template_name, ctx)
     
     
 
