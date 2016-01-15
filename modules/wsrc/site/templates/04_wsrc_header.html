@@ -1,0 +1,11 @@
+{% extends "03_jqm_page_structure.html" %}
+
+{% block page_header_classes %}jqm-header{% endblock %}
+{% block page_header %}
+<div class="centered-content-wrapper">
+{% block page_header_extra %}{% endblock %}
+  <p>{% block pagetitle %}{% endblock %}</p>
+  <h2 class="large-top-logo"><a href="/home" data-ajax="false" onclick="$.mobile.loading('show')"><img src="/static/images/logo_137x70.png" width="137" height="70" alt="Woking Squash Club"></a></h2>
+  <h2 class="small-top-logo"><a href="/home" data-ajax="false" onclick="$.mobile.loading('show')"><img src="/static/images/logo_98x50.png" width="98" height="50" alt="Woking Squash Club" ></a></h2>
+</div>
+{% endblock %}

@@ -1,4 +1,4 @@
-{% extends "header_base.html" %}
+{% extends "04_wsrc_header.html" %}
 
 {% load kwacros %}
 {% loadkwacros 'form_macros.html' %}
@@ -6,30 +6,29 @@
 {% block titleprefix %}Login - {% endblock %}
 {% block pagetype %}login{% endblock %}
 
-<!-- <div data-role="page" data-dialog="true" data-position-to="window" data-pagetype="login"> -->
-{% block pageattrs %}data-dialog="true" data-position-to="window" {% endblock %}
-{% block page_header_attrs %}data-theme="a"{% endblock %}
-{% block page_header %}
-    <h1>Login</h1>
-{% endblock %}
-
 {% block page_content %}
+
+<div class="ui-popup ui-body-inherit ui-overlay-shadow ui-corner-all centered-dialog">
+ <div data-role="header" data-theme="a">
+  <h2>Login</h2>
+  <a href="#" data-rel="back" class="ui-btn ui-corner-all ui-shadow ui-btn-a ui-icon-delete ui-btn-icon-notext ui-btn-right">Close</a>
+ </div>
+
 {% if form.errors %}
-    <span class="form_error_message ui-btn-icon ui-btn-icon-left ui-icon-alert">
+ <span class="form_error_message ui-btn-icon ui-btn-icon-left ui-icon-alert" style="display: inline;">
 Invalid username/password. Please try again.
-    </span>
+ </span>
 {% endif %}
 
-<form method="post" action="" data-ajax="false">{% csrf_token %}
-
-<fieldset name="password_details">
+ <form class="dialog-form" method="post" action="" data-ajax="false">{% csrf_token %}
+  <fieldset name="password_details">
 {% usekwacro createfield form.username %}
 {% usekwacro createfield form.password %}
-</fieldset>
-
-<input type="submit" value="Log in" data-theme="b"></input>
-<input type="hidden" name="next" value="{% if next %}{{ next }}{% else %}{% url 'homepage' %}{% endif %}" />
-<script type="text/javascript">document.getElementById("id_username").focus();</script>
-</form>
+  </fieldset>
+  <input type="submit" value="Go" data-theme="b"></input>
+  <input type="hidden" name="next" value="{% if next %}{{ next }}{% else %}{% url 'homepage' %}{% endif %}" />
+  <script type="text/javascript">document.getElementById("id_username").focus();</script>
+ </form>
+</div>
 
 {% endblock %}

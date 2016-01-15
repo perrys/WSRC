@@ -1,0 +1,26 @@
+{% extends "04_wsrc_header.html" %}
+
+{% load kwacros %}
+{% loadkwacros 'form_macros.html' %}
+
+{% block titleprefix %}Logout - {% endblock %}
+{% block pagetype %}logout{% endblock %}
+
+{% block page_content %}
+
+<div class="ui-popup ui-body-inherit ui-overlay-shadow ui-corner-all centered-dialog">
+ <div data-role="header" data-theme="a">
+  <h2>{{ user.first_name }} {{ user.last_name }}</h2>
+  <a href="#" data-rel="back" class="ui-btn ui-corner-all ui-shadow ui-btn-a ui-icon-delete ui-btn-icon-notext ui-btn-right">Close</a>
+ </div>
+  <div class="ui-content">
+    <h3 class="ui-title">What would you like to do?</h3>
+    <a href="{% url 'settings' %}" class="ui-btn ui-corner-all ui-shadow ui-btn-inline ui-btn-a">Settings</a>
+    <a href="{% url 'logout' %}?next=/home" class="ui-btn ui-corner-all ui-shadow ui-btn-inline ui-btn-a" data-ajax="false" onclick="$.mobile.loading('show')">Logout</a>
+    <a style="float: right;" href="#" class="ui-btn ui-corner-all ui-shadow ui-btn-inline ui-btn-a" data-rel="back" data-transition="flow">Cancel</a>
+  </div>
+ </div>
+
+</div>
+
+{% endblock %}

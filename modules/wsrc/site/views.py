@@ -202,9 +202,8 @@ def facebook_view(request):
                             content_type="text/plain", 
                             status=httplib.SERVICE_UNAVAILABLE)
     
+@login_required
 def change_password_view(request):
-    if not request.user.is_authenticated():
-        return redirect('/login/?next=%s' % request.path)
 
     success = False
     if request.method == 'POST':
@@ -219,6 +218,11 @@ def change_password_view(request):
 
     ctx = {"set_password_form": form}
     return TemplateResponse(request, 'change_password.html', ctx)
+
+@login_required
+def logout_dialog_view(request):
+    return TemplateResponse(request, 'logout.html')
+    
 
 @login_required
 def admin_mailshot_view(request):

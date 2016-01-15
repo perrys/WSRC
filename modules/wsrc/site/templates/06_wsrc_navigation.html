@@ -1,4 +1,4 @@
-{% extends "header_base.html" %}
+{% extends "05_wsrc_footer.html" %}
 
 {% block html_header_extra %}
 <script>
@@ -13,22 +13,16 @@ $( document ).on( "pagecreate", ".wsrc-site", function( event ) {
 </script>
 {% endblock %}{% comment "html_header_extra" %}{% endcomment %}
 
-{% block page_header_classes %}jqm-header{% endblock %}
-{% block page_header %}
-<div class="centered-content-wrapper">
-    <div class="topicon menu-link">
-      <a class="centered-icon" href="#"><img src="/static/css/images/bars-white.png" width="14" height="14" alt="Menu"></a>
-      <a href="#">Menu</a>
-    </div>
-    <div class="topicon login-link">
-      <a class="centered-icon" href="{% if user.is_authenticated %}#logout_dialog{% else %}/login?next={{ request.get_full_path }}{% endif %}" {% if user.is_authenticated %}data-transition="none"{% else %}data-ajax="false"{% endif %}><img src="/static/css/images/user-white.png" width="14" height="14" alt="Login"></a>
-      <a href="{% if user.is_authenticated %}#logout_dialog{% else %}/login?next={{ request.get_full_path }}{% endif %}" {% if user.is_authenticated %}data-transition="none"{% else %}data-ajax="false"{% endif %}>{% if user.is_authenticated %}{{ user.first_name }}{% else %}Login{% endif %}</a>
-    </div>
-    <p>{% block pagetitle %}{% endblock %}</p>
-    <h2 class="large-top-logo"><a href="/home" data-ajax="false" onclick="$.mobile.loading('show')"><img src="/static/images/logo_137x70.png" width="137" height="70" alt="Woking Squash Club"></a></h2>
-    <h2 class="small-top-logo"><a href="/home" data-ajax="false" onclick="$.mobile.loading('show')"><img src="/static/images/logo_98x50.png" width="98" height="50" alt="Woking Squash Club" ></a></h2>
-</div>
-{% endblock %}{% comment "page_header" %}{% endcomment %}
+{% block page_header_extra %}
+  <div class="topicon menu-link">
+    <a class="centered-icon" href="#"><img src="/static/css/images/bars-white.png" width="14" height="14" alt="Menu"></a>
+    <a href="#">Menu</a>
+  </div>
+  <div class="topicon login-link">
+    <a class="centered-icon" href="{% if user.is_authenticated %}/logout_dialog{% else %}/login?next={{ request.get_full_path }}{% endif %}" {% if user.is_authenticated %}data-transition="none"{% else %}data-ajax="false"{% endif %}><img src="/static/css/images/user-white.png" width="14" height="14" alt="Login"></a>
+    <a href="{% if user.is_authenticated %}/logout_dialog{% else %}/login?next={{ request.get_full_path }}{% endif %}" {% if user.is_authenticated %}data-transition="none"{% else %}data-ajax="false"{% endif %}>{% if user.is_authenticated %}{{ user.first_name }}{% else %}Login{% endif %}</a>
+  </div>
+{% endblock %}
 
 {% block page_content_classes %}jqm-content{% endblock %}
 {% block page_content %}
@@ -80,26 +74,3 @@ $( document ).on( "pagecreate", ".wsrc-site", function( event ) {
   </div>
 {% endblock %}{% comment "extra_page_content" %}{% endcomment %}
 
-{% block page_footer_classes %}jqm-footer{% endblock %}
-{% block page_footer %}
-<div class="centered-content-wrapper">
-    <div class="last_updated">{% block last_updated %}{% endblock %}</div>
-    <div>Woking Squash <span class="small-mobile-hidden">Rackets</span> Club</div>
-</div>
-{% endblock %}{% comment "page_footer" %}{% endcomment %}
-
-{% block extra_body_content %}
-{% if user.is_authenticated %}
-<div data-role="page" data-dialog="true" data-position-to="window" id="logout_dialog" data-dismissible="false">
-  <div data-role="header" data-theme="a">
-    <h1>{{ user.first_name }} {{ user.last_name }}</h1>
-  </div>
-  <div class="ui-content">
-    <h3 class="ui-title">What would you like to do?</h3>
-    <a href="{% url 'settings' %}" class="ui-btn ui-corner-all ui-shadow ui-btn-inline ui-btn-a">Settings</a>
-    <a href="{% url 'logout' %}?next=/home" class="ui-btn ui-corner-all ui-shadow ui-btn-inline ui-btn-a" data-ajax="false" onclick="$.mobile.loading('show')">Logout</a>
-    <a style="float: right;" href="#" class="ui-btn ui-corner-all ui-shadow ui-btn-inline ui-btn-a" data-rel="back" data-transition="flow">Cancel</a>
-  </div>
-</div>
-{% endif %}
-{% endblock %}{% comment "extra_body_content" %}{% endcomment %}
