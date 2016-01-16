@@ -15,8 +15,8 @@ window.WSRC_bracket_data = {{ bracket_data|safe }};
 </head>
 <body>
   <div id="outer_page_div" data-role="page" data-pagetype="tournament" data-competitionid="{{ competition.id }}" class="wsrc-site" style="background-color: white;">
-    <div style="margin-left: auto; margin-right: auto; width:1000px;">
-      <img  style="float:right;" src="/static/images/WSRC-logo_web_.jpg" alt="Woking Squash Club">
+    <div style="margin-left: auto; margin-right: auto; max-width:1400px; position: relative;">
+      <img  style="position: absolute; bottom:1em; right:1em;" src="/static/images/apple-touch-icon-114x114.png" alt="Woking Squash Club">
       <h1>{{ competition.name }} Tournament {{ competition.end_date|date:'Y' }}</h1>
       <div style="clear: both;height:30px;"></div>
       {{ bracket|safe }}
