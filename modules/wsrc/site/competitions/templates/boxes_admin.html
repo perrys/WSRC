@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+
+{% load competitions_extras %}
+
+<html>
+<head>
+
+  <link rel="stylesheet" href="/static/css/all_admin_boxes.css">
+  <script src="/static/js/all_admin_boxes.js"></script>
+
+{% load kwacros %}
+{% loadkwacros 'form_macros.html' %}
+
+  <title>Tournament Admin - Woking Squash Rackets Club</title>
+
+  <script type="text/javascript">
+var players  = { {% for p in players %}{% if forloop.counter0 > 0 %},{% endif %}{{ p.id }}: {id: {{ p.id }}, full_name: "{{ p.user.first_name }} {{ p.user.last_name }}"}{% endfor %} };
+var boxes_data = {{ box_data|safe }};
+jQuery(document).ready(function(){wsrc.boxes.onReady(players, boxes_data)});
+  </script>
+
+</head>
+<body>
+  <form method="GET" action="#" onsubmit="return false;" style="max-width: 800px; margin-left: auto; margin-right: auto;" class="ui-widget">  
+    <fieldset id="source_boxes" class="ui-corner-all" style="float: left">
+      <legend>Old Leauge</legend>
+      <div class="ui-field-contain">
+        <label for="league_end_date">League:</label>
+        <select name="league_end_date" id="league_end_date" onchange="WSRC.onLeagueSelected(this)">
+  {% regroup leagues|dictsortreversed:'year' by year as yearly_leagues_list %}
+{% for yearly_leagues in yearly_leagues_list %}
+          <optgroup label="{{ yearly_leagues.grouper }}">
+{% for league in yearly_leagues.list|dictsortreversed:'end_date' %}
+            <option value="{{ league.end_date|date:'Y-m-d' }}">{{ league.name }}</option>
+{% endfor %}
+          </optgroup>
+{% endfor %}
+        </select>
+      </div>
+      <div class="ui-field-contain">
+        <label>Display:</label>
+        <input type="radio" name="view_type" id="view_type_boxes" value="boxes"/>Boxes
+        <input type="radio" name="view_type" id="view_type_tables" value="tables"  checked="checked" />Tables
+      </div>
+{% for box_config in boxes %}
+      <div id="box_{{ box_config.id }}" class="box-wrapper" style="max-width: 500px; margin-left: auto; margin-right: auto">
+        <table class="ui-helper-hidden boxtable" cellspacing="0">
+          <caption class="ui-widget-header">{{ box_config.name }}</caption>
+          <thead class="ui-widget-content">
+            <tr>
+              <th colspan="2"></th>
+{% for i in competition.maxplayers|as_range %}<th class="ui-bar-a block">{{ i|add:"1" }}</th>{% endfor %}
+              <th class="ui-bar-a block">Σ</th>
+            </tr>
+          </thead>
+          <tbody class="ui-widget-content"></tbody>
+        </table>
+        <table class="leaguetable" cellspacing="0">
+          <caption class="ui-widget-header">{{ box_config.name }}</caption>
+          <thead class="ui-widget-content">
+            <tr>
+              <th class="text"></th>
+              <th class="ui-bar-a block">P</th>
+              <th class="ui-bar-a block">W</th>
+              <th class="ui-bar-a block">D</th>
+              <th class="ui-bar-a block">L</th>
+              <th class="ui-bar-a block">F</th>
+              <th class="ui-bar-a block">A</th>
+              <th class="ui-bar-a block" style="max-width: 1.5em;">Pts</th>
+            </tr>
+          </thead>
+          <tbody class="ui-widget-content"></tbody>
+        </table>
+      </div>
+      <div style="clear: both"></div>
+{% endfor %}
+    </fieldset>
+    <fieldset id="target_boxes" class="ui-corner-all" style="display: table-cell">
+      <legend>New League</legend>
+        <table cellspacing="0">
+          <caption class="ui-widget-header">Premier</caption>
+          <thead class="ui-widget-content">
+            <tr><th class="text">&nbsp;</th></tr>
+          </thead>
+          <tbody>
+{% for i in "123456" %}
+            <tr><td><span class="handle ui-icon ui-icon-carat-2-n-s"></span></td><th class="player"><input name="player_{{ i }}" /></th><td><button class="remove ">Remove</button></td></tr>
+{% endfor %}
+          </tbody>
+        </table>
+    </fieldset>
+  </form>
+</body>
+</html>
