@@ -193,6 +193,7 @@ def boxes_view(request, end_date=None, template_name="boxes.html"):
     ctx["boxes"] = boxes
     ctx.update(get_competition_lists())
     ctx["box_data"] = box_data
+    ctx['players'] = Player.objects.all()
     return TemplateResponse(request, template_name, ctx)
     
     
