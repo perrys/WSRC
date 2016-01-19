@@ -1,0 +1,113 @@
+
+
+body {
+  font-size: 0.8em;
+}
+
+table.boxtable, table.leaguetable {
+    border-spacing:0;
+    border-collapse: collapse; 
+    width: 100%;
+    border: #333333 1px solid;
+    padding: 0.5em;
+    tr {
+        height: 2em;
+    }
+    thead, tbody {
+        border: 0;
+    }
+    caption {
+        margin-top: 1em;
+        padding: 0.25em 0 0.25em 0;
+    }
+    td {
+        border: #333333 1px solid;
+    }
+    .text {
+        text-align: left;
+        padding-right: 1em;
+    }
+    .block {
+        min-width: 1em;
+        text-align: center;
+        border: #333333 1px solid;
+    }
+    .number {
+        text-align: right;
+        input {
+            text-align: right;
+            padding-left: 1em;
+        }
+    }
+
+    .block {
+        background-color: #eee;
+    }
+
+    .player {
+        padding: 0 6px 0 4px;
+        white-space: nowrap;
+        max-width: 150px;
+        min-width: 80px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+}
+
+table.leaguetable td.number {
+    min-width: 1.75em;
+}
+table.boxtable td.number {
+    min-width: 1.5em;
+}
+
+.handle {
+    cursor: move;
+}
+
+button.remove {
+    width: 1.5em;
+    height: 1.5em;
+}
+
+.ui-field-contain {
+    padding: 0;
+    margin: 0.5em 0;
+    border-bottom-width: 0;
+    &:before,
+    &:after {
+        content: "";
+        display: table;
+    }
+    &:after {
+        xxxclear: both;
+    }
+    & > label {
+        float: left;
+        width: 5.5em;
+        margin: .5em 0.5em 0 0;
+        text-align: right;
+    }
+    & > input, & > select  {
+        width: 17em;
+    }
+    & > input[type='checkbox']  {
+        width: 2em;
+    }
+    & > input[type='radio']  {
+        width: 2em;
+    }
+    & > select {
+        height: 2em;
+        margin-left: inherit;
+    }
+    & > input[type='submit'] {
+        width: 3em;
+    }
+    & > .radio-buttonset > label  {
+        width: 5em;
+        .ui-button-text {
+            padding: 0.4em 0;
+        }
+    }
+}
