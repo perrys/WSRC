@@ -79,11 +79,15 @@ class WSRC_boxes_view
     
   set_source_player_ghost: (id) ->
     rows = $("#source_boxes tr").filter(@make_id_filter(id))
-    rows.find("th.player").css("opacity", 0.3)
+    draggables = rows.find("th.player:not(.ui-draggable-dragging)")
+    draggables.css("opacity", 0.3)
+    return draggables
     
   revert_source_player_ghost: (id) ->
     rows = $("#source_boxes tr").filter(@make_id_filter(id))
-    rows.find("th.player").css("opacity", 1.0)
+    draggables = rows.find("th.player")
+    draggables.css("opacity", 1.0)
+    return draggables
     
     
 
@@ -111,31 +115,35 @@ class WSRC_boxes
       @handle_display_type_change(evt)
     )
 
+    me = this
     if @view.is_admin_view
       $("#source_boxes th.player").draggable(
         opacity: 0.7
         helper:  "clone"
         revert:  "invalid"
-        start:   (event, ui) => @handle_source_drag_start(event, ui)
-        stop:    (event, ui) => @handle_source_drag_stop(event, ui)
+        start:   (event, ui) => @handle_source_player_drag_start(event, ui)
+        stop:    (event, ui) => @handle_source_player_drag_stop(event, ui)
       )
       players = ("#{ player.full_name } [#{ player.id }]" for id,player of @model.member_map)  
       $("#target_boxes th.player input").autocomplete(
         source: players
+        select: (event, ui) => @handle_target_autocomplete_select(event, ui)
+        change: (event, ui) => @handle_target_autocomplete_change(event, ui)
       ).droppable(
-#        activeClass: "ui-state-default",
         hoverClass: "ui-state-hover",
         accept: ".player",
         drop: ( event, ui ) ->
-          if ui.draggable.hasClass("player")
-            $(this).val(ui.draggable.text())
+          me.handle_source_player_dropped(event, ui, $(this))
       )
       $("#target_boxes tbody").sortable(
         handle: ".handle"
         containment: "parent"
       )
-      $("button.remove").button(text: false, {icons: {primary: "ui-icon-close"}})
-        
+      $("button.remove").button(
+        text: false,
+        icons:
+          primary: "ui-icon-close"
+      ).on("click", (evt, ui) => @handle_target_remove_button_click(evt, ui))
 
   get_points_totals: (this_box_config) ->
     newTotals = (player_id) -> {id: player_id, p: 0, w: 0, d: 0, l: 0, f: 0, a: 0, pts: 0}
@@ -172,14 +180,83 @@ class WSRC_boxes
       result
     )
     return player_totals
+
+  collect_target_league_players: (ignored_input) ->
+    tables = $("#target_boxes table")
+    result = {}
+    tables.each (idx, table) =>
+      player_list = []
+      league_name = $(table).find("caption").text()
+      $(table).find("tbody tr input").each (idx1, input) =>
+        unless ignored_input == input
+          id = @scrape_player_id($(input).val())
+          if id
+            player_list.push(id)
+      if player_list.length > 0
+        result[league_name] = player_list
+    return result
+
+  scrape_player_id: (str) ->
+    unless str
+      return null
+    id = str.substring(str.lastIndexOf("[")+1, str.lastIndexOf("]"))
+    id = wsrc.utils.to_int(id)
+    if isNaN(id)
+      return  null
+    return id
+
+  handle_target_remove_button_click: (evt, ui) ->
+    button = $(evt.target)
+    input = button.parents("tr").find("input")
+    player_str = input.val()
+    input.val("")
+    id = @scrape_player_id(player_str)
+    if id
+      draggables = @view.revert_source_player_ghost(id)
+      draggables.draggable("enable")
+
+  handle_target_autocomplete_select: (evt, ui) ->
+    player_str = ui.item.value
+    player_id = @scrape_player_id(player_str)
+    for league, players of @collect_target_league_players(evt.target)
+      if players.indexOf(player_id) >= 0
+        alert("ERROR: #{ player_str } is already in box \"#{ league }\"")
+        evt.stopPropagation()
+        evt.preventDefault()
+        return false
+    draggables = @view.set_source_player_ghost(player_id)
+    draggables.draggable("disable")
+
+  handle_target_autocomplete_change: (evt, ui) ->
+    input = $(evt.target).parents("tr").find("input")
+    player_str = input.val()
+    player_id = @scrape_player_id(player_str)
+    unless player_id
+        alert("ERROR: Cannot get player ID from \"#{ player_str }\"")
+        input.val("")
+        evt.stopPropagation()
+        evt.preventDefault()
+        return false
     
-  handle_source_drag_start: (evt, ui) ->
-    id = wsrc.utils.to_int($(evt.target).parents("tr").data("id"))
+
+  handle_source_player_dropped: (evt, ui, target) ->
+    source = ui.draggable
+    if source.hasClass("player")
+      id = wsrc.utils.to_int(source.parents("tr").data("id"))
+      target.val(ui.draggable.text())
+      draggables = @view.set_source_player_ghost(id)
+      draggables.draggable("disable")
+            
+  handle_source_player_drag_start: (evt, ui) ->
+    source = $(evt.target)
+    id = wsrc.utils.to_int(source.parents("tr").data("id"))
     @view.set_source_player_ghost(id)
 
-  handle_source_drag_stop: (evt, ui) ->
-    id = wsrc.utils.to_int($(evt.target).parents("tr").data("id"))
-    @view.revert_source_player_ghost(id)
+  handle_source_player_drag_stop: (evt, ui) ->
+    source = $(evt.target)
+    unless source.draggable("option").disabled
+      id = wsrc.utils.to_int(source.parents("tr").data("id"))
+      @view.revert_source_player_ghost(id)
 
   handle_display_type_change: (evt) ->
     view_radios = $("input[name='view_type']")
