@@ -29,7 +29,7 @@ class Player(models.Model):
   other_phone = models.CharField(('Other Phone'), max_length=30, validators = [phone_validator], blank=True)
   short_name  = models.CharField(("Short Name"), max_length=32, blank=True)
 
-  membership_type = models.CharField(("Membership Type"), max_length=8, choices=MEMBERSHIP_TYPES)
+  membership_type = models.CharField(("Membership Type"), max_length=16, choices=MEMBERSHIP_TYPES)
   wsrc_id  = models.IntegerField(("WSRC ID"), db_index=True, blank=True, null=True,
                                  help_text="Index in the membership spreadsheet")
   cardnumber  = models.IntegerField(("Cardnumber"), db_index=True, blank=True, null=True,
