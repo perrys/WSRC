@@ -63,7 +63,7 @@ class WSRC_boxes_view
         name += " [#{ player.id }]"
       tr = "<tr data-id='#{ player.id }'><th class='text player'>#{ name }</th><td class='number'>#{ row.p }</td><td class='number'>#{ row.w }</td><td class='number'>#{ row.d }</td><td class='number'>#{ row.l }</td><td class='number'>#{ row.f }</td><td class='number'>#{ row.a }</td><td class='number'>#{ row.pts }</td></tr>"
       table_body.append(tr)
-      
+
       
   set_view_type: (view_type) ->
     if view_type == "tables"
@@ -115,6 +115,9 @@ class WSRC_boxes
       @handle_display_type_change(evt)
     )
 
+    $("input.hasDatePicker").datepicker
+      dateFormat: "yy-mm-dd"
+
     me = this
     if @view.is_admin_view
       $("#source_boxes th.player").draggable(
@@ -125,7 +128,7 @@ class WSRC_boxes
         stop:    (event, ui) => @handle_source_player_drag_stop(event, ui)
       )
       players = ("#{ player.full_name } [#{ player.id }]" for id,player of @model.member_map)  
-      $("#target_boxes th.player input").autocomplete(
+      $("#target_boxes input.player").autocomplete(
         source: players
         select: (event, ui) => @handle_target_autocomplete_select(event, ui)
         change: (event, ui) => @handle_target_autocomplete_change(event, ui)
@@ -220,7 +223,9 @@ class WSRC_boxes
     player_id = @scrape_player_id(player_str)
     for league, players of @collect_target_league_players(evt.target)
       if players.indexOf(player_id) >= 0
+        input = $(evt.target).parents("tr").find("input")
         alert("ERROR: #{ player_str } is already in box \"#{ league }\"")
+        input.val("")
         evt.stopPropagation()
         evt.preventDefault()
         return false
