@@ -11,7 +11,7 @@
 {% load kwacros %}
 {% loadkwacros 'form_macros.html' %}
 
-  <title>Tournament Admin - Woking Squash Rackets Club</title>
+  <title>Boxes Admin - Woking Squash Rackets Club</title>
 
   <script type="text/javascript">
 var players  = { {% for p in players %}{% if forloop.counter0 > 0 %},{% endif %}{{ p.id }}: {id: {{ p.id }}, full_name: "{{ p.user.first_name }} {{ p.user.last_name }}"}{% endfor %} };
@@ -21,41 +21,48 @@ jQuery(document).ready(function(){wsrc.boxes.onReady(players, boxes_data)});
 
 </head>
 <body>
-  <form method="GET" action="#" onsubmit="return false;" style="max-width: 800px; margin-left: auto; margin-right: auto;" class="ui-widget">  
-    <fieldset id="source_boxes" class="ui-corner-all" style="float: left">
-      <legend>Old Leauge</legend>
-      <div class="ui-field-contain">
-        <label for="league_end_date">League:</label>
-        <select name="league_end_date" id="league_end_date" onchange="WSRC.onLeagueSelected(this)">
+  <div class="column-wrapper ui-widget">
+  <div class="hrow">
+    <form class="column" id="source_boxes" method="GET" action="#" onsubmit="return false;">  
+    <fieldset class="ui-corner-all">
+      <legend>Old League</legend>
+      <div class="top-form-field-container">
+        <div class="ui-field-contain">
+          <label for="league_end_date">League:</label>
+          <select name="league_end_date" id="league_end_date" onchange="WSRC.onLeagueSelected(this)">
   {% regroup leagues|dictsortreversed:'year' by year as yearly_leagues_list %}
 {% for yearly_leagues in yearly_leagues_list %}
-          <optgroup label="{{ yearly_leagues.grouper }}">
+            <optgroup label="{{ yearly_leagues.grouper }}">
 {% for league in yearly_leagues.list|dictsortreversed:'end_date' %}
-            <option value="{{ league.end_date|date:'Y-m-d' }}">{{ league.name }}</option>
+              <option value="{{ league.end_date|date:'Y-m-d' }}">{{ league.name }}</option>
 {% endfor %}
-          </optgroup>
+            </optgroup>
 {% endfor %}
-        </select>
-      </div>
-      <div class="ui-field-contain">
-        <label>Display:</label>
-        <input type="radio" name="view_type" id="view_type_boxes" value="boxes"/>Boxes
-        <input type="radio" name="view_type" id="view_type_tables" value="tables"  checked="checked" />Tables
+          </select>
+        </div>
+        <div class="ui-field-contain">
+          <label>Display:</label>
+          <input type="radio" name="view_type" id="view_type_boxes" value="boxes"/>Boxes
+          <input type="radio" name="view_type" id="view_type_tables" value="tables"  checked="checked" />Tables
+        </div>
       </div>
 {% for box_config in boxes %}
-      <div id="box_{{ box_config.id }}" class="box-wrapper" style="max-width: 500px; margin-left: auto; margin-right: auto">
-        <table class="ui-helper-hidden boxtable" cellspacing="0">
+{% if box_config.colspec == "double" and box_config.nthcol == "first" %}
+      <div class="hrow">
+{% endif %}
+      <div id="box_{{ box_config.id }}" class="{% if box_config.colspec == 'single' %}single-table{% else %}column twin-table{% endif %}">
+        <table class="ui-helper-hidden boxtable" >
           <caption class="ui-widget-header">{{ box_config.name }}</caption>
           <thead class="ui-widget-content">
             <tr>
-              <th colspan="2"></th>
+              <th></th><th></th>
 {% for i in competition.maxplayers|as_range %}<th class="ui-bar-a block">{{ i|add:"1" }}</th>{% endfor %}
               <th class="ui-bar-a block">Σ</th>
             </tr>
           </thead>
           <tbody class="ui-widget-content"></tbody>
         </table>
-        <table class="leaguetable" cellspacing="0">
+        <table class="leaguetable" >
           <caption class="ui-widget-header">{{ box_config.name }}</caption>
           <thead class="ui-widget-content">
             <tr>
@@ -72,23 +79,46 @@ jQuery(document).ready(function(){wsrc.boxes.onReady(players, boxes_data)});
           <tbody class="ui-widget-content"></tbody>
         </table>
       </div>
-      <div style="clear: both"></div>
+{% if box_config.colspec == "double" and box_config.nthcol == "second" %}
+      </div>
+{% endif %}
 {% endfor %}
     </fieldset>
-    <fieldset id="target_boxes" class="ui-corner-all" style="display: table-cell">
+    </form>
+    <form class="column" id="target_boxes" method="GET" action="#" onsubmit="return false;">  
+    <fieldset class="ui-corner-all">
       <legend>New League</legend>
-        <table cellspacing="0">
-          <caption class="ui-widget-header">Premier</caption>
+      <div class="top-form-field-container">
+        <div class="ui-field-contain">
+          <label for="league_end_date">End Date:</label>
+          <input name="end_date" class="hasDatePicker" />
+          <button type="button" value="Save">Save</button>
+        </div>
+      </div>
+{% for box_config in boxes %}
+{% if box_config.colspec == "double" and box_config.nthcol == "first" %}
+      <div class="hrow">
+{% endif %}
+      <div class="{% if box_config.colspec == 'single' %}single-table{% else %}column twin-table{% endif %}">
+        <table class="newtable" >
+          <caption class="ui-widget-header">{{ box_config.name }}</caption>
           <thead class="ui-widget-content">
-            <tr><th class="text">&nbsp;</th></tr>
+            <tr><th colspan="3"></th></tr>
           </thead>
           <tbody>
 {% for i in "123456" %}
-            <tr><td><span class="handle ui-icon ui-icon-carat-2-n-s"></span></td><th class="player"><input name="player_{{ i }}" /></th><td><button class="remove " type="button">Remove</button></td></tr>
+            <tr><td><span class="handle ui-icon ui-icon-carat-2-n-s"></span></td><th><input class="player" name="player_{{ i }}" /></th><td><button class="remove " type="button">Remove</button></td></tr>
 {% endfor %}
           </tbody>
         </table>
+      </div>
+{% if box_config.colspec == "double" and box_config.nthcol == "second" %}
+      </div>
+{% endif %}
+{% endfor %}
     </fieldset>
-  </form>
+    </form>
+  </div>
+  </div>
 </body>
 </html>
