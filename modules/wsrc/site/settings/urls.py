@@ -9,6 +9,7 @@ from django.shortcuts import redirect
 import wsrc.site.competitions.data_urls
 import wsrc.site.accounts.data_urls
 import wsrc.site.usermodel.data_urls
+from wsrc.site.usermodel.forms import SpaceTranslatingAuthenticationForm
 
 import wsrc.site.views
 import wsrc.site.accounts.views
@@ -26,7 +27,7 @@ urlpatterns = patterns('',
     url(r'^$',       wsrc.site.views.index_view),
     url(r'^home/?$', wsrc.site.views.index_view, name="homepage"),
 
-    url(r'^login/?$',  auth_views.login, {'template_name': 'login.html'}),
+    url(r'^login/?$',  auth_views.login, {'template_name': 'login.html', 'authentication_form': SpaceTranslatingAuthenticationForm}),
     url(r'^logout/?$', auth_views.logout, name='logout'),
     url(r'^logout_dialog/?$', wsrc.site.views.logout_dialog_view, name='logout_dialog'),
 
