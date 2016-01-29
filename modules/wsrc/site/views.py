@@ -60,7 +60,7 @@ WSRC_FACEBOOK_PAGE_ID = 576441019131008
 COURT_SLOT_LENGTH = datetime.timedelta(minutes=45)
 
 COMMITTEE_EMAIL_ADDRESS = "committee@wokingsquashclub.org"
-MAINT_OFFIER_EMAIL_ADRESS = "maintenance@wokingsquashclub"
+MAINT_OFFICER_EMAIL_ADRESS = "maintenance@wokingsquashclub.org"
 
 HOME_TEAM_SHORT_NAMES = {
     u"Woking 1": "1sts",
@@ -444,11 +444,11 @@ def maintenance_view(request):
                 instance.reporter = request.user.player
                 instance.save()
                 context = {"issue": instance}
-                to_list = (request.user.email, MAINT_OFFIER_EMAIL_ADRESS)  
+                to_list = [request.user.email, MAINT_OFFICER_EMAIL_ADRESS]
                 cc_list = [COMMITTEE_EMAIL_ADDRESS]
                 notify("MaintenanceIssueReceipt", context, 
                        subject="WSRC Maintenance", to_list=to_list,
-                       cc_list=cc_list, from_address=MAINT_OFFIER_EMAIL_ADRESS)
+                       cc_list=cc_list, from_address=MAINT_OFFICER_EMAIL_ADRESS)
     form = MaintenanceForm()
 
     issues = [issue for issue in MaintenanceIssue.objects.all().order_by('-reported_date')]
@@ -474,7 +474,7 @@ def suggestions_view(request):
                 instance.save()
                 email_target = COMMITTEE_EMAIL_ADDRESS
                 context = {"suggestion": instance}
-                to_list = (request.user.email, email_target)  
+                to_list = [request.user.email, email_target]
                 notify("SuggestionReceipt", context, 
                        subject="WSRC New Suggestion", to_list=to_list,
                        cc_list=None, from_address=COMMITTEE_EMAIL_ADDRESS)
