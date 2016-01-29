@@ -25,7 +25,7 @@ def send_email(subject, text_body, html_body, from_address, to_list, bcc_list=No
   else:
     msg = EmailMessage(subject, text_body, from_address,
                        to_list, bcc_list, headers=headers, cc=cc_list)
-  LOGGER.debug("sending mail, subject=\"{subject}\", from={from_address}, to_list={to_list}, headers={headers}".format(**locals()))
+  LOGGER.debug("sending mail, subject=\"{subject}\", from={from_address}, to_list={to_list}, cc_list={cc_list}, bcc_list={bcc_list}, headers={headers}".format(**locals()))
   msg.send(fail_silently=False)
 
 def send_markdown_email(subject, markdown_body, from_address, to_list, bcc_list=None, reply_to_address=None):
