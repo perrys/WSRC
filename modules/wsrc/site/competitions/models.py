@@ -48,7 +48,8 @@ class Competition(models.Model):
   url = models.CharField(max_length=128, blank=True)
   ordering = models.IntegerField(blank=True, null=True)
   def __unicode__(self):
-    return u"%s - %s [%s]" % (self.group.name, self.name, self.end_date)
+    group_name = self.group is not None and self.group.name or "null"
+    return u"%s - %s [%s]" % (group_name, self.name, self.end_date)
   class Meta:
     unique_together = (("group", "ordering"),)
     ordering=["-group__end_date", "ordering", "name"]
