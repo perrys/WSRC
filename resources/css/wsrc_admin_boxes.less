@@ -4,6 +4,15 @@ body {
     font-size: 0.8em;
 }
 
+#maskdiv {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: -1;
+}
+
 .column-wrapper, .single-table {
     display: table;
     margin: auto;
@@ -114,5 +123,15 @@ button.remove {
     }
     & > input.hasDatePicker {
         width: 7em;
+    }
+}
+
+#target_boxes .ui-field-contain {
+    select, input {
+        width: 11em;
+        -ms-box-sizing:border-box;
+        -moz-box-sizing:border-box;
+        -webkit-box-sizing:border-box; 
+        box-sizing:border-box;
     }
 }
