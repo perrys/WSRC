@@ -314,6 +314,18 @@ class WSRC_boxes_admin extends WSRC_boxes
     source_league_selector.on "change", () =>
       @handle_source_league_changed(source_league_selector.val())
 
+    # bulk action inputs:
+    @view.bulk_action_selector = $("#target_boxes select[name='action']")
+    @view.bulk_action_go_button = $("#target_boxes button[name='go']")
+    @toggle_bulk_action()
+    @view.bulk_action_selector.on "change", () =>
+      @toggle_bulk_action()
+    @view.bulk_action_go_button.on "click", () =>
+      dispach_target = "handle_bulk_action_#{ @view.bulk_action_selector.val() }"
+      @view.bulk_action_selector.val("")
+      @toggle_bulk_action()
+      me[dispach_target]()
+
   populate_source_competition_group: (competition_group) ->
     super competition_group
     $("#source_boxes th.player").draggable(
@@ -368,7 +380,11 @@ class WSRC_boxes_admin extends WSRC_boxes
   mark_save_required: (val) ->
     val = val != false
     @view.target_save_button.prop('disabled', not val)
-    
+
+  toggle_bulk_action: () ->
+    disabled = @view.bulk_action_selector.val() == ''
+    @view.bulk_action_go_button.prop("disabled", disabled)
+        
   handle_source_league_changed: (comp_group_id) ->
     group = @model.competition_group_map[comp_group_id]
     @fetch_competition_group(group, (data) =>
@@ -487,6 +503,10 @@ class WSRC_boxes_admin extends WSRC_boxes
     view_radios = $("input[name='view_type']")
     view_type = view_radios.filter(":checked").val()
     @view.set_view_type(view_type)
+
+  handle_bulk_action_clear: () ->
+    @view.clear_new_tables()
+    @mark_save_required()
 
   @on: (method) ->
     args = $.fn.toArray.call(arguments)
