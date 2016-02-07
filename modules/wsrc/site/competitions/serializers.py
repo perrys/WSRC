@@ -55,11 +55,11 @@ class PlayerSerializer(serializers.ModelSerializer):
     fields = ('id', 'full_name', 'short_name')
 
 class EntrantSerializer(serializers.ModelSerializer):
-  player = PlayerSerializer(read_only="True")
-  player2 = PlayerSerializer(read_only="True")
+  player = PlayerSerializer(required=True)
+  player2 = PlayerSerializer(required=False)
   class Meta:
     model = Entrant
-    fields = ('competition', 'player', 'player2', 'ordering', "seeded", "handicap", "hcap_suffix")
+    fields = ('player', 'player2', 'ordering', "seeded", "handicap", "hcap_suffix")
 
 class EntrantDeSerializer(serializers.ModelSerializer):
   class Meta:
@@ -84,6 +84,12 @@ class MatchSerializer(serializers.ModelSerializer):
               "team1_score1", "team1_score2", "team1_score3", "team1_score4", "team1_score5", 
               "team2_score1", "team2_score2", "team2_score3", "team2_score4", "team2_score5", 
               "competition_match_id", "walkover")
+
+class StatusField(serializers.CharField):
+  def to_representation(self, comp_group):
+    for comp in comp_group.all():
+        return comp.state
+    return 'empty'
 
 class CompactMatchField(serializers.RelatedField):
   def to_representation(self, match):
@@ -120,11 +126,11 @@ class CompactMatchField(serializers.RelatedField):
 class CompetitionSerializer(serializers.ModelSerializer):
   matches = CompactMatchField(source="match_set", many=True, read_only=True)
   entrants = EntrantSerializer(source="entrant_set", many=True)
-  rounds   = RoundSerializer(many=True)
+  rounds   = RoundSerializer(many=True, required=False)
   class Meta:
     model = Competition
     depth = 0
-    fields = ('id', 'name', 'end_date', 'url', 'entrants', 'matches', 'rounds')
+    fields = ('id', 'name', 'end_date', 'ordering', 'group', 'state', 'url', 'entrants', 'matches', 'rounds')
 
   def __init__(self, *args, **kwargs):
     expanded = False
@@ -140,22 +146,81 @@ class CompetitionSerializer(serializers.ModelSerializer):
 
     if not expanded:
       self.fields.pop("matches")
+  
+  def update_entrants(self, instance, entrants):
+    for e in instance.entrant_set.all():
+        e.delete()
+    for e in entrants:
+      e["competition"] = instance.id
+      e["player"] = e["player"]["id"]
+      e["player2"] = e.get("player2") and e["player2"]["id"] or None
+      serializer = EntrantDeSerializer(data=e)        
+      if not serializer.is_valid():
+        raise Exception(serializer.errors)
+      serializer.save()
+
+  def create(self, validated_data):
+    validated_data.pop("entrant_set")
+    instance = self.Meta.model.objects.create(**validated_data)
+    self.update_entrants(instance, self.initial_data["entrants"])
+    return instance
+
+  def update(self, instance, validated_data):
+    validated_data.pop("entrant_set")
+    for attr, value in validated_data.items():
+      setattr(instance, attr, value)
+    instance.save()
+    self.update_entrants(instance, self.initial_data["entrants"])
+    return instance
 
 class CompetitionGroupSerializer(serializers.ModelSerializer):
-  competitions_expanded = CompetitionSerializer(source="competition_set", many=True, expand=True)
+  competitions_expanded = CompetitionSerializer(source="competition_set", many=True, expand=True, read_only=True)
+  status   = StatusField(source="competition_set", read_only=True)
   class Meta:
     model = CompetitionGroup
     depth = 0
-    fields = ('id', 'name', 'comp_type', 'end_date', 'active', 'competition_set', 'competitions_expanded')
+    fields = ('id', 'name', 'comp_type', 'end_date', 'active', 'competition_set', 'competitions_expanded', 'status')
 
   def __init__(self, *args, **kwargs):
     # Instantiate the superclass normally
     super(self.__class__, self).__init__(*args, **kwargs)
-    queryParams = kwargs["context"]["request"].GET
+    queryParams = {}
+    if "context" in kwargs:
+      queryParams = kwargs["context"]["request"].GET
     if "expand" not in queryParams:
       self.fields.pop("competitions_expanded")
     else:
       self.fields.pop("competition_set")
 
+  def update_competitions(self, instance, competition_set):
+    for e in instance.competition_set.all():
+        e.delete()
+    for comp in competition_set:
+      comp["group"] = instance.id
+      serializer = CompetitionSerializer(data=comp)        
+      if not serializer.is_valid():
+        raise Exception(serializer.errors)
+      serializer.save()
+
+
+  def create(self, validated_data):
+    competition_set = self.initial_data.pop("competitions_expanded")
+    instance = self.Meta.model.objects.create(**validated_data)
+    instance.save()
+    self.update_competitions(instance, competition_set)
+    return instance
+
+  def update(self, instance, validated_data):
+    print validated_data
+    print self.initial_data
+    competition_set = self.initial_data.pop("competitions_expanded")
+    for attr, value in validated_data.items():
+      setattr(instance, attr, value)
+    instance.save()
+    self.update_competitions(instance, competition_set)
+    return instance
       
-    
+# Local Variables:
+# mode: python
+# python-indent-offset: 2
+# End:
