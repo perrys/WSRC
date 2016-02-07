@@ -51,7 +51,7 @@ class PlayerDetail(rest_generics.RetrieveAPIView):
     queryset = Player.objects.all()
     serializer_class = PlayerSerializer
 
-class CompetitionList(rest_generics.ListAPIView):
+class CompetitionList(rest_generics.ListCreateAPIView):
     serializer_class = CompetitionSerializer
     filter_backends = [rest_framework.filters.OrderingFilter]
     ordering_fields = ("__all__")
@@ -66,7 +66,7 @@ class CompetitionDetail(rest_generics.RetrieveUpdateDestroyAPIView):
     queryset = Competition.objects.all()
     serializer_class = CompetitionSerializer
 
-class CompetitionGroupList(rest_generics.ListAPIView):
+class CompetitionGroupList(rest_generics.ListCreateAPIView):
     queryset = CompetitionGroup.objects.all()
     serializer_class = CompetitionGroupSerializer
 
@@ -162,6 +162,7 @@ def boxes_view(request, end_date=None, template_name="boxes.html"):
         group = get_object_or_404(queryset, end_date=end_date)
 
     box_data = JSON_RENDERER.render(CompetitionGroupSerializer(group, context={"request": FAKE_REQUEST_CONTEXT}).data)
+    competition_groups = JSON_RENDERER.render(CompetitionGroupSerializer(CompetitionGroup.objects.all(), many=True).data)
 
     def create_box_config(previous_comp, competition, ctx):
         is_second = False
@@ -178,6 +179,22 @@ def boxes_view(request, end_date=None, template_name="boxes.html"):
                 "players": [p.player for p in competition.entrant_set.all().order_by("ordering")]
                 }
 
+    def create_new_box_config(idx):
+        result = {"id": None, "players": None}
+        if idx == 0:
+            result["colspec"] = "single"
+            result["name"] = "Premier"
+            result["nthcol"] = "first"
+        else:
+            result["colspec"] = "double"
+            suffix = (idx % 2 == 1) and "A" or "B"
+            number = (idx+1)/2
+            result["name"] = "League %(number)d%(suffix)s" % locals()
+            result["nthcol"] = suffix == "A" and "first" or "second"
+        return result
+
+    new_boxes = [create_new_box_config(i) for i in range(0,21)]
+
     nullplayer = {"name": "", "id": ""}
     last = None
     boxes = []
@@ -191,6 +208,8 @@ def boxes_view(request, end_date=None, template_name="boxes.html"):
         while len(box["players"]) < comp_meta["maxplayers"]:
             box["players"].append(nullplayer)
     ctx["boxes"] = boxes
+    ctx["new_boxes"] = new_boxes
+    ctx["competition_groups"] = competition_groups
     ctx.update(get_competition_lists())
     ctx["box_data"] = box_data
     ctx['players'] = Player.objects.all()
