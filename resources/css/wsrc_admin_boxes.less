@@ -98,9 +98,18 @@ table.boxtable td.number {
     cursor: move;
 }
 
-button.remove {
-    width: 1.5em;
-    height: 1.5em;
+button.small {
+    width: 20px;
+    height: 20px;
+    span.ui-icon {
+      margin-left: -9px
+    }
+}
+
+caption > button.small {
+    float: right;
+    display: block;
+    margin-right: 5px;
 }
 
 .ui-field-contain {

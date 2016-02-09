@@ -31,11 +31,12 @@ class WSRC_boxes_view
     source_container = $("#source_boxes")
     source_container.find("input.player").val("")
     @source_container_map = {}
-    do_mapping = (container, map) ->
+    do_mapping = (container, map) =>
       tables = container.find("table")
-      tables.each (idx, elt) ->
+      tables.each (idx, elt) =>
         box = $(elt)
-        map[box.find("caption").text()] = box.parent()
+        name = @get_table_name(box)
+        map[name] = box.parent()
     do_mapping(source_container, @source_container_map)
 
     target_container = $("#target_boxes")
@@ -43,6 +44,8 @@ class WSRC_boxes_view
       @target_container_map = {}
       do_mapping(target_container, @target_container_map)
 
+  get_table_name: (jtable) ->
+    return jtable.find("caption").contents()[0].nodeValue
 
   get_player_name: (player) ->
     name = player.full_name
@@ -126,7 +129,15 @@ class WSRC_boxes_view
   make_id_filter: (id) ->
     return (idx, elt) ->
       $(elt).data("id") == id
-    
+
+  relocate_player: (player, table_name, index) ->
+    target_table = @target_container_map[table_name]
+    target = target_table.find("input").eq(index)
+    if target.val() == ""
+      target.val(@get_player_name(player))
+      draggables = @set_source_player_ghost(player.id)
+      draggables.draggable("disable")
+        
   set_source_player_ghost: (id) ->
     rows = $("#source_boxes tr").filter(@make_id_filter(id))
     draggables = rows.find("th.player:not(.ui-draggable-dragging)")
@@ -326,6 +337,18 @@ class WSRC_boxes_admin extends WSRC_boxes
       @toggle_bulk_action()
       me[dispach_target]()
 
+    $("#source_boxes caption button.auto").button(
+      icons: {primary: "ui-icon-arrowthickstop-1-e"}
+      text: false
+    ).on "click", (evt) =>
+      table = $(evt.target).parents("table")
+      @auto_populate_new_box(table)
+      
+
+    $("#target_boxes button.clear_all").button
+      icons: {primary: "ui-icon-arrowreturnthick-1-w"}
+      text: false
+
   populate_source_competition_group: (competition_group) ->
     super competition_group
     $("#source_boxes th.player").draggable(
@@ -346,13 +369,83 @@ class WSRC_boxes_admin extends WSRC_boxes
         @view.populate_new_table(comp)
     $("#target_boxes").data("id", id)
 
+  auto_populate_new_box: (source_box) ->
+    jtable = source_box.parents(".table-wrapper").find(".leaguetable")
+    source_name = @view.get_table_name(source_box)
+    other = (suffix) -> if suffix == "A" then "B" else "A"
+    if source_name == "Premier"
+      league_number = 0
+      sibling = "Premier"
+      child_1 = "League 1A"
+      child_2 = "League 1B"
+    else
+      unless source_name.startsWith("League ")
+        throw "ERROR: invalid source_name: #{ source_name }"
+      league_number = wsrc.utils.to_int(source_name.slice(-2,-1))
+      league_suffix = source_name.slice(-1).toUpperCase()
+      if league_number == 1
+        parent_1 = "Premier"
+        parent_2 = null
+      else
+        parent_1 = "League #{ league_number-1 }#{ league_suffix }"
+        parent_2 = "League #{ league_number-1 }#{ other(league_suffix) }"
+      sibling = "League #{ league_number }#{ league_suffix }"
+      child_1 = "League #{ league_number+1 }#{ league_suffix }"
+      child_2 = "League #{ league_number+1 }#{ other(league_suffix) }"
+    
+    entrants = @collect_source_league_players(jtable)
+    idx = 1
+    while idx <= entrants.length
+      entrant = entrants[idx-1]
+      player = @model.member_map[entrant.player.id]
+      done = false
+      set_target = (target_position, target_name) =>
+        if @view.relocate_player(player, target_name, target_position-1)
+          @mark_save_required()
+        done = true
+      if idx == 1 # top position
+        if league_number == 1 # in league 1, only the top gets promoted
+          if league_suffix == "A"
+            set_target(5, parent_1) # A -> #5
+          else
+            set_target(6, parent_1) # B -> #6
+        else if league_number > 1 # in leagues > 1, promote vertically to #5
+          set_target(5, parent_1)
+      else if idx == 2 # second place, gets diagonally promoted in leagues > 1
+        if league_number > 1
+          set_target(6, parent_2)
+      else if idx == 5 # 5th place gets demoted vertically to #1
+        set_target(1, child_1)
+      else if idx == 6 # 6th place gets demoted diagonally to #2
+        if league_number == 0
+          set_target(1, child_2)
+        else
+          set_target(2, child_2)
+      if not done
+        set_target(idx, sibling) # default - move horizontally   
+      ++idx
+      
+        
+    
+
+  collect_source_league_players: (jtable) ->
+    entrants = []
+    jtable.find("tbody th.player").each (idx1, elt) =>
+      id = @scrape_player_id(elt.textContent)
+      if id
+        entrants.push
+          player:
+            id: id
+          ordering: idx1
+    return entrants
+
   collect_target_league_players: (ignored_input) ->
     tables = $("#target_boxes table")
     result = {}
     tables.each (idx, table) =>
       entrants = []
       jtable = $(table)
-      league_name = jtable.find("caption").text()
+      league_name = @view.get_table_name(jtable)
       jtable.find("tbody tr input").each (idx1, input) =>
         unless ignored_input == input
           id = @scrape_player_id($(input).val())
@@ -454,7 +547,7 @@ class WSRC_boxes_admin extends WSRC_boxes
     player_str = ui.item.value
     player_id = @scrape_player_id(player_str)
     for league, comp_data of @collect_target_league_players(evt.target)
-      player_ids = (e.id for e in comp_data.entrants)
+      player_ids = (e.player.id for e in comp_data.entrants)
       if player_ids.indexOf(player_id) >= 0
         input = $(evt.target).parents("tr").find("input")
         alert("ERROR: #{ player_str } is already in box \"#{ league }\"")
@@ -505,6 +598,7 @@ class WSRC_boxes_admin extends WSRC_boxes
     @view.set_view_type(view_type)
 
   handle_bulk_action_clear: () ->
+    @view.revert_source_player_ghost()
     @view.clear_new_tables()
     @mark_save_required()
 
