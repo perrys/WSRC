@@ -88,10 +88,15 @@ table.boxtable, table.leaguetable, table.newtable {
 }
 
 table.leaguetable td.number {
-    min-width: 1.75em;
-}
-table.boxtable td.number {
     min-width: 1.5em;
+}
+table.boxtable {
+    td {
+        min-width: 1.3em;
+        &.points {
+            text-align: center;
+        }
+    }
 }
 
 .handle {
