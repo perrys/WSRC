@@ -74,9 +74,9 @@ class WSRC_boxes_view
       rows.push(row)
       for j in [0...max_players]
         if idx == j
-          jcell = $("<td class='#{ block_cls } number'></td>")
+          jcell = $("<td class='#{ block_cls }'></td>")
         else
-          jcell = $("<td class='number'></td>")
+          jcell = $("<td class='points'></td>")
         jrow.append(jcell)
         row.push(jcell)
       jrow.append("<td class='number'>#{ points_map[player.id] }</td>")
@@ -345,9 +345,15 @@ class WSRC_boxes_admin extends WSRC_boxes
       @auto_populate_new_box(table)
       
 
-    $("#target_boxes button.clear_all").button
+    $("#target_boxes button.clear_all").button(
       icons: {primary: "ui-icon-arrowreturnthick-1-w"}
       text: false
+    ).on "click", (evt) =>
+      table = $(evt.target).parents("table")
+      inputs = table.find("input")
+      inputs.each (idx, elt) =>
+        @revert_target_input($(elt))
+      
 
   populate_source_competition_group: (competition_group) ->
     super competition_group
@@ -425,9 +431,6 @@ class WSRC_boxes_admin extends WSRC_boxes
         set_target(idx, sibling) # default - move horizontally   
       ++idx
       
-        
-    
-
   collect_source_league_players: (jtable) ->
     entrants = []
     jtable.find("tbody th.player").each (idx1, elt) =>
@@ -478,6 +481,15 @@ class WSRC_boxes_admin extends WSRC_boxes
     disabled = @view.bulk_action_selector.val() == ''
     @view.bulk_action_go_button.prop("disabled", disabled)
         
+  revert_target_input: (input) ->
+    player_str = input.val()
+    input.val("")
+    id = @scrape_player_id(player_str)
+    if id
+      draggables = @view.revert_source_player_ghost(id)
+      draggables.draggable("enable")
+      @mark_save_required()
+
   handle_source_league_changed: (comp_group_id) ->
     group = @model.competition_group_map[comp_group_id]
     @fetch_competition_group(group, (data) =>
@@ -494,13 +506,7 @@ class WSRC_boxes_admin extends WSRC_boxes
   handle_target_remove_button_click: (evt, ui) ->
     button = $(evt.target)
     input = button.parents("tr").find("input")
-    player_str = input.val()
-    input.val("")
-    id = @scrape_player_id(player_str)
-    if id
-      draggables = @view.revert_source_player_ghost(id)
-      draggables.draggable("enable")
-      @mark_save_required()
+    revert_target_input(input)
 
   handle_target_save_click: (evt, ui) ->    
     end_date = @view.target_end_date.val()
