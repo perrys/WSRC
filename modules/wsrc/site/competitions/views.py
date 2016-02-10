@@ -221,7 +221,6 @@ def bracket_view(request, year, name, template_name="tournaments.html"):
     if year is None:
         groups = CompetitionGroup.objects.filter(comp_type='wsrc_tournaments').filter(active=True).order_by("-end_date")
         group = groups[0]
-        print group
     else:
         group = get_object_or_404(CompetitionGroup.objects, end_date__year=year, comp_type='wsrc_tournaments')
 
