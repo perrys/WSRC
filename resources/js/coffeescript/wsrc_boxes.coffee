@@ -261,10 +261,13 @@ class WSRC_boxes_admin extends WSRC_boxes
     super model
     me = this
 
-    # save button
+    # save and preview buttons
     @view.target_save_button = $("#target_boxes button[value='save']")
+    @view.target_preview_button = $("#target_boxes button[value='preview']")
     @view.target_save_button.on "click", () =>
       @handle_target_save_click()
+    @view.target_preview_button.on "click", () =>
+      @handle_target_preview_click()
     $(window).bind 'keydown', (event) =>
       if (event.ctrlKey) 
         if String.fromCharCode(event.which).toLowerCase() == 's'
@@ -374,6 +377,7 @@ class WSRC_boxes_admin extends WSRC_boxes
       for comp in competition_group.competitions_expanded
         @view.populate_new_table(comp)
     $("#target_boxes").data("id", id)
+    @view.target_preview_button.prop('disabled', false)
 
   auto_populate_new_box: (source_box) ->
     jtable = source_box.parents(".table-wrapper").find(".leaguetable")
@@ -476,6 +480,7 @@ class WSRC_boxes_admin extends WSRC_boxes
   mark_save_required: (val) ->
     val = val != false
     @view.target_save_button.prop('disabled', not val)
+    @view.target_preview_button.prop('disabled', val)
 
   toggle_bulk_action: () ->
     disabled = @view.bulk_action_selector.val() == ''
@@ -549,6 +554,10 @@ class WSRC_boxes_admin extends WSRC_boxes
     else
       wsrc.ajax.ajax_bare_helper("/data/competitiongroup/?expand=1", comp_group, opts, "POST")
 
+  handle_target_preview_click: (evt, ui) ->
+    end_date = @view.target_end_date.val()
+    window.open("/boxes/#{ end_date }", "boxes_preview")
+
   handle_target_autocomplete_select: (evt, ui) ->
     player_str = ui.item.value
     player_id = @scrape_player_id(player_str)
@@ -576,7 +585,6 @@ class WSRC_boxes_admin extends WSRC_boxes
         evt.preventDefault()
         return false
     @mark_save_required()
-    
 
   handle_source_player_dropped: (evt, ui, target) ->
     source = ui.draggable

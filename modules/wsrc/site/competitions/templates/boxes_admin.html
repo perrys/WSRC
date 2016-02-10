@@ -87,13 +87,17 @@ jQuery(document).ready(function(){wsrc.admin.boxes.onReady(players, competition_
           <label for="target_league_end_date">End Date:</label>
           <input name="end_date" id="target_league_end_date">
           <button type="button" name="save" value="save">Save</button>
+          <button type="button" name="preview" value="preview">Preview</button>
         </div>
         <div class="ui-field-contain">
           <label for="target_league_actions">Action:</label>
           <select name="action" id="target_league_actions">
             <option value="" selected="selected">----------</option>
-            <option value="clear">Clear All Leagues</option>
-            <option value="make_live">Make Live</option>
+            <option value="auto_populate">Auto-Populate All</option>
+            <option value="clear">Clear All</option>
+            <optgroup label="Permanent Changes:">
+              <option value="make_live">Start New League</option>
+            </optgroup>
           </select>
           <button type="button" name="go" value="go">Go</button>
         </div>
