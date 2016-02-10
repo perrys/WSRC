@@ -511,7 +511,7 @@ class WSRC_boxes_admin extends WSRC_boxes
   handle_target_remove_button_click: (evt, ui) ->
     button = $(evt.target)
     input = button.parents("tr").find("input")
-    revert_target_input(input)
+    @revert_target_input(input)
 
   handle_target_save_click: (evt, ui) ->    
     end_date = @view.target_end_date.val()
@@ -615,6 +615,12 @@ class WSRC_boxes_admin extends WSRC_boxes
     @view.revert_source_player_ghost()
     @view.clear_new_tables()
     @mark_save_required()
+
+  handle_bulk_action_auto_populate: () ->
+    for name, container of @view.source_container_map
+      console.log("name: #{ name }")
+      @auto_populate_new_box(container.find("table.leaguetable")) 
+      @mark_save_required()
 
   @on: (method) ->
     args = $.fn.toArray.call(arguments)
