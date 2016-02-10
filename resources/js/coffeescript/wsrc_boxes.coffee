@@ -618,7 +618,6 @@ class WSRC_boxes_admin extends WSRC_boxes
 
   handle_bulk_action_auto_populate: () ->
     for name, container of @view.source_container_map
-      console.log("name: #{ name }")
       @auto_populate_new_box(container.find("table.leaguetable")) 
       @mark_save_required()
 
