@@ -13,25 +13,33 @@
 # You should have received a copy of the GNU General Public License
 # along with WSRC.  If not, see <http://www.gnu.org/licenses/>.
 
+from wsrc.site.models import EmailContent
 from wsrc.site.usermodel.models import Player
 from wsrc.site.competitions.models import Competition, CompetitionGroup, Match, Entrant
 from wsrc.site.competitions.serializers import PlayerSerializer, CompetitionSerializer, CompetitionGroupSerializer
 from wsrc.utils.timezones import parse_iso_date_to_naive
+from wsrc.utils import email_utils
 
 from django.core.exceptions import PermissionDenied, SuspiciousOperation
 from django.shortcuts import get_object_or_404
 from django.shortcuts import redirect
 from django.shortcuts import render
+from django.template import Template, Context
 from django.template.response import TemplateResponse
 from django.forms import ModelForm, ModelChoiceField
 from django.http import HttpResponse, HttpResponseBadRequest
 
 import rest_framework.filters
+import rest_framework.status
 import rest_framework.generics as rest_generics
+import rest_framework.permissions as rest_permissions
+from rest_framework.authentication import SessionAuthentication
 from rest_framework.renderers import JSONRenderer
+from rest_framework.response import Response
 from rest_framework.parsers import JSONParser
 from rest_framework.views import APIView
 
+import markdown
 import tournament
 
 class FakeRequestContext:
@@ -74,11 +82,16 @@ class CompetitionGroupDetail(rest_generics.RetrieveUpdateDestroyAPIView):
     queryset = CompetitionGroup.objects.all()
     serializer_class = CompetitionGroupSerializer
 
-class UpdateMatch(APIView):
+
+class PermissionedAPIView(APIView):
+    "Restrict update views to competition editors"
+    queryset = CompetitionGroup.objects.none() # Required for DjangoModelPermissions
+    authentication_classes = (SessionAuthentication,)
+    permission_classes = (rest_permissions.IsAuthenticated,rest_permissions.DjangoModelPermissions,)
+
+class UpdateMatch(PermissionedAPIView):
     parser_classes = (JSONParser,)
     def put(self, request, pk, format="json"):
-        if not request.user.is_authenticated():
-            raise PermissionDenied()
         match_id = int(pk)
         match_data = request.DATA
         if int(match_data["id"]) != match_id:
@@ -116,11 +129,9 @@ class UpdateMatch(APIView):
             match.save()
         return HttpResponse(status=201)
 
-class UpdateTournament(APIView):
+class UpdateTournament(PermissionedAPIView):
     parser_classes = (JSONParser,)
     def put(self, request, pk, format="json"):
-        if not request.user.is_authenticated():
-            raise PermissionDenied()
         comp_id = int(pk)
         comp_data = request.DATA
         if comp_data["id"] != comp_id:
@@ -149,6 +160,51 @@ def get_competition_lists():
         "tournaments": tournaments,
         "leagues": leagues,
         }
+
+class SetCompetitionGroupLive(PermissionedAPIView):
+    parser_classes = (JSONParser,)
+    def put(self, request, format="json"):
+        competition_group_id = request.DATA.pop('competition_group_id')
+        competition_type = request.DATA.pop('competition_type')
+        new_group = CompetitionGroup.objects.get(pk = competition_group_id)
+        old_groups = CompetitionGroup.objects.filter(active = True).filter(comp_type = competition_type)
+        for group in old_groups:
+            for comp in group.competition_set.all():
+                comp.state = "complete"
+                comp.save()
+            group.active = False
+            group.save()
+        for comp in new_group.competition_set.all():
+            comp.state = "active"
+            comp.save()
+        new_group.active = True
+        new_group.save()
+        serialiser = CompetitionGroupSerializer(new_group, context={"request": FAKE_REQUEST_CONTEXT})
+        return Response(serialiser.data, status=rest_framework.status.HTTP_201_CREATED)
+        
+
+
+class SendCompetitionEmail(PermissionedAPIView):
+    parser_classes = (JSONParser,)
+    def put(self, request, format="json"):
+        competition_id = request.DATA.pop('competition_id')
+        template_name  = request.DATA.pop('template_name')
+        subject        = request.DATA.pop('subject')
+        from_address   = request.DATA.pop('from_address')
+
+        competition = Competition.objects.get(pk=competition_id)
+        to_list = [entrant.player.user.email for entrant in competition.entrant_set.all()]
+        email_template = EmailContent.objects.get(name=template_name)
+        email_template = Template(email_template.markup)
+        
+        context = Context({"competition": competition})
+        context["content_type"] = "text/html"
+        html_body = markdown.markdown(email_template.render(context))
+        context["content_type"] = "text/plain"
+        text_body = email_template.render(context)
+    
+        email_utils.send_email(subject, text_body, html_body, from_address, to_list)
+        return HttpResponse(status=204)
 
 def boxes_view(request, end_date=None, template_name="boxes.html"):
     """Return a view of the Leagues for ending on END_DATE. If
