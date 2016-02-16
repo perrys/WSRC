@@ -495,6 +495,55 @@ class WSRC_boxes_admin extends WSRC_boxes
       draggables.draggable("enable")
       @mark_save_required()
 
+  send_league_start_email: (competition, callback) ->
+    end_date = wsrc.utils.iso_to_js_date(competition.end_date)
+    end_date = wsrc.utils.js_to_readable_date_str(end_date)
+    data =
+      competition_id: competition.id
+      template_name: "StartOfNewLeague"
+      subject: "New Legaues Ending #{ end_date }"
+      from_address: "leagues@wokingsquashclub.org" 
+    jqmask  = $("#maskdiv")
+    jqmask.css("z-index", "1")
+    opts =
+      csrf_token:  $("input[name='csrfmiddlewaretoken']").val()
+      successCB: (data, status, jq_xhr) =>
+        jqmask.unmask()
+        jqmask.css("z-index", "-1")
+        if callback
+          callback(data)
+      failureCB: (xhr, status) -> 
+        jqmask.unmask()
+        jqmask.css("z-index", "-1")
+        alert("ERROR #{ xhr.status }: #{ xhr.statusText }\nResponse: #{ xhr.responseText }\n\nEmail for '#{ competition.name }' may not have been sent.")
+    jqmask.mask("Sending start-of-league emails for \'#{ competition.name }\'...")
+    wsrc.ajax.ajax_bare_helper("/boxes/admin/email", data, opts, "PUT")
+
+
+  send_league_start_emails: (comp_group) ->
+    jqmask  = $("#maskdiv")
+    idx = 0
+    doit = () =>
+      if idx < comp_group.competitions_expanded.length
+        doit1 = () =>
+          competition = comp_group.competitions_expanded[idx]
+          ++idx
+          @send_league_start_email(competition, doit)
+        if idx > 0
+          pause = 2
+          resume = () ->
+            jqmask.unmask()
+            jqmask.css("z-index", "-1")
+            doit1()
+          jqmask.mask("Waiting for #{ pause } seconds...")
+          jqmask.css("z-index", "1")
+          setTimeout(resume, pause * 1000)
+        else
+          doit1()
+      else
+        document.location = "/boxes/admin"
+    doit()
+
   handle_source_league_changed: (comp_group_id) ->
     group = @model.competition_group_map[comp_group_id]
     @fetch_competition_group(group, (data) =>
@@ -513,7 +562,7 @@ class WSRC_boxes_admin extends WSRC_boxes
     input = button.parents("tr").find("input")
     @revert_target_input(input)
 
-  handle_target_save_click: (evt, ui) ->    
+  handle_target_save_click: (evt, ui, callback) ->    
     end_date = @view.target_end_date.val()
     if end_date == ''
       alert("ERROR - no end date set\n\nPlease set the end date before saving this league.")
@@ -537,14 +586,18 @@ class WSRC_boxes_admin extends WSRC_boxes
     jqmask  = $("#maskdiv")
     opts =
       csrf_token:  $("input[name='csrfmiddlewaretoken']").val()
-      completeCB: (xhr, status) ->
+      successCB: (data, status, jqxhr) =>
         jqmask.unmask()
         jqmask.css("z-index", "-1")
-      successCB: (data, status, jqxhr) =>
         comp_group.id = data.id
+        @model.competition_group_map[data.id] = data
         $("#target_boxes").data("id", comp_group.id)
         @mark_save_required(false)
+        if callback
+          callback()
       failureCB: (xhr, status, error) -> 
+        jqmask.unmask()
+        jqmask.css("z-index", "-1")
         alert("ERROR #{ xhr.status }: #{ xhr.statusText }\nResponse: #{ xhr.responseText }\n\nUnable to save data for '#{ comp_group.name }'.")
     
     jqmask.css("z-index", "1")
@@ -621,6 +674,32 @@ class WSRC_boxes_admin extends WSRC_boxes
       @auto_populate_new_box(container.find("table.leaguetable")) 
       @mark_save_required()
 
+  handle_bulk_action_make_live: () ->
+    make_live = () =>
+      data =
+        competition_group_id: $("#target_boxes").data("id")
+        competition_type: "wsrc_boxes"
+      jqmask  = $("#maskdiv")
+      jqmask.css("z-index", "1")
+      opts =
+        csrf_token:  $("input[name='csrfmiddlewaretoken']").val()
+        successCB: (data, status, jq_xhr) =>
+          jqmask.unmask()
+          jqmask.css("z-index", "-1")
+          @send_league_start_emails(data)
+        failureCB: (xhr, status) -> 
+          jqmask.unmask()
+          jqmask.css("z-index", "-1")
+          alert("ERROR #{ xhr.status }: #{ xhr.statusText }\nResponse: #{ xhr.responseText }\n\nUnable to make league live.")
+      jqmask.mask("Setting new league active...")
+      wsrc.ajax.ajax_bare_helper("/boxes/admin/activate", data, opts, "PUT")
+        
+    if @view.target_save_button.prop('disabled')
+      make_live()
+    else
+      @handle_target_save_click(null, null, make_live)
+    
+      
   @on: (method) ->
     args = $.fn.toArray.call(arguments)
     @instance[method].apply(@instance, args[1..])
