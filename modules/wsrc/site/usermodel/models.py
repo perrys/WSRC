@@ -48,7 +48,7 @@ class Player(models.Model):
 
   def get_ordered_name(self):
       """
-      Returns the first_name plus the last_name, with a space in between.
+      Returns the last_name plus the first_name, with a comma in between.
       """
       full_name = '%s, %s' % (self.user.last_name, self.user.first_name)
       return full_name.strip()
