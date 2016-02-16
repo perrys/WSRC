@@ -256,7 +256,7 @@ class WSRC_admin_memberlist_view
       width: 450
       height: 175
       autoOpen: false
-      model: true
+      modal: true
       dialogClass: "new_member_form_dialog"
     )
     jqdialog.dialog("open")
