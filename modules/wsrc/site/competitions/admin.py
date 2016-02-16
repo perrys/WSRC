@@ -41,7 +41,7 @@ set_concluded.short_description="Conclude"
 class CompetitionAdmin(admin.ModelAdmin):
     list_display = ("name", "group", "state", "end_date", "ordering")
     list_editable = ("state", "end_date", "ordering",)
-    list_filter = ('group__comp_type', 'group__name')
+    list_filter = ('group__comp_type', 'group__name', 'state')
     inlines = (EntrantInline,)
     actions=(set_in_progress, set_concluded)
 admin.site.register(comp_models.Competition, CompetitionAdmin)
