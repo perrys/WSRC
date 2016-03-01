@@ -42,7 +42,7 @@ $( document ).on( "pagecreate", ".wsrc-site", function( event ) {
       <li><a href="{% url 'boxes' %}"   data-ajax="false" onclick="$.mobile.loading('show')">Club Leagues</a></li>
       <li><a href="{% url 'tournaments' %}" data-ajax="false" onclick="$.mobile.loading('show')">Club Tournaments</a></li>
 
-      <li data-icon="calendar"><a href="http://court-booking.co.uk/WokingSquashClub/" data-ajax="false" onclick="$.mobile.loading('show')">Court Booking</a></li>
+      <li data-icon="calendar"><a href="http://booking.wokingsquashclub.org/" data-ajax="false" onclick="$.mobile.loading('show')">Court Booking</a></li>
 {% if user.is_authenticated %}
       <li data-icon="phone"><a href="{% url 'member_list' %}">Members' Details</a></li>
       <li><a href="/committee">Committee</a></li>
