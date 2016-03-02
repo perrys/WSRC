@@ -74,16 +74,8 @@ class RoundSerializer(serializers.ModelSerializer):
     fields = ('round', 'end_date')
 
 class MatchSerializer(serializers.ModelSerializer):
-  team1_player1 = PlayerSerializer()
-  team1_player2 = PlayerSerializer()
-  team2_player1 = PlayerSerializer()
-  team2_player2 = PlayerSerializer()
   class Meta:
     model = Match
-    fields = ("team1_player1", "team1_player2", "team2_player1", "team2_player2", 
-              "team1_score1", "team1_score2", "team1_score3", "team1_score4", "team1_score5", 
-              "team2_score1", "team2_score2", "team2_score3", "team2_score4", "team2_score5", 
-              "competition_match_id", "walkover")
 
 class StatusField(serializers.CharField):
   def to_representation(self, comp_group):
@@ -102,9 +94,12 @@ class CompactMatchField(serializers.RelatedField):
       return None
     scores = [getScore(n) for n in range(1,6)]
     scores = [score for score in scores if score is not None]
-    t1wins = reduce(lambda total, val: (val[0] > val[1]) and total+1 or total, scores, 0)
-    t2wins = reduce(lambda total, val: (val[1] > val[0]) and total+1 or total, scores, 0)
-    points = toPoints(t1wins, t2wins)
+    if match.walkover is not None:
+      points = (match.walkover == 1) and [7,2] or [2,7]
+    else:
+      t1wins = reduce(lambda total, val: (val[0] > val[1]) and total+1 or total, scores, 0)
+      t2wins = reduce(lambda total, val: (val[1] > val[0]) and total+1 or total, scores, 0)
+      points = toPoints(min(t1wins,3), min(t2wins,3))
     def safe_get_id(attr):
         player = getattr(match, attr)
         if player is not None:
