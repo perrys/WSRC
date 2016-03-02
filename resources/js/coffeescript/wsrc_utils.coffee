@@ -35,6 +35,13 @@ class WSRC_utils
     l.reduce(reducer, amap)
     return amap 
 
+  @cantor_pair: (n1, n2) ->
+    if n1 < 0 or n2 < 0
+      raise "error: non-positive number passed to cantor pair, n1=#{ n1 }, n=#{ n2 }"      
+    result = (n1 + n2) * (n1 + n2 + 1) / 2 + n1
+    if ! Number.isSafeInteger(result)
+      raise "error: cantor pair overflow, n1=#{ n1 }, n=#{ n2 }"
+    return result
 
   @get_property_list: (obj) ->
     l = (k for k,v of obj)
