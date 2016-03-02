@@ -19,6 +19,7 @@ from rest_framework.urlpatterns import format_suffix_patterns
 import wsrc.site.competitions.views as views
 
 urlpatterns = patterns('',
+    url(r'^match/$', views.CreateMatch.as_view()),
     url(r'^match/(?P<pk>[0-9]*)$', views.UpdateMatch.as_view()),
     url(r'^players/$', views.PlayerList.as_view()),
     url(r'^player/(?P<pk>[0-9]+)$', views.PlayerDetail.as_view()),
