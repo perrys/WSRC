@@ -91,6 +91,13 @@ if (!('some' in Array.prototype)) {
         return false;
     };
 }
+if (!('isSafeInteger' in Number)) {
+    Number.isSafeInteger= function(n) {
+      var max = 9007199254740991;
+      var min = -9007199254740991;
+      return n < max && n > min
+    };
+}
 
 try {
     if (document.ELEMENT_NODE != 1) {
