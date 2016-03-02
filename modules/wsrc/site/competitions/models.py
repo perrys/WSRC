@@ -78,6 +78,32 @@ class Match(models.Model):
   team2_score5 = models.IntegerField(blank=True, null=True)
   walkover = models.IntegerField(blank=True, null=True, choices=WALKOVER_RESULTS)
   last_updated = models.DateTimeField(auto_now=True)
+
+  def get_winners(self):
+    if self.walkover is not None:
+      if self.walkover == 1:
+        return [self.team1_player1, self.team1_player2]
+      else:
+        return [self.team2_player1, self.team2_player2]
+
+    wins = [0,0]
+    for j in range(1,6):
+      def get_score(idx):
+        field = "team%(idx)d_score%(j)d" % locals()
+        return getattr(self, field)
+      scores = [get_score(i) for i in [1,2]]
+      if scores[0] > scores[1]:
+        wins[0] += 1
+      elif scores[0] < scores[1]:
+        wins[1] += 1
+    if wins[0] > wins[1]:
+      winners = [self.team1_player1, self.team1_player2]
+    elif wins[0] < wins[1]:
+      winners = [self.team2_player1, self.team2_player2]
+    else:
+      return None
+
+
   def __unicode__(self):
     teams = ""
     if self.team1_player1 is not None:
