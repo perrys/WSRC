@@ -612,26 +612,31 @@ div.boxes {
 table.boxes {
     font-size: 0.95em;
     font-color: @color-body;
+
+    th {
+        font-weight:300;
+        color: #000;
+        overflow: hidden;
+        max-width: 100px;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        text-align: left;
+        padding-left: 0px;
+    }
+    td {
+        max-width: 6px;
+        text-align: center;
+        border: @color-a-bar-border  1px solid; /* Should come from a-bar-border in ui theme */
+    }
+    td.points {
+        background: @color-body-background;
+    }
+    th.wsrc-currentuser,
+    th.wsrc-currentuser > a.ui-link {
+        color: #ed3338;
+    }
 }
 
-table.boxes th {
-    font-weight:300;
-    color: #000;
-    overflow: hidden;
-    max-width: 100px;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    text-align: left;
-    padding-left: 0px;
-}
-table.boxes td {
-    max-width: 6px;
-    text-align: center;
-    border: @color-a-bar-border  1px solid; /* Should come from a-bar-border in ui theme */
-}
-table.boxes td.points {
-    background: @color-body-background;
-}
 div.boxes {
     max-width:  500px;
     padding: 5px;
@@ -662,10 +667,7 @@ div.boxes-wrapper-singlecolumn {
 div.boxes-wrapper-doublecolumn {
     max-width: 500px; 
 }
-th.wsrc-currentuser,
-th.wsrc-currentuser > a.ui-link {
-    color: #ed3338;
-}
+
 .winner {
     font-weight: bold;
 }
