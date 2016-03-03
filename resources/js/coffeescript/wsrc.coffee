@@ -128,7 +128,7 @@ window.WSRC =
     if pagetype == "home"
       this.onHomePageShow(newpage)
     else if pagetype == "boxes"
-      this.onLeaguePageShow(newpage)
+      wsrc.boxes.onReady(WSRC_box_data, WSRC_players)
     else if pagetype == "tournament"
       this.onTournamentPageShow(newpage)
     else if pagetype == "memberlist"
