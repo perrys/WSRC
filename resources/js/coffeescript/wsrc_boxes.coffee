@@ -753,7 +753,8 @@ class WSRC_boxes_admin extends WSRC_boxes
       @view.revert_source_player_ghost(id)
 
   handle_bulk_action_clear: () ->
-    @view.revert_source_player_ghost()
+    draggables = @view.revert_source_player_ghost()
+    draggables.draggable("enable")
     @view.clear_new_tables()
     @mark_save_required()
 
