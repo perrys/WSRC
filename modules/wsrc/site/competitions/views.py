@@ -16,7 +16,7 @@
 from wsrc.site.models import EmailContent
 from wsrc.site.usermodel.models import Player
 from wsrc.site.competitions.models import Competition, CompetitionGroup, Match, Entrant
-from wsrc.site.competitions.serializers import PlayerSerializer, CompetitionSerializer, CompetitionGroupSerializer, MatchSerializer
+from wsrc.site.competitions.serializers import CompetitionSerializer, CompetitionGroupSerializer, MatchSerializer
 from wsrc.utils.timezones import parse_iso_date_to_naive
 from wsrc.utils import email_utils
 
@@ -50,14 +50,6 @@ FAKE_REQUEST_CONTEXT = FakeRequestContext()
 JSON_RENDERER = JSONRenderer()
 
 # REST data views:
-
-class PlayerList(rest_generics.ListAPIView):
-    queryset = Player.objects.all()
-    serializer_class = PlayerSerializer
-
-class PlayerDetail(rest_generics.RetrieveAPIView):
-    queryset = Player.objects.all()
-    serializer_class = PlayerSerializer
 
 class CompetitionList(rest_generics.ListCreateAPIView):
     serializer_class = CompetitionSerializer
