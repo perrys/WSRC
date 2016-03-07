@@ -46,8 +46,8 @@ urlpatterns = patterns('',
 
     url(r'^boxes/admin/activate/',              wsrc.site.competitions.views.SetCompetitionGroupLive.as_view()),
     url(r'^boxes/admin/email/',                 wsrc.site.competitions.views.SendCompetitionEmail.as_view()),
-    url(r'^boxes/admin/?$',                     wsrc.site.competitions.views.boxes_view, {'template_name': 'boxes_admin.html'}),
-    url(r'^boxes/admin/(\d{4}-\d{2}-\d{2})/?$', wsrc.site.competitions.views.boxes_view, {'template_name': 'boxes_admin.html'}),
+    url(r'^boxes/admin/?$',                     wsrc.site.competitions.views.boxes_view, {'template_name': 'boxes_admin.html', 'check_permissions': True}),
+    url(r'^boxes/admin/(\d{4}-\d{2}-\d{2})/?$', wsrc.site.competitions.views.boxes_view, {'template_name': 'boxes_admin.html', 'check_permissions': True}),
 
     url(r'^boxes/(\d{4}-\d{2}-\d{2})/?$', wsrc.site.competitions.views.boxes_view), # end-date based
     url(r'^boxes/?$',                     wsrc.site.competitions.views.boxes_view, name="boxes"), # most recent
