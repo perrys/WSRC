@@ -30,17 +30,9 @@ window.WSRC =
     return true
 
 
-  onBoxActionClicked: (link) ->
-    WSRC_leagues.open_box_detail_popup(link.id)
-
   onTournamentSelected: (selector) ->
     $.mobile.loading("show")
     link = $(selector).val()
-    document.location = link
-
-  onLeagueSelected: (selector) ->
-    $.mobile.loading("show")
-    link = "/boxes/" + $(selector).val()
     document.location = link
 
   onTournamentPageShow: (page) ->
@@ -65,33 +57,6 @@ window.WSRC =
       loadPageData()
     refresh_tournament_data(WSRC_bracket_data)
 
-  onLeaguePageShow: (page) ->
-    competitiongroup_id = page.data().competitiongroupid
-      
-    url = "/data/competitiongroup/#{ competitiongroup_id }?expand=1"
-    loadPageData = () =>
-      wsrc.ajax.GET(url,
-        successCB: (data) =>
-          return true
-        failureCB: (xhr, status) => 
-          this.show_error_dialog("ERROR: Failed to load data from #{ url }")
-          return false
-      )
-    $("#box-refresh-button").click (evt) ->
-      loadPageData()
-    WSRC_leagues.refresh_all_box_data(WSRC_box_data)
-
-    view_radios = $("#page-control-form input[name='view_type']")
-    view_radios.on("change", (evt) ->
-      view_type = view_radios.filter(":checked").val()
-      if view_type == "tables"
-        $("table.boxtable").hide()
-        $("table.leaguetable").show()
-      else
-        $("table.leaguetable").hide()
-        $("table.boxtable").show()
-    )
-    
   onHomePageShow: (page) ->
 
     $(".toggle-link a").on("click", wsrc.utils.toggle)
@@ -135,11 +100,6 @@ window.WSRC =
       document.getElementById("filterTable-input").focus()
     else if pagetype == "login"
       document.getElementById("id_username").focus()
-
-    # TODO - check why this is here ??
-    $("#box_link").click(() ->
-      document.location.pathname="/competitions/leagues"
-    )
 
     location.search.substr(1).split("&").forEach( (pair) ->
       if (pair == "")
