@@ -128,7 +128,7 @@ window.WSRC_homepage =
         name = booking.name
         if booking.name == "_"
           if addLinks
-            name = "<a href='http://www.court-booking.co.uk/WokingSquashClub/edit_entry_fixed.php?room=#{ booking.court }&area=1&hour=#{ getTimeElt(11,2) }&minute=#{ getTimeElt(14,2) }&year=#{ getTimeElt(0,4) }&month=#{ getTimeElt(5,2) }&day=#{ getTimeElt(8,2) }'>(available)</a>"
+            name = "<a href='http://booking.wokingsquashclub.org/edit_entry_fixed.php?room=#{ booking.court }&area=1&hour=#{ getTimeElt(11,2) }&minute=#{ getTimeElt(14,2) }&year=#{ getTimeElt(0,4) }&month=#{ getTimeElt(5,2) }&day=#{ getTimeElt(8,2) }'>(available)</a>"
         else
           name = booking.name
         cls = if parseInt(getTimeElt(11,2)) < 17 then toggleclass else ""

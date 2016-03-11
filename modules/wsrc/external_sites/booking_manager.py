@@ -31,12 +31,12 @@ UK_TZINFO = time_utils.GBEireTimeZone()
 
 class BookingSystemSession:
 
-  BASE_URL            = "http://www.court-booking.co.uk"
-  LOGIN_PAGE          = "/WokingSquashClub/admin.php"
-  BOOKING_PAGE        = "/WokingSquashClub/edit_entry_handler_fixed.php"
-  DELETE_BOOKING_PAGE = "/WokingSquashClub/del_entry.php"
-  WEEK_VIEW_PAGE      = '/WokingSquashClub/week.php'
-  USER_LIST_PAGE      = '/WokingSquashClub/edit_users.php'
+  BASE_URL            = "http://booking.wokingsquashclub.org"
+  LOGIN_PAGE          = "/admin.php"
+  BOOKING_PAGE        = "/edit_entry_handler_fixed.php"
+  DELETE_BOOKING_PAGE = "/del_entry.php"
+  WEEK_VIEW_PAGE      = '/week.php'
+  USER_LIST_PAGE      = '/edit_users.php'
 
   def __init__(self, username=None, password=None):
     self.client = url_utils.SimpleHttpClient(BookingSystemSession.BASE_URL)
