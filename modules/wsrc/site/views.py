@@ -124,6 +124,7 @@ def index_view(request):
             "url": f.url,
             }
         if f.team1_score is not None:
+            found_empty = False
             d["scores"] = "%d&#8209;%d" % (f.team1_score, f.team2_score)
             d["points"] = "%d&#8209;%d" % (f.team1_points, f.team2_points)
             if f.team1_points > f.team2_points:
