@@ -43,6 +43,7 @@ def get_squashlevels_rankings():
     "check": 1,
     "limit_confidence": 1,
     "format": "json",
+    "perpage": 200,
     }
   URL = 'http://www.squashlevels.com/players.php'
   AGENT = "SL-client/Woking (+http://www.wokingsquashclub.org)"  
