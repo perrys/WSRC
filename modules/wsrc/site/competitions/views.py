@@ -39,6 +39,7 @@ from rest_framework.response import Response
 from rest_framework.parsers import JSONParser
 from rest_framework.views import APIView
 
+import datetime
 import markdown
 import tournament
 
@@ -83,11 +84,33 @@ class CompetitionGroupDetail(rest_generics.RetrieveUpdateDestroyAPIView):
     authentication_classes = (SessionAuthentication,)
     permission_classes = (rest_permissions.DjangoModelPermissionsOrAnonReadOnly,)
 
+class SelfUpdateOrCompetitionEditorPermission(rest_permissions.BasePermission):
+    def has_permission(self, request, view):
+        if request.method in rest_permissions.SAFE_METHODS:
+            return True
+        elif request.method == "PUT" or request.method == "PATCH":
+            if request.user.has_perm("competitions.change_match"):
+                return True
+        elif request.method == "POST":
+            if request.user.has_perm("competitions.change_match"):
+                return True
+        elif request.method == "DELETE":
+            if request.user.has_perm("competitions.delete_match"):
+                return True
+        player = get_object_or_404(Player.objects.all(), user=request.user)
+        for i in (1,2):
+            for j in (1,2):
+                if request.DATA.get("team%(i)d_player%(j)d" % locals()) == player.id:
+                    return True
+        return False
+
+            
 
 class UpdateMatch(rest_generics.RetrieveUpdateAPIView):
     queryset = Match.objects.all()
     serializer_class = MatchSerializer
     authentication_classes = (SessionAuthentication,)
+    permission_classes = (SelfUpdateOrCompetitionEditorPermission,)
 
     def update(self, request, *args, **kwargs):
         partial = kwargs.pop('partial', False)
@@ -116,6 +139,7 @@ class CreateMatch(rest_generics.CreateAPIView):
     queryset = Match.objects.none()
     serializer_class = MatchSerializer
     authentication_classes = (SessionAuthentication,)
+    permission_classes = (SelfUpdateOrCompetitionEditorPermission,)
 
 # HTML template views:
 
@@ -200,7 +224,6 @@ def boxes_view(request, end_date=None, template_name="boxes.html", check_permiss
     ctx["box_data"] = box_data
     ctx['players'] = Player.objects.all() # TODO - filter to players in comp group
     return TemplateResponse(request, template_name, ctx)
-    
     
 
 def bracket_view(request, year, name, template_name="tournaments.html"):
