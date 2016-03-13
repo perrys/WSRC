@@ -26,6 +26,7 @@ urlpatterns = patterns('',
     url(r'^competitiongroup/$', views.CompetitionGroupList.as_view()),
     url(r'^competitiongroup/(?P<pk>[0-9]+)$', views.CompetitionGroupDetail.as_view()),
     url(r'^competition/tournament/(?P<pk>[0-9]*)$', views.UpdateTournament.as_view()),
+    url(r'^squashlevels_upload.csv/?$', views.squashlevels_upload_view),
 )
 
 urlpatterns = format_suffix_patterns(urlpatterns)

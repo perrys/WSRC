@@ -244,6 +244,16 @@ def bracket_view(request, year, name, template_name="tournaments.html"):
     
     return TemplateResponse(request, template_name, ctx)
 
+def squashlevels_upload_view(request):
+    cutoff_date = datetime.date.today() - datetime.timedelta(days=30*3)
+    groups = CompetitionGroup.objects.filter(comp_type='wsrc_boxes').filter(end_date__gt=cutoff_date)
+    matches = []
+    for group in groups.all():
+        for competition in group.competition_set.all():
+            for match in competition.match_set.all():
+                matches.append(match)
+    return TemplateResponse(request, context={"matches": matches}, template="squashlevels_upload.csv", content_type='text/csv')
+
 class NewCompetitionGroupForm(ModelForm):
     class Meta:
         model = CompetitionGroup
