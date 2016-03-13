@@ -24,6 +24,7 @@ class CompetitionGroup(models.Model):
   GROUP_TYPES = (
     ("wsrc_boxes", "Club Leagues"),
     ("wsrc_tournaments", "Club Tournaments"),
+    ("wsrc_qualifier", "Club Tournament Qualifiers"),
   )
   name = models.CharField(max_length=128)
   comp_type = models.CharField(max_length=32, choices=GROUP_TYPES)
