@@ -296,6 +296,11 @@ class WSRC_boxes
     form.data("controller", form_controller)
     dialog.popup('open')
 
+  handle_league_changed: (selector) ->
+    $.mobile.loading("show")
+    link = "/boxes/" + $(selector).val()
+    document.location = link
+
   handle_edit_clicked: (comp_id) ->
     competition = @model.get_source_competition(comp_id)
     entrants = competition.entrants

@@ -14,7 +14,7 @@ window.WSRC_box_data = {{ box_data|safe }};
 
   <form id="page-control-form" method="GET" action="#" onsubmit="return false;" >  
     <div class="left-control-box">
-      <select name="league_end_date" id="league_end_date" onchange="WSRC.onLeagueSelected(this)">
+      <select name="league_end_date" id="league_end_date" onchange="wsrc.boxes.on('handle_league_changed', this)">
         <option value="" >Leagues Ending . . .</option>
 {% regroup leagues|dictsortreversed:'year' by year as yearly_leagues_list %}
 {% for yearly_leagues in yearly_leagues_list %}
