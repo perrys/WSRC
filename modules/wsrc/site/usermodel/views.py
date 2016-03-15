@@ -22,7 +22,6 @@ from rest_framework.views import APIView
 from wsrc.external_sites.booking_manager import BookingSystemSession
 from wsrc.external_sites import scrape_page
 from wsrc.site.usermodel.models import Player
-from wsrc.site.competitions.views import get_competition_lists
 from wsrc.utils import xls_utils, sync_utils
 
 JSON_RENDERER = JSONRenderer()
@@ -39,12 +38,6 @@ class MemberListView(ListView):
 
     def get_template_names(self):
       return ["memberlist.html"]
-
-    def get_context_data(self, **kwargs):
-        context = super(MemberListView, self).get_context_data(**kwargs)
-        comp_lists = get_competition_lists()
-        context.update(comp_lists)
-        return context
 
 class MyNullBooleanSelect(forms.widgets.Select):
     """
