@@ -6,7 +6,7 @@
     <select name="team2" data-theme="a" data-native-menu="false" onchange="wsrc.result_form.on_team_selected(this)">
       <option value=""> - </option>
     </select>
-    <fieldset data-role="controlgroup" data-type="horizontal" class="match-type">
+    <fieldset data-role="controlgroup" data-type="horizontal" class="match-type" {% if not is_editor %}style="display: none;"{% endif %}>
       <label class="centered-text">Match
         <input type="radio" name="result_type" value="normal" checked="checked" onchange="wsrc.result_form.on_result_type_changed(this)">
       </label>
@@ -14,7 +14,7 @@
         <input type="radio" name="result_type" value="walkover" onchange="wsrc.result_form.on_result_type_changed(this)">
       </label>
     </fieldset>
-
+ 
     <p class="walkover-input" style="display: none;">
       <label class="ui-hidden-accessible">Winner:</label>
       <select name="walkover_result" data-theme="a" data-native-menu="false" onchange="wsrc.result_form.on_walkover_result_changed(this)">
