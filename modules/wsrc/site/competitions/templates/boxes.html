@@ -15,12 +15,12 @@ window.WSRC_box_data = {{ box_data|safe }};
   <form id="page-control-form" method="GET" action="#" onsubmit="return false;" >  
     <div class="left-control-box">
       <select name="league_end_date" id="league_end_date" onchange="wsrc.boxes.on('handle_league_changed', this)">
-        <option value="" >Leagues Ending . . .</option>
-{% regroup leagues|dictsortreversed:'year' by year as yearly_leagues_list %}
-{% for yearly_leagues in yearly_leagues_list %}
-        <optgroup label="{{ yearly_leagues.grouper }}">
-{% for league in yearly_leagues.list|dictsortreversed:'end_date' %}
-          <option value="{{ league.end_date|date:'Y-m-d' }}">{{ league.name }}</option>
+        <option value="" >{{ selector.default_text }} . . .</option>
+{% regroup selector.links|dictsortreversed:'year' by year as yearly_links_list %}
+{% for yearly_links in yearly_links_list %}
+        <optgroup label="{{ yearly_links.grouper }}">
+{% for link in yearly_links.list|dictsortreversed:'end_date' %}
+          <option value="{{ link.link }}">{{ link.name }}</option>
 {% endfor %}
         </optgroup>
 {% endfor %}

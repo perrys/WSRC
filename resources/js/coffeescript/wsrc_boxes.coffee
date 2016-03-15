@@ -303,7 +303,7 @@ class WSRC_boxes
 
   handle_league_changed: (selector) ->
     $.mobile.loading("show")
-    link = "/boxes/" + $(selector).val()
+    link = $(selector).val()
     document.location = link
 
   handle_edit_clicked: (comp_id) ->

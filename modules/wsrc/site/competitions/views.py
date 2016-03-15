@@ -21,6 +21,7 @@ from wsrc.utils.timezones import parse_iso_date_to_naive
 from wsrc.utils import email_utils
 
 from django.core.exceptions import PermissionDenied, SuspiciousOperation
+from django.core.urlresolvers import reverse
 from django.shortcuts import get_object_or_404
 from django.shortcuts import redirect
 from django.shortcuts import render
@@ -144,19 +145,36 @@ class CreateMatch(rest_generics.CreateAPIView):
 
 # HTML template views:
 
-def get_competition_lists():
-    tournaments = []
-    for group in CompetitionGroup.objects.filter(comp_type="wsrc_tournaments"):
-        tournaments.append({"year": group.end_date.year, "competitions": group.competition_set.exclude(state="not_started").order_by("name")})
+def get_tournament_links():
+    qset = CompetitionGroup.objects.all() # filter(active=True)
+    result = []
+    for group in qset.filter(comp_type="wsrc_tournaments"):
+        year = group.end_date.year
+        for comp in group.competition_set.exclude(state="not_started").order_by("name"):
+            name = comp.name
+            result.append({"year": year, 
+                           "name": name, 
+                           "end_date": comp.end_date,
+                           "link": reverse(bracket_view) + "/{year}/{name}/".format(**locals())})
+    for group in qset.filter(comp_type="wsrc_qualifiers"):
+        year = group.end_date.year
+        name = " ".join(group.name.split()[2:-1]) # remove front and rear sections
+        result.append({"year": year, 
+                       "name": name + " (qualifier)", 
+                       "end_date": group.end_date,
+                       "link": "/tournaments/qualifiers/{year}/{name}/".format(**locals())})
+    return {"default_text": "Select Tournament", "links": result}
+
+def get_boxes_links():
     leagues = []
     for group in CompetitionGroup.objects.filter(comp_type="wsrc_boxes").exclude(competition__state="not_started"):
-        leagues.append({"year": group.end_date.year, "end_date": group.end_date, "name": group.name})
-    return {
-        "tournaments": tournaments,
-        "leagues": leagues,
-        }
+        leagues.append({"year": group.end_date.year, 
+                        "end_date": group.end_date, 
+                        "name": group.name,
+                        "link": reverse(boxes_view) + "/" + group.end_date.isoformat()})
+    return {"default_text": "Leagues Ending", "links": leagues}
 
-def boxes_view(request, end_date=None, template_name="boxes.html", check_permissions=False, comp_type="wsrc_boxes"):
+def boxes_view(request, end_date=None, template_name="boxes.html", check_permissions=False, comp_type="boxes", name=None, year=None):
     """Return a view of the Leagues for ending on END_DATE. If
     END_DATE is  negative, the current league is shown"""
 
@@ -164,9 +182,12 @@ def boxes_view(request, end_date=None, template_name="boxes.html", check_permiss
         if (request.user.groups.filter(name="Competition Editor").count() == 0 and not request.user.is_superuser):
             raise PermissionDenied()
 
-
-    queryset = CompetitionGroup.objects.filter(comp_type=comp_type)
+    queryset = CompetitionGroup.objects.filter(comp_type="wsrc_" + comp_type)
     if end_date is None:
+        if year is not None:
+            name = "{comp_type} - {name} {year}".format(**locals())
+            group = get_object_or_404(queryset, end_date__year=year, name__iexact=name)
+
         group = queryset.filter(active=True).order_by('-end_date')[0]
     else:
         end_date = parse_iso_date_to_naive(end_date)
@@ -196,7 +217,7 @@ def boxes_view(request, end_date=None, template_name="boxes.html", check_permiss
                 "name": competition.name,
                 "id": competition.id,
                 "entrants": entrants,
-                "can_edit": can_edit and comp_type == "wsrc_qualifiers"
+                "can_edit": can_edit and comp_type == "qualifiers"
                 }
 
     def create_new_box_config(idx):
@@ -233,7 +254,7 @@ def boxes_view(request, end_date=None, template_name="boxes.html", check_permiss
     ctx["new_boxes"] = new_boxes
     ctx["is_editor"] = is_editor
     ctx["competition_groups"] = competition_groups
-    ctx.update(get_competition_lists())
+    ctx["selector"] = comp_type == "boxes" and get_boxes_links() or get_tournament_links()
     ctx["box_data"] = box_data
     ctx['players'] = Player.objects.all() # TODO - filter to players in comp group
     return TemplateResponse(request, template_name, ctx)
@@ -252,9 +273,12 @@ def bracket_view(request, year, name, template_name="tournaments.html"):
     bracket_data = JSON_RENDERER.render(CompetitionSerializer(competition, context={"request": FAKE_REQUEST_CONTEXT}).data)
     html_table = tournament.render_tournament(competition)
 
-    ctx = {"competition": competition, "bracket": html_table, "bracket_data": bracket_data}
-    ctx.update(get_competition_lists())
-    
+    ctx = {
+        "competition": competition, 
+        "bracket": html_table, 
+        "bracket_data": bracket_data,
+        "selector": get_tournament_links()
+    }
     return TemplateResponse(request, template_name, ctx)
 
 def squashlevels_upload_view(request):
