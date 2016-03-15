@@ -335,7 +335,7 @@ class WSRC_result_form
             @submitted_callback()
           return true
         failureCB: (xhr, status) => 
-          WSRC.show_error_dialog("ERROR: Failed to load data from #{ url }")
+          alert("ERROR #{ xhr.status }: Failed to update match #{ url }\n\nReason: #{ xhr.responseText }\n\n")
           return false
         csrf_token: csrf_token
       )
@@ -348,7 +348,7 @@ class WSRC_result_form
             @submitted_callback()
           return true
         failureCB: (xhr, status) => 
-          WSRC.show_error_dialog("ERROR: Failed to load data from #{ url }")
+          alert("ERROR #{ xhr.status }: Failed to create match #{ url }\n\nReason: #{ xhr.responseText }\n\n")
           return false
         csrf_token: csrf_token
       )
