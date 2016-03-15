@@ -54,6 +54,7 @@ urlpatterns = patterns('',
 
     url(r'^tournaments/admin/(\d{4})/([\w\s]+)/?',  wsrc.site.competitions.views.bracket_admin_view),
     url(r'^tournaments/admin/?',                    wsrc.site.competitions.views.bracket_admin_view),
+    url(r'^tournaments/qualifiers/?',               wsrc.site.competitions.views.boxes_view, {'comp_type': 'wsrc_qualifiers'}),
     url(r'^tournaments/(\d{4})/([\w\s]+)/print/?$', wsrc.site.competitions.views.bracket_view, {'template_name': 'tournaments_printable.html'}),
     url(r'^tournaments/(\d{4})/([\w\s]+)/?$',       wsrc.site.competitions.views.bracket_view),
     url(r'^tournaments/?',                          wsrc.site.competitions.views.bracket_view, {"year":None, "name":"Open"} , name="tournaments"),
