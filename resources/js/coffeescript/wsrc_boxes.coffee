@@ -30,9 +30,8 @@ class WSRC_boxes_model
 
 class WSRC_boxes_view
 
-  constructor: (@callbacks) ->
+  constructor: (@is_admin_view) ->
     @ghost_opacity = 0.4    
-    @is_admin_view = $("#source_boxes").length == 1
 
     source_container = $("#source_boxes")
     source_container.find("input.player").val("")
@@ -108,17 +107,22 @@ class WSRC_boxes_view
       rows[p1][p2].textContent = match.points[0]
       rows[p2][p1].textContent = match.points[1]
         
-  populate_points_table: (box, max_players, points_totals, id_to_player_map) ->
+  populate_points_table: (box, max_players, points_totals) ->
     container = @source_container_map[box.name]
     table_body = container.find("table.leaguetable tbody")
     table_body.children().remove()
+    id_map = {}
+    for e in box.entrants
+      id_map[e.player.id] = e
     for row in points_totals
-      player = id_to_player_map[row.id]
+      entrant = id_map[row.id]
       current_user_cls = '' # if row.id == WSRC_user_player_id then 'wsrc-currentuser' else ''
-      name = player.full_name
+      name = entrant.player.full_name
+      if entrant.handicap?
+        name += " (#{ entrant.handicap })"
       if @is_admin_view
-        name += " [#{ player.id }]"
-      tr = "<tr data-id='#{ player.id }'><th class='text player #{ current_user_cls }'>#{ name }</th><td class='number'>#{ row.p }</td><td class='number'>#{ row.w }</td><td class='number'>#{ row.d }</td><td class='number'>#{ row.l }</td><td class='number'>#{ row.f }</td><td class='number'>#{ row.a }</td><td class='number'>#{ row.pts }</td></tr>"
+        name += " [#{ entrant.player.id }]"
+      tr = "<tr data-id='#{ entrant.player.id }'><th class='text player #{ current_user_cls }'>#{ name }</th><td class='number'>#{ row.p }</td><td class='number'>#{ row.w }</td><td class='number'>#{ row.d }</td><td class='number'>#{ row.l }</td><td class='number'>#{ row.f }</td><td class='number'>#{ row.a }</td><td class='number'>#{ row.pts }</td></tr>"
       table_body.append(tr)
 
   populate_new_table: (comp) ->
@@ -198,8 +202,8 @@ class WSRC_boxes_view
 
 class WSRC_boxes
 
-  constructor: (@model) ->
-    @view = new WSRC_boxes_view()
+  constructor: (@model, is_admin_view) ->
+    @view = new WSRC_boxes_view(is_admin_view)
     @populate_source_competition_group(@model.source_competitiongroup)
     view_radios = $("input[name='view_type']")
     view_radios.on "change", (evt) =>
@@ -288,10 +292,11 @@ class WSRC_boxes
     dialog = $('#score_entry_dialog')
     form = dialog.find("form.match-result-form")
     prefix = "Player"
-    submit_callback = () =>
+    submit_callback = (data) =>
       dialog.popup("close")
-      if @page_dirty_callback
-        @page_dirty_callback()
+      @fetch_competition_group @model.source_competitiongroup, (data) =>
+        @model.source_competitiongroup = data
+        @populate_source_competition_group(data)
     form_controller = new wsrc.result_form(form, competition_data, permitted_matches, selected_match, prefix, submit_callback)
     form.data("controller", form_controller)
     dialog.popup('open')
@@ -343,7 +348,7 @@ class WSRC_boxes
 class WSRC_boxes_admin extends WSRC_boxes
 
   constructor: (model) ->
-    super model
+    super model, true
     me = this
 
     # save and preview buttons
