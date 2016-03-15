@@ -24,7 +24,7 @@ class CompetitionGroup(models.Model):
   GROUP_TYPES = (
     ("wsrc_boxes", "Club Leagues"),
     ("wsrc_tournaments", "Club Tournaments"),
-    ("wsrc_qualifier", "Club Tournament Qualifiers"),
+    ("wsrc_qualifiers", "Club Tournament Qualifiers"),
   )
   name = models.CharField(max_length=128)
   comp_type = models.CharField(max_length=32, choices=GROUP_TYPES)
@@ -88,11 +88,12 @@ class Match(models.Model):
         return [self.team2_player1, self.team2_player2]
 
     wins = [0,0]
+    winners = None
     for j in range(1,6):
-      def get_score(idx):
-        field = "team%(idx)d_score%(j)d" % locals()
+      def get_score(i,j):
+        field = "team%(i)d_score%(j)d" % locals()
         return getattr(self, field)
-      scores = [get_score(i) for i in [1,2]]
+      scores = [get_score(i,j) for i in [1,2]]
       if scores[0] > scores[1]:
         wins[0] += 1
       elif scores[0] < scores[1]:
@@ -101,8 +102,7 @@ class Match(models.Model):
       winners = [self.team1_player1, self.team1_player2]
     elif wins[0] < wins[1]:
       winners = [self.team2_player1, self.team2_player2]
-    else:
-      return None
+    return winners
 
 
   def __unicode__(self):
