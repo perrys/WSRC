@@ -117,8 +117,7 @@ class UpdateMatch(rest_generics.RetrieveUpdateAPIView):
         instance = self.get_object()
         serializer = self.get_serializer(instance, data=request.data, partial=partial)
         serializer.is_valid(raise_exception=True)
-        self.perform_update(serializer)
-        return Response(serializer.data)
+        return self.perform_update(serializer)
 
     def perform_update(self, serializer):
         match = serializer.instance
@@ -127,6 +126,8 @@ class UpdateMatch(rest_generics.RetrieveUpdateAPIView):
             # when this is a knockout competition. Validation should
             # really be done by the serializer, but we need the
             # winners for the next step anyway.
+            for attr, value in serializer.validated_data.items():
+                setattr(match, attr, value)
             winners = match.get_winners()
             if winners is None:
                 return HttpResponse("tournament matches must have a winner", status=400)
@@ -155,7 +156,7 @@ def get_competition_lists():
         "leagues": leagues,
         }
 
-def boxes_view(request, end_date=None, template_name="boxes.html", check_permissions=False):
+def boxes_view(request, end_date=None, template_name="boxes.html", check_permissions=False, comp_type="wsrc_boxes"):
     """Return a view of the Leagues for ending on END_DATE. If
     END_DATE is  negative, the current league is shown"""
 
@@ -164,15 +165,16 @@ def boxes_view(request, end_date=None, template_name="boxes.html", check_permiss
             raise PermissionDenied()
 
 
-    queryset = CompetitionGroup.objects
+    queryset = CompetitionGroup.objects.filter(comp_type=comp_type)
     if end_date is None:
-        group = queryset.filter(comp_type="wsrc_boxes", active=True).order_by('-end_date')[0]
+        group = queryset.filter(active=True).order_by('-end_date')[0]
     else:
         end_date = parse_iso_date_to_naive(end_date)
         group = get_object_or_404(queryset, end_date=end_date)
 
     box_data = JSON_RENDERER.render(CompetitionGroupSerializer(group, context={"request": FAKE_REQUEST_CONTEXT}).data)
-    competition_groups = JSON_RENDERER.render(CompetitionGroupSerializer(CompetitionGroup.objects.all(), many=True).data)
+    competition_groups = JSON_RENDERER.render(CompetitionGroupSerializer(queryset, many=True).data)
+    is_editor = request.user.has_perm("competitions.change_match")
 
     def create_box_config(previous_comp, competition, ctx):
         is_second = False
@@ -182,11 +184,19 @@ def boxes_view(request, end_date=None, template_name="boxes.html", check_permiss
                 is_second = True
                 previous_comp["colspec"] = 'double'
                 previous_comp["nthcol"] = 'first'
+        entrants = [p for p in competition.entrant_set.all().order_by("ordering")]
+        def this_user():
+            for e in entrants:
+                if e.player.user.id == request.user.id:
+                    return True
+            return False
+        can_edit = is_editor or this_user()
         return {"colspec": is_second and "double" or "single",
                 "nthcol": is_second and 'second' or 'first',
                 "name": competition.name,
                 "id": competition.id,
-                "players": [p.player for p in competition.entrant_set.all().order_by("ordering")]
+                "entrants": entrants,
+                "can_edit": can_edit and comp_type == "wsrc_qualifiers"
                 }
 
     def create_new_box_config(idx):
@@ -217,10 +227,11 @@ def boxes_view(request, end_date=None, template_name="boxes.html", check_permiss
         if cfg["nthcol"] == "second"
           last = None
     for box in boxes:
-        while len(box["players"]) < comp_meta["maxplayers"]:
-            box["players"].append(nullplayer)
+        while len(box["entrants"]) < comp_meta["maxplayers"]:
+            box["entrants"].append(nullplayer)
     ctx["boxes"] = boxes
     ctx["new_boxes"] = new_boxes
+    ctx["is_editor"] = is_editor
     ctx["competition_groups"] = competition_groups
     ctx.update(get_competition_lists())
     ctx["box_data"] = box_data
