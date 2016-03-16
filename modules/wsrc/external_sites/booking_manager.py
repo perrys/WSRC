@@ -91,7 +91,7 @@ class BookingSystemSession:
       return datetime.year, datetime.month, datetime.day, datetime.hour, datetime.minute
 
     (year, month, day, hour, minute) = parse_datetime(starttime)
-    returnURL = "http://www.court-booking.co.uk/WokingSquashClub/day.php?year=%(year)s&month=%(month)s&day=%(day)s&area=1" % locals()
+    returnURL = BookingSystemSession.BASE_URL + "/day.php?year=%(year)s&month=%(month)s&day=%(day)s&area=1" % locals()
     params = {
       "year" : year,
       "month" : month,

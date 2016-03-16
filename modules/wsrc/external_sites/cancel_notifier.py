@@ -286,7 +286,7 @@ if __name__ == "__main__":
       removed_event = BookingSystemEvent(start_time=datetime.datetime(2099,2,3,20,00), name="Foo Bar", court=2)
       notifier = Notifier(datetime.datetime(2099,2,3))
       def send_email(subject, text_body, html_body, from_address, to_list):
-        expected_link = "http://www.court-booking.co.uk/WokingSquashClub/edit_entry_fixed.php?room=2&area=1&hour=20&minute=00&year=2099&month=2&day=3"
+        expected_link = "http://booking.wokingsquashclub.org/edit_entry_fixed.php?room=2&area=1&hour=20&minute=00&year=2099&month=2&day=3"
         self.assertTrue(expected_link in text_body)
         self.assertTrue(expected_link in html_body)
         self.assertEqual("Court Cancellation", subject)
