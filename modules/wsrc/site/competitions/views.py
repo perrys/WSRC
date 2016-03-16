@@ -214,6 +214,8 @@ def boxes_view(request, end_date=None, template_name="boxes.html", check_permiss
         cfg = create_box_config(last, league, comp_meta)
         boxes.append(cfg)
         last = cfg
+        if cfg["nthcol"] == "second"
+          last = None
     for box in boxes:
         while len(box["players"]) < comp_meta["maxplayers"]:
             box["players"].append(nullplayer)
