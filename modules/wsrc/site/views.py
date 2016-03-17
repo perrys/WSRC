@@ -39,6 +39,7 @@ from django.template import Template, Context
 from django.template.response import TemplateResponse
 from django.utils import timezone
 from django.views.decorators.http import require_safe
+from django.db.models import Q
 
 import rest_framework.generics as rest_generics
 from rest_framework import serializers
@@ -243,10 +244,18 @@ def admin_mailshot_view(request):
                             "tournaments", 
                             "treasurer", 
                             "webmaster"]
-    def get_comp_entrants(group_type):
-        group = CompetitionGroup.objects.filter(comp_type=group_type).get(active=True)
+    def get_comp_entrants(*group_types):
+        clause = None
+        for group_type in group_types:
+            q = Q(comp_type=group_type)
+            if clause is None:
+                clause = q
+            else:
+                clause |= q
+        groups = CompetitionGroup.objects.filter(clause).filter(active=True).all()
         player_ids = set()
-        for comp in group.competition_set.all():
+        for group in groups:
+          for comp in group.competition_set.all():
             for entrants in comp.entrant_set.all():
                 player_ids.add(entrants.player.id)
                 if entrants.player2 is not None:
@@ -256,7 +265,7 @@ def admin_mailshot_view(request):
         "players": Player.objects.filter(user__is_active=True),
         "from_email_addresses": [x + "@wokingsquashclub.org" for x in from_email_addresses],
         "membership_types": Player.MEMBERSHIP_TYPES,
-        "tournament_player_ids": get_comp_entrants("wsrc_tournaments"),
+        "tournament_player_ids": get_comp_entrants("wsrc_tournaments", "wsrc_qualifiers"),
         "box_player_ids": get_comp_entrants("wsrc_boxes"),
         }
     return TemplateResponse(request, 'mailshot.html', ctx)
