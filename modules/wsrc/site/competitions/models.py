@@ -80,6 +80,23 @@ class Match(models.Model):
   walkover = models.IntegerField(blank=True, null=True, choices=WALKOVER_RESULTS)
   last_updated = models.DateTimeField(auto_now=True)
 
+  def get_scores(self):
+    def getScore(n):
+      s1 = getattr(self, "team1_score%d" % n)
+      s2 = getattr(self, "team2_score%d" % n)
+      if s1 is not None or s2 is not None:
+        return (s1, s2)
+      return None
+    scores = [getScore(n) for n in range(1,6)]
+    return [score for score in scores if score is not None]
+
+  def get_sets_won(self, scores=None):
+    if scores is None:
+      scores = self.get_scores()
+    t1wins = reduce(lambda total, val: (val[0] > val[1]) and total+1 or total, scores, 0)
+    t2wins = reduce(lambda total, val: (val[1] > val[0]) and total+1 or total, scores, 0)
+    return (t1wins, t2wins)
+
   def get_winners(self):
     if self.walkover is not None:
       if self.walkover == 1:
@@ -87,17 +104,8 @@ class Match(models.Model):
       else:
         return [self.team2_player1, self.team2_player2]
 
-    wins = [0,0]
+    wins = self.get_sets_won()
     winners = None
-    for j in range(1,6):
-      def get_score(i,j):
-        field = "team%(i)d_score%(j)d" % locals()
-        return getattr(self, field)
-      scores = [get_score(i,j) for i in [1,2]]
-      if scores[0] > scores[1]:
-        wins[0] += 1
-      elif scores[0] < scores[1]:
-        wins[1] += 1
     if wins[0] > wins[1]:
       winners = [self.team1_player1, self.team1_player2]
     elif wins[0] < wins[1]:

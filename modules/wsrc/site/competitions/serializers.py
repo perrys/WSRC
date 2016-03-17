@@ -85,21 +85,12 @@ class StatusField(serializers.CharField):
 
 class CompactMatchField(serializers.RelatedField):
   def to_representation(self, match):
-    scores = []
-    def getScore(n):
-      s1 = getattr(match, "team1_score%d" % n)
-      s2 = getattr(match, "team2_score%d" % n)
-      if s1 is not None or s2 is not None:
-        return (s1, s2)
-      return None
-    scores = [getScore(n) for n in range(1,6)]
-    scores = [score for score in scores if score is not None]
+    scores = match.get_scores()
     if match.walkover is not None:
       points = (match.walkover == 1) and [7,2] or [2,7]
     else:
-      t1wins = reduce(lambda total, val: (val[0] > val[1]) and total+1 or total, scores, 0)
-      t2wins = reduce(lambda total, val: (val[1] > val[0]) and total+1 or total, scores, 0)
-      points = toPoints(min(t1wins,3), min(t2wins,3))
+      sets_won = match.get_sets_won(scores)
+      points = toPoints(min(sets_won[0],3), min(sets_won[1],3))
     def safe_get_id(attr):
         player = getattr(match, attr)
         if player is not None:
