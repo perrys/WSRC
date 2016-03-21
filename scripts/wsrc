@@ -148,8 +148,6 @@ def email_tournament_match_reminders(usernames):
         text_body = email_template.render(context)
         to_list = [p.user.email]
         try:
-          print "\n*** " + p.user.email
-          sys.stdout.flush()
           email_utils.send_email(subject, text_body, html_body, from_address, to_list)
         except:
           failed_players.append(p)
@@ -158,10 +156,6 @@ def email_tournament_match_reminders(usernames):
         email_utils.pause_between_emails()
       else:
         sys.stderr.write("WARNING: no email address for " + p.get_full_name())
-    else:
-      context["content_type"] = "text/plain"
-      print "\n*** " + p.user.email + "\n"
-      print email_template.render(Context(context)).encode('utf-8')
     if len(failed_players) > 0:
       sys.stderr.write("ERROR: failed to send email to the following:\n" + "\n".join([p.get_full_name() + " " + p.user.email for p in failed_players]) + "\n")
 
