@@ -39,8 +39,8 @@ def set_concluded(modeladmin, request, queryset):
 set_concluded.short_description="Conclude"
 
 class CompetitionAdmin(admin.ModelAdmin):
-    list_display = ("name", "group", "state", "end_date", "ordering")
-    list_editable = ("state", "end_date", "ordering",)
+    list_display = ("name", "group", "state", "end_date", "ordering", "url")
+    list_editable = ("state", "end_date", "ordering", "url")
     list_filter = ('group__comp_type', 'group__name', 'state')
     inlines = (EntrantInline,)
     actions=(set_in_progress, set_concluded)
