@@ -165,60 +165,6 @@ def email_tournament_match_reminders(usernames):
     if len(failed_players) > 0:
       sys.stderr.write("ERROR: failed to send email to the following:\n" + "\n".join([p.get_full_name() + " " + p.user.email for p in failed_players]) + "\n")
 
-def email_membership(argv):
-  import wsrc.utils.email_utils as email_utils
-  def usage():
-    prog = os.path.basename(argv[0])
-    sys.stderr.write("USAGE: %s %s --subject <subject> --messagefile <filename> --from <email_address> [--filter <member_type1>,<member_type2>..] [--test_email] [--noconfirm]\n" % (prog, argv[1]))
-  try:
-    optlist, args = getopt.getopt(argv[2:], "s:m:f:", ["subject=", "messagefile=", "filter=", "from=", "test_email=", "noconfirm"])
-  except getopt.GetoptError as err:
-    sys.stderr.write(str(err) + "\n")
-    usage()
-    sys.exit(2)
-    
-  subject = messagefile = from_address = member_types = test_email = None
-  noconfirm = False
-  for opt,val in optlist:
-    if opt in ["-s", "--subject"]:
-      subject = val
-    elif opt in ["-m", "--messagefile"]:
-      messagefile = val
-    elif opt in ["-f", "--from"]:
-      from_address = val
-    elif opt in ["--filter"]:
-      member_types = val
-    elif opt in ["--test_email"]:
-      test_email = val
-    elif opt in ["--noconfirm"]:
-      noconfirm = True
-    else:
-      assert False, "unhandled option"
-  if subject is None or messagefile is None or from_address is None:
-    usage()
-    sys.exit(2)
-
-  fh = open(os.path.expanduser(messagefile))
-  message = fh.read()
-  fh.close()
-  
-  if test_email is not None:
-    from wsrc.site.usermodel.models import Player
-    member_list = [Player.objects.get(user__email=email) for email in test_email.split(",")]
-  else:
-    if member_types is not None:
-      member_types = member_types.split(",")
-    member_list = email_utils.select_members(member_types)
-    
-  if not noconfirm:
-    sys.stdout.write("About to email %d member(s), are you sure [y/N]: " % len(member_list))
-    line = sys.stdin.readline()
-    if not line.lower().startswith("y"):
-      sys.exit(0)
-  
-  success_list = email_utils.bulk_email_membership(subject, message, from_address, member_list)
-  print "Emailed %d members" % len(success_list)
-  
 
 if __name__ == "__main__":
   prog = os.path.basename(sys.argv[0])
@@ -246,9 +192,6 @@ if __name__ == "__main__":
 
   elif command in ("sync-leaguemaster"):
     wsrc.external_sites.main.cmdline_sync_leaguemaster(*args)
-
-  elif command in ("email-membership"):
-    email_membership(sys.argv)
 
   elif command in ("manage-tournament-bookings"):
 
