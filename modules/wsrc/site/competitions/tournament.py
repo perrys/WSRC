@@ -199,14 +199,43 @@ def render_tournament(competition):
     return etree.tostring(table.toHtml(), encoding='UTF-8', method='html')
 
 def get_current_competitions():
-    current_tournament_group = CompetitionGroup.objects.filter(comp_type="wsrc_tournaments").get(active=True)
-    return current_tournament_group.competition_set.all()
+    tournament_group = CompetitionGroup.objects.filter(comp_type="wsrc_tournaments").get(active=True)
+    comps = [c for c in tournament_group.competition_set.all()]
+    tournament_groups = CompetitionGroup.objects.filter(comp_type="wsrc_qualifiers", active=True)
+    for group in tournament_groups:
+      comps.extend([c for c in group.competition_set.all()])
+    return comps
 
 def get_unplayed_matches(comp):
-    at_least_one_player_expr = Q(team1_player1__isnull=False) | Q(team2_player1__isnull=False)
-    unplayed_matches = comp.match_set.filter(at_least_one_player_expr)
-    unplayed_matches = unplayed_matches.exclude(team1_score1__isnull=False)
-    unplayed_matches = unplayed_matches.exclude(walkover__isnull=False)
+    def exclude_played_matches(queryset):
+      predicate = (Q(team1_score1__isnull=True) | Q(team2_score1__isnull=True)) & Q(walkover__isnull=True)
+      return queryset.filter(predicate)
+    if comp.group.comp_type == "wsrc_qualifiers":
+      unplayed_matches = []
+      entrants = comp.entrant_set.all()
+      nentrants = len(entrants)
+      for i in range(0,nentrants):
+        for j in range(i+1, nentrants):
+          first_entrant = entrants[i]
+          second_entrant = entrants[j]
+          query = (
+            Q(team1_player1=first_entrant.player,team2_player1=second_entrant.player) | 
+            Q(team2_player1=first_entrant.player,team1_player1=second_entrant.player) 
+            )
+          existing_matches = comp.match_set.filter(query)
+          if existing_matches.count() > 0: # a match is already present in the DB
+            if existing_matches.count() > 1:
+              raise Exception("more than one match returned for competition {comp}, player1={p1}, player2={p2}".format(comp=comp.name, p1=first_entrant.player, p2=second_entrant.player))
+            if exclude_played_matches(existing_matches).count() > 0:
+              unplayed_matches.extend(existing_matches)
+          else: # nothing in the DB
+            new_match = Match(competition=comp, team1_player1=first_entrant.player, team2_player1=second_entrant.player)
+            unplayed_matches.append(new_match)
+    else:
+      at_least_one_player_expr = Q(team1_player1__isnull=False) | Q(team2_player1__isnull=False)
+      unplayed_matches = comp.match_set.filter(at_least_one_player_expr)
+      unplayed_matches = exclude_played_matches(unplayed_matches)
+
     return unplayed_matches
 
 def get_previous_match(match, team_number):
@@ -225,6 +254,8 @@ def descending_round_number_to_ascending(num, nrounds):
     return nrounds - num + 1
     
 def get_round_for_match(match):
+    if match.competition_match_id is None:
+      return None
     rnd = wsrc.utils.bracket.most_significant_bit(match.competition_match_id)
     nbrackets = count_brackets(match.competition)
     nrounds = len(match.competition.rounds.all())
