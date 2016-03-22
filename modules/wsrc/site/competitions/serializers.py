@@ -90,7 +90,9 @@ class CompactMatchField(serializers.RelatedField):
       points = (match.walkover == 1) and [7,2] or [2,7]
     else:
       sets_won = match.get_sets_won(scores)
-      points = toPoints(min(sets_won[0],3), min(sets_won[1],3))
+      points = None
+      if sets_won is not None:
+        points = toPoints(min(sets_won[0],3), min(sets_won[1],3))
     def safe_get_id(attr):
         player = getattr(match, attr)
         if player is not None:

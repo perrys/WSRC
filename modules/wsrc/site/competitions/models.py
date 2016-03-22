@@ -80,6 +80,9 @@ class Match(models.Model):
   walkover = models.IntegerField(blank=True, null=True, choices=WALKOVER_RESULTS)
   last_updated = models.DateTimeField(auto_now=True)
 
+  def is_unplayed(self):
+    return (self.team1_score1 is None or self.team2_score1 is None) and self.walkover is None
+
   def get_scores(self):
     def getScore(n):
       s1 = getattr(self, "team1_score%d" % n)
@@ -93,6 +96,8 @@ class Match(models.Model):
   def get_sets_won(self, scores=None):
     if scores is None:
       scores = self.get_scores()
+    if len(scores) == 0:
+      return None
     t1wins = reduce(lambda total, val: (val[0] > val[1]) and total+1 or total, scores, 0)
     t2wins = reduce(lambda total, val: (val[1] > val[0]) and total+1 or total, scores, 0)
     return (t1wins, t2wins)
@@ -105,6 +110,8 @@ class Match(models.Model):
         return [self.team2_player1, self.team2_player2]
 
     wins = self.get_sets_won()
+    if wins is None:
+      return None
     winners = None
     if wins[0] > wins[1]:
       winners = [self.team1_player1, self.team1_player2]
