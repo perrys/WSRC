@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+import datetime
 import getopt
 import logging
 import os
@@ -57,6 +58,7 @@ def email_tournament_match_reminders(usernames):
   from wsrc.utils.html_table import formatTable as format_html_table
 
   current_tournaments = tournament_utils.get_current_competitions()
+  year = datetime.date.today().year
 
   # Populate map of player_id -> unplayed matches
   player_to_matches_map = {}
@@ -98,18 +100,26 @@ def email_tournament_match_reminders(usernames):
           opponent_desc = get_previous_match_opponent_desc(match, other_team_number)
         except comp_models.Match.DoesNotExist: # if opponents are two rounds behind
           opponent_desc = "(PREVIOUS MATCH UNRESOLVED)"
-      comp_round = tournament_utils.get_round_for_match(match)
-      nrounds = len(comp_round.competition.rounds.all())
-      def rnd():
+      is_knockout_comp = match.competition.group.comp_type == "wsrc_tournaments"
+      if is_knockout_comp:
+        comp_name  = match.competition.name
+        comp_round = tournament_utils.get_round_for_match(match)
+        end_date   = comp_round.end_date
+        nrounds    = len(match.competition.rounds.all())
         n = 1+nrounds-comp_round.round
+        comp_round = str(comp_round.round)
         if n == 1:
-          return "F"
-        if n == 2:
-          return "SF"
-        if n == 3:
-          return "QF"
-        return str(n)
-      match_rows.append([match.competition.name + " [" + rnd() + "]", opponent_desc, comp_round.end_date.strftime("%a %d %b"), match.competition.url])
+          comp_round = "F"
+        elif n == 2:
+          comp_round = "SF"
+        elif n == 3:
+          comp_round = "QF"
+      else:
+        comp_name  = match.competition.group.name.replace("Qualifiers - ", "")
+        comp_name  = comp_name.replace(str(end_date.year), "").strip()
+        end_date   = match.competition.end_date
+        comp_round = match.competition.name
+      match_rows.append([comp_name + " [" + comp_round + "]", opponent_desc, end_date.strftime("%a %d %b"), match.competition.url])
     opponent_rows = [["Name", "Email", "Telephone", "Mobile"]]
     for opponent_id in opponent_set:
       opponent = user_models.Player.objects.get(pk=opponent_id)
@@ -127,6 +137,7 @@ def email_tournament_match_reminders(usernames):
     opponent_table = player_to_opponent_table_map[player_id]
     context = Context({
       "player": p,
+      "year": year,
       "match_table": {
         "raw_data": match_table,
         "text/plain": format_text_table(match_table, hasHeader=True, nspaces=2),
@@ -141,7 +152,7 @@ def email_tournament_match_reminders(usernames):
       })
     if usernames == [] or p.user.username in usernames:
       if p.user.email.find('@') > 0:
-        subject = "2015 Tournaments"
+        subject = "{year} Tournaments".format(**locals())
         from_address = "tournaments@wokingsquashclub.org"
         html_body = markdown.markdown(email_template.render(context))
         context["content_type"] = "text/plain"
