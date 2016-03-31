@@ -14,6 +14,7 @@
 # along with WSRC.  If not, see <http://www.gnu.org/licenses/>.
 
 from django.db import models
+import wsrc.utils.bracket
 
 import wsrc.site.usermodel.models as user_models
 
@@ -48,6 +49,11 @@ class Competition(models.Model):
   group = models.ForeignKey(CompetitionGroup, blank=True, null=True) 
   url = models.CharField(max_length=128, blank=True)
   ordering = models.IntegerField(blank=True, null=True)
+
+  def nbrackets(self):
+    maxId = reduce(max, [int(x.competition_match_id) for x in self.match_set.all()], 0)
+    return wsrc.utils.bracket.most_significant_bit(maxId)
+
   def __unicode__(self):
     group_name = self.group is not None and self.group.name or "null"
     return u"%s - %s [%s]" % (group_name, self.name, self.end_date)
@@ -119,6 +125,20 @@ class Match(models.Model):
       winners = [self.team2_player1, self.team2_player2]
     return winners
 
+  def is_knockout_comp(self):
+    return self.competition.group.comp_type == "wsrc_tournaments"
+
+  def get_round(self):
+    if self.competition_match_id is None:
+      return None
+    rnd = wsrc.utils.bracket.most_significant_bit(self.competition_match_id)
+    nbrackets = self.competition.nbrackets()
+    nrounds = len(self.competition.rounds.all())
+    if nrounds != nbrackets:
+        raise Exception("nrounds (%d) != nbrackets (%d) for competition %s" % (nrounds, nbrackets, str(self.competition)))
+    return self.competition.rounds.get(round=wsrc.utils.bracket.descending_round_number_to_ascending(rnd, nrounds))
+
+  
 
   def __unicode__(self):
     teams = ""

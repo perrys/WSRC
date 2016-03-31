@@ -45,6 +45,7 @@ def manage_tournament_bookings(username, password):
                                                                                                        evt.description))
           session.delete_booking(evt.get_booking_id())
 
+
 def email_tournament_match_reminders(usernames):
   import markdown
   import wsrc.site.competitions.models as comp_models;
@@ -100,10 +101,10 @@ def email_tournament_match_reminders(usernames):
           opponent_desc = get_previous_match_opponent_desc(match, other_team_number)
         except comp_models.Match.DoesNotExist: # if opponents are two rounds behind
           opponent_desc = "(PREVIOUS MATCH UNRESOLVED)"
-      is_knockout_comp = match.competition.group.comp_type == "wsrc_tournaments"
-      if is_knockout_comp:
+
+      if match.is_knockout_comp():
         comp_name  = match.competition.name
-        comp_round = tournament_utils.get_round_for_match(match)
+        comp_round = match.get_round()
         end_date   = comp_round.end_date
         nrounds    = len(match.competition.rounds.all())
         n = 1+nrounds-comp_round.round

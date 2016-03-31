@@ -219,6 +219,15 @@ def calc_slots(num_entrants):
     slots.append(code)
   return slots
 
+def descending_round_number_to_ascending(num, nrounds):
+    """Rounds are numbered from 1..N in the database, where the final is N, semi-final is N-1 etc.
+    On the website, they are ordered from N..1. This function converts the latter into the former"""
+    # for nrounds=6:
+    # 1 -> 6
+    # 6 -> 1
+    # 3 -> 4
+    return nrounds - num + 1
+
 class Tester(unittest.TestCase):
   def testRoundTrip(self):
     import random
