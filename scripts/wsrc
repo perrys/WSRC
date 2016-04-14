@@ -65,16 +65,25 @@ def email_report_overdue_tournament_matches():
   for tournament in current_tournaments:  
     matches = tournament_utils.get_unplayed_matches(tournament)
     overdue_matches = [m for m in matches if is_overdue(m)]
+    overdue_matches.sort(key=lambda(x): x.get_deadline(), reverse=False)
     if len(overdue_matches) > 0:
       overdue_match_map[tournament] = overdue_matches
 
+  def get_opponent_desc(match, team_number_1_or_2):
+    opponents = match.get_team_players(team_number_1_or_2)
+    if opponents is not None:
+      return match.get_team_players_as_string(team_number_1_or_2)
+    previous_match = tournament_utils.get_previous_match(match, team_number_1_or_2)
+    t1 = previous_match.get_team_players_as_string(1)
+    t2 = previous_match.get_team_players_as_string(2)
+    return  "(WINNER of %(t1)s vs %(t2)s)" % locals()
   
   for tourament, overdue_matches in overdue_match_map.iteritems():
     match_table = [["Match", "Deadline"]]
     for match in overdue_matches:
-      t1 = match.get_team_players_as_string(1)
-      t2 = match.get_team_players_as_string(2)
-      match_table.append(["%(t1)s vs %(t2)s" % locals(), m.get_deadline().strftime("%a %d %b")])
+      t1 = get_opponent_desc(match, 1)
+      t2 = get_opponent_desc(match, 2)
+      match_table.append(["%(t1)s vs %(t2)s" % locals(), match.get_deadline().strftime("%a %d %b")])
     overdue_match_map[tourament] = {
         "raw_data": match_table,
         "text/plain": format_text_table(match_table, hasHeader=True, nspaces=2),
@@ -84,7 +93,7 @@ def email_report_overdue_tournament_matches():
   email_template = site_models.EmailContent.objects.get(name="Overdue Tournament Matches")
   email_template = Template(email_template.markup)
   context = Context({"tournaments": overdue_match_map})
-  subject = "Overdue Tournament Matches".format(**locals())
+  subject = "Overdue Tournament Match Report".format(**locals())
   from_address = "tournaments@wokingsquashclub.org"
   context["content_type"] = "text/html"
   html_body = markdown.markdown(email_template.render(context))
