@@ -86,6 +86,22 @@ class Match(models.Model):
   walkover = models.IntegerField(blank=True, null=True, choices=WALKOVER_RESULTS)
   last_updated = models.DateTimeField(auto_now=True)
 
+  def get_team_players(self, team_number_1_or_2):
+    p1 = getattr(self, "team%(team_number_1_or_2)d_player1" % locals())
+    if p1 is None:
+      return None
+    players = [p1]
+    p2 = getattr(self, "team%(team_number_1_or_2)d_player2" % locals())
+    if p2 is not None:
+      players.append(p2)
+    return players
+
+  def get_team_players_as_string(self, team_number_1_or_2):
+    opponents = self.get_team_players(team_number_1_or_2)
+    if opponents is None:
+      return None
+    return " & ".join([p.get_full_name() for p in opponents])
+    
   def is_unplayed(self):
     return (self.team1_score1 is None or self.team2_score1 is None) and self.walkover is None
 
@@ -138,7 +154,10 @@ class Match(models.Model):
         raise Exception("nrounds (%d) != nbrackets (%d) for competition %s" % (nrounds, nbrackets, str(self.competition)))
     return self.competition.rounds.get(round=wsrc.utils.bracket.descending_round_number_to_ascending(rnd, nrounds))
 
-  
+  def get_deadline(self):
+    if self.is_knockout_comp():
+      return self.get_round().end_date
+    return self.competition.end_date
 
   def __unicode__(self):
     teams = ""
