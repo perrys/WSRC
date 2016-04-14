@@ -245,13 +245,9 @@ def get_previous_match(match, team_number):
     return Match.objects.filter(competition_id = match.competition_id).get(competition_match_id=previous_match_id) 
 
 def get_players(match, team_number, player_set=None):
-    p1 = getattr(match, "team%(team_number)d_player1" % locals())
-    if p1 is None:
-      return None
-    players = [p1]
-    p2 = getattr(match, "team%(team_number)d_player2" % locals())
-    if p2 is not None:
-      players.append(p2)
+    players = match.get_team_players(team_number)
+    if players is None:
+        return None
     if player_set is not None:
       for p in players:
         player_set.add(p.id)
