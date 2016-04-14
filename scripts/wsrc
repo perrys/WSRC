@@ -8,11 +8,18 @@ import os
 import os.path
 import sys
 
+import markdown
 import wsrc.site.settings.settings as settings  
 from wsrc.utils import sync_utils
 import wsrc.utils.timezones as timezone_utils
 LOGGER = logging.getLogger(__name__)
 
+import wsrc.utils.email_utils as email_utils
+from django.template import Template, Context
+from wsrc.utils.text import formatTable as format_text_table
+from wsrc.utils.html_table import formatTable as format_html_table
+
+COMMITTEE_EMAIL_ADDRESS = "committee@wokingsquashclub.org"
 
 def manage_tournament_bookings(username, password):
 
@@ -45,18 +52,57 @@ def manage_tournament_bookings(username, password):
                                                                                                        evt.description))
           session.delete_booking(evt.get_booking_id())
 
+def email_report_overdue_tournament_matches():
+  import wsrc.site.competitions.tournament as tournament_utils
+  import wsrc.site.models as site_models;
+
+  today = datetime.date.today()
+  def is_overdue(match):
+    return match.get_deadline() < today
+
+  current_tournaments = tournament_utils.get_current_competitions()
+  overdue_match_map = dict()
+  for tournament in current_tournaments:  
+    matches = tournament_utils.get_unplayed_matches(tournament)
+    overdue_matches = [m for m in matches if is_overdue(m)]
+    if len(overdue_matches) > 0:
+      overdue_match_map[tournament] = overdue_matches
+
+  
+  for tourament, overdue_matches in overdue_match_map.iteritems():
+    match_table = [["Match", "Deadline"]]
+    for match in overdue_matches:
+      t1 = match.get_team_players_as_string(1)
+      t2 = match.get_team_players_as_string(2)
+      match_table.append(["%(t1)s vs %(t2)s" % locals(), m.get_deadline().strftime("%a %d %b")])
+    overdue_match_map[tourament] = {
+        "raw_data": match_table,
+        "text/plain": format_text_table(match_table, hasHeader=True, nspaces=2),
+        "text/html":  format_html_table(match_table, hasHeader=True),
+        }
+
+  email_template = site_models.EmailContent.objects.get(name="Overdue Tournament Matches")
+  email_template = Template(email_template.markup)
+  context = Context({"tournaments": overdue_match_map})
+  subject = "Overdue Tournament Matches".format(**locals())
+  from_address = "tournaments@wokingsquashclub.org"
+  context["content_type"] = "text/html"
+  html_body = markdown.markdown(email_template.render(context))
+  context["content_type"] = "text/plain"
+  text_body = email_template.render(context)
+  to_list = [COMMITTEE_EMAIL_ADDRESS]
+  email_utils.send_email(subject, text_body, html_body, from_address, to_list)
+
+
+  
+
 
 def email_tournament_match_reminders(usernames):
-  import markdown
   import wsrc.site.competitions.models as comp_models;
   import wsrc.site.competitions.tournament as tournament_utils
   import wsrc.site.models as site_models;
   import wsrc.site.usermodel.models as user_models;
   import wsrc.utils.collection_utils as collection_utils
-  import wsrc.utils.email_utils as email_utils
-  from django.template import Template, Context
-  from wsrc.utils.text import formatTable as format_text_table
-  from wsrc.utils.html_table import formatTable as format_html_table
 
   current_tournaments = tournament_utils.get_current_competitions()
   year = datetime.date.today().year
@@ -72,18 +118,6 @@ def email_tournament_match_reminders(usernames):
             match_list = collection_utils.get_or_add(player_to_matches_map, player.id)
             match_list.append(m)
 
-  def get_opponent_desc(match, other_team_number, opponent_set=None):
-    opponents = tournament_utils.get_players(match, other_team_number, opponent_set)
-    if opponents is None:
-      return None
-    return " & ".join([p.get_full_name() for p in opponents])
-
-  def get_previous_match_opponent_desc(match, other_team_number):
-    previous_match = tournament_utils.get_previous_match(match, other_team_number)
-    t1 = get_opponent_desc(previous_match, 1)
-    t2 = get_opponent_desc(previous_match, 2)
-    return "(WINNER of %(t1)s vs %(t2)s)" % locals()
-
   # for each player/match_list combination, create rectangular tables
   # of match descriptions and opponent details
   player_to_opponent_table_map = dict()
@@ -95,17 +129,22 @@ def email_tournament_match_reminders(usernames):
     for match in match_list:
       my_team_number = tournament_utils.get_team_number(match, player_id)
       other_team_number = tournament_utils.other_team_number(my_team_number)
-      opponent_desc = get_opponent_desc(match, other_team_number, opponent_set)
-      if opponent_desc is None:
+      opponents = match.get_team_players(other_team_number)
+      if opponents is None:
         try:
-          opponent_desc = get_previous_match_opponent_desc(match, other_team_number)
+          previous_match = tournament_utils.get_previous_match(match, other_team_number)
+          t1 = previous_match.get_team_players_as_string(1)
+          t2 = previous_match.get_team_players_as_string(2)
+          opponent_desc =  "(WINNER of %(t1)s vs %(t2)s)" % locals()
         except comp_models.Match.DoesNotExist: # if opponents are two rounds behind
           opponent_desc = "(PREVIOUS MATCH UNRESOLVED)"
+      else:
+        opponent_set.update(opponents)
+        opponent_desc = match.get_team_players_as_string(other_team_number)
 
       if match.is_knockout_comp():
         comp_name  = match.competition.name
         comp_round = match.get_round()
-        end_date   = comp_round.end_date
         nrounds    = len(match.competition.rounds.all())
         n = 1+nrounds-comp_round.round
         comp_round = str(comp_round.round)
@@ -116,14 +155,13 @@ def email_tournament_match_reminders(usernames):
         elif n == 3:
           comp_round = "QF"
       else:
-        comp_name  = match.competition.group.name.replace("Qualifiers - ", "")
-        comp_name  = comp_name.replace(str(end_date.year), "").strip()
         end_date   = match.competition.end_date
         comp_round = match.competition.name
-      match_rows.append([comp_name + " [" + comp_round + "]", opponent_desc, end_date.strftime("%a %d %b"), match.competition.url])
+        comp_name  = match.competition.group.name.replace("Qualifiers - ", "")
+        comp_name  = comp_name.replace(str(end_date.year), "").strip()
+      match_rows.append([comp_name + " [" + comp_round + "]", opponent_desc, match.get_deadline().strftime("%a %d %b"), match.competition.url])
     opponent_rows = [["Name", "Email", "Telephone", "Mobile"]]
-    for opponent_id in opponent_set:
-      opponent = user_models.Player.objects.get(pk=opponent_id)
+    for opponent in opponent_set:
       opponent_rows.append([opponent.get_full_name(), opponent.user.email, opponent.other_phone, opponent.cell_phone]) 
     player_to_match_table_map[player_id] = match_rows
     player_to_opponent_table_map[player_id] = opponent_rows
@@ -251,6 +289,9 @@ if __name__ == "__main__":
       sys.exit(2)
 
     email_tournament_match_reminders(user_list)
+
+  elif command in ("send-overdue-match-report"):
+    email_report_overdue_tournament_matches()
 
   elif command in ("add-old-league"):
     wsrc.external_sites.main.cmdline_add_old_league(args)
