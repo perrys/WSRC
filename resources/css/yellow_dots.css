@@ -400,7 +400,7 @@ html body .ui-group-theme-b .ui-bar-inherit {
 .ui-overlay-b,
 .ui-page-theme-b,
 .ui-page-theme-b .ui-panel-wrapper {
-	background-color: #ffffff /*{b-page-background-color}*/;
+	background-color: #000000 /*{b-page-background-color}*/;
 	border-color: #ffffff /*{b-page-border}*/;
 	color: #000000 /*{b-page-color}*/;
 	text-shadow: 0 /*{b-page-shadow-x}*/ 1px /*{b-page-shadow-y}*/ 0 /*{b-page-shadow-radius}*/ #eeeeee /*{b-page-shadow-color}*/;
