@@ -28,7 +28,7 @@ $( document ).on( "pagecreate", ".wsrc-site", function( event ) {
 {% block page_content %}
 <div class="centered-content-wrapper">
   <!-- left nav menu: -->
-  <div data-role="panel" class="jqm-navmenu-panel" data-position="left" data-display="overlay" data-theme="a">
+  <div data-role="panel" class="jqm-navmenu-panel" data-position="left" data-display="overlay" data-theme="a" {% if options.no_navigation %}style="display: none;"{% endif %}>
     <ul class="jqm-list ui-alt-icon ui-nodisc-icon">
 
       <li data-icon="home"><a href="{% url 'homepage' %}" data-ajax="false" onclick="$.mobile.loading('show')">Home</a></li>
@@ -57,7 +57,7 @@ $( document ).on( "pagecreate", ".wsrc-site", function( event ) {
     </ul>
   </div>
 
-  <div class="nonmenu-content"> 
+  <div class="nonmenu-content" {% if options.no_navigation %}style="width: 100%; margin: 0; padding: 0;"{% endif %}> 
   {% block centered_page_content %}{% endblock %}
   </div>
 </div>
