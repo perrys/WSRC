@@ -145,33 +145,52 @@ class CreateMatch(rest_generics.CreateAPIView):
 
 # HTML template views:
 
-def get_tournament_links():
+def set_view_options(request, context):
+    options = context["options"] = dict()
+    for opt in ["no_navigation"]:
+        if opt in request.GET:
+            options[opt] = True
+    return options
+
+def get_tournament_links(options, selected_comp_or_group):
     qset = CompetitionGroup.objects.all() # filter(active=True)
     result = []
+    no_navigation = "no_navigation" in options
+    suffix = no_navigation and "?no_navigation" or ""
     for group in qset.filter(comp_type="wsrc_tournaments"):
         year = group.end_date.year
+        year_suffix = no_navigation and " {year}".format(**locals()) or "" 
         for comp in group.competition_set.exclude(state="not_started").order_by("name"):
             name = comp.name
             result.append({"year": year, 
-                           "name": name, 
+                           "name": name + year_suffix, 
                            "end_date": comp.end_date,
-                           "link": reverse(bracket_view) + "/{year}/{name}/".format(**locals())})
+                           "link": reverse(bracket_view) + "/{year}/{name}/{suffix}".format(**locals()),
+                           "selected": no_navigation and comp == selected_comp_or_group
+                       })
     for group in qset.filter(comp_type="wsrc_qualifiers"):
         year = group.end_date.year
+        year_suffix = no_navigation and " {year}".format(**locals()) or "" 
         name = " ".join(group.name.split()[2:-1]) # remove front and rear sections
         result.append({"year": year, 
-                       "name": name + " (qualifier)", 
+                       "name": name + " (qualifier)" + year_suffix, 
                        "end_date": group.end_date,
-                       "link": "/tournaments/qualifiers/{year}/{name}/".format(**locals())})
+                       "link": "/tournaments/qualifiers/{year}/{name}{suffix}".format(**locals()),
+                       "selected": no_navigation and group == selected_comp_or_group
+                   })
     return {"default_text": "Select Tournament", "links": result}
 
-def get_boxes_links():
+def get_boxes_links(options, selected_group):
     leagues = []
+    no_navigation = "no_navigation" in options
+    suffix = no_navigation and "?no_navigation" or ""
     for group in CompetitionGroup.objects.filter(comp_type="wsrc_boxes").exclude(competition__state="not_started"):
         leagues.append({"year": group.end_date.year, 
                         "end_date": group.end_date, 
                         "name": group.name,
-                        "link": reverse(boxes_view) + "/" + group.end_date.isoformat()})
+                        "link": reverse(boxes_view) + "/" + group.end_date.isoformat() + suffix,
+                        "selected": no_navigation and group == selected_group
+                    })
     return {"default_text": "Leagues Ending", "links": leagues}
 
 def boxes_view(request, end_date=None, template_name="boxes.html", check_permissions=False, comp_type="boxes", name=None, year=None):
@@ -241,6 +260,7 @@ def boxes_view(request, end_date=None, template_name="boxes.html", check_permiss
     boxes = []
     comp_meta = {"maxplayers": 0, "name": group.name, "id": group.id}
     ctx = {"competition": comp_meta}
+    options = set_view_options(request, ctx)
     for league in group.competition_set.all():
         cfg = create_box_config(last, league, comp_meta)
         boxes.append(cfg)
@@ -254,7 +274,7 @@ def boxes_view(request, end_date=None, template_name="boxes.html", check_permiss
     ctx["new_boxes"] = new_boxes
     ctx["is_editor"] = is_editor
     ctx["competition_groups"] = competition_groups
-    ctx["selector"] = comp_type == "boxes" and get_boxes_links() or get_tournament_links()
+    ctx["selector"] = comp_type == "boxes" and get_boxes_links(options, group) or get_tournament_links(options, group)
     ctx["box_data"] = box_data
     ctx['players'] = Player.objects.all() # TODO - filter to players in comp group
     return TemplateResponse(request, template_name, ctx)
@@ -277,8 +297,10 @@ def bracket_view(request, year, name, template_name="tournaments.html"):
         "competition": competition, 
         "bracket": html_table, 
         "bracket_data": bracket_data,
-        "selector": get_tournament_links()
     }
+    options = set_view_options(request, ctx)
+    ctx["selector"] = get_tournament_links(options, competition)
+
     return TemplateResponse(request, template_name, ctx)
 
 def squashlevels_upload_view(request):
