@@ -20,7 +20,7 @@ window.WSRC_box_data = {{ box_data|safe }};
 {% for yearly_links in yearly_links_list %}
         <optgroup label="{{ yearly_links.grouper }}">
 {% for link in yearly_links.list|dictsortreversed:'end_date' %}
-          <option value="{{ link.link }}">{{ link.name }}</option>
+          <option value="{{ link.link }}" {% if link.selected %}selected="selected"{% endif %}>{{ link.name }}</option>
 {% endfor %}
         </optgroup>
 {% endfor %}

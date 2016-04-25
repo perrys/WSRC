@@ -23,7 +23,7 @@ window.WSRC_bracket_data = {{ bracket_data|safe }};
 {% for year in yearly_links %}
         <optgroup label="{{ year.grouper }}">
 {% for comp in year.list %}
-          <option value="{{ comp.link }}">{{ comp.name }}</option>
+          <option value="{{ comp.link }}" {% if comp.selected %}selected="selected"{% endif %}>{{ comp.name }}</option>
 {% endfor %}
         </optgroup>
 {% endfor %}
