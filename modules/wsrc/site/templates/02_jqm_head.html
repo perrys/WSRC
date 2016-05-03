@@ -2,6 +2,7 @@
 
 {% block html_header %}
   <meta charset="utf-8">
+  <meta name="google-site-verification" content="LOIHqzpH9dkUKtOXPjmHnEg6jRqzA83LzEpvpx7s1lg" />
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black">
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -27,10 +28,14 @@
   {% block html_header_extra %}{% endblock %}
 
 
-{% if user.is_authenticated %}
 <script>
-window.WSRC_user_player_id = {% if user.player %}{{ user.player.id }}{% else %}-1{% endif %}
-</script>
+{% if user and user.is_authenticated %}
+window.WSRC_user_player_id = {% if user.player %}{{ user.player.id }}{% else %}-1{% endif %};
+window.WSRC_username = "{{ user.username }}";
+{% else %}
+window.WSRC_user_player_id = -1;
+window.WSRC_username = null;
 {% endif %}
+</script>
 
 {% endblock %}
