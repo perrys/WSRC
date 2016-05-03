@@ -20,13 +20,14 @@ Invalid username/password. Please try again.
  </span>
 {% endif %}
 
- <form class="dialog-form" method="post" action="" data-ajax="false">{% csrf_token %}
+ <form id="login_form" class="dialog-form" method="post" action="" data-ajax="false">{% csrf_token %}
   <fieldset name="password_details">
 {% usekwacro createfield form.username %}
 {% usekwacro createfield form.password %}
   </fieldset>
   <input type="submit" value="Go" data-theme="b"></input>
   <input type="hidden" name="next" value="{% if next %}{{ next }}{% else %}{% url 'homepage' %}{% endif %}" />
+  <input type="hidden" name="current_username" value="{{ user.username }}" />
   <script type="text/javascript">document.getElementById("id_username").focus();</script>
  </form>
 </div>
