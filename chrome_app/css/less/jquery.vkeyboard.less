@@ -1,3 +1,4 @@
+/* -*- mode: css;-*- */
 
 #vkeyboard_container {
     position: fixed;
@@ -6,6 +7,7 @@
     right: 0;
     display: flex;
     justify-content: center;
+    z-index: 1100; /* greater than jqm panel dismiss overlay */
     div#vkeyboard {
         background-color: rgba(1,1,1,0.1);
         .keyboard-row {
