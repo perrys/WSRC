@@ -168,7 +168,7 @@ def get_tournament_links(options, selected_comp_or_group):
                            "link": reverse(bracket_view) + "/{year}/{name}/{suffix}".format(**locals()),
                            "selected": no_navigation and comp == selected_comp_or_group
                        })
-    for group in qset.filter(comp_type="wsrc_qualifiers"):
+    for group in qset.filter(comp_type="wsrc_qualifiers", active=True):
         year = group.end_date.year
         year_suffix = no_navigation and " {year}".format(**locals()) or "" 
         name = " ".join(group.name.split()[2:-1]) # remove front and rear sections
