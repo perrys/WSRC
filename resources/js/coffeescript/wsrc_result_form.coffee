@@ -46,8 +46,8 @@ class WSRC_result_form
           selector.prop('disabled', true)
         selector.selectmenu('refresh')
     for idx in [1..5]
-      @form.find("input[name='team1_score#{ idx }']").val("")
-      @form.find("input[name='team2_score#{ idx }']").val("")
+      @form.find(":input[name='team1_score#{ idx }']").val("")
+      @form.find(":input[name='team2_score#{ idx }']").val("")
     return null
 
   enable_score_entry: () ->
@@ -162,8 +162,8 @@ class WSRC_result_form
     total = 0
     blank_row_found = false    
     for i in [1..5]
-      val1 = @form.find("input[name='team1_score#{ i }']").val()
-      val2 = @form.find("input[name='team2_score#{ i }']").val()
+      val1 = @form.find(":input[name='team1_score#{ i }']").val() or ""
+      val2 = @form.find(":input[name='team2_score#{ i }']").val() or ""
       if val1.length > 0 or val2.length > 0
         if blank_row_found
           return false
@@ -289,19 +289,19 @@ class WSRC_result_form
           p1idx = 1
           p2idx = 0
         for s in existing_match.scores
-          @form.find("input[name='team1_score#{ idx }']").val(s[p1idx])
-          @form.find("input[name='team2_score#{ idx }']").val(s[p2idx])
+          @form.find(":input[name='team1_score#{ idx }']").val(s[p1idx])
+          @form.find(":input[name='team2_score#{ idx }']").val(s[p2idx])
           idx += 1
         while idx <=5
-          @form.find("input[name='team1_score#{ idx }']").val("")
-          @form.find("input[name='team2_score#{ idx }']").val("")
+          @form.find(":input[name='team1_score#{ idx }']").val("")
+          @form.find(":input[name='team2_score#{ idx }']").val("")
           idx += 1
         @handle_score_changed()
     else
       @set_result_type('normal')
       for idx in [1..5]
-        @form.find("input[name='team1_score#{ idx }']").val("")
-        @form.find("input[name='team2_score#{ idx }']").val("")
+        @form.find(":input[name='team1_score#{ idx }']").val("")
+        @form.find(":input[name='team2_score#{ idx }']").val("")
 
   handle_submit: () ->
     selectors = (@form.find("select[name='team#{ p }']") for p in [1, 2])
@@ -319,7 +319,7 @@ class WSRC_result_form
     else
       for i in [1..5]
         for j in [1..2]
-          score = @form.find("input[name='team#{ j }_score#{ i }']").val()
+          score = @form.find(":input[name='team#{ j }_score#{ i }']").val()
           score = if wsrc.utils.is_valid_int(score) then parseInt(score) else null
           team = j
           if reversed
