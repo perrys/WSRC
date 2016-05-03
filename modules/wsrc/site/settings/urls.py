@@ -65,6 +65,7 @@ urlpatterns = patterns('',
     url(r'^data/bookings$', wsrc.site.views.BookingList.as_view()),
     url(r'^data/accounts/',  include(wsrc.site.accounts.data_urls)),
     url(r'^data/memberlist/',  include(wsrc.site.usermodel.data_urls)),
+    url(r'^data/auth/', wsrc.site.views.auth_view),
     url(r'^data/',    include(wsrc.site.competitions.data_urls)),
 
     url(r'^accounts/download/(\w+)', wsrc.site.accounts.views.transaction_csv_view),
