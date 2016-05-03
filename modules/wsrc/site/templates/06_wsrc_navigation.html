@@ -26,7 +26,7 @@ $( document ).on( "pagecreate", ".wsrc-site", function( event ) {
 
 {% block page_content_classes %}jqm-content{% endblock %}
 {% block page_content %}
-<div class="centered-content-wrapper">
+<div class="centered-content-wrapper" {% if options.no_navigation %}style="max-width: 90%;"{% endif %}>
   <!-- left nav menu: -->
   <div data-role="panel" class="jqm-navmenu-panel" data-position="left" data-display="overlay" data-theme="a" {% if options.no_navigation %}style="display: none;"{% endif %}>
     <ul class="jqm-list ui-alt-icon ui-nodisc-icon">
