@@ -6,7 +6,6 @@ vkeyboard_widget =
     
   _create: () ->
     @_initialize_vkeyboard()
-    console.log(@element)
     @element.on("focus", (evt, forced) =>
       unless forced
         @_show_vkeyboard()
