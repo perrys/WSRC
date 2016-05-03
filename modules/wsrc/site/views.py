@@ -27,6 +27,7 @@ from django.contrib.auth.forms import PasswordChangeForm
 from django.forms.widgets import Select, CheckboxSelectMultiple, HiddenInput, Textarea
 from django.forms.models import modelformset_factory
 from django.contrib.auth.models import User
+from django.middleware.csrf import get_token
 from django.core.exceptions import PermissionDenied
 from django.core.urlresolvers import reverse as reverse_url
 from django.db import transaction
@@ -51,6 +52,7 @@ import datetime
 import urllib
 import httplib
 import httplib2
+import json
 import logging
 import time
 
@@ -523,4 +525,33 @@ class BookingList(rest_generics.ListAPIView):
             tplus1 = date + datetime.timedelta(days=1)
             queryset = queryset.filter(start_time__gte=date, start_time__lt=tplus1)
         return queryset
-    
+
+def auth_view(request):
+    if request.method == 'GET': 
+      data = {
+          "username": request.user and request.user.username or None,
+          "csrf_token": get_token(request)
+      }
+      return HttpResponse(json.dumps(data), content_type="application/json")
+    elif request.method == 'POST': 
+        from django.contrib.auth import authenticate, login
+        username = request.POST['username']
+        password = request.POST['password']
+        user = authenticate(username=username, password=password)
+        if user is not None:
+            if user.is_active:
+                login(request, user)
+                data = {
+                    "username": request.user and request.user.username or None,
+                    "csrf_token": get_token(request)
+                }
+                json_data = json.dumps(data)
+                return HttpResponse(json.dumps(data), content_type="application/json", status=httplib.OK)
+            else:
+                raise PermissionDenied("inactive login", content_type="test/plain")
+        else:
+            raise PermissionDenied("invalid login", content_type="test/plain")
+    elif request.method == 'DELETE': 
+        logout(request)
+        return HttpResponse(None, content_type="application/json", status=httplib.OK)
+        
