@@ -1,0 +1,152 @@
+/* -*- mode: css;-*- */
+
+@color-yellow-dot: #fccb30;
+
+/* =Reset
+-------------------------------------------------------------- */
+ 
+* {
+    -webkit-box-sizing: border-box;
+    -moz-box-sizing: border-box;
+    box-sizing: border-box;
+    margin-top: 0;
+}
+ 
+html,
+body,
+div{
+    margin: 0;
+    padding: 0;
+    line-height: initial;
+}
+
+body {
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    right: 0;
+}
+
+@page-margin: 1em;
+
+#main {
+    display: table;
+    width: 100%;
+}
+
+#settings_panel {
+    .ui-panel-inner {
+        padding: 0;
+        #log_container > .ui-collapsible-content {
+            padding-left: 4px;
+            padding-right: 2px;
+        }
+        #log_console {
+            line-height: 0;
+            overflow-y: scroll;
+            overflow-x: hidden;
+            max-height: 600px;
+            font-family: monospace;
+            white-space: pre;
+            div {
+                white-space: pre-line;
+            }
+        }
+        fieldset > legend {
+            color: @color-yellow-dot;
+            padding-top: 1em;
+            padding-bottom: 1em;
+            -webkit-padding-start: 0px;
+            -moz-padding-start: 0px;
+            font-weight: bold;
+        }
+}
+        
+}
+
+.menu-wrapper {
+    display: table;
+    div.menu-container {
+        display: table-cell;
+        vertical-align: middle;
+    }
+}
+
+
+a.nav-button {
+    width: 20em;
+    display: block;
+    padding: 0;
+    line-height: 5em;
+}
+
+div.left, div.right {
+    display: table-cell;
+    width: 25%;
+    vertical-align: top;
+}
+
+div.centre {
+}
+
+h1 {
+    font-size: 2em;
+}
+
+.clock {
+    position: absolute;
+    top: 0.5em;
+    text-align: right;
+    right: @page-margin;
+}
+
+.courts_now_next {
+
+    margin-top: 5em;
+    table {
+        position: absolute;
+        right: @page-margin;
+    }
+    th.court {
+        min-width: 5em;
+        height: 2em;
+        vertical-align: bottom;
+    }
+    td.now_next {
+        text-align: right;
+        padding-right: 0.5em;
+    }
+}
+
+.logo {
+    position: fixed;
+    bottom: @page-margin;
+    right: @page-margin;
+}
+
+.content {
+    margin-top: 5em;
+    padding: 0 0.5em 0 0.5em;
+    h1 {
+        text-align: center;
+        width: 100%;
+        font-size: 5em;
+    }
+    
+
+}
+
+#boxes_popup-popup, #tournaments_popup-popup, #booking_popup-popup {
+    width: 90%;
+    height: 90%;
+    & > div {
+        width: 100%;
+        height: 100%;
+        webview {
+            width: 100%;
+            height: 100%;
+        }
+    }
+}
+

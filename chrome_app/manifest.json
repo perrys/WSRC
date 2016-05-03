@@ -1,0 +1,14 @@
+{
+  "name": "WSRC Kiosk",
+  "description": "Woking Squash Club Kiosk App.",
+  "version": "0.0.0.2",
+  "manifest_version": 2,
+  "permissions": ["webview", "http://localhost:8000/", "http://www.wokingsquashclub.org/", "storage", "fileSystem"],
+  "app": {
+    "background": {
+      "scripts": ["js/_jquery.js", "js/background.js"]
+    }
+  },
+  "icons": { "64": "images/ball_logo_64x64.png",  "152": "images/ball_logo_152x152.png", "180": "images/ball_logo_180x180.png" },
+  "kiosk_enabled" : true
+}

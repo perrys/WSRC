@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="css/jquery.mobile.structure.css">
+    <link rel="stylesheet" href="css/jquery.mobile.icons.css">
+    <link rel="stylesheet" href="css/yellow_dots.css">
+    <link rel="stylesheet" href="css/window.css">
+    <link rel="stylesheet" href="css/jquery.vkeyboard.css">
+    <script src="js/_jquery.js"></script>
+    <script src="js/jq_settings.js"></script>
+    <script src="js/wsrc_utils.js"></script>
+    <script src="js/wsrc_ajax.js"></script>
+    <script src="js/window.js"></script>
+    <script src="js/_jquery.mobile.js"></script>
+    <script src="js/jquery.vkeyboard.js"></script>
+  </head>
+  <body>
+    <div id="page" data-role="page">
+      <div id="main" role="main" class="ui-content">
+        <div class="left">
+          <div class="menu-wrapper">
+            <div class="menu-container">
+              <a href="#boxes_popup"       data-rel="popup" data-position-to="window" data-transition="fade" class="ui-btn ui-corner-all nav-button">Squash Leagues</a>
+              <a href="#tournaments_popup" data-rel="popup" data-position-to="window" data-transition="fade" class="ui-btn ui-corner-all nav-button">Tournaments</a>
+              <a href="#booking_popup"     data-rel="popup" data-position-to="window" data-transition="fade" class="ui-btn ui-corner-all nav-button">Court Booking</a>
+            </div>
+          </div>
+        </div>
+        <div class="centre">
+          <div class="content">
+            <h1>Welcome to Woking Squash Club</h1>
+          </div>
+        </div>
+        <div class="right">
+          <div class="clock"></div>
+          <div class="courts_now_next">
+            <table>
+              <tbody>
+                <tr>
+                  <th class="court">Court 1</th>
+                </tr>
+                <tr id="court1_now">
+                  <td class="now_next">Now:</td>
+                  <td class="time"></td>
+                  <td class="description"></td>
+                </tr>
+                <tr id="court1_next">
+                  <td class="now_next">Next:</td>
+                  <td class="time"></td>
+                  <td class="description"></td>
+                </tr>
+                <tr>
+                  <th class="court">Court 2</th>
+                </tr>
+                <tr id="court2_now">
+                  <td class="now_next">Now:</td>
+                  <td class="time"></td>
+                  <td class="description"></td>
+                </tr>
+                <tr id="court2_next">
+                  <td class="now_next">Next:</td>
+                  <td class="time"></td>
+                  <td class="description"></td>
+                </tr>
+                <tr>
+                  <th class="court">Court 3</th>
+                </tr>
+                <tr id="court3_now">
+                  <td class="now_next">Now:</td>
+                  <td class="time"></td>
+                  <td class="description"></td>
+                </tr>
+                <tr id="court3_next">
+                  <td class="now_next">Next:</td>
+                  <td class="time"></td>
+                  <td class="description"></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="logo"><img id="yellow_dots_img" src="images/ball_logo_180x180.png" width="180" height="180" /></div>
+          <div id="boxes_popup" data-role="popup" data-position-to="window" data-overlay-theme="b" data-transition="fade">
+            <a href="#" data-rel="back" class="ui-btn ui-corner-all ui-btn-a ui-icon-delete ui-btn-icon-notext ui-btn-right">Close</a>
+            <webview class="wsrc-client" data-src="boxes" style="width: 100%;"></webview>
+          </div>
+          <div id="tournaments_popup" data-role="popup" data-position-to="window" data-overlay-theme="b" data-transition="fade">
+            <a href="#" data-rel="back" class="ui-btn ui-corner-all ui-btn-a ui-icon-delete ui-btn-icon-notext ui-btn-right">Close</a>
+            <webview class="wsrc-client" data-src="tournaments" style="width: 100%;"></webview>
+          </div>
+          <div id="booking_popup" data-role="popup" data-position-to="window" data-overlay-theme="b" data-transition="fade">
+            <a href="#" data-rel="back" class="ui-btn ui-corner-all ui-btn-a ui-icon-delete ui-btn-icon-notext ui-btn-right">Close</a>
+            <webview src="http://booking.wokingsquashclub.org/" style="width: 100%;"></webview>
+          </div>
+        </div> <!-- main -->
+        <div id="settings_panel" data-role="panel" data-theme="b"  data-content-theme="a" data-display="overlay" data-position="right">
+          <a href="#my-header" data-rel="close" class="ui-btn ui-corner-all ui-btn-a ui-icon-delete ui-btn-right">Close panel</a>
+            <div data-role="collapsible" data-iconpos="right">
+              <h3>Settings</h3>
+              <form>
+                <fieldset data-group="wsrc_credentials">
+                  <legend>WSRC Credentials</legend>
+                  <label>Username: <input name="username" /></label>
+                  <label>Password: <input name="password" type="password" /></label>
+                </fieldset>
+              </form>
+              <button id="settings_apply_btn">Apply</button>
+            </div>
+            <div id="log_container" data-role="collapsible" data-collapsed="false" data-iconpos="right">
+              <h3>Log</h3>
+              <div id="log_console">
+              </div>
+            </div>
+          </div>
+        </div>
+      </div> <!-- page -->
+  </body>
+</html>
