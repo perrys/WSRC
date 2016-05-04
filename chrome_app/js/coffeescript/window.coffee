@@ -138,6 +138,24 @@ class WSRC_kiosk
   handle_message_show_panels: (event) ->
     @view.show_panels()
 
+  handle_message_login_webviews: () ->
+    login_webview = $("webview#login_webview")[0]
+    rule = 
+      name: 'listener_rule'
+      matches: ["http://#{ @wsrc_host }/*"]
+      js:
+        files: ["js/_jquery.js", "js/client_functions.js"]
+      run_at: 'document_end'
+    login_webview.addContentScripts([rule])
+    src = "http://#{ @wsrc_host }/login/"
+    @view.log("loading login webview: #{ src }")
+    login_webview.addEventListener('contentload', (event) =>
+      credentials = @view.get_settings().wsrc_credentials
+      login_webview.contentWindow.postMessage(["login", credentials.username, credentials.password], "http://#{ @wsrc_host }")
+      return null
+    )
+    login_webview.src = src
+    
   handle_message_load_webviews: () ->
     webviews = $("webview.wsrc-client")
     webviews.each (idx, wv) =>
