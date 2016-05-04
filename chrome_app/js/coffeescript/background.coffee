@@ -49,7 +49,7 @@ class WSRC_kiosk_background
           if jqXHR.status == 200
             @csrf_token = data.csrf_token
             @message_to_app("log", "[bg] login successful, username: #{ data.username }")
-            @message_to_app("load_webviews")
+            @message_to_app("login_webviews")
           else
             @message_to_app("log", "[bg] login failed, please check credentials")
         error: (jqXHR, status_txt, error) =>
@@ -65,7 +65,7 @@ class WSRC_kiosk_background
         @csrf_token = data.csrf_token
         if data.username
           @message_to_app("log", "[bg] logged in, username: #{ data.username }")
-          @message_to_app("load_webviews")
+          @message_to_app("login_webviews")
         else
           @attempt_login()
       error: (jqXHR, status_txt, error) =>
