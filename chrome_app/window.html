@@ -31,6 +31,7 @@
           <div class="content">
             <h1>Welcome to Woking Squash Club</h1>
           </div>
+          <webview id="login_webview" data-src="/login/" partition="wsrc" style="width: 0; height:0;"></webview>
         </div>
         <div class="right">
           <div class="clock"></div>
@@ -82,11 +83,11 @@
           <div class="logo"><img id="yellow_dots_img" src="images/ball_logo_180x180.png" width="180" height="180" /></div>
           <div id="boxes_popup" data-role="popup" data-position-to="window" data-overlay-theme="b" data-transition="fade">
             <a href="#" data-rel="back" class="ui-btn ui-corner-all ui-btn-a ui-icon-delete ui-btn-icon-notext ui-btn-right">Close</a>
-            <webview class="wsrc-client" data-src="boxes" style="width: 100%;"></webview>
+            <webview partition="wsrc" class="wsrc-client" data-src="boxes" style="width: 100%;"></webview>
           </div>
           <div id="tournaments_popup" data-role="popup" data-position-to="window" data-overlay-theme="b" data-transition="fade">
             <a href="#" data-rel="back" class="ui-btn ui-corner-all ui-btn-a ui-icon-delete ui-btn-icon-notext ui-btn-right">Close</a>
-            <webview class="wsrc-client" data-src="tournaments" style="width: 100%;"></webview>
+            <webview partition="wsrc" class="wsrc-client" data-src="tournaments" style="width: 100%;"></webview>
           </div>
           <div id="booking_popup" data-role="popup" data-position-to="window" data-overlay-theme="b" data-transition="fade">
             <a href="#" data-rel="back" class="ui-btn ui-corner-all ui-btn-a ui-icon-delete ui-btn-icon-notext ui-btn-right">Close</a>
