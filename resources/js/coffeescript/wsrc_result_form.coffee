@@ -33,6 +33,10 @@ class WSRC_result_form
         wsrc.utils.select(top_selector, WSRC_user_player_id)
         @handle_team1_selected(top_selector)
 
+    @form.find(".score-row :input").on("focusout", (event) =>
+      @handle_score_changed()
+    )
+
   disable_and_reset_inputs: (include_team1_selector) ->
     @disable_score_entry()
     for i in [1, 2]
