@@ -120,6 +120,8 @@ class WSRC_kiosk
     handler = (event) => @handle_message_received(event)
     window.addEventListener("message", handler, false)
 
+    window.setInterval ( => @update_clock()), 500
+
 
   handle_message_received: (event) ->
     method = "handle_message_" + event.data[0]
@@ -137,6 +139,12 @@ class WSRC_kiosk
 
   handle_message_show_panels: (event) ->
     @view.show_panels()
+
+  handle_message_court_bookings_update: (event, data) ->
+    @court_bookings = data
+    unless @court_update_started
+      window.setInterval ( => @view.update_courts(@court_bookings)), 6 * 1000
+      @court_update_started = true
 
   handle_message_login_webviews: () ->
     login_webview = $("webview#login_webview")[0]
@@ -186,12 +194,12 @@ class WSRC_kiosk
     src = $(webview).data("src")
     src = "http://#{ @wsrc_host }/#{ src }?no_navigation"    
     rule = 
-      name: 'listener_rule' + src
-      matches: ["http://#{ @origin }/*"]
+      name: 'vkeyboard'
+      matches: ["http://#{ @wsrc_host }/*"]
       js:
         files: ["js/_jquery.js", "js/_jquery-ui.js", "js/jquery.vkeyboard.js", "js/client_functions.js"]
       css:
-        files: ["css/jquery.vkeyboard.css"],
+        files: ["css/jquery.vkeyboard.css"]
       run_at: 'document_end'
     webview.addContentScripts([rule])
     id = $(webview).parents("div").attr("id")
@@ -204,28 +212,12 @@ class WSRC_kiosk
     time_str = now.toLocaleTimeString()
     @view.update_clock(date_str + " " + time_str)    
 
-  update_courts: () ->
-    base_url = "http://www.wokingsquashclub.org"
-    opts =
-      successCB: (data) =>
-        @view.update_courts(data)
-    today = wsrc.utils.js_to_iso_date_str(new Date())
-#    today = "2016-04-25"
-    wsrc.ajax.ajax_bare_helper(base_url + "/data/bookings?date=" + today, null, opts, "GET")
-
   @on: (method) ->
     args = $.fn.toArray.call(arguments)
     @instance[method].apply(@instance, args[1..])
 
   @onReady: () ->
     @instance = new WSRC_kiosk()
-    cb1 = () =>
-      @instance.update_clock()
-    window.setInterval(cb1, 500)
-    cb2 = () =>
-      @instance.update_courts()
-    cb2()
-    window.setInterval(cb2, 6 * 1000)
       
 
 window.wsrc_kiosk = WSRC_kiosk

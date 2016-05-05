@@ -8,6 +8,7 @@ class WSRC_kiosk_background
 
   constructor: (@app_window) ->
     @wsrc_url = "http://localhost:8000"
+    @booking_check_period_minutes = 5
     document = @app_window.contentWindow.document
     @view = new WSRC_kiosk_background_view(document)
     handler = (event) => @handle_message_received(event)
@@ -26,9 +27,29 @@ class WSRC_kiosk_background
         return null
     poll_handshake(200)
 
+    @handle_alarm_load_court_bookings()
+    booking_alarm = "load_court_bookings"
+    chrome.alarms.onAlarm.addListener (alarm) =>
+      @["handle_alarm_#{ alarm.name }"].apply(this)
+    chrome.alarms.create(booking_alarm, {periodInMinutes: @booking_check_period_minutes})
+
   message_to_app: () ->
     args = $.fn.toArray.call(arguments)
     @app_window.contentWindow.postMessage(args, "*")
+
+  handle_alarm_load_court_bookings: () ->
+    today = wsrc.utils.js_to_iso_date_str(new Date())
+    settings =
+      url: "#{ @wsrc_url }/data/bookings?date=#{ today }"
+      type: "GET"
+      complete: (jqXHR, status_txt) =>
+        if jqXHR.status == 200
+          console.log(jqXHR)
+          @message_to_app("court_bookings_update", jqXHR.responseJSON)
+        else
+          @message_to_app("log", "[bg] error fetching court bookings (#{ jqXHR.status } #{ jqXHR.statusText }) - #{ status }")
+    $.ajax(settings)
+
 
   attempt_login: () ->
     chrome.storage.local.get("wsrc_credentials", (data) =>
