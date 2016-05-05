@@ -65,16 +65,15 @@ class WSRC_kiosk_background
         headers:
           "X-CSRFToken": @csrf_token 
         data: credentials
-        success: (data, status_txt, jqXHR) =>
+        complete: (jqXHR) =>
           console.log(jqXHR)
+          data = jqXHR.responseJSON
           if jqXHR.status == 200
             @csrf_token = data.csrf_token
             @message_to_app("log", "[bg] login successful, username: #{ data.username }")
             @message_to_app("login_webviews")
           else
-            @message_to_app("log", "[bg] login failed, please check credentials")
-        error: (jqXHR, status_txt, error) =>
-            @message_to_app("log", "[bg] login failed (#{ jqXHR.status } #{ jqXHR.statusText }), please check credentials")
+            @message_to_app("log", "[bg] login failed (#{ jqXHR.status } #{ jqXHR.statusText }), response: #{ jqXHR.responseText }, please check credentials")
       $.ajax(settings)
     )
   check_auth: () ->

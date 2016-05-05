@@ -30,7 +30,7 @@ dispatch = (event) ->
             post_log_message "login successful, username: #{ credentials.username }"
             post_message ["load_webviews"]
           else
-            post_log_message "login failed, response: #{ jqXHR.responseText }"
+            post_log_message "login failed (#{ jqXHR.status } #{ jqXHR.statusText }), response: #{ jqXHR.responseText }, please check credentials"
       $.ajax(settings)
       post_log_message "attempting login, username: #{ username }"
       
