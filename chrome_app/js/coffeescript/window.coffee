@@ -18,7 +18,10 @@ class WSRC_kiosk_view
 
   show_panels: () ->
     $("#settings_panel").panel("open")
-    
+
+  hide_panels: () ->
+    $("#settings_panel").panel("close")
+        
   update_clock: (val) ->
     $('div.clock').html(val)
 
@@ -168,6 +171,7 @@ class WSRC_kiosk
     webviews = $("webview.wsrc-client")
     webviews.each (idx, wv) =>
       @load_webview(wv)
+    @view.hide_panels()
                 
   handle_update_settings: (event) ->
     data = @view.get_settings()
