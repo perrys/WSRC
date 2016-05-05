@@ -40,4 +40,5 @@ dispatch = (event) ->
 
 window.addEventListener("message", dispatch, false)
 
-$(":input[type='number']").vkeyboard({layout: 'numeric'})
+if $.fn.vkeyboard
+  $(":input[type='number']").vkeyboard({layout: 'numeric'})
