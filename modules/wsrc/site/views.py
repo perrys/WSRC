@@ -548,9 +548,9 @@ def auth_view(request):
                 json_data = json.dumps(data)
                 return HttpResponse(json.dumps(data), content_type="application/json", status=httplib.OK)
             else:
-                raise PermissionDenied("inactive login", content_type="test/plain")
+                return HttpResponse("inactive login", content_type="text/plain", status=httplib.FORBIDDEN)
         else:
-            raise PermissionDenied("invalid login", content_type="test/plain")
+            return HttpResponse("invalid login", content_type="text/plain", status=httplib.FORBIDDEN)
     elif request.method == 'DELETE': 
         logout(request)
         return HttpResponse(None, content_type="application/json", status=httplib.OK)
