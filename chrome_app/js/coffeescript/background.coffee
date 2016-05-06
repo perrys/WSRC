@@ -9,6 +9,7 @@ class WSRC_kiosk_background
   constructor: (@app_window) ->
     @wsrc_url = "http://localhost:8000"
     @booking_check_period_minutes = 5
+    @club_event_check_period_minutes = 1 # 60
     document = @app_window.contentWindow.document
     @view = new WSRC_kiosk_background_view(document)
     handler = (event) => @handle_message_received(event)
@@ -28,10 +29,12 @@ class WSRC_kiosk_background
     poll_handshake(200)
 
     @handle_alarm_load_court_bookings()
+    @handle_alarm_load_club_events()
     booking_alarm = "load_court_bookings"
     chrome.alarms.onAlarm.addListener (alarm) =>
       @["handle_alarm_#{ alarm.name }"].apply(this)
-    chrome.alarms.create(booking_alarm, {periodInMinutes: @booking_check_period_minutes})
+    chrome.alarms.create("load_court_bookings", {periodInMinutes: @booking_check_period_minutes})
+    chrome.alarms.create("load_club_events",    {periodInMinutes: @club_event_check_period_minutes})
 
   message_to_app: () ->
     args = $.fn.toArray.call(arguments)
@@ -50,6 +53,17 @@ class WSRC_kiosk_background
           @message_to_app("log", "[bg] error fetching court bookings (#{ jqXHR.status } #{ jqXHR.statusText }) - #{ status }")
     $.ajax(settings)
 
+  handle_alarm_load_club_events: () ->
+    settings =
+      url: "#{ @wsrc_url }/data/club_events"
+      type: "GET"
+      complete: (jqXHR, status_txt) =>
+        if jqXHR.status == 200
+          console.log(jqXHR)
+          @message_to_app("club_events_update", jqXHR.responseJSON)
+        else
+          @message_to_app("log", "[bg] error fetching club events (#{ jqXHR.status } #{ jqXHR.statusText }) - #{ status }")
+    $.ajax(settings)
 
   attempt_login: () ->
     chrome.storage.local.get("wsrc_credentials", (data) =>

@@ -1,4 +1,40 @@
 
+utils = 
+  to_12h_time_str: (dt, with_am_pm) ->
+    hour = dt.getHours()
+    ampm = ""
+    if with_am_pm
+      ampm = if hour < 12 then " AM" else " PM"
+    if hour > 12
+      hour -= 12
+    else if hour == 0
+      hour = 12
+    min = dt.getMinutes()
+    if min < 10
+      min = "0#{ min }"
+    return "#{ hour }:#{ min }#{ ampm }"
+    
+  toint: (s) ->
+    parseInt(s, 10)
+    
+  parse_date: (dt_str) ->
+    y = this.toint(dt_str.substr(0,4))
+    m = this.toint(dt_str.substr(5,2))
+    d = this.toint(dt_str.substr(8,2))
+    ho = this.toint(dt_str.substr(11,2))
+    mi = this.toint(dt_str.substr(14,2))
+    se = this.toint(dt_str.substr(17,4))
+    offset_mi = 0
+    if dt_str.length > 19
+      offset_ho = this.toint(dt_str.substr(20,2))
+      offset_mi = this.toint(dt_str.substr(23,2))
+      offset_mi += offset_ho * 60
+      if dt_str.substr(19,1) != "-"
+        offset_mi = offset_mi * -1
+    date = new Date(Date.UTC(y, m-1, d, ho, mi + offset_mi, se)) 
+    return date
+
+  
 class WSRC_kiosk_view
 
   constructor: () ->
@@ -29,41 +65,11 @@ class WSRC_kiosk_view
     court_map = {}
     factory = () ->
       return []
-    toint = (s) ->
-      parseInt(s, 10)
-    parse_date = (dt_str) ->
-      y = toint(dt_str.substr(0,4))
-      m = toint(dt_str.substr(5,2))
-      d = toint(dt_str.substr(8,2))
-      ho = toint(dt_str.substr(11,2))
-      mi = toint(dt_str.substr(14,2))
-      se = toint(dt_str.substr(17,4))
-      offset_ho = toint(dt_str.substr(20,2))
-      offset_mi = toint(dt_str.substr(23,2))
-      offset_mi += offset_ho * 60
-      if dt_str.substr(19,1) != "-"
-        offset_mi = offset_mi * -1
-      date = new Date(Date.UTC(y, m-1, d, ho, mi + offset_mi, se)) 
-      return date
-    to_12h_time_str = (dt, with_am_pm) ->
-      hour = dt.getHours()
-      ampm = ""
-      if with_am_pm
-        ampm = if hour < 12 then " AM" else " PM"
-      if hour > 12
-        hour -= 12
-      else if hour == 0
-        hour = 12
-      min = dt.getMinutes()
-      if min < 10
-        min = "0#{ min }"
-      return "#{ hour }:#{ min }#{ ampm }"
-      
     for booking in data
       bookings = wsrc.utils.get_or_add_property(court_map, booking.court, factory)
       bookings.push(booking)
-      booking.start_time_js = parse_date(booking.start_time)
-      booking.end_time_js = parse_date(booking.end_time)
+      booking.start_time_js = utils.parse_date(booking.start_time)
+      booking.end_time_js   = utils.parse_date(booking.end_time)
 
     now_courts = {}
     next_courts = {}
@@ -82,7 +88,7 @@ class WSRC_kiosk_view
           next_court_found = true
     display_court = (type, court, booking) ->
       jq_row = $("#court#{ court }_#{ type }")
-      jq_row.find("td.time").html("#{ to_12h_time_str(booking.start_time_js) }&mdash;#{ to_12h_time_str(booking.end_time_js,true) }")
+      jq_row.find("td.time").html("#{ utils.to_12h_time_str(booking.start_time_js) }&mdash;#{ utils.to_12h_time_str(booking.end_time_js,true) }")
       jq_row.find("td.description").html(if booking.name then booking.name else "-")
     for court, booking of now_courts
       display_court("now", court, booking)
@@ -108,11 +114,31 @@ class WSRC_kiosk_view
           fieldset.find(":input[name='#{ key }']").val(val)
       )
 
+  update_club_event: (event) ->
+    panel = $("#notifications")
+    date = ""
+    if event?.display_date
+      jsdate = wsrc.utils.iso_to_js_date(event.display_date)
+      date += wsrc.utils.js_to_readable_date_str(jsdate)
+    if event?.display_time
+      jsdate = utils.parse_date("2000-01-01 #{ event.display_time }")
+      date += " " + utils.to_12h_time_str(jsdate, true)
+    options =
+      duration: 2 * 1000
+      complete: () ->
+        if event
+          panel.find(".heading").text(event.title)
+          panel.find(".date").text(date)
+          panel.find(".ui-body").html(event.markup)
+          panel.fadeIn(3 * 1000)
+    panel.fadeOut(options)
+    
 class WSRC_kiosk
 
   constructor: () ->
     @wsrc_host = "localhost:8000"
     @logo_click_count = 0
+    @club_event_idx = 0
     @view = new WSRC_kiosk_view()
     $("#settings_apply_btn").click (evt) =>
       @handle_update_settings(evt);
@@ -146,8 +172,27 @@ class WSRC_kiosk
   handle_message_court_bookings_update: (event, data) ->
     @court_bookings = data
     unless @court_update_started
-      window.setInterval ( => @view.update_courts(@court_bookings)), 6 * 1000
+      updater = () => @view.update_courts(@court_bookings)
+      updater()
+      window.setInterval updater, 6 * 1000
       @court_update_started = true
+
+  handle_message_club_events_update: (event, data) ->
+    @club_events = data
+    unless @club_event_update_started
+      updater = () =>
+        len = @club_events.length
+        if len == 0
+          event = null
+        else
+          if @club_event_idx >= len
+            @club_event_idx = 0
+          event = @club_events[@club_event_idx++]
+        @view.update_club_event(event)
+        return null
+      updater()
+      window.setInterval(updater, 45 * 1000)
+      @club_event_update_started = true
 
   handle_message_login_webviews: () ->
     login_webview = $("webview#login_webview")[0]
