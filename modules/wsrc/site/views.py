@@ -16,7 +16,7 @@
 
 import sys
 
-from wsrc.site.models import PageContent, SquashLevels, LeagueMasterFixtures, BookingSystemEvent, EventFilter, MaintenanceIssue, Suggestion, EmailContent
+from wsrc.site.models import PageContent, SquashLevels, LeagueMasterFixtures, BookingSystemEvent, EventFilter, MaintenanceIssue, Suggestion, EmailContent, ClubEvent
 from wsrc.site.competitions.models import CompetitionGroup
 from wsrc.site.usermodel.models import Player
 import wsrc.site.settings.settings as settings
@@ -555,3 +555,19 @@ def auth_view(request):
         logout(request)
         return HttpResponse(None, content_type="application/json", status=httplib.OK)
         
+
+class MarkdownField(serializers.DateTimeField):
+    def to_representation(self, value):
+        return markdown.markdown(value)
+
+class ClubEventSerializer(serializers.ModelSerializer):
+    markup   = MarkdownField()
+    class Meta:
+        model = ClubEvent
+        fields = ('title', 'display_date', 'display_time', 'markup', 'last_updated')
+
+class ClubEventList(rest_generics.ListAPIView):
+    serializer_class = ClubEventSerializer
+    def get_queryset(self):
+        queryset = ClubEvent.objects.order_by("last_updated")
+        return queryset.filter(Q(display_date__isnull=True) | Q(display_date__gte=datetime.date.today()))

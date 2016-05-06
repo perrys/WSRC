@@ -28,6 +28,15 @@ class EmailContent(models.Model):
   def __unicode__(self):
     return self.name
 
+class ClubEvent(models.Model):  
+  title = models.CharField(max_length=64)
+  display_date = models.DateField(blank=True, null=True)
+  display_time = models.TimeField(blank=True, null=True)
+  markup = models.TextField()
+  last_updated = models.DateTimeField(auto_now=True)
+  def __unicode__(self):
+    date_str = self.display_date is not None and "{display_date:%Y-%m-%d}".format(**self.__dict__) or ""
+    return "{title} {date}".format(title=self.title, date=date_str) 
 
 class BookingSystemEvent(models.Model):
   start_time = models.DateTimeField()
