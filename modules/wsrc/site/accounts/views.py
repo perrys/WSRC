@@ -64,9 +64,9 @@ class TransactionView(rest_generics.ListAPIView):
     def put(self, request, account_id, format="json"):
         # Bulk Upload
         account_id = int(account_id)
-        assert(account_id == request.DATA['account'])
+        assert(account_id == request.data['account'])
         account = Account.objects.get(pk=int(account_id))
-        transaction_data = request.DATA['transactions']
+        transaction_data = request.data['transactions']
         categories = dict([(cat.id, cat) for cat in Category.objects.all()])
         models = []
         for tran in transaction_data:
@@ -98,7 +98,7 @@ class CategoryListView(rest_generics.ListAPIView):
         same time"""
         if not request.user.is_authenticated():
             raise PermissionDenied()
-        category_data = request.DATA
+        category_data = request.data
         existing_categories = dict([(c.id, c) for c in Category.objects.all()])
         errors = []
         with transaction.atomic():

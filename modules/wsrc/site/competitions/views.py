@@ -101,7 +101,7 @@ class SelfUpdateOrCompetitionEditorPermission(rest_permissions.BasePermission):
         player = get_object_or_404(Player.objects.all(), user=request.user)
         for i in (1,2):
             for j in (1,2):
-                if request.DATA.get("team%(i)d_player%(j)d" % locals()) == player.id:
+                if request.data.get("team%(i)d_player%(j)d" % locals()) == player.id:
                     return True
         return False
 
@@ -396,8 +396,8 @@ class CompetitionEditorPermissionedAPIView(APIView):
 class SetCompetitionGroupLive(CompetitionEditorPermissionedAPIView):
     parser_classes = (JSONParser,)
     def put(self, request, format="json"):
-        competition_group_id = request.DATA.pop('competition_group_id')
-        competition_type = request.DATA.pop('competition_type')
+        competition_group_id = request.data.pop('competition_group_id')
+        competition_type = request.data.pop('competition_type')
         new_group = CompetitionGroup.objects.get(pk = competition_group_id)
         old_groups = CompetitionGroup.objects.filter(active = True).filter(comp_type = competition_type)
         for group in old_groups:
@@ -417,10 +417,10 @@ class SetCompetitionGroupLive(CompetitionEditorPermissionedAPIView):
 class SendCompetitionEmail(CompetitionEditorPermissionedAPIView):
     parser_classes = (JSONParser,)
     def put(self, request, format="json"):
-        competition_id = request.DATA.pop('competition_id')
-        template_name  = request.DATA.pop('template_name')
-        subject        = request.DATA.pop('subject')
-        from_address   = request.DATA.pop('from_address')
+        competition_id = request.data.pop('competition_id')
+        template_name  = request.data.pop('template_name')
+        subject        = request.data.pop('subject')
+        from_address   = request.data.pop('from_address')
 
         competition = Competition.objects.get(pk=competition_id)
         to_list = [entrant.player.user.email for entrant in competition.entrant_set.all()]
@@ -440,7 +440,7 @@ class UpdateTournament(CompetitionEditorPermissionedAPIView):
     parser_classes = (JSONParser,)
     def put(self, request, pk, format="json"):
         comp_id = int(pk)
-        comp_data = request.DATA
+        comp_data = request.data
         if comp_data["id"] != comp_id:
             raise SuspiciousOperation()
         competition = Competition.objects.get(pk=comp_id)

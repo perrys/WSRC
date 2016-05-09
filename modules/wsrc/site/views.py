@@ -277,7 +277,7 @@ class SendEmail(APIView):
     def put(self, request, format="json"):
         if not request.user.is_authenticated() or not request.user.is_staff:
             raise PermissionDenied()
-        email_data = request.DATA
+        email_data = request.data
         fmt  = email_data.pop('format')
         body = email_data.pop('body')
         if fmt == 'mixed':
@@ -515,11 +515,11 @@ class BookingList(rest_generics.ListAPIView):
     serializer_class = BookingSerializer
     def get_queryset(self):
         queryset = BookingSystemEvent.objects.order_by("start_time")
-        date = self.request.QUERY_PARAMS.get('date', None)
+        date = self.request.query_params.get('date', None)
         if date is not None:
             date = timezones.parse_iso_date_to_naive(date)
             date = datetime.datetime.combine(date, datetime.time(0, tzinfo=timezone.get_default_timezone()))
-            delta = self.request.QUERY_PARAMS.get('day_offset', None)
+            delta = self.request.query_params.get('day_offset', None)
             if delta is not None:
               date = date + datetime.timedelta(days=int(delta))
             tplus1 = date + datetime.timedelta(days=1)

@@ -97,7 +97,7 @@ class PlayerListView(rest_generics.ListCreateAPIView):
     queryset = Player.objects.all()
     serializer_class = PlayerSerializer
     def post(self, request, format="json"):
-        player = request.DATA
+        player = request.data
         with transaction.atomic():
             user = player["user"]
             def get_and_remove(f):
@@ -140,7 +140,7 @@ class BookingSystemMembersView(APIView):
     def post(self, request, format="json"):
         if (request.user.groups.filter(name="Membership Editor").count() == 0 and not request.user.is_superuser):
             raise PermissionDenied()
-        credentials = request.DATA
+        credentials = request.data
         username = credentials["username"]
         password = credentials["password"]
         booking_session = BookingSystemSession(username, password)
