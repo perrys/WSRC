@@ -41,8 +41,6 @@ class WSRC_kiosk_view
     @log_id = 0
     $("#settings_panel").panel("open")
     $("input").vkeyboard()
-    @populate_settings_form()
-    
 
   log: (message) ->
     now = new Date()
@@ -105,14 +103,13 @@ class WSRC_kiosk_view
         group_data[input.attr("name")] = input.val()
     return data
 
-  populate_settings_form: () ->
-    $("#settings_panel fieldset").each (idx, elt) ->
-      fieldset = $(this)
+  populate_settings_form: (all_settings) ->
+    $("#settings_panel fieldset").each (idx, elt) =>
+      fieldset = $(elt)
       group_key = fieldset.data("group")
-      chrome.storage.local.get(group_key, (data) =>
-        for key, val of data[group_key]
-          fieldset.find(":input[name='#{ key }']").val(val)
-      )
+      settings = all_settings[group_key]
+      for key, val of settings
+        fieldset.find(":input[name='#{ key }']").val(val)
 
   update_club_event: (event) ->
     panel = $("#notifications")
@@ -136,7 +133,6 @@ class WSRC_kiosk_view
 class WSRC_kiosk
 
   constructor: () ->
-    @wsrc_host = "localhost:8000"
     @logo_click_count = 0
     @club_event_idx = 0
     @view = new WSRC_kiosk_view()
@@ -148,7 +144,6 @@ class WSRC_kiosk
     @view.log("waiting for handshake")
     handler = (event) => @handle_message_received(event)
     window.addEventListener("message", handler, false)
-
     window.setInterval ( => @update_clock()), 500
 
 
@@ -165,6 +160,10 @@ class WSRC_kiosk
 
   handle_message_log: (event, message) ->
     @view.log(message)
+
+  handle_message_settings_update: (event, settings) ->
+    @settings = settings
+    @view.populate_settings_form(settings)
 
   handle_message_show_panels: (event) ->
     @view.show_panels()
@@ -194,20 +193,19 @@ class WSRC_kiosk
       window.setInterval(updater, 45 * 1000)
       @club_event_update_started = true
 
-  handle_message_login_webviews: () ->
+  handle_message_login_webviews: (event, credentials) ->
     login_webview = $("webview#login_webview")[0]
     rule = 
       name: 'listener_rule'
-      matches: ["http://#{ @wsrc_host }/*"]
+      matches: ["http://#{ credentials.server }/*"]
       js:
         files: ["js/_jquery.js", "js/client_functions.js"]
       run_at: 'document_end'
     login_webview.addContentScripts([rule])
-    src = "http://#{ @wsrc_host }/login/"
+    src = "http://#{ credentials.server }/login/"
     @view.log("loading login webview: #{ src }")
-    login_webview.addEventListener('contentload', (event) =>
-      credentials = @view.get_settings().wsrc_credentials
-      login_webview.contentWindow.postMessage(["login", credentials.username, credentials.password], "http://#{ @wsrc_host }")
+    $(login_webview).one('contentload', (event) =>
+      login_webview.contentWindow.postMessage(["login", credentials.username, credentials.password], "http://#{ credentials.server }")
       return null
     )
     login_webview.src = src
@@ -238,13 +236,12 @@ class WSRC_kiosk
         @view.show_panels() 
             
   load_webview: (webview) ->
-    if webview.src
-      return
     src = $(webview).data("src")
-    src = "http://#{ @wsrc_host }/#{ src }?no_navigation"    
+    server = @settings.wsrc_credentials.server
+    src = "http://#{ server }/#{ src }?no_navigation"    
     rule = 
       name: 'vkeyboard'
-      matches: ["http://#{ @wsrc_host }/*"]
+      matches: ["http://#{ server }/*"]
       js:
         files: ["js/_jquery.js", "js/_jquery-ui.js", "js/jquery.vkeyboard.js", "js/client_functions.js"]
       css:
