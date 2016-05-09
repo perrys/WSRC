@@ -26,6 +26,11 @@ body {
     bottom: 0;
     left: 0;
     right: 0;
+    font-family: Helvetica,sans-serif;
+}
+
+.courts_now_next, .notifications-wrapper {
+    font-family: Ubuntu,Helvetica,sans-serif;
 }
 
 @page-margin: 1em;
@@ -33,6 +38,23 @@ body {
 #main {
     display: table;
     width: 100%;
+}
+
+.content {
+    margin-top: 5em;
+    padding: 0 0.5em 0 0.5em;
+    h1 {
+        text-align: center;
+        width: 100%;
+        font-size: 5em;
+    }
+}
+
+div.notifications-wrapper {
+    position: absolute;
+    top: 50%;
+    left: 25%;
+    right: 25%;
 }
 
 #notifications {
@@ -103,9 +125,6 @@ div.left, div.right {
 div.centre {
 }
 
-h1 {
-    font-size: 2em;
-}
 
 .clock {
     position: absolute;
@@ -138,17 +157,6 @@ h1 {
     right: @page-margin;
 }
 
-.content {
-    margin-top: 5em;
-    padding: 0 0.5em 0 0.5em;
-    h1 {
-        text-align: center;
-        width: 100%;
-        font-size: 5em;
-    }
-    
-
-}
 
 #boxes_popup-popup, #tournaments_popup-popup, #booking_popup-popup {
     width: 90%;
