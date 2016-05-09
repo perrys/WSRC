@@ -6,7 +6,7 @@ import os.path
 
 def get_images(pathelts):
   images = []
-  for ext in [".jpg", ".ico", ".png"]:
+  for ext in [".jpg", ".ico", ".png", ".gif"]:
     elts = list(pathelts)
     elts.append('*'+ext)
     pattern = os.path.join(*elts)
