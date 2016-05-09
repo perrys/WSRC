@@ -32,12 +32,14 @@
             <h1>Welcome to Woking Squash Club</h1>
           </div>
           <webview id="login_webview" data-src="/login/" partition="wsrc" style="width: 0; height:0;"></webview>
+          <div class="notifications-wrapper">
           <div id="notifications">
             <div data-theme="b">
               <h3 class="heading"></h3>
               <h4 class="date"></h4>
             </div>
             <div class="ui-body"></div>
+          </div>
           </div>
         </div>
         <div class="right">
@@ -107,7 +109,8 @@
               <h3>Settings</h3>
               <form>
                 <fieldset data-group="wsrc_credentials">
-                  <legend>WSRC Credentials</legend>
+                  <legend>Main Website Details</legend>
+                  <label>Server: <input name="server" /></label>
                   <label>Username: <input name="username" /></label>
                   <label>Password: <input name="password" type="password" /></label>
                 </fieldset>
