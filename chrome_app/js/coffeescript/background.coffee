@@ -13,7 +13,7 @@ class WSRC_kiosk_background
         username: "kiosk_user"
     
     @booking_check_period_minutes = 5
-    @club_event_check_period_minutes = 1 # 60
+    @club_event_check_period_minutes = 60
     document = @app_window.contentWindow.document
     @view = new WSRC_kiosk_background_view(document)
     handler = (event) => @handle_message_received(event)
