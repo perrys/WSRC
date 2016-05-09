@@ -7,7 +7,11 @@ class WSRC_kiosk_background_view
 class WSRC_kiosk_background
 
   constructor: (@app_window) ->
-    @wsrc_url = "http://localhost:8000"
+    @settings_defaults =
+      wsrc_credentials:
+        server: "www.wokingsquashclub.org"
+        username: "kiosk_user"
+    
     @booking_check_period_minutes = 5
     @club_event_check_period_minutes = 1 # 60
     document = @app_window.contentWindow.document
@@ -16,8 +20,8 @@ class WSRC_kiosk_background
     window.addEventListener("message", handler, false)
     chrome.storage.onChanged.addListener (changes, areaName) =>
       if areaName == "local"
-        @message_to_app("log", "[bg] detected settings change, attempting login")
-        @attempt_login()
+        @message_to_app("log", "[bg] detected settings change, checking login credentials")
+        @check_auth()
       
     @handshake_recieved = false
     poll_handshake = (timeout) =>
@@ -41,40 +45,51 @@ class WSRC_kiosk_background
     @app_window.contentWindow.postMessage(args, "*")
 
   handle_alarm_load_court_bookings: () ->
-    today = wsrc.utils.js_to_iso_date_str(new Date())
-    settings =
-      url: "#{ @wsrc_url }/data/bookings?date=#{ today }"
-      type: "GET"
-      complete: (jqXHR, status_txt) =>
-        if jqXHR.status == 200
-          console.log(jqXHR)
-          @message_to_app("court_bookings_update", jqXHR.responseJSON)
-        else
-          @message_to_app("log", "[bg] error fetching court bookings (#{ jqXHR.status } #{ jqXHR.statusText }) - #{ status }")
-    $.ajax(settings)
-
+    @get_settings (stored_data) =>
+      credentials = stored_data.wsrc_credentials
+      today = wsrc.utils.js_to_iso_date_str(new Date())
+      settings =
+        url: "http://#{ credentials.server }/data/bookings?date=#{ today }"
+        type: "GET"
+        complete: (jqXHR, status_txt) =>
+          if jqXHR.status == 200
+            console.log(jqXHR)
+            @message_to_app("court_bookings_update", jqXHR.responseJSON)
+          else
+            @message_to_app("log", "[bg] error fetching court bookings (#{ jqXHR.status } #{ jqXHR.statusText }) - #{ status }")
+      $.ajax(settings)
+  
   handle_alarm_load_club_events: () ->
-    settings =
-      url: "#{ @wsrc_url }/data/club_events"
-      type: "GET"
-      complete: (jqXHR, status_txt) =>
-        if jqXHR.status == 200
-          console.log(jqXHR)
-          @message_to_app("club_events_update", jqXHR.responseJSON)
-        else
-          @message_to_app("log", "[bg] error fetching club events (#{ jqXHR.status } #{ jqXHR.statusText }) - #{ status }")
-    $.ajax(settings)
+    @get_settings (stored_data) =>
+      credentials = stored_data.wsrc_credentials
+      settings =
+        url: "http://#{ credentials.server }/data/club_events"
+        type: "GET"
+        complete: (jqXHR, status_txt) =>
+          if jqXHR.status == 200
+            console.log(jqXHR)
+            @message_to_app("club_events_update", jqXHR.responseJSON)
+          else
+            @message_to_app("log", "[bg] error fetching club events (#{ jqXHR.status } #{ jqXHR.statusText }) - #{ status }")
+      $.ajax(settings)
+  
+  get_settings: (callback) =>
+    chrome.storage.local.get (settings) =>
+      merged = {}
+      $.extend(true, merged, @settings_defaults, settings)
+      callback.call(_this, merged)
+    
 
   attempt_login: () ->
-    chrome.storage.local.get("wsrc_credentials", (data) =>
-      credentials = data.wsrc_credentials
+    @get_settings (stored_data) =>
+      credentials = stored_data.wsrc_credentials
       unless credentials?.username and credentials?.password
         @message_to_app("log", "[bg] unable to login, please provide login credentials")
         @message_to_app("show_panels")
         return
       @message_to_app("log", "[bg] attempting login with username: #{ credentials.username }")
       settings =
-        url: "#{ @wsrc_url }/data/auth/"
+        url: "http://#{ credentials.server }/data/auth/"
         type: "POST"
         headers:
           "X-CSRFToken": @csrf_token 
@@ -85,34 +100,43 @@ class WSRC_kiosk_background
           if jqXHR.status == 200
             @csrf_token = data.csrf_token
             @message_to_app("log", "[bg] login successful, username: #{ data.username }")
-            @message_to_app("login_webviews")
+            @message_to_app("login_webviews", credentials)
           else
             @message_to_app("log", "[bg] login failed (#{ jqXHR.status } #{ jqXHR.statusText }), response: #{ jqXHR.responseText }, please check credentials")
       $.ajax(settings)
-    )
+      
   check_auth: () ->
-    settings =
-      url: "#{ @wsrc_url }/data/auth/"
-      type: "GET"
-      contentType: "application/json"
-      success: (data) =>
-        @csrf_token = data.csrf_token
-        if data.username
-          @message_to_app("log", "[bg] logged in, username: #{ data.username }")
-          @message_to_app("login_webviews")
-        else
-          @attempt_login()
-      error: (jqXHR, status_txt, error) =>
-        console.log(jqXHR)
-        console.log(error)
-    $.ajax(settings)
-
+    @get_settings (stored_data) =>
+      @message_to_app("settings_update", stored_data)
+      credentials = stored_data.wsrc_credentials
+      settings =
+        url: "http://#{ credentials.server }/data/auth/"
+        type: "GET"
+        contentType: "application/json"
+        success: (data) =>
+          @csrf_token = data.csrf_token
+          if data.username
+            if data.username == credentials.username
+              @message_to_app("log", "[bg] logged in, username: #{ data.username }")
+              @message_to_app("login_webviews", credentials)
+            else
+              @message_to_app("log", "[bg] incorrect username: #{ data.username }")
+              @attempt_login()
+          else
+            @attempt_login()
+        error: (jqXHR, status_txt, error) =>
+          console.log(jqXHR)
+          console.log(error)
+      $.ajax(settings)
+  
   handle_message_received: (event) ->
     console.log("background window received message:  #{ event.data }, from: #{ event.origin }")
     if event.data[0] == "handshake"
       @handshake_received = true
       @message_to_app("log", "[bg] handshake complete")
       @check_auth()
+      @get_settings (stored_data) =>
+        @message_to_app("settings_update", stored_data)
 
   @onReady: (app_window) ->
     app_window.contentWindow.addEventListener("load", () =>
