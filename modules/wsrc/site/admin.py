@@ -6,12 +6,12 @@ from wsrc.site.models import PageContent, EmailContent, EventFilter, Maintenance
 
 class PageContentAdmin(admin.ModelAdmin):
     formfield_overrides = {
-        models.TextField: {'widget': forms.Textarea(attrs={'cols': 100, 'rows': 40})},
+        models.TextField: {'widget': forms.Textarea(attrs={'cols': 100, 'rows': 30})},
     }
 
 class EmailContentAdmin(admin.ModelAdmin):
     formfield_overrides = {
-        models.TextField: {'widget': forms.Textarea(attrs={'cols': 100, 'rows': 40})},
+        models.TextField: {'widget': forms.Textarea(attrs={'cols': 100, 'rows': 30})},
     }
 
 class ClubEventAdmin(admin.ModelAdmin):
