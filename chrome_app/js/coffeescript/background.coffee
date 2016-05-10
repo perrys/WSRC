@@ -11,8 +11,12 @@ class WSRC_kiosk_background
       wsrc_credentials:
         server: "www.wokingsquashclub.org"
         username: "kiosk_user"
+      kiosk_settings:
+        booking_fetch_period: 5
+        events_fetch_period: 30
+        events_refresh_period: 45
+        webview_timeout: 2
     
-    @booking_check_period_minutes = 5
     @club_event_check_period_minutes = 60
     document = @app_window.contentWindow.document
     @view = new WSRC_kiosk_background_view(document)
@@ -37,8 +41,9 @@ class WSRC_kiosk_background
     booking_alarm = "load_court_bookings"
     chrome.alarms.onAlarm.addListener (alarm) =>
       @["handle_alarm_#{ alarm.name }"].apply(this)
-    chrome.alarms.create("load_court_bookings", {periodInMinutes: @booking_check_period_minutes})
-    chrome.alarms.create("load_club_events",    {periodInMinutes: @club_event_check_period_minutes})
+    @get_settings (settings) =>
+      chrome.alarms.create("load_court_bookings", {periodInMinutes: settings.kiosk_settings.booking_fetch_period})
+      chrome.alarms.create("load_club_events",    {periodInMinutes: settings.kiosk_settings.events_fetch_period})
 
   message_to_app: () ->
     args = $.fn.toArray.call(arguments)
@@ -47,6 +52,7 @@ class WSRC_kiosk_background
   handle_alarm_load_court_bookings: () ->
     @get_settings (stored_data) =>
       credentials = stored_data.wsrc_credentials
+      kiosk_settings = stored_data.kiosk_settings
       today = wsrc.utils.js_to_iso_date_str(new Date())
       settings =
         url: "http://#{ credentials.server }/data/bookings?date=#{ today }"
@@ -54,7 +60,7 @@ class WSRC_kiosk_background
         complete: (jqXHR, status_txt) =>
           if jqXHR.status == 200
             console.log(jqXHR)
-            @message_to_app("court_bookings_update", jqXHR.responseJSON)
+            @message_to_app("court_bookings_update", jqXHR.responseJSON, kiosk_settings)
           else
             @message_to_app("log", "[bg] error fetching court bookings (#{ jqXHR.status } #{ jqXHR.statusText }) - #{ status }")
       $.ajax(settings)
@@ -62,13 +68,13 @@ class WSRC_kiosk_background
   handle_alarm_load_club_events: () ->
     @get_settings (stored_data) =>
       credentials = stored_data.wsrc_credentials
+      kiosk_settings = stored_data.kiosk_settings
       settings =
         url: "http://#{ credentials.server }/data/club_events"
         type: "GET"
         complete: (jqXHR, status_txt) =>
           if jqXHR.status == 200
-            console.log(jqXHR)
-            @message_to_app("club_events_update", jqXHR.responseJSON)
+            @message_to_app("club_events_update", jqXHR.responseJSON, kiosk_settings)
           else
             @message_to_app("log", "[bg] error fetching club events (#{ jqXHR.status } #{ jqXHR.statusText }) - #{ status }")
       $.ajax(settings)
