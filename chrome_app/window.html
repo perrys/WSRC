@@ -90,21 +90,22 @@
             </table>
           </div>
           <div class="logo"><img id="yellow_dots_img" src="images/ball_logo_180x180.png" width="180" height="180" /></div>
-          <div id="boxes_popup" data-role="popup" data-position-to="window" data-overlay-theme="b" data-transition="fade">
+          <div id="boxes_popup" data-role="popup" data-position-to="window" data-overlay-theme="b" data-transition="fade" class="popup-timeout">
             <a href="#" data-rel="back" class="ui-btn ui-corner-all ui-btn-a ui-icon-delete ui-btn-icon-notext ui-btn-right">Close</a>
             <webview partition="wsrc" class="wsrc-client" data-src="boxes" style="width: 100%;"></webview>
           </div>
-          <div id="tournaments_popup" data-role="popup" data-position-to="window" data-overlay-theme="b" data-transition="fade">
+          <div id="tournaments_popup" data-role="popup" data-position-to="window" data-overlay-theme="b" data-transition="fade" class="popup-timeout">
             <a href="#" data-rel="back" class="ui-btn ui-corner-all ui-btn-a ui-icon-delete ui-btn-icon-notext ui-btn-right">Close</a>
             <webview partition="wsrc" class="wsrc-client" data-src="tournaments" style="width: 100%;"></webview>
           </div>
-          <div id="booking_popup" data-role="popup" data-position-to="window" data-overlay-theme="b" data-transition="fade">
+          <div id="booking_popup" data-role="popup" data-position-to="window" data-overlay-theme="b" data-transition="fade" class="popup-timeout">
             <a href="#" data-rel="back" class="ui-btn ui-corner-all ui-btn-a ui-icon-delete ui-btn-icon-notext ui-btn-right">Close</a>
             <webview src="http://booking.wokingsquashclub.org/" style="width: 100%;"></webview>
           </div>
         </div> <!-- main -->
         <div id="settings_panel" data-role="panel" data-theme="b"  data-content-theme="a" data-display="overlay" data-position="right">
           <a href="#my-header" data-rel="close" class="ui-btn ui-corner-all ui-btn-a ui-icon-delete ui-btn-right">Close panel</a>
+            <div data-role="collapsibleset">
             <div data-role="collapsible" data-iconpos="right">
               <h3>Settings</h3>
               <form>
@@ -114,6 +115,13 @@
                   <label>Username: <input name="username" /></label>
                   <label>Password: <input name="password" type="password" /></label>
                 </fieldset>
+                <fieldset data-group="kiosk_settings">
+                  <legend>Kiosk Settings</legend>
+                  <label>Bookings Sync Freq (mins): <input name="booking_fetch_period" type="range" min="1" max="120"/></label>
+                  <label>Events Sync Freq (mins): <input name="events_fetch_period" type="range" min="1" max="120"/></label>
+                  <label>Event Display Period (secs): <input name="events_refresh_period" type="range" min="0" max="120"/></label>
+                  <label>Webviews Display Timeout (mins): <input name="webview_timeout" type="range" min="0" max="15"/></label>
+                </fieldset>
               </form>
               <button id="settings_apply_btn">Apply</button>
             </div>
@@ -122,6 +130,7 @@
               <div id="log_console">
               </div>
             </div>
+          </div>
           </div>
         </div>
       </div> <!-- page -->

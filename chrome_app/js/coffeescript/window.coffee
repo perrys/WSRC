@@ -100,16 +100,21 @@ class WSRC_kiosk_view
       group_data = data[fieldset.data("group")] = {}
       fieldset.find(":input").each () ->
         input = $(this)
-        group_data[input.attr("name")] = input.val()
+        val = input.val()
+        if input.attr("type") == "number"
+          val = utils.toint(val)
+        group_data[input.attr("name")] = val
     return data
 
   populate_settings_form: (all_settings) ->
-    $("#settings_panel fieldset").each (idx, elt) =>
+    panel = $("#settings_panel")
+    panel.find("fieldset").each (idx, elt) =>
       fieldset = $(elt)
       group_key = fieldset.data("group")
       settings = all_settings[group_key]
       for key, val of settings
         fieldset.find(":input[name='#{ key }']").val(val)
+    panel.find("input[data-type='range']").slider("refresh")
 
   update_club_event: (event) ->
     panel = $("#notifications")
@@ -140,12 +145,28 @@ class WSRC_kiosk
       @handle_update_settings(evt);
     $('#yellow_dots_img').click (evt) =>
       @handle_logo_click(evt)
+
+    chrome.alarms.onAlarm.addListener (alarm) =>
+      @["handle_alarm_#{ alarm.name }"].call(this, alarm)
     
     @view.log("waiting for handshake")
     handler = (event) => @handle_message_received(event)
     window.addEventListener("message", handler, false)
     window.setInterval ( => @update_clock()), 500
-
+    $(".popup-timeout").on("popupafteropen", (evt) =>
+      id = evt.target.id
+      alarmname = "close_#{ id }"      
+      chrome.alarms.clear(alarmname, () =>
+        delay = @settings?.kiosk_settings?.webview_timeout
+        delay = 2 unless delay
+        chrome.alarms.create(alarmname, {delayInMinutes: delay})
+      )
+    )
+    $(".popup-timeout").on("popupafterclose", (evt) =>
+      id = evt.target.id
+      alarmname = "close_#{ id }"      
+      chrome.alarms.clear(alarmname)
+    )
 
   handle_message_received: (event) ->
     method = "handle_message_" + event.data[0]
@@ -168,15 +189,15 @@ class WSRC_kiosk
   handle_message_show_panels: (event) ->
     @view.show_panels()
 
-  handle_message_court_bookings_update: (event, data) ->
+  handle_message_court_bookings_update: (event, data, kiosk_settings) ->
     @court_bookings = data
     unless @court_update_started
       updater = () => @view.update_courts(@court_bookings)
       updater()
-      window.setInterval updater, 6 * 1000
+      window.setInterval updater, kiosk_settings.booking_fetch_period * 60 * 1000
       @court_update_started = true
 
-  handle_message_club_events_update: (event, data) ->
+  handle_message_club_events_update: (event, data, kiosk_settings) ->
     @club_events = data
     unless @club_event_update_started
       updater = () =>
@@ -190,7 +211,7 @@ class WSRC_kiosk
         @view.update_club_event(event)
         return null
       updater()
-      window.setInterval(updater, 45 * 1000)
+      window.setInterval(updater, kiosk_settings.events_refresh_period * 1000)
       @club_event_update_started = true
 
   handle_message_login_webviews: (event, credentials) ->
@@ -215,7 +236,21 @@ class WSRC_kiosk
     webviews.each (idx, wv) =>
       @load_webview(wv)
     @view.hide_panels()
-                
+
+  close_popup: (alarm_name) ->
+    id = alarm_name.replace("close_", "")
+    $("##{ id }").popup("close")
+    return true
+    
+  handle_alarm_close_boxes_popup: (alarm) ->
+    @close_popup(alarm.name)
+
+  handle_alarm_close_tournaments_popup: (alarm) ->
+    @close_popup(alarm.name)
+
+  handle_alarm_close_booking_popup: (alarm) ->
+    @close_popup(alarm.name)
+
   handle_update_settings: (event) ->
     data = @view.get_settings()
     chrome.storage.local.set(data, () =>
