@@ -51,6 +51,7 @@ class CompetitionRoundAdmin(admin.ModelAdmin):
 admin.site.register(comp_models.CompetitionRound, CompetitionRoundAdmin)
 
 class MatchAdmin(admin.ModelAdmin):
+    list_filter = ('competition__group__comp_type', 'competition__group')
     list_display = ("competition", "team1_player1", "team1_player2", "team2_player1", "team2_player2", "last_updated")
 admin.site.register(comp_models.Match, MatchAdmin)
 
