@@ -9,6 +9,7 @@
 {{ block.super }}
 <script>
 window.WSRC_bracket_data = {{ bracket_data|safe }};
+window.WSRC_is_editor = {% if is_editor %}true{% else %}false{% endif %};
 </script>
 {% endblock %}
 
@@ -31,7 +32,7 @@ window.WSRC_bracket_data = {{ bracket_data|safe }};
     </div>
     <div class="right-control-box">
       <fieldset data-role="controlgroup" data-type="horizontal" data-shadow="true">
-        <button id="edit-button" data-inline="true" class="ui-btn ui-icon-edit ui-btn-icon-right {% if not user.is_authenticated or not user.player %}ui-state-disabled{% endif %}" {% if user.is_authenticated and user.player %}onclick="wsrc.Tournament.on_edit_clicked(this);"{% endif %}>Edit</button>
+        <button id="edit-button" data-inline="true" class="ui-btn ui-icon-edit ui-btn-icon-right {% if not user.is_authenticated %}ui-state-disabled{% endif %}" {% if user.is_authenticated %}onclick="wsrc.Tournament.on_edit_clicked(this);"{% endif %}>Edit</button>
       </fieldset>
       <fieldset data-role="controlgroup" data-type="horizontal" data-shadow="true">
         <button id="bracket-refresh-button" data-inline="true" class="ui-btn ui-icon-refresh ui-btn-icon-right">Refresh</button>
