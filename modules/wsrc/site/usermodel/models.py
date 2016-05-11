@@ -36,6 +36,8 @@ class Player(models.Model):
                                     help_text="The number on your door entry card")
   squashlevels_id  = models.IntegerField(("SquashLevels ID"), db_index=True, blank=True, null=True, 
                                          help_text="ID on the squashlevels website - it is not normally necessary to change this")
+  england_squash_id  = models.IntegerField(("ES Membership #"), blank=True, null=True, 
+                                           help_text="England Squash Membership Number - it is not normally necessary to change this")
   prefs_receive_email  = models.NullBooleanField(("Receive Email"), default=True, null=True, blank=True,
                                                  help_text="Uncheck if you do *not* want to receive emails from the club&emdash; match reminders, social events etc.")
 
