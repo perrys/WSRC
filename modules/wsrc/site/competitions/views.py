@@ -297,6 +297,7 @@ def bracket_view(request, year, name, template_name="tournaments.html"):
         "competition": competition, 
         "bracket": html_table, 
         "bracket_data": bracket_data,
+        "is_editor": request.user.is_authenticated and request.user.has_perm("competitions.change_match")
     }
     options = set_view_options(request, ctx)
     ctx["selector"] = get_tournament_links(options, competition)
