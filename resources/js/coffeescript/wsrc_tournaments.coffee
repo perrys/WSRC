@@ -50,7 +50,7 @@ class WSRC_Tournament
     playerElts.mouseleave (evt) =>      
       jQuery("td.#{ wsrc.Tournament.HIGHLIGHT_CLASS }").removeClass(wsrc.Tournament.HIGHLIGHT_CLASS)
 
-    unless WSRC_user_player_id?
+    unless WSRC_is_authenticated?
       return null
       
     open_score_entry_dialog = (elt) =>
