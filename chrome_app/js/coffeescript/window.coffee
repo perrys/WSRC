@@ -116,7 +116,7 @@ class WSRC_kiosk_view
         fieldset.find(":input[name='#{ key }']").val(val)
     panel.find("input[data-type='range']").slider("refresh")
 
-  update_club_event: (event) ->
+  update_club_event: (event, nevents, idx, fast) ->
     panel = $("#notifications")
     date = ""
     if event?.display_date
@@ -125,20 +125,29 @@ class WSRC_kiosk_view
     if event?.display_time
       jsdate = utils.parse_date("2000-01-01 #{ event.display_time }")
       date += " " + utils.to_12h_time_str(jsdate, true)
+    scale = if fast then 100 else 1000
     options =
-      duration: 2 * 1000
+      duration: 2 * scale
       complete: () ->
         if event
           panel.find(".heading").text(event.title)
           panel.find(".date").text(date)
           panel.find(".ui-body").html(event.markup)
-          panel.fadeIn(3 * 1000)
+          panel.fadeIn(3 * scale)
+          pager = panel.find(".pager")
+          pager.children().remove()
+          for i in [1..nevents]
+            button = $("<div class='pager-button'><a href='' class='pager-link'>#{ i }</a></div>")
+            button.appendTo(pager)
+            if i == idx
+              button.addClass("active")
     panel.fadeOut(options)
     
 class WSRC_kiosk
 
   constructor: () ->
     @logo_click_count = 0
+    @club_events = []
     @club_event_idx = 0
     @view = new WSRC_kiosk_view()
     $("#settings_apply_btn").click (evt) =>
@@ -167,6 +176,13 @@ class WSRC_kiosk
       alarmname = "close_#{ id }"      
       chrome.alarms.clear(alarmname)
     )
+    $("#notifications").on "swipeleft", () =>
+      @update_club_events(true, -1)
+    $("#notifications").on "swiperight", () =>
+      @update_club_events(true)
+    $("#notifications").on "dblclick", () =>
+      @update_club_events(true)
+      
 
   handle_message_received: (event) ->
     method = "handle_message_" + event.data[0]
@@ -200,19 +216,11 @@ class WSRC_kiosk
   handle_message_club_events_update: (event, data, kiosk_settings) ->
     @club_events = data
     unless @club_event_update_started
-      updater = () =>
-        len = @club_events.length
-        if len == 0
-          event = null
-        else
-          if @club_event_idx >= len
-            @club_event_idx = 0
-          event = @club_events[@club_event_idx++]
-        @view.update_club_event(event)
-        return null
-      updater()
-      window.setInterval(updater, kiosk_settings.events_refresh_period * 1000)
       @club_event_update_started = true
+      updater = () =>
+        @update_club_events()
+      @update_club_events(true, 0)
+      window.setInterval(updater, kiosk_settings.events_refresh_period * 1000)
 
   handle_message_login_webviews: (event, credentials) ->
     login_webview = $("webview#login_webview")[0]
@@ -292,6 +300,20 @@ class WSRC_kiosk
     date_str = wsrc.utils.js_to_readable_date_str(now)
     time_str = now.toLocaleTimeString()
     @view.update_clock(date_str + " " + time_str)    
+
+  update_club_events: (fast, offset=1) =>
+    len = @club_events.length
+    if len == 0
+      event = null
+    else
+      @club_event_idx += offset
+      if @club_event_idx >= len
+        @club_event_idx = 0
+      else if @club_event_idx < 0
+        @club_event_idx = len-1
+      event = @club_events[@club_event_idx]
+    @view.update_club_event(event, len, @club_event_idx+1, fast)
+    return true
 
   @on: (method) ->
     args = $.fn.toArray.call(arguments)
