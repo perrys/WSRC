@@ -101,3 +101,6 @@ REST_FRAMEWORK = {
         'rest_framework.authentication.SessionAuthentication',
     )
 }
+
+MEDIA_ROOT=STATICFILES_DIRS[1]
+MEDIA_URL="/static/"
