@@ -55,6 +55,9 @@ import httplib2
 import json
 import logging
 import time
+import base64
+import os.path
+
 
 FACEBOOK_GRAPH_URL              = "https://graph.facebook.com/"
 FACEBOOK_GRAPH_ACCESS_TOKEN_URL = FACEBOOK_GRAPH_URL + "oauth/access_token"
@@ -556,15 +559,31 @@ def auth_view(request):
         return HttpResponse(None, content_type="application/json", status=httplib.OK)
         
 
-class MarkdownField(serializers.DateTimeField):
+class MarkdownField(serializers.Field):
     def to_representation(self, value):
         return markdown.markdown(value)
 
+class PictureField(serializers.Field):
+    def to_representation(self, value):
+        if value.name is None:
+            return None
+
+        data = value.file.read()
+        result = {
+            "name": os.path.split(value.name)[1],
+            "size": value.size,
+            "width": value.width,
+            "height": value.height,
+            "data": base64.standard_b64encode(data),
+        }
+        return result
+
 class ClubEventSerializer(serializers.ModelSerializer):
     markup   = MarkdownField()
+    picture  = PictureField()
     class Meta:
         model = ClubEvent
-        fields = ('title', 'display_date', 'display_time', 'markup', 'last_updated')
+        fields = ('title', 'display_date', 'display_time', 'markup', 'picture', 'last_updated')
 
 class ClubEventList(rest_generics.ListAPIView):
     serializer_class = ClubEventSerializer

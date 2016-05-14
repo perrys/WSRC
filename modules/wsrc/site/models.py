@@ -32,6 +32,7 @@ class ClubEvent(models.Model):
   title = models.CharField(max_length=64)
   display_date = models.DateField(blank=True, null=True)
   display_time = models.TimeField(blank=True, null=True)
+  picture = models.ImageField(upload_to="event_pictures/%Y/%m/%d", blank=True, null=True)
   markup = models.TextField()
   last_updated = models.DateTimeField(auto_now=True)
   def __unicode__(self):
