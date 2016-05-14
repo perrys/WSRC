@@ -133,6 +133,14 @@ class WSRC_kiosk_view
           panel.find(".heading").text(event.title)
           panel.find(".date").text(date)
           panel.find(".ui-body").html(event.markup)
+          picture = panel.find(".picture")
+          if event.picture
+            img = "<img src='#{ event.picture.url }' width='#{ event.picture.width }', height='#{ event.picture.height }', data-filename='#{ event.picture.name }' />"
+            picture.html(img)
+            picture.show()
+          else
+            picture.html("")
+            picture.hide()
           panel.fadeIn(3 * scale)
           pager = panel.find(".pager")
           pager.children().remove()
