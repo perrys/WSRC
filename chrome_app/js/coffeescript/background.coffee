@@ -1,4 +1,24 @@
 
+bytes_to_blob = (byteCharacters, contentType='', sliceSize=512) ->
+
+  byteArrays = [];
+  offset = 0
+
+  while offset < byteCharacters.length
+    slice = byteCharacters.slice(offset, offset + sliceSize)
+    offset += sliceSize
+
+    byteNumbers = new Array(slice.length)
+    i = 0
+    while i < slice.length
+      byteNumbers[i] = slice.charCodeAt(i)
+      ++i
+
+    byteArrays.push(new Uint8Array(byteNumbers));
+
+  return new Blob(byteArrays, {type: contentType})
+
+  
 class WSRC_kiosk_background_view
 
   constructor: (document) ->
@@ -74,11 +94,26 @@ class WSRC_kiosk_background
         type: "GET"
         complete: (jqXHR, status_txt) =>
           if jqXHR.status == 200
-            @message_to_app("club_events_update", jqXHR.responseJSON, kiosk_settings)
+            events = jqXHR.responseJSON
+            for event in events
+              @preprocess_club_event(event)
+            @message_to_app("club_events_update", events, kiosk_settings)
           else
             @message_to_app("log", "[bg] error fetching club events (#{ jqXHR.status } #{ jqXHR.statusText }) - #{ status }")
       $.ajax(settings)
-  
+
+  preprocess_club_event: (data) =>
+    if data.picture
+      binary_data = atob(data.picture.data)
+      if binary_data.length != data.picture.size
+        console.log("ERROR: decoded picture #{ data.picture.name } size mismatch - got #{ binary_data.length }, expected #{ data.picture.size }")
+      else
+        ext = data.picture.name.split(".").slice(-1)[0]
+        type = "image/#{ ext }"
+        blob = bytes_to_blob(binary_data, type)
+        data.picture.url = URL.createObjectURL(blob)
+    return data
+
   get_settings: (callback) =>
     chrome.storage.local.get (settings) =>
       merged = {}
