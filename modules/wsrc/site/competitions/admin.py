@@ -31,6 +31,9 @@ admin.site.register(comp_models.CompetitionGroup, CompetitionGroupAdmin)
 class EntrantInline(admin.TabularInline):
     model = comp_models.Entrant
 
+class MatchInLine(admin.TabularInline):
+    model = comp_models.Match
+
 def set_in_progress(modeladmin, request, queryset):
   queryset.update(state="active")
 set_in_progress.short_description="Start"
@@ -42,7 +45,7 @@ class CompetitionAdmin(admin.ModelAdmin):
     list_display = ("name", "group", "state", "end_date", "ordering", "url")
     list_editable = ("state", "end_date", "ordering", "url")
     list_filter = ('group__comp_type', 'group__name', 'state')
-    inlines = (EntrantInline,)
+    inlines = (EntrantInline,MatchInLine,)
     actions=(set_in_progress, set_concluded)
 admin.site.register(comp_models.Competition, CompetitionAdmin)
 
