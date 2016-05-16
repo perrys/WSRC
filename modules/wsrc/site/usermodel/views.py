@@ -127,11 +127,13 @@ class UserForm(forms.ModelForm):
     is_active = forms.fields.BooleanField(widget=MyNullBooleanSelect)
     class Meta:
         model = User
+        fields = ('id', 'username', 'password', 'first_name', 'last_name', 'email', 'is_active')
 
 class PlayerForm(forms.ModelForm):
     prefs_receive_email = forms.fields.NullBooleanField(widget=MyNullBooleanSelect)
     class Meta:
         model = Player
+        fields = ('id', 'user', 'cell_phone', 'other_phone', 'membership_type', 'wsrc_id', 'cardnumber', 'squashlevels_id', 'prefs_receive_email')
 
 class BookingSystemMembersView(APIView):
     authentication_classes = (SessionAuthentication,)
