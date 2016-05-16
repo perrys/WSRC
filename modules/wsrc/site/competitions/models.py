@@ -30,7 +30,11 @@ class CompetitionGroup(models.Model):
   name = models.CharField(max_length=128)
   comp_type = models.CharField(max_length=32, choices=GROUP_TYPES)
   end_date = models.DateField()
-  active = models.BooleanField(default=False)
+  # TODO - this field is a less useful duplicate of the state field on
+  # competition, and the two are used interchangably in the code. We
+  # should remove this one. Group querysets can be filtered using e.g.
+  # .exclude(competition__state="not_started")
+  active = models.BooleanField(default=False) 
   def __unicode__(self):
     return u"%s" % (self.name)
   class Meta:
