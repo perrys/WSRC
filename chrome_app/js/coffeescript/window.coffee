@@ -40,7 +40,7 @@ class WSRC_kiosk_view
   constructor: () ->
     @log_id = 0
     $("#settings_panel").panel("open")
-    $("input").vkeyboard()
+    $("input").not("[type='checkbox']").vkeyboard()
 
   log: (message) ->
     now = new Date()
