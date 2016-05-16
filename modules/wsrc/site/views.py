@@ -427,7 +427,6 @@ class MaintenanceForm(ModelForm):
     class Meta:
         model = MaintenanceIssue
         fields = ["description"]
-        exclude = ["reported_by"]
         widgets = {
             "description": Textarea(attrs={"rows": "3"})
         }
@@ -435,6 +434,7 @@ class MaintenanceForm(ModelForm):
 class SuggestionForm(ModelForm):
     class Meta:
         model = Suggestion
+        fields = ["description"]
         widgets = {
             "description": Textarea(attrs={"rows": "6"})
         }
