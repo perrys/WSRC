@@ -207,7 +207,8 @@ def boxes_view(request, end_date=None, template_name="boxes.html", check_permiss
             name = "{comp_type} - {name} {year}".format(**locals())
             group = get_object_or_404(queryset, end_date__year=year, name__iexact=name)
 
-        group = queryset.filter(active=True).order_by('-end_date')[0]
+        groups = queryset.exclude(competition__state="not_started").order_by('-end_date')
+        group = groups[0]
     else:
         end_date = parse_iso_date_to_naive(end_date)
         group = get_object_or_404(queryset, end_date=end_date)
