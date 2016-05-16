@@ -126,6 +126,13 @@
                   <label>Events Sync Freq (mins): <input name="events_fetch_period" type="range" min="1" max="120"/></label>
                   <label>Event Display Period (secs): <input name="events_refresh_period" type="range" min="0" max="120"/></label>
                   <label>Webviews Display Timeout (mins): <input name="webview_timeout" type="range" min="0" max="15"/></label>
+                  <fieldset data-role="controlgroup" data-type="horizontal">
+                    <legend>Soft Keyboard: </legend> 
+                    <input id="soft_keyboard_toggle_on"  name="virtual_keyboard" type="radio" value="on" checked="checked"/>
+                    <label for="soft_keyboard_toggle_on">On</label>
+                    <input id="soft_keyboard_toggle_off" name="virtual_keyboard" type="radio" value="off" />
+                    <label for="soft_keyboard_toggle_off">Off</label>
+                  </fieldset>
                 </fieldset>
               </form>
               <button id="settings_apply_btn">Apply</button>
