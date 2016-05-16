@@ -102,5 +102,5 @@ REST_FRAMEWORK = {
     )
 }
 
-MEDIA_ROOT=STATICFILES_DIRS[1]
-MEDIA_URL="/static/"
+MEDIA_ROOT='/var/www/static/uploads'
+MEDIA_URL = '/static/uploads/'
