@@ -19,8 +19,9 @@ vkeyboard_widget =
       @_vkeyboard = $("<div id='vkeyboard'></div>").appendTo(container)
 
   _show_vkeyboard: () ->
-    @_setup_vkeyboard()
-    @_vkeyboard.parents("#vkeyboard_container").show()
+    unless @options.disabled
+      @_setup_vkeyboard()
+      @_vkeyboard.parents("#vkeyboard_container").show()
 
   _hide_vkeyboard: () ->
     @_vkeyboard.parents("#vkeyboard_container").hide()
