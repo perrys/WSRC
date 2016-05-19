@@ -33,6 +33,20 @@ dispatch = (event) ->
             post_log_message "login failed (#{ jqXHR.status } #{ jqXHR.statusText }), response: #{ jqXHR.responseText }, please check credentials"
       $.ajax(settings)
       post_log_message "attempting login, username: #{ username }"
+
+    enable_vkeyboard: () ->
+      if $.fn.vkeyboard
+        inputs = $(":input[type='number']")
+        unless inputs.vkeyboard("instance")
+          inputs.vkeyboard({layout: 'numeric'})
+        inputs.vkeyboard("option", "disabled", false)
+      
+    disable_vkeyboard: () ->
+      if $.fn.vkeyboard
+        inputs = $(":input[type='number']")
+        unless inputs.vkeyboard("instance")
+          inputs.vkeyboard({layout: 'numeric'})
+        inputs.vkeyboard("option", "disabled", true)
       
   method = event.data[0]
   args = event.data[1..]
@@ -40,5 +54,3 @@ dispatch = (event) ->
 
 window.addEventListener("message", dispatch, false)
 
-if $.fn.vkeyboard
-  $(":input[type='number']").vkeyboard({layout: 'numeric'})
