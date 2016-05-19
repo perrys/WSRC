@@ -40,7 +40,6 @@ class WSRC_kiosk_view
   constructor: () ->
     @log_id = 0
     $("#settings_panel").panel("open")
-    $("input").not("[type='checkbox']").not("[type='radio']").vkeyboard()
 
   log: (message) ->
     now = new Date()
@@ -95,7 +94,7 @@ class WSRC_kiosk_view
 
   get_settings: () ->
     data = {}
-    $("#settings_panel fieldset").each (idx, elt) ->
+    $("#settings_panel form>fieldset").each (idx, elt) ->
       fieldset = $(this)
       group_data = data[fieldset.data("group")] = {}
       fieldset.find(":input").each () ->
@@ -103,18 +102,28 @@ class WSRC_kiosk_view
         val = input.val()
         if input.attr("type") == "number"
           val = utils.toint(val)
+        else if input.attr("type") == "radio"
+          unless input.prop("checked")
+            return
+          val = input.data("value")
         group_data[input.attr("name")] = val
     return data
 
   populate_settings_form: (all_settings) ->
-    panel = $("#settings_panel")
-    panel.find("fieldset").each (idx, elt) =>
+    $("#settings_panel form>fieldset").each (idx, elt) ->
       fieldset = $(elt)
       group_key = fieldset.data("group")
       settings = all_settings[group_key]
       for key, val of settings
-        fieldset.find(":input[name='#{ key }']").val(val)
-    panel.find("input[data-type='range']").slider("refresh")
+        inputs = fieldset.find(":input[name='#{ key }']")
+        inputs.each (idx,elt) ->
+          input = $(elt)
+          if input.attr("type") == "radio"
+            input.prop("checked", val == input.val())
+            inputs.checkboxradio("refresh")
+          else
+            input.val(val)
+    $("#settings_panel").find("input[data-type='range']").slider("refresh")
 
   update_club_event: (event, nevents, idx, fast) ->
     panel = $("#notifications")
@@ -159,12 +168,14 @@ class WSRC_kiosk
     @club_event_idx = 0
     @view = new WSRC_kiosk_view()
     $("#settings_apply_btn").click (evt) =>
-      @handle_update_settings(evt);
+      @handle_apply_settings(evt);
     $('#yellow_dots_img').click (evt) =>
       @handle_logo_click(evt)
 
     chrome.alarms.onAlarm.addListener (alarm) =>
-      @["handle_alarm_#{ alarm.name }"].call(this, alarm)
+      method = @["handle_alarm_#{ alarm.name }"]
+      if method
+        method.call(this, alarm)
     
     @view.log("waiting for handshake")
     handler = (event) => @handle_message_received(event)
@@ -190,6 +201,9 @@ class WSRC_kiosk
       @update_club_events(true)
     $("#notifications").on "dblclick", () =>
       @update_club_events(true)
+    $("input[name='virtual_keyboard']").on "change", () =>
+      @toggle_vkeyboard($("input[name='virtual_keyboard']:checked").val())
+
       
 
   handle_message_received: (event) ->
@@ -209,6 +223,15 @@ class WSRC_kiosk
   handle_message_settings_update: (event, settings) ->
     @settings = settings
     @view.populate_settings_form(settings)
+    @toggle_vkeyboard(settings.kiosk_settings.virtual_keyboard)
+    webviews = $("webview.wsrc-client")
+    webviews.each (idx, wv) =>
+      @setup_webview_vkeyboard()
+
+  setup_webview_vkeyboard: (wv) ->
+    method = if @settings?.kiosk_settings.virtual_keyboard == "on" then "enable_vkeyboard" else "disable_vkeyboard"
+    if wv?.contentWindow
+      wv.contentWindow.postMessage([method], "http://#{ @settings.wsrc_credentials.server }")
 
   handle_message_show_panels: (event) ->
     @view.show_panels()
@@ -240,9 +263,9 @@ class WSRC_kiosk
       run_at: 'document_end'
     login_webview.addContentScripts([rule])
     src = "http://#{ credentials.server }/login/"
-    @view.log("loading login webview: #{ src }")
+    @view.log("loading login webview: #{ src }, username: #{ credentials.username }")
     $(login_webview).one('contentload', (event) =>
-      login_webview.contentWindow.postMessage(["login", credentials.username, credentials.password], "http://#{ credentials.server }")
+      login_webview.contentWindow.postMessage(["login", credentials?.username, credentials.password], "http://#{ credentials.server }")
       return null
     )
     login_webview.src = src
@@ -267,7 +290,7 @@ class WSRC_kiosk
   handle_alarm_close_booking_popup: (alarm) ->
     @close_popup(alarm.name)
 
-  handle_update_settings: (event) ->
+  handle_apply_settings: (event) ->
     data = @view.get_settings()
     chrome.storage.local.set(data, () =>
       if chrome.runtime.lastError
@@ -301,6 +324,9 @@ class WSRC_kiosk
     webview.addContentScripts([rule])
     id = $(webview).parents("div").attr("id")
     @view.log("webview #{ id } loading: #{ src }") 
+    $(webview).one('contentload', (event) =>
+      @setup_webview_vkeyboard(webview)
+    )
     webview.src = src
 
   update_clock: () ->
@@ -322,6 +348,17 @@ class WSRC_kiosk
       event = @club_events[@club_event_idx]
     @view.update_club_event(event, len, @club_event_idx+1, fast)
     return true
+
+  toggle_vkeyboard: (val) =>
+    inputs = $("input").not("[type='checkbox']").not("[type='radio']")
+    if val == "on"
+      unless inputs.vkeyboard("instance")
+        inputs.vkeyboard()
+      inputs.vkeyboard("option", "disabled", false)
+    else
+      unless inputs.vkeyboard("instance")
+        inputs.vkeyboard()
+      inputs.vkeyboard("option", "disabled", true)
 
   @on: (method) ->
     args = $.fn.toArray.call(arguments)
