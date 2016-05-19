@@ -36,7 +36,8 @@ class WSRC_kiosk_background
         events_fetch_period: 30
         events_refresh_period: 45
         webview_timeout: 2
-    
+        virtual_keyboard: "on"
+            
     @club_event_check_period_minutes = 60
     document = @app_window.contentWindow.document
     @view = new WSRC_kiosk_background_view(document)
@@ -44,6 +45,8 @@ class WSRC_kiosk_background
     window.addEventListener("message", handler, false)
     chrome.storage.onChanged.addListener (changes, areaName) =>
       if areaName == "local"
+        @handle_alarm_load_court_bookings()
+        @handle_alarm_load_club_events()
         @message_to_app("log", "[bg] detected settings change, checking login credentials")
         @check_auth()
       
@@ -60,7 +63,9 @@ class WSRC_kiosk_background
     @handle_alarm_load_club_events()
     booking_alarm = "load_court_bookings"
     chrome.alarms.onAlarm.addListener (alarm) =>
-      @["handle_alarm_#{ alarm.name }"].apply(this)
+      method = @["handle_alarm_#{ alarm.name }"]
+      if method
+        method.apply(this)
     @get_settings (settings) =>
       chrome.alarms.create("load_court_bookings", {periodInMinutes: settings.kiosk_settings.booking_fetch_period})
       chrome.alarms.create("load_club_events",    {periodInMinutes: settings.kiosk_settings.events_fetch_period})
@@ -171,7 +176,6 @@ class WSRC_kiosk_background
       $.ajax(settings)
   
   handle_message_received: (event) ->
-    console.log("background window received message:  #{ event.data }, from: #{ event.origin }")
     if event.data[0] == "handshake"
       @handshake_received = true
       @message_to_app("log", "[bg] handshake complete")
