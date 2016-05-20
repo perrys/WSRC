@@ -1,7 +1,7 @@
 {
   "name": "WSRC Kiosk",
   "description": "Woking Squash Club Kiosk App.",
-  "version": "0.0.0.3",
+  "version": "0.0.0.4",
   "manifest_version": 2,
   "permissions": ["webview", "http://localhost:8000/", "http://www.wokingsquashclub.org/", "storage", "alarms"],
   "app": {
