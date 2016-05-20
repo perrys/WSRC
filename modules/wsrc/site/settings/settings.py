@@ -102,5 +102,4 @@ REST_FRAMEWORK = {
     )
 }
 
-MEDIA_ROOT='/var/www/static/uploads'
 
