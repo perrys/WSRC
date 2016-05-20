@@ -565,7 +565,7 @@ class MarkdownField(serializers.Field):
 
 class PictureField(serializers.Field):
     def to_representation(self, value):
-        if value.name is None:
+        if not value or value.name is None:
             return None
 
         data = value.file.read()
