@@ -85,8 +85,13 @@ class WSRC_kiosk_view
           next_court_found = true
     display_court = (type, court, booking) ->
       jq_row = $("#court#{ court }_#{ type }")
-      jq_row.find("td.time").html("#{ utils.to_12h_time_str(booking.start_time_js) }&mdash;#{ utils.to_12h_time_str(booking.end_time_js,true) }")
-      jq_row.find("td.description").html(if booking.name then booking.name else "-")
+      timestr = if booking then "#{ utils.to_12h_time_str(booking.start_time_js) }&mdash;#{ utils.to_12h_time_str(booking.end_time_js,true) }" else ""
+      descr   = if booking and booking.name then booking.name else "&mdash;"
+      jq_row.find("td.time").html(timestr)
+      jq_row.find("td.description").html(descr)
+    for i in [1..3]
+      display_court("now", i, null)
+      display_court("next", i, null)
     for court, booking of now_courts
       display_court("now", court, booking)
     for court, booking of next_courts
@@ -241,7 +246,7 @@ class WSRC_kiosk
     unless @court_update_started
       updater = () => @view.update_courts(@court_bookings)
       updater()
-      window.setInterval updater, kiosk_settings.booking_fetch_period * 60 * 1000
+      window.setInterval updater, 10 * 1000
       @court_update_started = true
 
   handle_message_club_events_update: (event, data, kiosk_settings) ->
