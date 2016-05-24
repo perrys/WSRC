@@ -237,7 +237,7 @@ def boxes_view(request, end_date=None, template_name="boxes.html", check_permiss
                 "name": competition.name,
                 "id": competition.id,
                 "entrants": entrants,
-                "can_edit": can_edit and comp_type == "qualifiers"
+                "can_edit": can_edit,
                 }
 
     def create_new_box_config(idx):
