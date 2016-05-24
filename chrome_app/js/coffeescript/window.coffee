@@ -110,7 +110,6 @@ class WSRC_kiosk_view
         else if input.attr("type") == "radio"
           unless input.prop("checked")
             return
-          val = input.data("value")
         group_data[input.attr("name")] = val
     return data
 
