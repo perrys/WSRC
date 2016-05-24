@@ -40,13 +40,15 @@ dispatch = (event) ->
         unless inputs.vkeyboard("instance")
           inputs.vkeyboard({layout: 'numeric'})
         inputs.vkeyboard("option", "disabled", false)
+        post_log_message "[wv] vkeyboard enabled #{ inputs.length } inputs"
       
     disable_vkeyboard: () ->
-      if $.fn.vkeyboard
+      if $.fn.vkeyboard        
         inputs = $(":input[type='number']")
         unless inputs.vkeyboard("instance")
           inputs.vkeyboard({layout: 'numeric'})
         inputs.vkeyboard("option", "disabled", true)
+        post_log_message "[wv] vkeyboard disabled #{ inputs.length } inputs"
       
   method = event.data[0]
   args = event.data[1..]
