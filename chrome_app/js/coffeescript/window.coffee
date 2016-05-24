@@ -329,7 +329,7 @@ class WSRC_kiosk
     webview.addContentScripts([rule])
     id = $(webview).parents("div").attr("id")
     @view.log("webview #{ id } loading: #{ src }") 
-    $(webview).one('contentload', (event) =>
+    $(webview).on('contentload', (event) =>
       @setup_webview_vkeyboard(webview)
     )
     webview.src = src
