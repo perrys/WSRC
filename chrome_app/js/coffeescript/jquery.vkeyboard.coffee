@@ -88,6 +88,13 @@ vkeyboard_widget =
 
   _action_tab: () -> return "	"
   _action_space: () -> return " "
+  _action_zero: () -> return "0"
+  _action_minus: () ->
+    val = parseInt(this.element.val(), 10)
+    unless isNaN(val)
+      val = -1 * val
+      this.element.val("#{ val }")
+      return null
   _action_bksp: () ->
     val = this.element.val()
     if val
@@ -118,6 +125,7 @@ vkeyboard_widget =
   _key_name_map:
     space: "&nbsp;"
     zero:  "0"
+    minus:  "-"
 
   _tab_next: () ->
     parent = @element.parents("form")
@@ -156,7 +164,7 @@ vkeyboard_widget =
         '7 8 9 {prev}'
         '4 5 6 {next}'
         '1 2 3 {clear}'
-        '{zero} - {done}'
+        '{zero} {minus} {done}'
       ]
 
 $.widget("wsrc.vkeyboard", vkeyboard_widget)
