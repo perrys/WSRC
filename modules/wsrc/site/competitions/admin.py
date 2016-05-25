@@ -40,13 +40,16 @@ set_in_progress.short_description="Start"
 def set_concluded(modeladmin, request, queryset):
   queryset.update(state="complete")
 set_concluded.short_description="Conclude"
+def set_not_started(modeladmin, request, queryset):
+  queryset.update(state="not_started")
+set_not_started.short_description="Un-start"
 
 class CompetitionAdmin(admin.ModelAdmin):
     list_display = ("name", "group", "state", "end_date", "ordering", "url")
     list_editable = ("state", "end_date", "ordering", "url")
-    list_filter = ('group__comp_type', 'group__name', 'state')
+    list_filter = ('group__comp_type', 'group', 'state')
     inlines = (EntrantInline,MatchInLine,)
-    actions=(set_in_progress, set_concluded)
+    actions=(set_not_started, set_in_progress, set_concluded)
 admin.site.register(comp_models.Competition, CompetitionAdmin)
 
 class CompetitionRoundAdmin(admin.ModelAdmin):
@@ -54,7 +57,7 @@ class CompetitionRoundAdmin(admin.ModelAdmin):
 admin.site.register(comp_models.CompetitionRound, CompetitionRoundAdmin)
 
 class MatchAdmin(admin.ModelAdmin):
-    list_filter = ('competition__group__comp_type', 'competition__group')
+    list_filter = ('competition__group', 'competition__name')
     list_display = ("competition", "team1_player1", "team1_player2", "team2_player1", "team2_player2", "last_updated")
 admin.site.register(comp_models.Match, MatchAdmin)
 
