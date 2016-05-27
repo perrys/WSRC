@@ -125,6 +125,45 @@ class WSRC_boxes_view
       tr = "<tr data-id='#{ entrant.player.id }'><th class='text player #{ current_user_cls }'>#{ name }</th><td class='number'>#{ row.p }</td><td class='number'>#{ row.w }</td><td class='number'>#{ row.d }</td><td class='number'>#{ row.l }</td><td class='number'>#{ row.f }</td><td class='number'>#{ row.a }</td><td class='number'>#{ row.pts }</td></tr>"
       table_body.append(tr)
 
+  show_results_dialog: (box) ->
+    container = $("#box_results_dialog")
+    container.find(".header h2").text("#{ box.name } Results")
+    jqbody = container.find("table tbody")
+    jqbody.children().remove()
+    id_map = {}
+    for e in box.entrants
+      id_map[e.player.id] = e
+      
+    for match in box.matches
+      if match.walkover
+        continue
+      unless match.points
+        continue
+      [p1,p2] = [0,1]
+      if match.points[0] > match.points[1]
+        [player1, player2] = [match.team1_player1, match.team2_player1]
+      else if match.points[0] < match.points[1]
+        [player2, player1] = [match.team1_player1, match.team2_player1]
+        [p2,p1] = [0,1]
+      else
+        is_draw = true
+        [player1, player2] = [match.team1_player1, match.team2_player1]
+      [player1, player2] = (id_map[p].player for p in [player1, player2])
+      date = wsrc.utils.iso_to_js_date(match.last_updated)
+      date = wsrc.utils.js_to_readable_date_str(date)
+      listify = (l) ->
+        l1 = ("#{ e[p1] }&ndash;#{ e[p2] }" for e in l)
+        l1.join(", ")
+      tr = """
+      <tr>
+        <td>#{ date }</td>
+        <td><span class='#{ if is_draw then '' else 'winner'}'>#{ player1.full_name }</span> vs. #{ player2.full_name }</td>
+        <td>#{ listify(match.scores) }</td>
+        <td class='points'>#{ listify([match.points]) }</td>
+      </td>"""
+      jqbody.append(tr)
+    container.popup("open")
+
   populate_new_table: (comp) ->
     container = @target_container_map[comp.name]
     container.data("id", comp.id)
@@ -337,6 +376,10 @@ class WSRC_boxes
     view_type = view_radios.filter(":checked").val()
     @view.set_view_type(view_type)
 
+  handle_results_clicked: (comp_id) ->
+    competition = @model.get_source_competition(comp_id)
+    @view.show_results_dialog(competition)
+    
   @on: (method) ->
     args = $.fn.toArray.call(arguments)
     @instance[method].apply(@instance, args[1..])

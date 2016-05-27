@@ -34,7 +34,7 @@ window.WSRC_box_data = {{ box_data|safe }};
         <label for="view_type_tables">Tables</label>
       </fieldset>
       <fieldset data-role="controlgroup" data-type="horizontal" data-shadow="true">
-        <button id="box-refresh-button" data-inline="true" class="ui-btn ui-icon-refresh ui-btn-icon-right">Refresh</button>
+        <button id="box-refresh-button" data-inline="true" class="ui-btn ui-icon-refresh ui-btn-icon-left">Refresh</button>
       </fieldset>
     </div>
     <div class="clear-all"></div>
@@ -50,9 +50,10 @@ window.WSRC_box_data = {{ box_data|safe }};
       <div class="ui-bar box-header" data-theme="b" data-role="header">
         <h2>{% if user.is_authenticated %}<a href="{% url 'member_list' %}?filter-ids={% for e in box_config.entrants %}{% if e.player.id %}{% if forloop.counter0 > 0 %},{% endif %}{{ e.player.id }}{% endif %}{% endfor %}">{% endif %}{{ box_config.name }}{% if user.is_authenticated %}</a>{% endif %}</h2>
 {% if box_config.can_edit %}
-        <a id="link-{{ box_config.id }}" class="ui-btn ui-btn-icon ui-btn-icon-right ui-icon-edit ui-corner-all ui-btn-right ui-btn-a" onclick="wsrc.boxes.on('handle_edit_clicked', {{ box_config.id }}); return true;">Edit
+        <a id="link-{{ box_config.id }}" class="ui-btn ui-btn-icon ui-btn-icon-left ui-icon-edit ui-corner-all ui-btn-right ui-btn-a" onclick="wsrc.boxes.on('handle_edit_clicked', {{ box_config.id }}); return true;">Edit
         </a>
 {% endif %}
+        <a class="ui-btn ui-btn-icon ui-btn-icon-left ui-icon-bullets ui-corner-all ui-btn-left ui-btn-a" data-rel="popup" onclick="wsrc.boxes.on('handle_results_clicked', {{ box_config.id }}); return true;">Results</a>
       </div>
       <div class="ui-body ui-body-a">
         <table data-role="table" data-mode="" data-name="{{ box_config.name }}" data-id="{{ box_config.id }}" class="boxes ui-corner-all ui-table boxtable">
@@ -106,6 +107,7 @@ window.WSRC_box_data = {{ box_data|safe }};
 {% endfor %}
         </tbody>
         </table>
+        
 
       </div>
     </div>
@@ -129,4 +131,33 @@ window.WSRC_box_data = {{ box_data|safe }};
 
   </div>
 </div>
+
+<div data-role="popup" id="box_results_dialog" data-overlay-theme="b" data-theme="a" data-dismissible="true">
+  <div data-role="header" data-theme="a">
+    <h2>Results</h2>
+    <a href="#" data-rel="back" class="ui-btn ui-corner-all ui-shadow ui-btn-a ui-icon-delete ui-btn-icon-notext ui-btn-right">Close</a>
+  </div>
+  <div class="ui-content">
+    <table class="league-results">
+      <thead>
+        <tr><th>Date</th><th>Opponents</th><th>Scores</th><th>Points</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Wed 24th Feb, 7:56pm</td>
+          <td><span class="winner">Stewart Perry</span> vs. Peter Richardson</td>
+          <td class="points">9-3, 9-1, 9-0</td>
+          <td class="points">7-2</td>
+        </tr>
+        <tr>
+          <td>Wed 24th Feb, 7:56pm</td>
+          <td><span class="winner">John Hughes</span> vs. Peter Richardson</td>
+          <td class="points">9-3, 9-7, 8-9, 9-3</td>
+          <td class="points">6-3</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
 {% endblock %}{% comment "extra_page_content" %}{% endcomment %}
