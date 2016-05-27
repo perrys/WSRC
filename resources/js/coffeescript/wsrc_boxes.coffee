@@ -531,7 +531,7 @@ class WSRC_boxes_admin extends WSRC_boxes
     other = (suffix) -> if suffix == "A" then "B" else "A"
     if source_name == "Premier"
       league_number = 0
-      sibling = "Premier"
+      myself = sibling = "Premier"
       child_1 = "League 1A"
       child_2 = "League 1B"
     else
@@ -545,10 +545,11 @@ class WSRC_boxes_admin extends WSRC_boxes
       else
         parent_1 = "League #{ league_number-1 }#{ league_suffix }"
         parent_2 = "League #{ league_number-1 }#{ other(league_suffix) }"
-      sibling = "League #{ league_number }#{ league_suffix }"
+      myself  = "League #{ league_number }#{ league_suffix }"
+      sibling = "League #{ league_number }#{ other(league_suffix) }"
       child_1 = "League #{ league_number+1 }#{ league_suffix }"
       child_2 = "League #{ league_number+1 }#{ other(league_suffix) }"
-    
+
     entrants = @collect_source_league_players(jtable)
     idx = 1
     while idx <= entrants.length
@@ -570,6 +571,8 @@ class WSRC_boxes_admin extends WSRC_boxes
       else if idx == 2 # second place, gets diagonally promoted in leagues > 1
         if league_number > 1
           set_target(6, parent_2)
+      else if idx == 4 # fourth place, gets shifted accross to sibling league
+        set_target(4, sibling)
       else if idx == 5 # 5th place gets demoted vertically to #1
         set_target(1, child_1)
       else if idx == 6 # 6th place gets demoted diagonally to #2
@@ -578,7 +581,7 @@ class WSRC_boxes_admin extends WSRC_boxes
         else
           set_target(2, child_2)
       if not done
-        set_target(idx, sibling) # default - move horizontally   
+        set_target(idx, myself) # default - move horizontally   
       ++idx
       
   collect_source_league_players: (jtable) ->
