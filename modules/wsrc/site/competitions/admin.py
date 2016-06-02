@@ -58,11 +58,11 @@ admin.site.register(comp_models.CompetitionRound, CompetitionRoundAdmin)
 
 class MatchAdmin(admin.ModelAdmin):
     list_filter = ('competition__group', 'competition__name')
-    list_display = ("competition", "team1_player1", "team1_player2", "team2_player1", "team2_player2", "last_updated")
+    list_display = ("competition", "team1", "team2", "get_scores_display", "walkover", "last_updated")
 admin.site.register(comp_models.Match, MatchAdmin)
 
 class EntrantAdmin(admin.ModelAdmin):
-    list_display = ("competition", "player", "player2")
-    list_filter = ('competition__group',)
+    list_display = ("competition", "player1", "player2", "ordering", "handicap")
+    list_filter = ('competition__group', 'competition__name')
 admin.site.register(comp_models.Entrant, EntrantAdmin)
 
