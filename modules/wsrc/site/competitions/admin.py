@@ -48,7 +48,8 @@ class CompetitionAdmin(admin.ModelAdmin):
     list_display = ("name", "group", "state", "end_date", "ordering", "url")
     list_editable = ("state", "end_date", "ordering", "url")
     list_filter = ('group__comp_type', 'group', 'state')
-    inlines = (EntrantInline,MatchInLine,)
+#    inlines = (EntrantInline,MatchInLine,) # TODO: figure out why inlines seem to really kill the CPU
+    inlines = (EntrantInline,)
     actions=(set_not_started, set_in_progress, set_concluded)
 admin.site.register(comp_models.Competition, CompetitionAdmin)
 
