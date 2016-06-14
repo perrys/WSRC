@@ -39,13 +39,13 @@ window.WSRC_admin =
     jQuery.ajax(settings)
     return null
 
-  find_entrant_by_id: (player_id) ->
+  find_entrant_by_id: (player1_id) ->
     children = this.jq_entrant_list[0].children
     for child in children
       child = $(child)
-      for attr in ["playerid", "player2id"]        
+      for attr in ["player1id", "player2id"]        
         id = child.data(attr)
-        if `id == player_id`
+        if `id == player1_id`
           return child
     return null
     
@@ -117,14 +117,14 @@ window.WSRC_admin =
       cls += " seeded"
     if comp_type == "doubles"
       cls += " doubles"
-    item = $("<li data-playerid='#{ entrant.player.id }' data-player2id='#{ entrant.player2.id }' class='#{ cls }'>
+    item = $("<li data-player1id='#{ entrant.player1.id }' data-player2id='#{ entrant.player2.id }' class='#{ cls }'>
       <input type='checkbox' class='seeded #{ seed_class }' onclick='WSRC_admin.on_toggle_seed(this);' #{ checked }>
       <input type='number' class='handicap #{ hcap_class }' min='-100' max='15' size='2' value='#{ hcap_val }'>
       <div class='player1'>
-        #{ entrant.player.full_name }
+        #{ entrant.player1.full_name }
       </div>
       <input class='player2 doubles #{ player2_class }' value='#{ entrant.player2.full_name }'>
-      <a class='ui-icon ui-icon-close' href='#' onclick='WSRC_admin.on_remove_entrant(#{ entrant.player.id });'></a>
+      <a class='ui-icon ui-icon-close' href='#' onclick='WSRC_admin.on_remove_entrant(#{ entrant.player1.id });'></a>
       </li>"
     )
     this.jq_entrant_list.append(item)
@@ -188,12 +188,12 @@ window.WSRC_admin =
   on_auto_complete: (cmp, event, ui) ->
     event.preventDefault()
     cmp.val(ui.item.label)
-    player_id = parseInt(ui.item.value)
-    player = this.players[player_id]
+    player1_id = parseInt(ui.item.value)
+    player = this.players[player1_id]
     unless player
       alert("Unable to find player #{ ui.item.label } [#{ ui.item.value }]")
-    cmp.data('playerid', player_id)
-    return player_id
+    cmp.data('player1id', player1_id)
+    return player1_id
 
   on_add_entrant: (form) ->
     input = $(form).find("input") 
@@ -203,12 +203,12 @@ window.WSRC_admin =
     if tokens.length > 1
       name = tokens[0]
       hcap_val = tokens[1]
-    player_id = parseInt(input.data("playerid"))
-    player = this.players[player_id]
+    player1_id = parseInt(input.data("player1id"))
+    player = this.players[player1_id]
     if player
       unless this.entrant_already_present(player)
         this.add_entrant_item
-          player: player
+          player1: player
           handicap: hcap_val
         input.val("")
       return true
@@ -227,7 +227,7 @@ window.WSRC_admin =
     comp_type = this.get_comp_type()
     this.jq_entrant_list.find("li").each (idx, elt) =>
       elt = $(elt)
-      player_id = elt.data("playerid")
+      player1_id = elt.data("player1id")
       handicap = if comp_type == "handicap" then elt.find("input.handicap").val() else null
       player2_id = if comp_type == "doubles" then elt.data("player2id") else null
       entrants.push
@@ -235,7 +235,7 @@ window.WSRC_admin =
         handicap: handicap
         hcap_suffix: ""
         ordering: idx+1
-        player:  this.players[player_id]
+        player1: this.players[player1_id]
         player2: this.players[player2_id]
         seeded: elt.hasClass("seeded")
     competition_data.entrants = entrants
