@@ -319,7 +319,7 @@ html .ui-bar-a .ui-btn:active,
 html .ui-body-a .ui-btn:active,
 html body .ui-group-theme-a .ui-btn:active,
 html head + body .ui-btn.ui-btn-a:active {
-	background-color: #FFFFFF /*{a-bdown-background-color}*/;
+	background-color: #fccb30 /*{a-bdown-background-color}*/;
 	border-color: #8c8c8c /*{a-bdown-border}*/;
 	color: #000000 /*{a-bdown-color}*/;
 	text-shadow: 0 /*{a-bdown-shadow-x}*/ 1px /*{a-bdown-shadow-y}*/ 0 /*{a-bdown-shadow-radius}*/ #eeeeee /*{a-bdown-shadow-color}*/;
@@ -481,7 +481,7 @@ html .ui-bar-b .ui-btn:active,
 html .ui-body-b .ui-btn:active,
 html body .ui-group-theme-b .ui-btn:active,
 html head + body .ui-btn.ui-btn-b:active {
-	background-color: #939393 /*{b-bdown-background-color}*/;
+	background-color: #fccb30 /*{b-bdown-background-color}*/;
 	border-color: #505050 /*{b-bdown-border}*/;
 	color: #ffffff /*{b-bdown-color}*/;
 	text-shadow: 0 /*{b-bdown-shadow-x}*/ 1px /*{b-bdown-shadow-y}*/ 0 /*{b-bdown-shadow-radius}*/ #444444 /*{b-bdown-shadow-color}*/;
