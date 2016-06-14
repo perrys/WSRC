@@ -55,16 +55,17 @@ class PlayerSerializer(serializers.ModelSerializer):
     fields = ('id', 'full_name', 'short_name')
 
 class EntrantSerializer(serializers.ModelSerializer):
-  player = PlayerSerializer(required=True)
+  player1 = PlayerSerializer(required=True)
   player2 = PlayerSerializer(required=False)
+  name = serializers.CharField(source="get_players_as_string", read_only="True")
   class Meta:
     model = Entrant
-    fields = ('player', 'player2', 'ordering', "seeded", "handicap", "hcap_suffix")
+    fields = ('id', 'name', 'player1', 'player2', 'ordering', "seeded", "handicap", "hcap_suffix")
 
 class EntrantDeSerializer(serializers.ModelSerializer):
   class Meta:
     model = Entrant
-    fields = ('competition', 'player', 'player2', 'ordering', "seeded", "handicap", "hcap_suffix")
+    fields = ('competition', 'player1', 'player2', 'ordering', "seeded", "handicap", "hcap_suffix")
   def create(self, validated_data):
       return Entrant.objects.create(**validated_data)
 
@@ -101,10 +102,8 @@ class CompactMatchField(serializers.RelatedField):
     return {"id": match.id,
             "competition_match_id": match.competition_match_id,
             "last_updated": match.last_updated,
-            "team1_player1": safe_get_id("team1_player1"),
-            "team2_player1": safe_get_id("team2_player1"),
-            "team1_player2": safe_get_id("team1_player2"),
-            "team2_player2": safe_get_id("team2_player2"),
+            "team1": safe_get_id("team1"),
+            "team2": safe_get_id("team2"),
             "scores": scores,
             "points": points,
             "walkover": match.walkover,
@@ -140,7 +139,7 @@ class CompetitionSerializer(serializers.ModelSerializer):
         e.delete()
     for e in entrants:
       e["competition"] = instance.id
-      e["player"] = e["player"]["id"]
+      e["player1"] = e["player1"]["id"]
       e["player2"] = e.get("player2") and e["player2"]["id"] or None
       serializer = EntrantDeSerializer(data=e)        
       if not serializer.is_valid():

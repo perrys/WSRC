@@ -65,6 +65,44 @@ class Competition(models.Model):
     unique_together = (("group", "ordering"),)
     ordering=["-group__end_date", "ordering", "name"]
 
+
+class Entrant(models.Model):
+  # players may not be populated for all types of competitions, as some are inferred from matches:
+  competition = models.ForeignKey(Competition)
+  player1 = models.ForeignKey(user_models.Player)
+  player2 = models.ForeignKey(user_models.Player, null=True, blank=True, related_name="entrant2+")
+  ordering = models.IntegerField()
+  handicap = models.IntegerField(null=True, blank=True)
+  hcap_suffix = models.CharField(max_length=4, blank=True)
+  seeded = models.BooleanField(default=False)
+
+  def get_players(self):
+    if self.player1 is None:
+      return None
+    players = [self.player1]
+    if self.player2 is not None:
+      players.append(self.player2)
+    return players
+
+  def get_players_as_string(self):
+    opponents = self.get_players()
+    if opponents is None:
+      return None
+    if len(opponents) == 1:
+      return opponents[0].get_full_name()
+    return " & ".join([p.get_short_name() for p in opponents])
+
+  def __unicode__(self):
+    result = self.get_players_as_string()
+    if self.handicap:
+      result += " ({hcap}{suffix})".format(hcap=self.handicap, suffix=self.hcap_suffix or "")
+    else:
+      result += " [{ordering}]".format(**self.__dict__)
+    return  result
+  class Meta:
+    unique_together = (("competition", "ordering"), ("competition", "player1"),)
+    ordering=["-competition__end_date", "competition", "ordering"]
+
 class Match(models.Model):
   """A match which forms part of a competition. For singles matches, only player1 is populated for each team"""
   WALKOVER_RESULTS = (
@@ -73,10 +111,12 @@ class Match(models.Model):
   )
   competition = models.ForeignKey(Competition)
   competition_match_id = models.IntegerField(help_text="Unique ID of this match within its competition", blank=True, null=True)
-  team1_player1 = models.ForeignKey(user_models.Player, related_name="match_1_1+", blank=True, null=True)
-  team1_player2 = models.ForeignKey(user_models.Player, related_name="match_1_2+", blank=True, null=True)
-  team2_player1 = models.ForeignKey(user_models.Player, related_name="match_2_1+", blank=True, null=True)
-  team2_player2 = models.ForeignKey(user_models.Player, related_name="match_2_2+", blank=True, null=True)
+  team1 = models.ForeignKey(Entrant, related_name="match_1+", blank=True, null=True)
+  team2 = models.ForeignKey(Entrant, related_name="match_2+", blank=True, null=True)
+  # team1_player1 = models.ForeignKey(user_models.Player, related_name="match_1_1+", blank=True, null=True)
+  # team1_player2 = models.ForeignKey(user_models.Player, related_name="match_1_2+", blank=True, null=True)
+  # team2_player1 = models.ForeignKey(user_models.Player, related_name="match_2_1+", blank=True, null=True)
+  # team2_player2 = models.ForeignKey(user_models.Player, related_name="match_2_2+", blank=True, null=True)
   team1_score1 = models.IntegerField(blank=True, null=True)
   team1_score2 = models.IntegerField(blank=True, null=True)
   team1_score3 = models.IntegerField(blank=True, null=True)
@@ -90,22 +130,51 @@ class Match(models.Model):
   walkover = models.IntegerField(blank=True, null=True, choices=WALKOVER_RESULTS)
   last_updated = models.DateTimeField(auto_now=True)
 
-  def get_team_players(self, team_number_1_or_2):
-    p1 = getattr(self, "team%(team_number_1_or_2)d_player1" % locals())
-    if p1 is None:
-      return None
-    players = [p1]
-    p2 = getattr(self, "team%(team_number_1_or_2)d_player2" % locals())
-    if p2 is not None:
-      players.append(p2)
-    return players
+  def clean(self):
+    if self.entrant1 is None and self.entrant2 is None:
+      raiseValidationError("Match must have at least one entrant")
+    def is_entrant(e):      
+      return e is None or self.competition.entrant_set.filter(id=e.id).count() == 1
+    if not is_entrant(self.entrant1):
+      raiseValidationError("Entrant 1 is not part of this competition")
+    if not is_entrant(self.entrant2):
+      raiseValidationError("Entrant 2 is not part of this competition")
 
-  def get_team_players_as_string(self, team_number_1_or_2):
-    opponents = self.get_team_players(team_number_1_or_2)
-    if opponents is None:
-      return None
-    return " & ".join([p.get_full_name() for p in opponents])
-    
+  def fixup(self):
+    def doit(team_number_1_or_2):
+      print self.competition
+      p1 = getattr(self, "team%(team_number_1_or_2)d_player1" % locals())
+      if p1 is None:
+        return
+      p2 = getattr(self, "team%(team_number_1_or_2)d_player2" % locals())
+      print p1
+      print p2
+      try:
+        entrant = self.competition.entrant_set.get(player1=p1, player2=p2)
+      except Exception,e:
+        if "Doubles" in self.competition.name: # some older double competition entrants are only keyed by first player
+          entrant = self.competition.entrant_set.get(player1=p1)
+          if entrant.player2 is None:
+            entrant.player2 = p2
+            entrant.save()
+        elif self.competition.name == "Handicap" and self.competition.end_date.year == 2013 :
+          max_ord = 0
+          for e in self.competition.entrant_set.all():
+            max_ord = max(max_ord, e.ordering)
+          entrant = Entrant.objects.create(competition=self.competition, player1=p1, ordering=max_ord+1)
+          entrant.save()
+        else:
+          raise e
+      setattr(self, "team%(team_number_1_or_2)d" % locals(), entrant)
+
+    doit(1)
+    doit(2)
+    self.save()
+
+  def get_team(self, team_number_1_or_2):
+    entrant = getattr(self, "team%(team_number_1_or_2)d" % locals())
+    return entrant or None
+
   def is_unplayed(self):
     return (self.team1_score1 is None or self.team2_score1 is None) and self.walkover is None
 
@@ -119,6 +188,13 @@ class Match(models.Model):
     scores = [getScore(n) for n in range(1,6)]
     return [score for score in scores if score is not None]
 
+  def get_scores_display(self):
+    scores = self.get_scores()
+    def fmt(s):
+      return "-".join([i is not None and "%d" % (i,) or "(None)" for i in s])
+    return ", ".join([fmt(s) for s in scores])
+  get_scores_display.short_description = "Scores"
+
   def get_sets_won(self, scores=None):
     if scores is None:
       scores = self.get_scores()
@@ -128,21 +204,21 @@ class Match(models.Model):
     t2wins = reduce(lambda total, val: (val[1] > val[0]) and total+1 or total, scores, 0)
     return (t1wins, t2wins)
 
-  def get_winners(self):
+  def get_winner(self):
     if self.walkover is not None:
       if self.walkover == 1:
-        return [self.team1_player1, self.team1_player2]
+        return self.team1
       else:
-        return [self.team2_player1, self.team2_player2]
+        return self.team2
 
     wins = self.get_sets_won()
     if wins is None:
       return None
     winners = None
     if wins[0] > wins[1]:
-      winners = [self.team1_player1, self.team1_player2]
+      winners = self.team1
     elif wins[0] < wins[1]:
-      winners = [self.team2_player1, self.team2_player2]
+      winners = self.team2
     return winners
 
   def is_knockout_comp(self):
@@ -165,16 +241,12 @@ class Match(models.Model):
 
   def __unicode__(self):
     teams = ""
-    if self.team1_player1 is not None:
-      teams += self.team1_player1.get_short_name()
-    if self.team1_player2 is not None:
-      teams += " & " + self.team1_player2.get_short_name()
-    if self.team2_player1 is not None:
+    if self.team1 is not None:
+      teams += self.team1.get_players_as_string()
+    if self.team2 is not None:
       if len(teams) > 0:
         teams += " vs "
-      teams += self.team2_player1.get_short_name()
-    if self.team2_player2 is not None:
-      teams += " & " + self.team2_player2.get_short_name()
+      teams += self.team2.get_players_as_string()
     return u"%s [%s] %s" % (self.competition_match_id, self.last_updated, teams)
   class Meta:
     verbose_name_plural = "matches"
@@ -187,18 +259,3 @@ class CompetitionRound(models.Model):
   end_date = models.DateField()
   def __unicode__(self):
     return u"%d [%s]" % (self.round, self.end_date)
-
-class Entrant(models.Model):
-  # players may not be populated for all types of competitions, as some are inferred from matches:
-  competition = models.ForeignKey(Competition)
-  player  = models.ForeignKey(user_models.Player)
-  player2 = models.ForeignKey(user_models.Player, null=True, blank=True, related_name="entrant2+")
-  ordering = models.IntegerField()
-  handicap = models.IntegerField(null=True, blank=True)
-  hcap_suffix = models.CharField(max_length=4, blank=True)
-  seeded = models.BooleanField(default=False)
-  def __unicode__(self):
-    return u"%s [%d] hcap:(%s%s) <%s>" % (self.player, self.ordering, self.handicap, self.hcap_suffix, self.competition)
-  class Meta:
-    unique_together = (("competition", "ordering"), ("competition", "player"),)
-    ordering=["-competition__end_date", "competition", "ordering"]
