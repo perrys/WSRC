@@ -219,8 +219,8 @@ def get_unplayed_matches(comp):
           first_entrant = entrants[i]
           second_entrant = entrants[j]
           query = (
-            Q(team1_player1=first_entrant.player,team2_player1=second_entrant.player) | 
-            Q(team2_player1=first_entrant.player,team1_player1=second_entrant.player) 
+            Q(team1=first_entrant,team2=second_entrant) | 
+            Q(team2=first_entrant,team1=second_entrant) 
             )
           existing_matches = comp.match_set.filter(query)
           if existing_matches.count() > 0: # a match is already present in the DB
@@ -229,10 +229,10 @@ def get_unplayed_matches(comp):
             if exclude_played_matches(existing_matches).count() > 0:
               unplayed_matches.extend(existing_matches)
           else: # nothing in the DB
-            new_match = Match(competition=comp, team1_player1=first_entrant.player, team2_player1=second_entrant.player)
+            new_match = Match(competition=comp, team1=first_entrant, team2=second_entrant)
             unplayed_matches.append(new_match)
     else:
-      at_least_one_player_expr = Q(team1_player1__isnull=False) | Q(team2_player1__isnull=False)
+      at_least_one_player_expr = Q(team1__isnull=False) | Q(team2__isnull=False)
       unplayed_matches = comp.match_set.filter(at_least_one_player_expr)
       unplayed_matches = exclude_played_matches(unplayed_matches)
 
@@ -244,21 +244,13 @@ def get_previous_match(match, team_number):
       previous_match_id += 1
     return Match.objects.filter(competition_id = match.competition_id).get(competition_match_id=previous_match_id) 
 
-def get_players(match, team_number, player_set=None):
-    players = match.get_team_players(team_number)
-    if players is None:
-        return None
-    if player_set is not None:
-      for p in players:
-        player_set.add(p.id)
-    return players
-
 def get_team_number(match, player_id):
     "Get the team number for this player in the given match"
-    for team in [1,2]:
-        player_set = set()
-        get_players(match, team, player_set)
-        if player_id in player_set:
+    for team_number in [1,2]:
+      team = match.get_team(team_number)
+      if team is not None:
+        for player in team.get_players():
+          if player.id == player_id:
             return team
     return None
 
@@ -267,19 +259,17 @@ def other_team_number(team_number):
         return 2
     return 1
 
-def get_or_create_next_match(competition, slot_id, player1, player2):
-    bottomSlot = slot_id & 1
+def get_or_create_next_match(competition, slot_id, winning_team):
+    is_bottomSlot = slot_id & 1
     match_id = slot_id >> 1
     try:
         match = competition.match_set.get(competition_match_id=match_id)
     except Match.DoesNotExist:
         match = competition.match_set.create(competition_match_id=match_id)
-    if bottomSlot:
-        match.team2_player1 = player1
-        match.team2_player2 = player2
+    if is_bottomSlot:
+        match.team2 = winning_team
     else:
-        match.team1_player1 = player1
-        match.team1_player2 = player2
+        match.team1 = winning_team
     match.save()
     return match
 
@@ -292,7 +282,7 @@ def reset(comp_id, entrants):
     for m in competition.match_set.all():
         m.delete()
     for e in entrants:
-        e["player"] = e["player"]["id"]
+        e["player1"] = e["player1"]["id"]
         e["player2"] = e.get("player2") and e["player2"]["id"] or None
         serializer = EntrantDeSerializer(data=e)        
         if not serializer.is_valid():
@@ -302,12 +292,12 @@ def reset(comp_id, entrants):
     entrants = competition.entrant_set.order_by("ordering")
     slots = wsrc.utils.bracket.calc_slots(len(entrants))
     for slot,entrant in zip(slots, entrants):
-        get_or_create_next_match(competition, slot, entrant.player, entrant.player2)
+        get_or_create_next_match(competition, slot, entrant)
 
 @transaction.atomic
-def submit_match_winners(match, winners):
+def submit_match_winner(match, winning_team):
     match.save()
-    get_or_create_next_match(match.competition, match.competition_match_id, winners[0], winners[1])
+    get_or_create_next_match(match.competition, match.competition_match_id, winning_team)
     
         
 @transaction.atomic
