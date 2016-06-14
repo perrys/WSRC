@@ -129,10 +129,10 @@ class UpdateMatch(rest_generics.RetrieveUpdateAPIView):
             # winners for the next step anyway.
             for attr, value in serializer.validated_data.items():
                 setattr(match, attr, value)
-            winners = match.get_winners()
-            if winners is None:
+            winner = match.get_winner()
+            if winner is None:
                 return HttpResponse("tournament matches must have a winner", status=400)
-            tournament.submit_match_winners(match, winners)
+            tournament.submit_match_winner(match, winner)
         else:
             serializer.save()
         return Response(serializer.data, status=200)
@@ -231,7 +231,7 @@ def boxes_view(request, end_date=None, template_name="boxes.html", check_permiss
                 if e.player.user.id == request.user.id:
                     return True
             return False
-        can_edit = is_editor or this_user()
+        can_edit = competition.state == "active" and (is_editor or this_user())
         return {"colspec": is_second and "double" or "single",
                 "nthcol": is_second and 'second' or 'first',
                 "name": competition.name,
