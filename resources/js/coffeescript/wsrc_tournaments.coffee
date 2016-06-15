@@ -23,7 +23,7 @@ class WSRC_Tournament
 
   get_unplayed_matches: () ->
     predicate = (match) ->
-      unless match.team1_player1 and match.team2_player1
+      unless match.team1 and match.team2
         return false
       if match.scores.length > 0
         return false # todo - allow authorized users to edit existing matches
@@ -43,9 +43,7 @@ class WSRC_Tournament
         return false
       matches = jQuery("td.player").filter () ->
         theirteam = $(this).data("team")
-        unless theirteam
-          return false
-        return myteam.primary_id == theirteam.primary_id
+        return myteam == theirteam
       matches.addClass(wsrc.Tournament.HIGHLIGHT_CLASS)
     playerElts.mouseleave (evt) =>      
       jQuery("td.#{ wsrc.Tournament.HIGHLIGHT_CLASS }").removeClass(wsrc.Tournament.HIGHLIGHT_CLASS)
@@ -89,12 +87,8 @@ class WSRC_Tournament
   @populate_matches: (competition_data) ->
     
     entrants = {}
-    players = {}
-    for p in competition_data.entrants
-      entrants[p.player.id] = p
-      players[p.player.id] = p.player
-      if p.player2
-        players[p.player2.id] = p.player2
+    for entrant in competition_data.entrants
+      entrants[entrant.id] = entrant
     
     populateMatch = (match) ->
   
@@ -102,12 +96,14 @@ class WSRC_Tournament
       baseSelector = "td#match_#{ competition_data.id  }_#{ match.competition_match_id }"
       team1Elt = jQuery(baseSelector + "_t")  # top cell
       team2Elt = jQuery(baseSelector + "_b")  # bottom cell
+      team1 = entrants[match.team1]
+      team2 = entrants[match.team2]
 
       unless team1Elt.length and team2Elt.length
         return
 
       single_team = false
-      if (not match.team1_player1) or (not match.team2_player1)
+      if (not team1?.player1) or (not team2?.player1)
         single_team = true
 
       for elt in [team1Elt, team2Elt]
@@ -122,12 +118,10 @@ class WSRC_Tournament
           apply_to_row (target) -> target.addClass("completed-match")
 
       set_team = (elt, idx) ->
-        p1id = match["team#{ idx }_player1"]
-        if p1id
-          p2id = match["team#{ idx }_player2"]
-          team = new WSRC_team(players[p1id], players[p2id])
-          elt.html(team.toString())
-          elt.data("team", team)
+        team_id = match["team#{ idx }"]
+        if team_id
+          elt.html(entrants[team_id].name)
+          elt.data("team", team_id)
       for [elt, idx] in [[team1Elt, 1], [team2Elt, 2]]
         set_team(elt, idx)
   
@@ -139,11 +133,11 @@ class WSRC_Tournament
             elt.prev().html(entrant.ordering)
           else if entrant.handicap != null
             elt.prev().html(entrant.handicap + entrant.hcap_suffix)
-      addSeed(match.team1_player1, team1Elt)
-      addSeed(match.team2_player1, team2Elt)
+      addSeed(match.team1, team1Elt)
+      addSeed(match.team2, team2Elt)
   
       # if we have two players, add any scores avaialble:
-      if match.team1_player1? and match.team2_player1?
+      if match.team1? and match.team2?
         team1ScoreElt = team1Elt.next()
         team2ScoreElt = team2Elt.next()
         scores = match.scores
