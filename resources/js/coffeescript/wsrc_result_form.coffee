@@ -14,6 +14,7 @@ class WSRC_result_form
     unless @team_type_prefix
       @team_type_prefix = "Player"
 
+    @entrants_map = wsrc.utils.list_to_map(@competition_data.entrants, "id")
     @players = WSRC_result_form.get_player_map(@competition_data.entrants)
 
     top_selector    = @form.find("select[name='team1']")
@@ -23,9 +24,9 @@ class WSRC_result_form
     @fill_selector(top_selector, null)
 
     if selected_match
-      wsrc.utils.select(top_selector,    selected_match.team1_player1)
+      wsrc.utils.select(top_selector,    selected_match.team1)
       @handle_team1_selected(top_selector)
-      wsrc.utils.select(bottom_selector, selected_match.team2_player1)
+      wsrc.utils.select(bottom_selector, selected_match.team2)
       @handle_team2_selected(bottom_selector)
       @load_scores_for_match(selected_match, false)
     else
@@ -87,19 +88,18 @@ class WSRC_result_form
   # primary id. If OPPOSITION_ID_FILTER is provided, only
   # include matches with approrpriate opponents
   fill_selector: (selector, opposition_id_filter) ->
-    teams = WSRC_result_form.get_team_map(@valid_match_set, @players, opposition_id_filter)
-    team_list = WSRC_result_form.team_map_to_list(teams)
+    entrants = WSRC_result_form.get_entrant_map(@valid_match_set, @entrants_map, opposition_id_filter)
+    entrant_tuples = WSRC_result_form.entrant_map_to_tuples(entrants)
     name = selector[0].name
     suffix = name.substr(name.length-1)
-    team_list.unshift(["", "#{ @team_type_prefix } #{ suffix }"])
-    wsrc.utils.fill_selector(selector, team_list)
-    return team_list[1..]
+    entrant_tuples.unshift(["", "#{ @team_type_prefix } #{ suffix }"])
+    wsrc.utils.fill_selector(selector, entrant_tuples)
+    return entrant_tuples[1..]
 
   handle_team1_selected: (selector) ->
     team1_id = WSRC_result_form.get_selected_id(selector)
     if team1_id
-      teams = WSRC_result_form.get_team_map(@valid_match_set, @players)
-      text = teams[team1_id].toString()
+      text = @entrants_map[team1_id].name
       @form.find("table.score-entry th.header-team1").text(text)
       bottom_selector = @form.find("select[name='team2']")
       bottom_selector.prop('disabled', false)
@@ -113,8 +113,7 @@ class WSRC_result_form
   handle_team2_selected: (selector) ->
     team2_id = WSRC_result_form.get_selected_id(selector)
     if team2_id
-      teams = WSRC_result_form.get_team_map(@valid_match_set, @players)
-      text = teams[team2_id].toString()
+      text = @entrants_map[team2_id].name
       @form.find("table.score-entry th.header-team2").text(text)
       top_selector = @form.find("select[name='team1']")
       team1_id = WSRC_result_form.get_selected_id(top_selector)
@@ -122,8 +121,8 @@ class WSRC_result_form
         @enable_score_entry()
         list = [
           ["", "Winner"]
-          [team1_id, teams[team1_id].toString()]
-          [team2_id, teams[team2_id].toString()]
+          [team1_id, @entrants_map[team1_id].name]
+          [team2_id, @entrants_map[team2_id].name]
         ]
         walkover_selector = @form.find("select[name='walkover_result']")
         wsrc.utils.fill_selector(walkover_selector, list)
@@ -173,7 +172,7 @@ class WSRC_result_form
           return false
         # use absolute values as handicap scores can be negative, and
         # e.g. -15/15 is a valid result
-        row_total = Math.abs(parseInt(val1)) + Math.abs(parseInt(val2))
+        row_total = Math.abs(wsrc.utils.to_int(val1)) + Math.abs(wsrc.utils.to_int(val2))
         if isNaN(row_total) or row_total == 0
           return false
         total += row_total
@@ -185,47 +184,42 @@ class WSRC_result_form
   @get_player_map: (entrants) ->
     players = {}
     for e in entrants
-      players[e.player.id] = e.player
+      players[e.player1.id] = e.player
       if e.player2
         players[e.player2.id] = e.player2
     return players
     
   # return a map of teams keyed by the first player's id. Each team
   # object has "player" and "player2" properties. If
-  # OPPOSITION_ID_FILTER is provided, only include matches with
+  # OPPOSITION_ENTRANT_ID is provided, only include matches with
   # this opponent team, and do not include that team in the returned list
-  @get_team_map: (match_set, players, opposition_id_filter) ->
-    teams = {}
+  @get_entrant_map: (match_set, entrant_map, opposition_entrant_id) ->
+    result = {}
     filter = (match) ->
-      if opposition_id_filter
-        return match.team1_player1 == opposition_id_filter or
-          match.team1_player2 == opposition_id_filter or
-          match.team2_player1 == opposition_id_filter or
-          match.team2_player2 == opposition_id_filter
+      if opposition_entrant_id
+        return match.team1 == opposition_entrant_id or
+          match.team2 == opposition_entrant_id
       return true
     for match in match_set
       if filter(match)
         for i in [1,2]
-          player1_id = match["team#{ i }_player1"]
-          player2_id = match["team#{ i }_player2"]
-          if opposition_id_filter
-            if player1_id == opposition_id_filter or player2_id == opposition_id_filter
+          entrant_id = match["team#{ i }"]
+          if opposition_entrant_id
+            if entrant_id == opposition_entrant_id
               continue
-          team = new WSRC_team(players[player1_id], players[player2_id])
-          teams[team.primary_id] = team
-    return teams
+          result[entrant_id] = entrant_map[entrant_id]
+    return result
 
-  @team_map_to_list: (team_map) ->
-    team_list = (t for id, t of team_map)
-    team_list.sort (lhs,rhs) ->
-      (lhs.toString() > rhs.toString()) - (lhs.toString() < rhs.toString())
-    team_list = ([p.primary_id, p.toString()] for p in team_list)
-    return team_list
+  @entrant_map_to_tuples: (entrant_map) ->
+    entrant_list = ([id, t.name] for id, t of entrant_map)
+    mapper = (tup) -> tup[1]
+    entrant_list.sort (l,r) -> wsrc.utils.lexical_sorter(l, r, mapper)
+    return entrant_list
 
   @get_selected_id: (selector) ->
     selected_value = $(selector).val()
     if selected_value.length > 0
-      selected_value = parseInt(selected_value)
+      selected_value = wsrc.utils.to_int(selected_value)
     else
       selected_value = null
     return selected_value
@@ -233,9 +227,9 @@ class WSRC_result_form
   # find an existing match with the given player/team ids. The 
   @find_match_for_ids: (valid_match_set, id1, id2) ->
     for match in valid_match_set
-      if id1 == match.team1_player1 and id2 == match.team2_player1
+      if id1 == match.team1 and id2 == match.team2
         return [match, false]
-      else if id1 == match.team2_player1 and id2 == match.team1_player1
+      else if id1 == match.team2 and id2 == match.team1
         return [match, true]
     return [null, null]
 
@@ -279,9 +273,9 @@ class WSRC_result_form
         @set_result_type('walkover')
         winner_select = @form.find("select[name='walkover_result']")
         if existing_match.walkover == 1
-          winner_select.val(existing_match.team1_player1)
+          winner_select.val(existing_match.team1)
         else
-          winner_select.val(existing_match.team2_player1)
+          winner_select.val(existing_match.team2)
         winner_select.selectmenu("refresh")
         @handle_walkover_result_changed(winner_select[0])
       else
@@ -315,7 +309,7 @@ class WSRC_result_form
     match.competition = @competition_data.id
     result_type = @form.find("input[name='result_type']:checked").val()
     if result_type == "walkover"
-      winner_id = parseInt(@form.find("select[name='walkover_result']").val())
+      winner_id = wsrc.utils.to_int(@form.find("select[name='walkover_result']").val())
       if winner_id == team_ids[0]
         match.walkover = if reversed then 2 else 1
       else
@@ -324,7 +318,7 @@ class WSRC_result_form
       for i in [1..5]
         for j in [1..2]
           score = @form.find(":input[name='team#{ j }_score#{ i }']").val()
-          score = if wsrc.utils.is_valid_int(score) then parseInt(score) else null
+          score = if wsrc.utils.is_valid_int(score) then wsrc.utils.to_int(score) else null
           team = j
           if reversed
             team = if j == 2 then 1 else 2
