@@ -55,6 +55,7 @@ def manage_tournament_bookings(username, password):
 def email_report_overdue_tournament_matches():
   import wsrc.site.competitions.tournament as tournament_utils
   import wsrc.site.models as site_models;
+  import wsrc.site.competitions.models as comp_models;
 
   today = datetime.date.today()
   def is_overdue(match):
@@ -70,14 +71,19 @@ def email_report_overdue_tournament_matches():
       overdue_match_map[tournament] = overdue_matches
 
   def get_opponent_desc(match, team_number_1_or_2):
-    opponents = match.get_team_players(team_number_1_or_2)
+    opponents = match.get_team(team_number_1_or_2)
     if opponents is not None:
-      return match.get_team_players_as_string(team_number_1_or_2)
-    previous_match = tournament_utils.get_previous_match(match, team_number_1_or_2)
-    t1 = previous_match.get_team_players_as_string(1)
-    t2 = previous_match.get_team_players_as_string(2)
-    return  "(WINNER of %(t1)s vs %(t2)s)" % locals()
-  
+      return opponents.get_players_as_string()
+    def match_descr(match, team_number):
+      try:
+        previous_match = tournament_utils.get_previous_match(match, team_number)
+        t1 = previous_match.team1 is not None and previous_match.team1.get_players_as_string() or match_descr(previous_match, 1)
+        t2 = previous_match.team2 is not None and previous_match.team2.get_players_as_string() or match_descr(previous_match, 2)
+        return "(WINNER of %(t1)s vs %(t2)s)" % locals()
+      except comp_models.Match.DoesNotExist: # if opponents are two rounds behind
+        return "(PREVIOUS MATCH UNRESOLVED)"
+    return match_descr(match, team_number_1_or_2)
+
   for tourament, overdue_matches in overdue_match_map.iteritems():
     match_table = [["Match", "Deadline"]]
     for match in overdue_matches:
@@ -121,11 +127,12 @@ def email_tournament_match_reminders(usernames):
   for tournament in current_tournaments:
     for m in tournament_utils.get_unplayed_matches(tournament):
       for i in [1,2]:
-        for j in [1,2]:
-          player = getattr(m, "team%(i)d_player%(j)d" % locals())
-          if player is not None:
-            match_list = collection_utils.get_or_add(player_to_matches_map, player.id)
-            match_list.append(m)
+        entrant = getattr(m, "team%(i)d" % locals())
+        if not entrant: 
+          continue
+        for player in entrant.get_players():
+          match_list = collection_utils.get_or_add(player_to_matches_map, player.id)
+          match_list.append(m)
 
   # for each player/match_list combination, create rectangular tables
   # of match descriptions and opponent details
@@ -138,18 +145,20 @@ def email_tournament_match_reminders(usernames):
     for match in match_list:
       my_team_number = tournament_utils.get_team_number(match, player_id)
       other_team_number = tournament_utils.other_team_number(my_team_number)
-      opponents = match.get_team_players(other_team_number)
-      if opponents is None:
-        try:
-          previous_match = tournament_utils.get_previous_match(match, other_team_number)
-          t1 = previous_match.get_team_players_as_string(1)
-          t2 = previous_match.get_team_players_as_string(2)
-          opponent_desc =  "(WINNER of %(t1)s vs %(t2)s)" % locals()
-        except comp_models.Match.DoesNotExist: # if opponents are two rounds behind
-          opponent_desc = "(PREVIOUS MATCH UNRESOLVED)"
+      opponents = match.get_team(other_team_number)
+      if opponents is not None:
+        opponent_set.update(opponents.get_players())
+        opponent_desc = opponents.get_players_as_string()
       else:
-        opponent_set.update(opponents)
-        opponent_desc = match.get_team_players_as_string(other_team_number)
+        def match_descr(match, team_number):
+          try:
+            previous_match = tournament_utils.get_previous_match(match, team_number)
+            t1 = previous_match.team1 is not None and previous_match.team1.get_players_as_string() or match_descr(previous_match, 1)
+            t2 = previous_match.team2 is not None and previous_match.team2.get_players_as_string() or match_descr(previous_match, 2)
+            return "(WINNER of %(t1)s vs %(t2)s)" % locals()
+          except comp_models.Match.DoesNotExist: # if opponents are two rounds behind
+            return "(PREVIOUS MATCH UNRESOLVED)"
+        opponent_desc = match_descr(match, other_team_number)
 
       if match.is_knockout_comp():
         comp_name  = match.competition.name
