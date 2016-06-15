@@ -69,13 +69,13 @@ class WSRC_boxes_view
     table_body = container.find("table.boxtable tbody")
     if clear_and_add_rows
       table_body.children().remove()
-    player_id_to_index_map = {}
+    entrant_id_to_index_map = {}
     rows = []
     idx = 0
     for player_spec in box.entrants
-      player = player_spec.player
+      player = player_spec.player1
       name = @get_player_name(player)
-      player_id_to_index_map[player.id] = idx
+      entrant_id_to_index_map[player_spec.id] = idx
       if clear_and_add_rows
         current_user_cls = ''
         block_cls = 'ui-bar-a block'
@@ -89,7 +89,7 @@ class WSRC_boxes_view
             jcell = $("<td class='points'></td>")
           jrow.append(jcell)
           row.push(jcell.get(0))
-        jrow.append("<td class='number'>#{ points_map[player.id] }</td>")
+        jrow.append("<td class='number'>#{ points_map[player_spec.id] }</td>")
         table_body.append(jrow)
       ++idx
     unless clear_and_add_rows
@@ -102,8 +102,8 @@ class WSRC_boxes_view
             row.push(elt) if j > 1
           elt.lastElementChild.textContent = points_map[id]
     for match in box.matches
-      p1 = player_id_to_index_map[match.team1_player1]
-      p2 = player_id_to_index_map[match.team2_player1]
+      p1 = entrant_id_to_index_map[match.team1]
+      p2 = entrant_id_to_index_map[match.team2]
       rows[p1][p2].textContent = match.points[0]
       rows[p2][p1].textContent = match.points[1]
         
@@ -113,16 +113,16 @@ class WSRC_boxes_view
     table_body.children().remove()
     id_map = {}
     for e in box.entrants
-      id_map[e.player.id] = e
+      id_map[e.id] = e
     for row in points_totals
       entrant = id_map[row.id]
       current_user_cls = '' # if row.id == WSRC_user_player_id then 'wsrc-currentuser' else ''
-      name = entrant.player.full_name
+      name = entrant.player1.full_name
       if entrant.handicap?
         name += " (#{ entrant.handicap })"
       if @is_admin_view
-        name += " [#{ entrant.player.id }]"
-      tr = "<tr data-id='#{ entrant.player.id }'><th class='text player #{ current_user_cls }'>#{ name }</th><td class='number'>#{ row.p }</td><td class='number'>#{ row.w }</td><td class='number'>#{ row.d }</td><td class='number'>#{ row.l }</td><td class='number'>#{ row.f }</td><td class='number'>#{ row.a }</td><td class='number'>#{ row.pts }</td></tr>"
+        name += " [#{ entrant.player1.id }]"
+      tr = "<tr data-id='#{ entrant.player1.id }'><th class='text player #{ current_user_cls }'>#{ name }</th><td class='number'>#{ row.p }</td><td class='number'>#{ row.w }</td><td class='number'>#{ row.d }</td><td class='number'>#{ row.l }</td><td class='number'>#{ row.f }</td><td class='number'>#{ row.a }</td><td class='number'>#{ row.pts }</td></tr>"
       table_body.append(tr)
 
   show_results_dialog: (box) ->
@@ -132,7 +132,7 @@ class WSRC_boxes_view
     jqbody.children().remove()
     id_map = {}
     for e in box.entrants
-      id_map[e.player.id] = e
+      id_map[e.id] = e
       
     for match in box.matches
       if match.walkover
@@ -141,14 +141,14 @@ class WSRC_boxes_view
         continue
       [p1,p2] = [0,1]
       if match.points[0] > match.points[1]
-        [player1, player2] = [match.team1_player1, match.team2_player1]
+        [entrant1, entrant2] = [match.team1, match.team2]
       else if match.points[0] < match.points[1]
-        [player2, player1] = [match.team1_player1, match.team2_player1]
+        [entrant2, entrant1] = [match.team1, match.team2]
         [p2,p1] = [0,1]
       else
         is_draw = true
-        [player1, player2] = [match.team1_player1, match.team2_player1]
-      [player1, player2] = (id_map[p].player for p in [player1, player2])
+        [entrant1, entrant2] = [match.team1, match.team2]
+      [player1, player2] = (id_map[e].player1 for e in [entrant1, entrant2])
       date = wsrc.utils.iso_to_js_date(match.last_updated)
       date = wsrc.utils.js_to_readable_date_str(date)
       listify = (l) ->
@@ -171,8 +171,8 @@ class WSRC_boxes_view
     inputs.val("")
     idx = 0
     for entrant in comp.entrants
-      inputs.eq(idx).val(@get_player_name(entrant.player))
-      @set_source_player_ghost(entrant.player.id)
+      inputs.eq(idx).val(@get_player_name(entrant.player1))
+      @set_source_player_ghost(entrant.player1.id)
       ++idx
 
   clear_new_tables: () ->
@@ -214,6 +214,9 @@ class WSRC_boxes_view
     draggables = rows.find("th.player")
     draggables.css("opacity", 1.0)
     return draggables
+
+  erase_source_leagues: () ->
+    $("#source_boxes div.table-wrapper tbody th.player").html("")
 
   hide_source_leagues: () ->
     $("#source_boxes div.table-wrapper").hide()
@@ -258,6 +261,7 @@ class WSRC_boxes
     leagues = competition_group.competitions_expanded
     for league in leagues
       max_players = Math.max(max_players, league.entrants.length)
+    @view.erase_source_leagues()
     @view.hide_source_leagues()
     for league in leagues
       points_table = @get_points_totals(league)
@@ -292,17 +296,16 @@ class WSRC_boxes
 
 
   get_points_totals: (this_box_config) ->
-    newTotals = (player_id) -> {id: player_id, p: 0, w: 0, d: 0, l: 0, f: 0, a: 0, pts: 0}
-    player_totals = {}
+    newTotals = (entrant_id) -> {id: entrant_id, p: 0, w: 0, d: 0, l: 0, f: 0, a: 0, pts: 0}
+    entrant_totals = {}
     for e in this_box_config.entrants
-      player = e.player
-      player_totals[player.id] = newTotals(player.id)
+      entrant_totals[e.id] = newTotals(e.id)
     for r in this_box_config.matches
       for i in [1..2]
-        player_id = r["team#{ i }_player1"]
-        totals = player_totals[player_id]
+        entrant_id = r["team#{ i }"]
+        totals = entrant_totals[entrant_id]
         unless totals?
-          totals =  player_totals[player_id] = newTotals(player_id)
+          totals =  entrant_totals[entrant_id] = newTotals(entrant_id)
         totals.p += 1
         mine = i-1
         theirs = (if i == 1 then 1 else 0)
@@ -316,8 +319,8 @@ class WSRC_boxes
         else
           totals.d += 1
         totals.pts += r.points[mine]
-    player_totals = (totals for id,totals of player_totals)
-    player_totals.sort((l,r) ->
+    entrant_totals = (totals for id,totals of entrant_totals)
+    entrant_totals.sort((l,r) ->
       result = r.pts - l.pts
       if result == 0
         result = (r.f-r.a) - (l.f-l.a)
@@ -325,7 +328,7 @@ class WSRC_boxes
           result = r.full_name < l.full_name
       result
     )
-    return player_totals
+    return entrant_totals
 
   show_score_entry_dialog: (competition_data, permitted_matches, selected_match) ->
     dialog = $('#score_entry_dialog')
@@ -350,24 +353,26 @@ class WSRC_boxes
     entrants = competition.entrants
     possible_matches = if competition.matches then competition.matches.slice() else []
     mapping = {}
+    # need to calculate the set of possible matches. First get matches already played:
     for m in possible_matches
-      p1 = m.team1_player1
-      p2 = m.team2_player1
+      p1 = m.team1
+      p2 = m.team2
       if p1 > p2
         [p1, p2] = [p2, p1]
       mapping[wsrc.utils.cantor_pair(p1, p2)] = m
     last = entrants.length
+    # Now fill in blank matches for the opponent pairs not already played
     for i in [0...last]
       row_start = i+1
       for j in [row_start...last]
-        p1 = entrants[i].player.id
-        p2 = entrants[j].player.id
+        p1 = entrants[i].id
+        p2 = entrants[j].id
         if p1 > p2
           [p1, p2] = [p2, p1]
         unless mapping[wsrc.utils.cantor_pair(p1, p2)]
           possible_matches.push
-            team1_player1: p1
-            team2_player1: p2
+            team1: p1
+            team2: p2
             scores: []
     @show_score_entry_dialog(competition, possible_matches)
 
@@ -554,7 +559,7 @@ class WSRC_boxes_admin extends WSRC_boxes
     idx = 1
     while idx <= entrants.length
       entrant = entrants[idx-1]
-      player = @model.member_map[entrant.player.id]
+      player = @model.member_map[entrant.player1.id]
       done = false
       set_target = (target_position, target_name) =>
         if @view.relocate_player(player, target_name, target_position-1)
@@ -590,7 +595,7 @@ class WSRC_boxes_admin extends WSRC_boxes
       id = @scrape_player_id(elt.textContent)
       if id
         entrants.push
-          player:
+          player1:
             id: id
           ordering: idx1
     return entrants
@@ -607,7 +612,7 @@ class WSRC_boxes_admin extends WSRC_boxes
           id = @scrape_player_id($(input).val())
           if id
             entrants.push
-              player:
+              player1:
                 id: id
               ordering: idx1
       if entrants.length > 0
@@ -702,7 +707,7 @@ class WSRC_boxes_admin extends WSRC_boxes
       league_players_map = @collect_target_league_players()
       for league_name, comp_data of league_players_map
         for entrant in comp_data.entrants
-          draggables = @view.set_source_player_ghost(entrant.player.id)
+          draggables = @view.set_source_player_ghost(entrant.player1.id)
           draggables.draggable("disable")
     )
 
@@ -764,7 +769,7 @@ class WSRC_boxes_admin extends WSRC_boxes
     player_str = ui.item.value
     player_id = @scrape_player_id(player_str)
     for league, comp_data of @collect_target_league_players(evt.target)
-      player_ids = (e.player.id for e in comp_data.entrants)
+      player_ids = (e.player1.id for e in comp_data.entrants)
       if player_ids.indexOf(player_id) >= 0
         input = $(evt.target).parents("tr").find("input")
         alert("ERROR: #{ player_str } is already in box \"#{ league }\"")
