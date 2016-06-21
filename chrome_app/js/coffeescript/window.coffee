@@ -34,19 +34,40 @@ utils =
     date = new Date(Date.UTC(y, m-1, d, ho, mi + offset_mi, se)) 
     return date
 
-  
+  getAllEvents: (element) ->
+    result = [];
+    for key of element
+      if key.indexOf('on') == 0 
+        result.push(key.slice(2))
+    return result.join(' ');
+
+  elt_to_string: (elt) ->
+    result = elt.tagName.toLocaleLowerCase()
+    if elt.id
+      result += "##{ elt.id }"
+    classlist = elt.classList
+    if classlist
+      result += "." + Array.prototype.slice.call(classlist,0).join(".")
+    return result
+
+  evt_to_string: (evt) ->
+    result = "#{ evt.type } [#{ if evt.bubbles then '+' else '-' }bubbles, #{ if evt.originalEvent.isTrusted then '' else 'not ' }trusted]"
+    return result
+            
 class WSRC_kiosk_view
 
   constructor: () ->
     @log_id = 0
     $("#settings_panel").panel("open")
 
-  log: (message) ->
+  log: (message, jqcontainer, elide_date) ->
     now = new Date()
-    date = wsrc.utils.js_to_iso_date_str(now)
+    date = if elide_date? then "" else wsrc.utils.js_to_iso_date_str(now) + " "
     time = now.toTimeString().substr(0,8)
-    message = "#{ date } #{ time } #{ message }"
-    $("#log_console").append("<div id='log_#{ @log_id }'>#{ message }</div>")
+    message = "#{ date }#{ time } #{ message }"
+    unless jqcontainer
+      jqcontainer = $("#log_console")
+    jqcontainer.prepend("<div id='log_#{ @log_id }'>#{ message }</div>")
     return @log_id++
 
   show_panels: () ->
@@ -207,6 +228,15 @@ class WSRC_kiosk
       @update_club_events(true)
     $("input[name='virtual_keyboard']").on "change", () =>
       @toggle_vkeyboard($("input[name='virtual_keyboard']:checked").val())
+    $(".event_test").each (idx, elt) =>
+      events = utils.getAllEvents(elt)
+      $(elt).on(events, (e) =>
+#        e.preventDefault()
+        msg = "#{ utils.evt_to_string(e) }"
+        #msg += "<br>tgt: #{ utils.elt_to_string(e.target) }"
+        @view.log(msg, $("#event_log_console"), true)
+        return true
+      )
 
       
 
