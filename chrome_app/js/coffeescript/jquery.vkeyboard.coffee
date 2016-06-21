@@ -163,9 +163,9 @@ vkeyboard_widget =
       ]
     numeric: 
       normal: [
-        '7 8 9 {prev}'
+        '7 8 9 {clear}'
         '4 5 6 {next}'
-        '1 2 3 {clear}'
+        '1 2 3 {prev}'
         '{zero} {minus} {done}'
       ]
 
