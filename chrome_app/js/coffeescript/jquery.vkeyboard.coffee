@@ -14,7 +14,9 @@ vkeyboard_widget =
   _initialize_vkeyboard: () ->
     @_vkeyboard = $('#vkeyboard')
     unless @_vkeyboard.length
-      container = $("<div id='vkeyboard_container'></div>").appendTo($("body"))
+      popup_parent = @element.parents(".ui-popup") # if this is a popup append to the popup container to avoid problems with the screen mask
+      target = if popup_parent then popup_parent.eq(0) else $("body")
+      container = $("<div id='vkeyboard_container'></div>").appendTo(target)
       container.hide()
       @_vkeyboard = $("<div id='vkeyboard'></div>").appendTo(container)
 
