@@ -10,25 +10,33 @@ vkeyboard_widget =
       unless forced
         @_show_vkeyboard()
     )
-
+    @_popup_parent = @element.parents(".ui-popup") # if this is a popup append to the popup container to avoid problems with the screen mask
+    if @_popup_parent.length
+      @_popup_parent.on "popupafterclose", () ->
+        @_hide_vkeyboard()
+    
   _initialize_vkeyboard: () ->
-    @_vkeyboard = $('#vkeyboard')
-    unless @_vkeyboard.length
-      popup_parent = @element.parents(".ui-popup") # if this is a popup append to the popup container to avoid problems with the screen mask
-      target = if popup_parent then popup_parent.eq(0) else $("body")
-      container = $("<div id='vkeyboard_container'></div>").appendTo(target)
-      container.hide()
-      @_vkeyboard = $("<div id='vkeyboard'></div>").appendTo(container)
+    @_vkeyboard_container = $('#vkeyboard_container')
+    if @_vkeyboard_container.length
+      @_vkeyboard = $('#vkeyboard')
+    else
+      @_vkeyboard_container = $("<div id='vkeyboard_container'></div>").appendTo("body")
+      @_vkeyboard_container.hide()
+      @_vkeyboard = $("<div id='vkeyboard'></div>").appendTo(@_vkeyboard_container)
 
   _show_vkeyboard: () ->
     unless @options.disabled
       @_setup_vkeyboard()
-      @_vkeyboard.parents("#vkeyboard_container").show()
+      @_vkeyboard_container.show()
 
   _hide_vkeyboard: () ->
-    @_vkeyboard.parents("#vkeyboard_container").hide()
+    @_vkeyboard_container.hide()
 
   _setup_vkeyboard: () ->
+    target = if @_popup_parent.length then @_popup_parent.eq(0) else $("body")
+    @_vkeyboard_container.detach()
+    target.append(@_vkeyboard_container)
+    
     layout = @options.layout
     keyset = if @_is_shift or @_is_caps then 'shift' else 'normal'
     require_layout = true
