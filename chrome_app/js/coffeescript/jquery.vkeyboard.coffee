@@ -1,4 +1,3 @@
-
 vkeyboard_widget =
 
   options:
@@ -10,11 +9,27 @@ vkeyboard_widget =
       unless forced
         @_show_vkeyboard()
     )
-    @_popup_parent = @element.parents(".ui-popup") # if this is a popup append to the popup container to avoid problems with the screen mask
-    if @_popup_parent.length
-      @_popup_parent.on "popupafterclose", () ->
-        @_hide_vkeyboard()
-    
+
+    # if this is a popup append to the popup container to avoid
+    # problems with the screen mask
+    get_parent_popup = (elt) ->
+      role = elt.data("role")
+      if role == "popup"
+        return elt
+      parent = elt.parent()
+      if parent.length
+        return get_parent_popup(parent)
+      return parent
+      
+    @_popup_parent = get_parent_popup(@element)
+
+    # hide when parent form is submitted. Note: there is no way to
+    # detect when the popup closes from an injected script.
+    form = @element.parents("form")
+    form.on "submit", () =>
+      console.log("form submit")
+      @_hide_vkeyboard()
+
   _initialize_vkeyboard: () ->
     @_vkeyboard_container = $('#vkeyboard_container')
     if @_vkeyboard_container.length
