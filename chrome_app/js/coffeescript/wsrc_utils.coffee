@@ -1,0 +1,1 @@
+../../../resources/js/coffeescript/wsrc_utils.coffee

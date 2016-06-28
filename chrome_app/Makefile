@@ -7,7 +7,7 @@ ZIP = zip
 .SECONDARY: _jquery.js _jquery.mobile.js _jquery-ui.js
 
 CSS_FILES = window.css jquery.mobile.structure.css jquery.mobile.icons.css jquery.vkeyboard.css
-JS_FILES  = window.js background.js client_functions.js jq_settings.js _jquery.js _jquery.mobile.js _jquery-ui.js jquery.vkeyboard.js
+JS_FILES  = window.js background.js client_functions.js wsrc_utils.js jq_settings.js _jquery.js _jquery.mobile.js _jquery-ui.js jquery.vkeyboard.js
 
 CSS_TARGETS = $(addprefix css/,$(CSS_FILES))
 JS_TARGETS  = $(addprefix js/,$(JS_FILES))
