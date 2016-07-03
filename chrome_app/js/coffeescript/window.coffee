@@ -293,7 +293,7 @@ class WSRC_kiosk
       name: 'listener_rule'
       matches: ["http://#{ credentials.server }/*"]
       js:
-        files: ["js/_jquery.js", "js/client_functions.js"]
+        files: ["js/jq_jquery.js", "js/client_functions.js"]
       run_at: 'document_end'
     login_webview.addContentScripts([rule])
     src = "http://#{ credentials.server }/login/"
@@ -351,7 +351,7 @@ class WSRC_kiosk
       name: 'vkeyboard'
       matches: ["http://#{ server }/*"]
       js:
-        files: ["js/_jquery.js", "js/_jquery-ui.js", "js/jquery.vkeyboard.js", "js/client_functions.js"]
+        files: ["js/jq_jquery.js", "js/jq_jquery-ui.js", "js/jquery.vkeyboard.js", "js/client_functions.js"]
       css:
         files: ["css/jquery.vkeyboard.css"]
       run_at: 'document_end'
