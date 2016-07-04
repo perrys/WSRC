@@ -228,7 +228,7 @@ def boxes_view(request, end_date=None, template_name="boxes.html", check_permiss
         entrants = [p for p in competition.entrant_set.all().order_by("ordering")]
         def this_user():
             for e in entrants:
-                if e.player.user.id == request.user.id:
+                if e.player1.user.id == request.user.id:
                     return True
             return False
         can_edit = competition.state == "active" and (is_editor or this_user())
