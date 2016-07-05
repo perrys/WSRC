@@ -13,9 +13,12 @@
 # You should have received a copy of the GNU General Public License
 # along with WSRC.  If not, see <http://www.gnu.org/licenses/>.
 
+from django.contrib.auth.models import User
+from django.db.models import Q
 from django.forms import widgets
 from rest_framework import serializers
-from django.contrib.auth.models import User
+from rest_framework.exceptions import ValidationError
+from rest_framework.utils.representation import smart_repr
 
 from wsrc.site.usermodel.models import Player
 from wsrc.site.competitions.models import CompetitionGroup, Competition, Match, Entrant, CompetitionRound
@@ -74,9 +77,57 @@ class RoundSerializer(serializers.ModelSerializer):
     model = CompetitionRound
     fields = ('round', 'end_date')
 
+class UniqueMatchInCompetitionValidator:
+  def __init__(self):
+    pass
+
+  def set_context(self, serializer):
+    """
+    This hook is called by the serializer instance,
+    prior to the validation call being made.
+    """
+    # Determine the existing instance, if this is an update operation. Seems to be thread-unsafe
+    self.instance = getattr(serializer, 'instance', None)
+
+  def enforce_required_fields(self, attrs):
+    if self.instance is not None:
+      return
+    required_fields = ['competition', 'team1', 'team2'] 
+    missing = dict([
+      (field_name, 'This field is required.')
+      for field_name in required_fields
+      if field_name not in attrs
+    ])
+    if missing:
+      raise ValidationError(missing)
+
+  def __call__(self, attrs):
+    if self.instance is not None:
+      return
+    # new match
+    self.enforce_required_fields(attrs)
+    queryset = Match.objects.all()
+    competition = attrs['competition']
+    first_entrant = attrs['team1']
+    if first_entrant.competition != competition:
+      raise ValidationError('team1')    
+    second_entrant = attrs['team2']
+    if second_entrant.competition != competition:
+      raise ValidationError('team2')    
+    query = (
+      Q(team1=first_entrant,team2=second_entrant) | 
+      Q(team2=first_entrant,team1=second_entrant) 
+    )
+    existing_matches = queryset.filter(query, competition=competition)
+    if len(existing_matches) > 0:
+      raise ValidationError("Match has already been entered! {match}  - refresh the page and try again.".format(match=existing_matches[0]))
+
 class MatchSerializer(serializers.ModelSerializer):
   class Meta:
     model = Match
+    validators = [
+      UniqueMatchInCompetitionValidator()
+    ]
 
 class StatusField(serializers.CharField):
   def to_representation(self, comp_group):
