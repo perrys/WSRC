@@ -93,11 +93,11 @@ class Entrant(models.Model):
     return " & ".join([p.get_short_name() for p in opponents])
 
   def __unicode__(self):
-    result = self.get_players_as_string()
+    result = u"[{id}] {team}".format(id=self.id, team=self.get_players_as_string())
     if self.handicap:
       result += " ({hcap}{suffix})".format(hcap=self.handicap, suffix=self.hcap_suffix or "")
     else:
-      result += " [{ordering}]".format(**self.__dict__)
+      result += " ({ordering})".format(**self.__dict__)
     return  result
   class Meta:
     unique_together = (("competition", "ordering"), ("competition", "player1"),)
@@ -131,13 +131,13 @@ class Match(models.Model):
   last_updated = models.DateTimeField(auto_now=True)
 
   def clean(self):
-    if self.entrant1 is None and self.entrant2 is None:
+    if self.team1 is None and self.team2 is None:
       raiseValidationError("Match must have at least one entrant")
     def is_entrant(e):      
       return e is None or self.competition.entrant_set.filter(id=e.id).count() == 1
-    if not is_entrant(self.entrant1):
+    if not is_entrant(self.team1):
       raiseValidationError("Entrant 1 is not part of this competition")
-    if not is_entrant(self.entrant2):
+    if not is_entrant(self.team2):
       raiseValidationError("Entrant 2 is not part of this competition")
 
   def fixup(self):
@@ -240,14 +240,18 @@ class Match(models.Model):
     return self.competition.end_date
 
   def __unicode__(self):
-    teams = ""
+    teams = u""
     if self.team1 is not None:
       teams += self.team1.get_players_as_string()
     if self.team2 is not None:
       if len(teams) > 0:
         teams += " vs "
       teams += self.team2.get_players_as_string()
-    return u"%s [%s] %s" % (self.competition_match_id, self.last_updated, teams)
+    buf = u""
+    if self.competition_match_id:
+      buf += "[{id}] ".format(id=self.competition_match_id)
+    buf += "{teams} @{timestamp:%Y-%m-%dT%H:%M}".format(teams=teams, timestamp=self.last_updated)
+    return buf
   class Meta:
     verbose_name_plural = "matches"
 
