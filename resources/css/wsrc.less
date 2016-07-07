@@ -559,10 +559,19 @@ span.field-error {
 .form_error_message {
     color: @color-loser
 }
+
 .form_error_message:after {
     left: inherit;
     top: inherit;
     margin-top: -20px;
+}
+.form_errors {
+    margin-left: 1em;
+    margin-top: 1em;
+    a {
+        font-weight: 400;
+        text-decoration: none;
+    }
 }
 .settings-form .ui-select .ui-btn.ui-state-disabled,
 .settings-form .ui-state-disabled {
