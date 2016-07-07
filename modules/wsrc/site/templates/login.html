@@ -15,9 +15,11 @@
  </div>
 
 {% if form.errors %}
- <span class="form_error_message ui-btn-icon ui-btn-icon-left ui-icon-alert" style="display: inline;">
-Invalid username/password. Please try again.
+<div class="form_errors">
+ <span class="form_error_message ui-btn-icon ui-btn-icon-left ui-icon-alert" style="display: inline; padding-left: 2em;">
+Invalid username/password.
  </span>
+ <p>Please try again or <a href="/password/reset/" class="form_error_message" data-ajax="false">reset your password</a>.</p>
 {% endif %}
 
  <form id="login_form" class="dialog-form" method="post" action="" data-ajax="false">{% csrf_token %}
