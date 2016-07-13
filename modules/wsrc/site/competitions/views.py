@@ -42,6 +42,7 @@ from rest_framework.views import APIView
 
 import datetime
 import markdown
+import StringIO
 import tournament
 
 class FakeRequestContext:
@@ -193,6 +194,52 @@ def get_boxes_links(options, selected_group):
                     })
     return {"default_text": "Leagues Ending", "links": leagues}
 
+def create_spreadsheet(comp_meta, boxes_config):
+    import xlsxwriter
+    from django.contrib.staticfiles import finders
+    cell_width = 5
+    title_row_height = 20
+    row_height = 18
+    output = StringIO.StringIO()
+    workbook = xlsxwriter.Workbook(output, {'in_memory': True})
+    title_format        = workbook.add_format({'align': 'right',  'valign': 'top',     'bold': True,  'border': 0})
+    header_format       = workbook.add_format({'align': 'center', 'valign': 'vcenter', 'bold': True,  'border': 2})
+    entrant_format      = workbook.add_format({'align': 'left',   'valign': 'vcenter', 'bold': False, 'indent': 0, 'left': 1, 'right': 1})
+    last_entrant_format = workbook.add_format({'align': 'left',   'valign': 'vcenter', 'bold': False, 'indent': 0, 'left': 1, 'right': 1, 'bottom': 1})
+    worksheet = workbook.add_worksheet("Boxes")
+    row = 0
+    worksheet.merge_range(row, 0, row, 2*cell_width, "Squash " + comp_meta['name'], title_format)
+    worksheet.set_column(0, 2 * cell_width + 1, 5)
+    absolute_path = finders.find("images/apple-touch-icon-180x180.png")
+    worksheet.insert_image(0, 0, absolute_path, {'positioning': 3, 'x_scale': 0.4, 'y_scale': 0.4})
+    row += 3
+    for box in boxes_config:
+        row_reset = None
+        if box['colspec'] == "single":
+            col = 1 + cell_width / 2
+        elif box['nthcol'] == 'second':
+            col = cell_width + 1
+        else:
+            row_reset = row
+            col = 0
+        worksheet.set_row(row, title_row_height)
+        worksheet.merge_range(row, col, row, col + cell_width-1, box['name'], header_format)
+        row += 1
+        entrants = box['entrants']
+        for (i,e) in enumerate(entrants):
+            print e
+            worksheet.set_row(row, row_height)
+            fmt = (i+1) < len(entrants) and entrant_format or last_entrant_format
+            worksheet.merge_range(row, col, row, col + cell_width-1, e.get_players_as_string(), fmt)
+            row += 1
+        if row_reset is not None:
+            row = row_reset
+        else:
+            row += 1
+    workbook.close()
+    return output.getvalue()
+
+
 def boxes_view(request, end_date=None, template_name="boxes.html", check_permissions=False, comp_type="boxes", name=None, year=None):
     """Return a view of the Leagues for ending on END_DATE. If
     END_DATE is  negative, the current league is shown"""
@@ -254,14 +301,13 @@ def boxes_view(request, end_date=None, template_name="boxes.html", check_permiss
             result["nthcol"] = suffix == "A" and "first" or "second"
         return result
 
-    new_boxes = [create_new_box_config(i) for i in range(0,21)]
 
-    nullplayer = {"name": "", "id": ""}
+    class NP(dict):
+        def get_players_as_string(self): return ""
+    nullplayer = NP({"name": "", "id": ""})
     last = None
     boxes = []
     comp_meta = {"maxplayers": 0, "name": group.name, "id": group.id}
-    ctx = {"competition": comp_meta}
-    options = set_view_options(request, ctx)
     for league in group.competition_set.all():
         cfg = create_box_config(last, league, comp_meta)
         boxes.append(cfg)
@@ -271,6 +317,17 @@ def boxes_view(request, end_date=None, template_name="boxes.html", check_permiss
     for box in boxes:
         while len(box["entrants"]) < comp_meta["maxplayers"]:
             box["entrants"].append(nullplayer)
+
+    if request.GET.get('format') == 'xlsx':
+        payload = create_spreadsheet(comp_meta, boxes)
+        content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        response = HttpResponse(payload, content_type=content_type)
+        response['Content-Disposition'] = 'attachment; filename="boxes_{date:%Y-%m-%d}.xlsx"'.format(date=group.end_date)
+        return response
+
+    ctx = {"competition": comp_meta}
+    options = set_view_options(request, ctx)
+    new_boxes = [create_new_box_config(i) for i in range(0,21)]
     ctx["boxes"] = boxes
     ctx["new_boxes"] = new_boxes
     ctx["is_editor"] = is_editor
