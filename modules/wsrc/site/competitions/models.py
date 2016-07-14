@@ -14,6 +14,7 @@
 # along with WSRC.  If not, see <http://www.gnu.org/licenses/>.
 
 from django.db import models
+from django.core.exceptions import ValidationError
 import wsrc.utils.bracket
 
 import wsrc.site.usermodel.models as user_models
@@ -55,6 +56,8 @@ class Competition(models.Model):
   ordering = models.IntegerField(blank=True, null=True)
 
   def nbrackets(self):
+    """Only applicable for knockout tournaments - return the number of
+       brackets based on the values of competition_match_id for each match."""
     maxId = reduce(max, [int(x.competition_match_id) for x in self.match_set.all()], 0)
     return wsrc.utils.bracket.most_significant_bit(maxId)
 
@@ -67,14 +70,15 @@ class Competition(models.Model):
 
 
 class Entrant(models.Model):
-  # players may not be populated for all types of competitions, as some are inferred from matches:
+  """Makes up the set of distinct competitors or teams in a competition
+     - allows for two players per team (for doubles competitions)"""
   competition = models.ForeignKey(Competition)
   player1 = models.ForeignKey(user_models.Player)
   player2 = models.ForeignKey(user_models.Player, null=True, blank=True, related_name="entrant2+")
-  ordering = models.IntegerField()
+  ordering = models.IntegerField("Ordering within a competition - exact meaning depends on the competition type")
   handicap = models.IntegerField(null=True, blank=True)
   hcap_suffix = models.CharField(max_length=4, blank=True)
-  seeded = models.BooleanField(default=False)
+  seeded = models.BooleanField(default=False) # if true then ordering is interpreted as seeding
 
   def get_players(self):
     if self.player1 is None:
@@ -104,7 +108,7 @@ class Entrant(models.Model):
     ordering=["-competition__end_date", "competition", "ordering"]
 
 class Match(models.Model):
-  """A match which forms part of a competition. For singles matches, only player1 is populated for each team"""
+  """A match which forms part of a competition."""
   WALKOVER_RESULTS = (
     (1, "Team 1"),
     (2, "Team 2"),
@@ -113,10 +117,6 @@ class Match(models.Model):
   competition_match_id = models.IntegerField(help_text="Unique ID of this match within its competition", blank=True, null=True)
   team1 = models.ForeignKey(Entrant, related_name="match_1+", blank=True, null=True)
   team2 = models.ForeignKey(Entrant, related_name="match_2+", blank=True, null=True)
-  team1_player1 = models.ForeignKey(user_models.Player, related_name="match_1_1+", blank=True, null=True)
-  team1_player2 = models.ForeignKey(user_models.Player, related_name="match_1_2+", blank=True, null=True)
-  team2_player1 = models.ForeignKey(user_models.Player, related_name="match_2_1+", blank=True, null=True)
-  team2_player2 = models.ForeignKey(user_models.Player, related_name="match_2_2+", blank=True, null=True)
   team1_score1 = models.IntegerField(blank=True, null=True)
   team1_score2 = models.IntegerField(blank=True, null=True)
   team1_score3 = models.IntegerField(blank=True, null=True)
@@ -131,45 +131,16 @@ class Match(models.Model):
   last_updated = models.DateTimeField(auto_now=True)
 
   def clean(self):
+    """Validates the model before it is saved to the database - used when
+       data is uploaded in forms e.g. by the generic admin pages.""" 
     if self.team1 is None and self.team2 is None:
-      raiseValidationError("Match must have at least one entrant")
+      raise ValidationError("Match must have at least one entrant")
     def is_entrant(e):      
       return e is None or self.competition.entrant_set.filter(id=e.id).count() == 1
     if not is_entrant(self.team1):
-      raiseValidationError("Entrant 1 is not part of this competition")
+      raise ValidationError("{entrant} is not part of this competition".format(entrant=self.team1))
     if not is_entrant(self.team2):
-      raiseValidationError("Entrant 2 is not part of this competition")
-
-  def fixup(self):
-    def doit(team_number_1_or_2):
-      print self.competition
-      p1 = getattr(self, "team%(team_number_1_or_2)d_player1" % locals())
-      if p1 is None:
-        return
-      p2 = getattr(self, "team%(team_number_1_or_2)d_player2" % locals())
-      print p1
-      print p2
-      try:
-        entrant = self.competition.entrant_set.get(player1=p1, player2=p2)
-      except Exception,e:
-        if "Doubles" in self.competition.name: # some older double competition entrants are only keyed by first player
-          entrant = self.competition.entrant_set.get(player1=p1)
-          if entrant.player2 is None:
-            entrant.player2 = p2
-            entrant.save()
-        elif self.competition.name == "Handicap" and self.competition.end_date.year == 2013 :
-          max_ord = 0
-          for e in self.competition.entrant_set.all():
-            max_ord = max(max_ord, e.ordering)
-          entrant = Entrant.objects.create(competition=self.competition, player1=p1, ordering=max_ord+1)
-          entrant.save()
-        else:
-          raise e
-      setattr(self, "team%(team_number_1_or_2)d" % locals(), entrant)
-
-    doit(1)
-    doit(2)
-    self.save()
+      raise ValidationError("{entrant} is not part of this competition".format(entrant=self.team2))
 
   def get_team(self, team_number_1_or_2):
     entrant = getattr(self, "team%(team_number_1_or_2)d" % locals())
