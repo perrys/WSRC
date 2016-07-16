@@ -43,6 +43,7 @@ from rest_framework.views import APIView
 import datetime
 import markdown
 import StringIO
+import os.path
 import tournament
 
 class FakeRequestContext:
@@ -101,9 +102,10 @@ class SelfUpdateOrCompetitionEditorPermission(rest_permissions.BasePermission):
                 return True
         player = get_object_or_404(Player.objects.all(), user=request.user)
         for i in (1,2):
-            for j in (1,2):
-                if request.data.get("team%(i)d_player%(j)d" % locals()) == player.id:
-                    return True
+            entrant_id = request.data.get("team%(i)d" % locals())
+            entrant = get_object_or_404(Entrant.objects.all(), id=entrant_id)
+            if entrant.player1 == player or entrant.player2 == player:
+                return True
         return False
 
             
@@ -210,7 +212,10 @@ def create_spreadsheet(comp_meta, boxes_config):
     row = 0
     worksheet.merge_range(row, 0, row, 2*cell_width, "Squash " + comp_meta['name'], title_format)
     worksheet.set_column(0, 2 * cell_width + 1, 5)
-    absolute_path = finders.find("images/apple-touch-icon-180x180.png")
+    image_path = "images/apple-touch-icon-180x180.png"
+    absolute_path = finders.find(image_path)
+    if absolute_path is None:
+        absolute_path = os.path.join("/usr/local/www", image_path)
     worksheet.insert_image(0, 0, absolute_path, {'positioning': 3, 'x_scale': 0.4, 'y_scale': 0.4})
     row += 3
     for box in boxes_config:
