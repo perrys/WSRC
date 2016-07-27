@@ -262,7 +262,7 @@ def admin_mailshot_view(request):
         for group in groups:
           for comp in group.competition_set.all():
             for entrants in comp.entrant_set.all():
-                player_ids.add(entrants.player.id)
+                player_ids.add(entrants.player1.id)
                 if entrants.player2 is not None:
                     player_ids.add(entrants.player2.id)
         return player_ids
