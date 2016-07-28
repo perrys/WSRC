@@ -220,6 +220,18 @@ class WSRC_kiosk
       alarmname = "close_#{ id }"      
       chrome.alarms.clear(alarmname)
     )
+    # ensure that the webviews get focus after we display them - this
+    # seems to be necessary for the touchscreen as touch events on the
+    # webview do not seem to grant it focus from the underlying window
+    # in the same way that a mouse click does.
+    $("webview.wsrc-client").each (idx, elt) =>
+      $(elt).parent("div[data-role='popup']").on("popupafteropen", (evt) =>
+        webview = $(evt.target).find("webview.wsrc-client")
+        do_focus = () ->
+          webview.focus()
+        do_focus()
+        window.setTimeout(do_focus, 500)
+      )
     $("#notifications").on "swipeleft", () =>
       @update_club_events(true, -1)
     $("#notifications").on "swiperight", () =>
