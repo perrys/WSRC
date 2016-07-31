@@ -3,6 +3,9 @@
 COFFEECC = coffee -c
 LESSC = lessc --no-color --strict-math=on
 ZIP = zip
+VERSION = 1.0.0
+DATE = $(shell date --utc +%Y-%m-%dT%H:%M)
+HOST = $(shell hostname)
 
 .SECONDARY: jq_jquery.js jq_jquery.mobile.js jq_jquery-ui.js
 
@@ -12,7 +15,7 @@ JS_FILES  = window.js background.js client_functions.js wsrc_utils.js jq_setting
 CSS_TARGETS = $(addprefix css/,$(CSS_FILES))
 JS_TARGETS  = $(addprefix js/,$(JS_FILES))
 
-all: $(CSS_TARGETS) $(JS_TARGETS)
+all: $(CSS_TARGETS) $(JS_TARGETS) manifest.json
 
 js/jq_jquery.js:
 	wget http://ajax.googleapis.com/ajax/libs/jquery/1.11.1/$(subst js/jq_,,$@) -O $@
@@ -32,5 +35,8 @@ js/%.js: js/coffeescript/%.coffee
 css/%.css: css/less/%.less
 	$(LESSC) $< > $@
 
-app.zip: $(CSS_TARGETS) $(JS_TARGETS)
+manifest.json: manifest.json.template
+	sed 's/{version}/$(VERSION)/;s/{date}/$(DATE)/;s/{host}/$(HOST)/' $< > $@
+
+app.zip: $(CSS_TARGETS) $(JS_TARGETS)  manifest.json
 	$(ZIP) $@ manifest.json window.html css/*.css js/*.js images/* css/images/*

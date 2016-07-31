@@ -249,7 +249,8 @@ class WSRC_kiosk
         @view.log(msg, $("#event_log_console"), true)
         return true
       )
-
+    manifest = chrome.runtime.getManifest()
+    $('#app_version_info').html("#{ manifest.name } v#{ manifest.version_name }")
       
 
   handle_message_received: (event) ->
