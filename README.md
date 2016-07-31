@@ -8,13 +8,13 @@ prerequisites:
 Pip:
 
 ```sh
-$ apt-get install python-pip
+$ apt-get -y install python-pip
 ```
 
 MySQL: either:
 
 ```sh
-$ apt-get install python-mysqldb
+$ apt-get -y install python-mysqldb
 ```
 
 or:
@@ -33,12 +33,13 @@ $ pip install beautifulsoup4
 $ pip insatll Jinja2
 $ pip install --upgrade google-api-python-client
 $ pip install xlrd
+$ pip install xlsxwriter
 ```
 
 for development:
 
 ```sh
-$ apt-get install npm
+$ apt-get -y install npm
 $ npm install -g coffee-script@1.8.0
 $ npm install -g minify@1.4.3
 $ npm install -g util-io@1.7.0
