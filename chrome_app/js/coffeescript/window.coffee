@@ -184,7 +184,39 @@ class WSRC_kiosk_view
             if i == idx
               button.addClass("active")
     panel.fadeOut(options)
-    
+
+
+  update_cpu_usage: (percentages) ->
+    table = $("#cpu_table tbody")
+    table.empty()
+    idx = 0
+    for p in percentages
+      table.append("<tr><td>#{ idx++ }</td><td>#{ p.idle.toFixed(1) }%</td><td>#{ p.user.toFixed(1) }%</td><td>#{ p.kernel.toFixed(1) }%</td></tr>")
+          
+  update_networks: (networks) ->
+    table = $("#network_interfaces_table tbody")
+    table.empty()
+    for n in networks
+      table.append("<tr><td>#{ n.name }</td><td>#{ n.address }/#{ n.prefixLength }</td></tr>")
+          
+  update_wireless_info: (interface_map) ->
+    container = $("#status_container .tables")
+    container.find("table.wifi_table").remove()
+    for name, info of interface_map
+      table = $("""
+<table class='wifi_table'>
+  <thead>
+    <tr><th colspan="2">#{ name }</th></tr>
+  </thead>
+  <tbody>
+  </tbody>
+</table>""")
+      container.append(table)
+      body = table.find("tbody")
+      for attrib, val of info
+        body.append("<tr><td>#{ attrib }:</td><td>#{ val }</td></tr>")
+        
+          
 class WSRC_kiosk
 
   constructor: () ->
@@ -196,6 +228,11 @@ class WSRC_kiosk
       @handle_apply_settings(evt);
     $('#yellow_dots_img').click (evt) =>
       @handle_logo_click(evt)
+    $("#restart_btn").click (evt) =>
+      try
+        chrome.runtime.reload()
+      catch error
+        chrome.runtime.restart()
 
     chrome.alarms.onAlarm.addListener (alarm) =>
       method = @["handle_alarm_#{ alarm.name }"]
@@ -250,7 +287,7 @@ class WSRC_kiosk
         return true
       )
     manifest = chrome.runtime.getManifest()
-    $('#app_version_info').html("#{ manifest.name } v#{ manifest.version_name }")
+    $('#app_version_info').html("#{ manifest.name } v#{ manifest.version }")
       
 
   handle_message_received: (event) ->
@@ -267,6 +304,15 @@ class WSRC_kiosk
   handle_message_log: (event, message) ->
     @view.log(message)
 
+  handle_message_cpu_usage: (event, message) ->
+    @view.update_cpu_usage(message)
+
+  handle_message_networks: (event, message) ->
+    @view.update_networks(message)
+    
+  handle_message_wireless_info: (event, message) ->
+    @view.update_wireless_info(message)
+    
   handle_message_settings_update: (event, settings) ->
     @settings = settings
     @view.populate_settings_form(settings)
