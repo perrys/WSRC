@@ -17,6 +17,7 @@ resources/images/icons-png
 chrome_app/js/*.js
 chrome_app/css/*.css
 chrome_app/*.zip
+chrome_app/manifest.json
 
 .pydevproject
 .ropeproject
