@@ -52,7 +52,6 @@ class WSRC_kiosk_background
       
     @handshake_recieved = false
     poll_handshake = (timeout) =>
-      console.log("poll_handshake called")
       unless @handshake_received
         @message_to_app("handshake")
         window.setTimeout(poll_handshake, 2*timeout)
@@ -69,6 +68,8 @@ class WSRC_kiosk_background
     @get_settings (settings) =>
       chrome.alarms.create("load_court_bookings", {periodInMinutes: settings.kiosk_settings.booking_fetch_period})
       chrome.alarms.create("load_club_events",    {periodInMinutes: settings.kiosk_settings.events_fetch_period})
+    @handle_alarm_get_system_status()
+    chrome.alarms.create("get_system_status", {periodInMinutes: 1})
 
   message_to_app: () ->
     args = $.fn.toArray.call(arguments)
@@ -84,7 +85,6 @@ class WSRC_kiosk_background
         type: "GET"
         complete: (jqXHR, status_txt) =>
           if jqXHR.status == 200
-            console.log(jqXHR)
             @message_to_app("court_bookings_update", jqXHR.responseJSON, kiosk_settings)
           else
             @message_to_app("log", "[bg] error fetching court bookings (#{ jqXHR.status } #{ jqXHR.statusText }) - #{ status }")
@@ -107,6 +107,35 @@ class WSRC_kiosk_background
             @message_to_app("log", "[bg] error fetching club events (#{ jqXHR.status } #{ jqXHR.statusText }) - #{ status }")
       $.ajax(settings)
 
+  handle_alarm_get_system_status: () ->
+    calc_pcts = (current, previous, i) ->
+      current = current.processors[i].usage
+      previous = previous.processors[i].usage
+      total  = 1.0 * (current.total - previous.total)
+      idle   = 1.0 * (current.idle - previous.idle)
+      user   = 1.0 * (current.user - previous.user)
+      kernel = 1.0 * (current.kernel - previous.kernel)
+      result =
+        idle:   100 * idle/total
+        user:   100 * user/total
+        kernel: 100 * kernel/total
+    chrome.system.cpu.getInfo (cpu_info) =>
+      if @previous_cpu_info
+        ncpus = cpu_info.numOfProcessors
+        percentages = (calc_pcts(cpu_info, @previous_cpu_info, i) for i in [0...ncpus])
+        @message_to_app("cpu_usage", percentages)
+      @previous_cpu_info = cpu_info
+    chrome.system.network.getNetworkInterfaces (networks) =>
+        @message_to_app("networks", networks)
+        names = {}
+        for network in networks
+          names[network.name] = null
+        names = (name for name, dummy of names)
+        handle_wireless_info = (info) =>
+          if info
+            @message_to_app("wireless_info", info)
+        @fetch_wireless(names, handle_wireless_info)
+    
   preprocess_club_event: (data) =>
     if data.picture
       binary_data = atob(data.picture.data)
@@ -141,7 +170,6 @@ class WSRC_kiosk_background
           "X-CSRFToken": @csrf_token 
         data: credentials
         complete: (jqXHR) =>
-          console.log(jqXHR)
           data = jqXHR.responseJSON
           if jqXHR.status == 200
             @csrf_token = data.csrf_token
@@ -182,6 +210,11 @@ class WSRC_kiosk_background
       @check_auth()
       @get_settings (stored_data) =>
         @message_to_app("settings_update", stored_data)
+
+  fetch_wireless: (interface_names, handler) ->
+    msg =
+      interfaces: interface_names
+    chrome.runtime.sendNativeMessage("org.wokingsquashclub.chrome_app.wireless", msg, handler)
 
   @onReady: (app_window) ->
     app_window.contentWindow.addEventListener("load", () =>
