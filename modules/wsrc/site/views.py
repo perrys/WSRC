@@ -606,9 +606,7 @@ def auth_view(request):
 
     "csrf_token": get_token(request)
       }
-      return HttpResponse(json.dumps(data), content_typ
-
-    e="application/json")
+      return HttpResponse(json.dumps(data), content_type="application/json")
     elif request.method == 'POST': 
         from django.contrib.auth import authenticate, login
         username = request.POST['username']
