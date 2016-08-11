@@ -28,12 +28,8 @@ window.WSRC_homepage =
           odd = true
         table.append(row)
 
-  add_empty_slots: (bookings) ->
+  add_empty_slots: (bookings, date_prefix) ->
     # Scan todays bookings and insert empty court slots
-    if bookings.length == 0
-      return bookings
-      
-    date_prefix = bookings[0].start_time.substr(0,11)
     
     COURT_SLOT_LENGTH = 45
     COURT_START_TIMES =
@@ -78,18 +74,19 @@ window.WSRC_homepage =
           
     newlist = []
     for court, start of COURT_START_TIMES
+      court = parseInt(court)
       while start < (22.5 * 60)
         unless is_booked(court, start)
           newlist.push
-            start_time:  date_prefix + totimestr start
-            end_time:    date_prefix + totimestr (start + COURT_SLOT_LENGTH)
+            start_time:  date_prefix + "T" + totimestr start
+            end_time:    date_prefix + "T" + totimestr (start + COURT_SLOT_LENGTH)
             court:       court
             name:        "_"
         start += COURT_SLOT_LENGTH
 
     return bookings.concat(newlist)
         
-  display_court_bookings: (data, day_offset, addLinks) ->
+  display_court_bookings: (bookings_data, day_offset, addLinks) ->
     
     day_offset = if day_offset then parseInt(day_offset) else 0
       
@@ -108,9 +105,9 @@ window.WSRC_homepage =
     
     table = $("#evening_bookings tbody").show()
     
-    if data
+    if bookings_data
       table.find("tr").remove()
-      slots = if day_offset >= 0 then this.add_empty_slots(data) else data
+      slots = if day_offset >= 0 then this.add_empty_slots(bookings_data.bookings, bookings_data.date) else bookings_data.bookings
       slots.sort (lhs, rhs) ->
         (lhs.start_time > rhs.start_time) - (lhs.start_time < rhs.start_time)
       odd = true
@@ -128,7 +125,10 @@ window.WSRC_homepage =
         name = booking.name
         if booking.name == "_"
           if addLinks
-            name = "<a href='http://booking.wokingsquashclub.org/edit_entry_fixed.php?room=#{ booking.court }&area=1&hour=#{ getTimeElt(11,2) }&minute=#{ getTimeElt(14,2) }&year=#{ getTimeElt(0,4) }&month=#{ getTimeElt(5,2) }&day=#{ getTimeElt(8,2) }'>(available)</a>"
+            timepart = getTimeElt(11, 5)
+            token = bookings_data.tokens[booking.court][timepart]
+            if token
+              name = "<a href='http://booking.wokingsquashclub.org/edit_entry_fixed.php?room=#{ booking.court }&area=1&hour=#{ getTimeElt(11,2) }&minute=#{ getTimeElt(14,2) }&year=#{ getTimeElt(0,4) }&month=#{ getTimeElt(5,2) }&day=#{ getTimeElt(8,2) }&token=#{ token }'>(available)</a>"
         else
           name = booking.name
         cls = if parseInt(getTimeElt(11,2)) < 17 then toggleclass else ""
