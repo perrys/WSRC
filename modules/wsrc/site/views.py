@@ -43,10 +43,13 @@ from django.views.decorators.http import require_safe
 from django.db.models import Q
 
 import rest_framework.generics as rest_generics
+from rest_framework.renderers import JSONRenderer
 from rest_framework import serializers
 from rest_framework.parsers import JSONParser
 from rest_framework.views import APIView
+from rest_framework.utils.serializer_helpers import ReturnDict
 
+import collections
 import markdown
 import datetime
 import urllib
@@ -85,6 +88,9 @@ AWAY_TEAM_SHORT_NAMES = {
     "Surrey Sports Park": "Surrey S. P.",
     }        
 
+JSON_RENDERER = JSONRenderer()
+LW_REQUEST = collections.namedtuple('LW_REQUEST', ['query_params'])
+
 LOGGER = logging.getLogger(__name__)
 LOGGER.setLevel(logging.WARNING)
 
@@ -104,6 +110,23 @@ def generic_view(request, page):
     "Informational views rendered directly from markdown content stored in the DB"
     ctx = get_pagecontent_ctx(page)
     return TemplateResponse(request, 'generic_page.html', ctx)
+
+
+def generate_tokens(date):
+    start_times = {
+        1: datetime.datetime.combine(date, datetime.time(8, 30)),
+        2: datetime.datetime.combine(date, datetime.time(8, 45)),
+        3: datetime.datetime.combine(date, datetime.time(9)),
+    }
+    court_length = datetime.timedelta(minutes=45)
+    def times(court, start):
+        m = {}
+        while (start.time().hour < 23):
+            m[start.time().strftime("%H:%M")] = BookingSystemEvent.generate_hmac_token(start, court)
+            start += court_length
+        return m
+    return dict([(court, times(court, start)) for court, start in start_times.items()]) 
+    
 
 @require_safe
 def index_view(request):
@@ -152,12 +175,17 @@ def index_view(request):
         
 
     now = timezone.now()
+    today_str = timezones.as_iso_date(now)
     midnight_today = now - datetime.timedelta(hours=now.hour, minutes=now.minute, seconds=now.second, microseconds = now.microsecond)
     cutoff_today = midnight_today + datetime.timedelta(hours=7)
     midnight_tomorrow = midnight_today + datetime.timedelta(days=1)
     bookings = BookingSystemEvent.objects.filter(start_time__gte=cutoff_today, start_time__lt=midnight_tomorrow).order_by('start_time')
-    ctx["bookings"] = bookings
-    ctx["today"] = timezones.as_iso_date(now)
+
+    fake_context = {"request": LW_REQUEST({"date": today_str})}
+    bookings_data = BookingSerializer(bookings, many=True, context=fake_context).data
+    
+    ctx["bookings"] = JSON_RENDERER.render(bookings_data)
+    ctx["today"] = today_str
     return TemplateResponse(request, 'index.html', ctx)
         
     
@@ -508,11 +536,53 @@ class DateTimeTzAwareField(serializers.DateTimeField):
         value = timezone.localtime(value) # convert UTC value in DB to local time
         return super(DateTimeTzAwareField, self).to_representation(value)
 
+
+class CustomBookingListSerializer(serializers.ListSerializer):
+    """Custom ListSerializer, which is automagically returneded by the
+       BookingSerializer constructor when many=True argument is
+       provided. Returns the list as an attribute of an object with
+       some extra attributes for date and HMAC tokens"""
+
+    def __init__(self, *args, **kwargs):
+        ctx = kwargs.get('context')
+        req = ctx is not None and ctx.get('request') or None
+        super(CustomBookingListSerializer, self).__init__(*args, **kwargs)
+        self.date = None
+        if req is not None:
+            date = req.query_params.get('date', None)
+            if date is not None:
+                self.date = timezones.parse_iso_date_to_naive(date)
+                delta = req.query_params.get('day_offset', None)
+                if delta is not None:
+                    self.date += datetime.timedelta(days=int(delta))
+
+    def to_representation(self, data):
+      obj = super(CustomBookingListSerializer, self).to_representation(data)
+      result = dict()
+      result["bookings"] =  obj
+      if self.date is not None:
+          result["date"] = self.date.isoformat()
+          dt = self.date - datetime.date.today()
+          if dt.days >=0 and dt.days < 8:
+              result["tokens"] = generate_tokens(self.date)
+      return result
+
+    # need to override as ListSerializer tries to return the contents
+    # in a ReturnList
+    @property
+    def data(self):
+        ret = super(serializers.ListSerializer, self).data
+        return ReturnDict(ret, serializer=self)
+
 class BookingSerializer(serializers.ModelSerializer):
     start_time = DateTimeTzAwareField()
     end_time   = DateTimeTzAwareField()
     class Meta:
       model = BookingSystemEvent
+    @classmethod
+    def many_init(cls, *args, **kwargs):
+        kwargs['child'] = cls()
+        return CustomBookingListSerializer(*args, **kwargs)
 
 class BookingList(rest_generics.ListAPIView):
     serializer_class = BookingSerializer
@@ -533,9 +603,12 @@ def auth_view(request):
     if request.method == 'GET': 
       data = {
           "username": request.user and request.user.username or None,
-          "csrf_token": get_token(request)
+
+    "csrf_token": get_token(request)
       }
-      return HttpResponse(json.dumps(data), content_type="application/json")
+      return HttpResponse(json.dumps(data), content_typ
+
+    e="application/json")
     elif request.method == 'POST': 
         from django.contrib.auth import authenticate, login
         username = request.POST['username']
