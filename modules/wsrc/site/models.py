@@ -1,9 +1,11 @@
 
 import wsrc.site.usermodel.models as user_models
 import wsrc.utils.text as text_utils
+import hmac
 
 from django.db import models
 from django.contrib.auth.models import User
+import wsrc.site.settings
 
 import re
 
@@ -46,6 +48,14 @@ class BookingSystemEvent(models.Model):
   name = models.CharField(max_length=64)
   event_id = models.IntegerField(blank=True, null=True)
   description = models.CharField(max_length=128, blank=True, null=True)
+
+  @staticmethod
+  def generate_hmac_token(start_time, court):
+    msg = "{start_time:%Y-%m-%dT%H:%M}/{court}".format(**locals())
+    return hmac.new(wsrc.site.settings.settings.BOOKING_SYSTEM_HMAC_KEY, msg).hexdigest()
+
+  def hmac_token(self):
+    return BookingSystemEvent.generate_hmac_token(self.start_time, self.court)
 
   def __unicode__(self):
     if self.start_time is None or self.end_time is None:
