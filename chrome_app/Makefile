@@ -3,7 +3,7 @@
 COFFEECC = coffee -c
 LESSC = lessc --no-color --strict-math=on
 ZIP = zip
-VERSION = $(shell date --utc +%Y.%m.%d.%H%M)
+VERSION = $(subst .0,.,$(shell date --utc +%Y.%m.%d.%H%M))
 DATE = $(shell date --utc +%Y-%m-%dT%H:%M)
 HOST = $(shell hostname)
 
