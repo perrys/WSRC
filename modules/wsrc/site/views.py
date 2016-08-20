@@ -111,6 +111,27 @@ def generic_view(request, page):
     ctx = get_pagecontent_ctx(page)
     return TemplateResponse(request, 'generic_page.html', ctx)
 
+@require_safe
+def booking_view(request, date=None):
+    if date is None:
+        date = datetime.date.today()
+    else:
+        date = timezones.parse_iso_date_to_naive(date)
+    def get_bookings(date):
+      today_str    = timezones.as_iso_date(date)
+      tomorrow_str = timezones.as_iso_date(date + datetime.timedelta(days=1))
+      url = settings.BOOKING_SYSTEM_URL + "/api/entries.php?start_date={today_str}&end_date={tomorrow_str}&with_tokens=1".format(**locals())
+      h = httplib2.Http()
+      (resp_headers, content) = h.request(url, "GET")
+      if resp_headers.status != httplib.OK:
+          raise Exception("unable to fetch bookings data, status = " + str(resp_headers.status) + ", response: " +  content)
+      return content
+    bookings = get_bookings(date)
+    return render(request, 'court_booking.html', {
+        "date": date,
+        "bookings": bookings
+    })
+        
 
 def generate_tokens(date):
     start_times = {
