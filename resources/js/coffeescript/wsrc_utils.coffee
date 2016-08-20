@@ -35,6 +35,12 @@ class WSRC_utils
     l.reduce(reducer, amap)
     return amap 
 
+  # like Array.prototype.reduce - loops over the attributes of an object
+  @reduce_object: (obj, func, start_val) ->
+    for key, val of obj
+      start_val = func(start_val, val)
+    return start_val
+
   @cantor_pair: (n1, n2) ->
     if n1 < 0 or n2 < 0
       raise "error: non-positive number passed to cantor pair, n1=#{ n1 }, n=#{ n2 }"      
