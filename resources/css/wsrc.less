@@ -11,9 +11,12 @@
 @color-body-background: #ffffff;
 @color-body: #333;
 @color-yellow-dot: #fccb30;
+@color-yellow-dot-opaque: fade(@color-yellow-dot, 10%);
 @color-a-bar-border: #333;
 @color-a-bar-background: #6e6e6e;
 @color-a-bar: #ffffff;
+@color-booking-user: #ddffdd;
+@color-booking-system: #c0e0ff;
 
 @max-page-width: 1200px;
 
@@ -523,6 +526,85 @@ div.wsrc-membership {
 }
 tr.odd > td {
     background-color: #f9f9f9;
+}
+
+table.booking_dates {
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    border-collapse: collapse;
+    border-spacing: 0;
+    table-layout: fixed;
+    th {
+        border: 1px solid @color-header-border-bottom;
+        font-weight: normal;
+        &:hover {
+            background-color: @color-block-border;
+        }
+    }
+}
+
+table.booking_day {
+    width: 100%;
+    table-layout: fixed;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    border-collapse: separate;
+    border-spacing: 0.5em 0;
+    .time-col {
+        width: 5%;
+    }
+    thead th {
+        text-align: center;
+        font-weight: normal;
+    }
+    tbody {
+        th {
+            height: 1.2em;
+            vertical-align: top;
+            font-weight: normal;
+            text-align: center;
+            & > div {
+                font-size: 0.8em;
+                line-height: 0.8em;
+                margin-top: -0.5em;
+            }
+        }
+        td {
+            position: relative;
+            div.slot_time {
+                position: absolute;
+                top: 1px;
+                right: 2px;
+                font-size: 0.7em;
+            }
+            &.booking {
+                border-width: 1px 1px 0 1px;
+                border-style: solid;
+                border-color: @color-block-border;
+                &.I {
+                    background: @color-booking-user;
+                }
+                &.E {
+                    background: @color-booking-system;
+                }
+                &:hover {
+                    background-color: @color-block-border;
+                }
+            }
+            &.available, &.unavailable {
+                border-width: 1px 1px 0 1px;
+                border-style: solid;
+                border-color: @color-block-border;
+                background: white;
+            }
+            &.available:hover {
+                background-color: @color-block-border;
+            }
+        }
+    }
 }
 
 /* admin dialogs */
