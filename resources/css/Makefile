@@ -13,8 +13,8 @@ all: $(CSS_TARGETS)
 %.min.css: %.css
 	$(MINIFY) $<
 
-all_%.css: _wsrc_%.css _jquery.mobile.icons.min.css svg-icons-homemade.css yellow_dots.css _jquery.mobile.structure.css jquery.bxslider.css
-	cat  _jquery.mobile.icons.min.css svg-icons-homemade.css yellow_dots.css  _jquery.mobile.structure.css jquery.bxslider.css $< > $@
+all_%.css: _wsrc_%.css _jquery.mobile.icons.min.css svg-icons-homemade.css yellow_dots.css _jquery.mobile.structure.css jquery.bxslider.css _jquery.mobile.datepicker.css _jquery.mobile.datepicker.theme.css
+	cat _jquery.mobile.icons.min.css svg-icons-homemade.css yellow_dots.css  _jquery.mobile.structure.css jquery.bxslider.css _jquery.mobile.datepicker.css _jquery.mobile.datepicker.theme.css $< > $@
 
 all_admin.css: _jquery-ui.css jquery.loadmask.css wsrc_admin.css
 	cat _jquery-ui.css jquery.loadmask.css wsrc_admin.css > $@
@@ -42,6 +42,12 @@ _jquery-ui.css:
 
 _jquery.dataTables.css:
 	wget https://cdn.datatables.net/1.10.10/css/jquery.dataTables.css -O $@
+
+_jquery.mobile.datepicker.css:
+	wget https://rawgithub.com/arschmitz/jquery-mobile-datepicker-wrapper/master/jquery.mobile.datepicker.css -O $@
+
+_jquery.mobile.datepicker.theme.css:
+	wget https://rawgithub.com/arschmitz/jquery-mobile-datepicker-wrapper/master/jquery.mobile.datepicker.theme.css -O $@
 
 _wsrc_html5.css: wsrc.less
 	$(LESSC) --global-var='iemode=false' $< > $@
