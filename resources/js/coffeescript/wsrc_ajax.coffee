@@ -31,8 +31,6 @@ class WSRC_ajax
     settings =
       url: url
       type: method
-      contentType: "application/json"
-      data: JSON.stringify(data)
       headers: headers
       success: opts.successCB
       error: opts.failureCB
@@ -40,6 +38,8 @@ class WSRC_ajax
     if method == "GET"
       settings.dataType = "json" # expected return value
     else
+      contentType: "application/json"
+      data: JSON.stringify(data)
       settings.processData = false
     jQuery.ajax(settings)
     return null
