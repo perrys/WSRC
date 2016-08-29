@@ -1,3 +1,4 @@
+
 # -*- mode: makefile-gmake; -*-
 
 COFFEECC = coffee -c
@@ -13,7 +14,7 @@ all: all.min.js all_admin.js all_admin_mailshot.js all_admin_accounts.js all_adm
 %.min.js: %.js
 	$(MINIFY) $< -o $@
 
-ORDERED_MAIN_JS_SRCS = _jquery.js pre_jqm.js _jquery.mobile.js legacy_shims.js jquery.bxslider.js wsrc_utils.js wsrc_ajax.js wsrc_homepage.js wsrc_settings.js wsrc_tournaments.js wsrc_boxes.js wsrc_result_form.js wsrc_court_booking.js wsrc.js 
+ORDERED_MAIN_JS_SRCS = _jquery.js pre_jqm.js _jquery.mobile.js _jquery.ui.datepicker.js legacy_shims.js jquery.bxslider.js wsrc_utils.js wsrc_ajax.js wsrc_homepage.js wsrc_settings.js wsrc_tournaments.js wsrc_boxes.js wsrc_result_form.js wsrc_court_booking.js wsrc.js 
 
 all.js: $(ORDERED_MAIN_JS_SRCS)
 	cat $(ORDERED_MAIN_JS_SRCS) > $@
@@ -42,6 +43,9 @@ _jquery.mobile.js:
 
 _jquery-ui.js:
 	wget https://ajax.googleapis.com/ajax/libs/jqueryui/1.11.2/jquery-ui.js -O $@
+
+_jquery.ui.datepicker.js:
+	wget https://rawgithub.com/jquery/jquery-ui/1-10-stable/ui/jquery.ui.datepicker.js -O $@
 
 _jquery.dataTables.js:
 	wget https://cdn.datatables.net/1.10.10/js/jquery.dataTables.js -O $@
