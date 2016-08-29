@@ -11,12 +11,12 @@
 @color-body-background: #ffffff;
 @color-body: #333;
 @color-yellow-dot: #fccb30;
-@color-yellow-dot-opaque: fade(@color-yellow-dot, 10%);
 @color-a-bar-border: #333;
 @color-a-bar-background: #6e6e6e;
 @color-a-bar: #ffffff;
 @color-booking-user: #ddffdd;
 @color-booking-system: #c0e0ff;
+@color-booking-highlight: #aabbff;
 
 @max-page-width: 1200px;
 
@@ -528,21 +528,10 @@ tr.odd > td {
     background-color: #f9f9f9;
 }
 
-table.booking_dates {
-    width: 100%;
-    margin: 0;
-    padding: 0;
-    border: 0;
-    border-collapse: collapse;
-    border-spacing: 0;
-    table-layout: fixed;
-    th {
-        border: 1px solid @color-header-border-bottom;
-        font-weight: normal;
-        &:hover {
-            background-color: @color-block-border;
-        }
-    }
+div#booking_datepicker_container:after {
+    background-color: @color-a-bar-background;
+    filter: Alpha(Opacity=50);
+    opacity: .5;
 }
 
 table.booking_day {
@@ -591,7 +580,7 @@ table.booking_day {
                     background: @color-booking-system;
                 }
                 &:hover {
-                    background-color: @color-block-border;
+                    background-color: @color-booking-highlight;
                 }
             }
             &.available, &.unavailable {
@@ -600,8 +589,14 @@ table.booking_day {
                 border-color: @color-block-border;
                 background: white;
             }
-            &.available:hover {
-                background-color: @color-block-border;
+            &.available {
+                span {
+                    opacity: 0.5;
+                    font-size: 0.8em;
+                }
+                &:hover {
+                    background-color: @color-booking-highlight;
+                }
             }
         }
     }
