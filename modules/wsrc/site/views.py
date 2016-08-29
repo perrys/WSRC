@@ -129,7 +129,8 @@ def booking_view(request, date=None):
     bookings = get_bookings(date)
     return render(request, 'court_booking.html', {
         "date": date,
-        "bookings": bookings
+        "bookings": bookings,
+        "booking_system_url": settings.BOOKING_SYSTEM_URL
     })
         
 
