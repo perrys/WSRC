@@ -3,6 +3,8 @@
 import datetime
 
 UK_TIMEZONE = "Europe/London"
+ISO_DATE_FMT = "%Y-%m-%d"
+ISO_DATETIME_FMT = "%Y-%m-%dT%H:%M:%S"
 
 class GBEireTimeZone(datetime.tzinfo):
 
@@ -68,16 +70,16 @@ class UTC(datetime.tzinfo):
 UTC_TZINFO = UTC()
 
 def parse_iso_datetime_to_naive(s):
-  return datetime.datetime.strptime(s, "%Y-%m-%dT%H:%M:%S")
+  return datetime.datetime.strptime(s, ISO_DATETIME_FMT)
 
 def parse_iso_date_to_naive(s):
-  return datetime.datetime.strptime(s, "%Y-%m-%d").date()
+  return datetime.datetime.strptime(s, ISO_DATE_FMT).date()
 
 def as_iso_date(d):
-  return d.strftime("%Y-%m-%d")
+  return d.strftime(ISO_DATE_FMT)
 
 def as_iso_datetime(d):
-  return d.strftime("%Y-%m-%dT%H:%M:%S")
+  return d.strftime(ISO_DATETIME_FMT)
 
 def naive_utc_to_local(dt, tz):
   dt = dt.replace(tzinfo=UTC_TZINFO)
