@@ -7,7 +7,7 @@ class WSRC_utils
   
   @MONTHS_OF_YEAR: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
   @DAYS_OF_WEEK: ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]
-
+  
   @list_lookup: (list, id, id_key, converter) ->
     unless id_key?
       id_key = "id"
@@ -170,13 +170,18 @@ class WSRC_utils
       if n < 10 then "0#{ n }" else n
     return "#{ dt.getFullYear() }-#{ pad_zeros(dt.getMonth()+1) }-#{ pad_zeros(dt.getDate()) }"
 
-  @js_to_readable_date_str: (dt) ->
+  @js_to_readable_date_str: (dt, omit_year, dow_break) ->
     dow = this.DAYS_OF_WEEK[dt.getDay()][0..2]
     dom = dt.getDate()
     month = this.MONTHS_OF_YEAR[dt.getMonth()]
     year = dt.getFullYear()
     suffix = this.get_ordinal_suffix(dom)
-    return "#{ dow } #{ dom }#{ suffix } #{ month } #{ year }"
+    unless dow_break
+      dow_break = " "
+    result = "#{ dow }#{ dow_break }#{ dom }#{ suffix } #{ month }"
+    unless omit_year
+      result += " #{ year }"
+    return result
 
   @sum: (l) ->
     sum = 0.0
