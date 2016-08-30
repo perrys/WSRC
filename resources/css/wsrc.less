@@ -587,8 +587,14 @@ table.booking_day {
                 border-style: solid;
                 border-color: #cccccc; 
                 padding: 1em 0 0 2px;
+                &.last {
+                    border-bottom-width: 1px;
+                }
                 @ruleset-largescreen: {
                     padding: 0 0 0 2px;
+                    &.column-last {
+                        border-bottom-width: 1px;
+                    }
                 };
                 .media-guard(@ruleset-largescreen, @breakpoint-widen-frontpage);
                 div.slot_time {
