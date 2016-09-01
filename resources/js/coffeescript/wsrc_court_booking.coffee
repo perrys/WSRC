@@ -12,7 +12,7 @@ utils =
 
 class WSRC_court_booking_model
    
-  constructor: (day_courts) ->
+  constructor: (day_courts, @date) ->
     @refresh(day_courts)
 
   refresh: (day_courts) ->
@@ -99,8 +99,7 @@ class WSRC_court_booking_view
 
 class WSRC_court_booking
 
-  constructor: (@model, date, @server_base_url) ->
-    date = wsrc.utils.iso_to_js_date(date)
+  constructor: (@model, @server_base_url) ->
     @view = new WSRC_court_booking_view()
     options =
       dateFormat: "D, d M yy"
@@ -109,7 +108,7 @@ class WSRC_court_booking
       onSelect: (text, obj) =>
         @handle_date_selected(obj)
     datepicker = $("#booking_datepicker_container input").datepicker(options)
-    datepicker.datepicker("setDate", date)
+    datepicker.datepicker("setDate", @model.date)
     # jquery-ui appends this to the body, but we need it appended to
     # the page wrapper for the overlays and CSS to work properly:
     widget = datepicker.datepicker("widget")
@@ -119,27 +118,45 @@ class WSRC_court_booking
     $("#booking_datepicker_container").on("click", () ->
       datepicker.datepicker("show") 
     )
+    $("table.booking_day").on("swipeleft", () =>
+      @load_for_date(@model.date, 1)
+    )
+    $("table.booking_day").on("swiperight", () =>
+      @load_for_date(@model.date, -1)
+    )
+      
     @update_view()
 
   update_view: () ->
+    datepicker = $("#booking_datepicker_container input")
+    datepicker.datepicker("setDate", @model.date)
     @view.refresh_table(@model.earliest, @model.latest, @model.courts, @model.day_courts, 15)
 
-  handle_date_selected: (picker) ->
-    date = new Date(picker.selectedYear, picker.selectedMonth, picker.selectedDay)
-    today_str = wsrc.utils.js_to_iso_date_str(date)
-    date.setDate(date.getDate() + 1)
-    tomorrow_str = wsrc.utils.js_to_iso_date_str(date)
+  load_for_date: (aDate, offset) ->
+    d1 = new Date(aDate.getTime())
+    if offset
+      d1.setDate(d1.getDate()+offset)
+    today_str = wsrc.utils.js_to_iso_date_str(d1)
+    d2 = new Date(d1.getTime())
+    d2.setDate(d2.getDate() + 1)
+    tomorrow_str = wsrc.utils.js_to_iso_date_str(d2)
     url = @server_base_url + "/api/entries.php?start_date=#{ today_str }&end_date=#{ tomorrow_str }&with_tokens=1"
     opts =
       successCB: (data) =>
+        @model.date = d1
         @model.refresh(data[today_str])
         @update_view()
       failureCB: (xhr, status) -> 
         alert("ERROR #{ xhr.status }: #{ xhr.statusText }\nResponse: #{ xhr.responseText }\n\nUnable to fetch court bookings.")
     wsrc.ajax.GET(url, opts)
+
+  handle_date_selected: (picker) ->
+    date = new Date(picker.selectedYear, picker.selectedMonth, picker.selectedDay)
+    @load_for_date(date)
     
-  @onReady: (day_courts, date, url) ->
-    model = new WSRC_court_booking_model(day_courts[date])
-    @instance = new WSRC_court_booking(model, date, url)
+  @onReady: (day_courts, date_str, url) ->
+    date = wsrc.utils.iso_to_js_date(date_str)
+    model = new WSRC_court_booking_model(day_courts[date_str], date)
+    @instance = new WSRC_court_booking(model, url)
 
 window.wsrc.court_booking = WSRC_court_booking
