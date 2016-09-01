@@ -604,12 +604,15 @@ table.booking_day {
                     font-size: 0.7em;
                     text-align: right;
                 }
-                &.booking {
+                &.booking, &.available {
+                    cursor: pointer;
                     display: block;
                     @ruleset-largescreen: {
                         display: table-cell;
                     };
                     .media-guard(@ruleset-largescreen, @breakpoint-widen-frontpage);
+                }
+                &.booking {
                     &.I {
                         background: @color-booking-user;
                     }
@@ -621,11 +624,6 @@ table.booking_day {
                     }
                 }
                 &.available {
-                    display: block;
-                    @ruleset-largescreen: {
-                        display: table-cell;
-                    };
-                    .media-guard(@ruleset-largescreen, @breakpoint-widen-frontpage);
                     span.available {
                         opacity: 0.5;
                         font-size: 0.8em;
