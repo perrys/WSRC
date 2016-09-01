@@ -1,9 +1,26 @@
 
 utils =
+
+        
   time_str:  (mins) ->
     pad_zeros = (n) ->
       if n < 10 then "0#{ n }" else n
     return "#{ pad_zeros(Math.floor(mins/60)) }:#{ pad_zeros(mins%60) }"
+
+  duration_str:  (mins) ->
+    hours = Math.floor(mins/60)
+    mins  = mins % 60
+    result = ""
+    if hours > 0
+      result += "#{ hours } hour#{ wsrc.utils.plural(hours) } "
+    if mins > 0
+      result += "#{ mins } min#{ wsrc.utils.plural(mins) } "
+    return result
+
+  TYPE_MAP:
+    E: "Club"
+    I: "Member"
+    
 
 
 ################################################################################
@@ -76,6 +93,14 @@ class WSRC_court_booking_view
           if slot.id
             td.addClass("booking")
             td.addClass(slot.type)
+            td.data("name", slot.name)
+            td.data("court", court)
+            td.data("time", row_time)
+            td.data("duration", utils.duration_str(slot.duration_mins))
+            td.data("description", slot.description)
+            td.data("type", utils.TYPE_MAP[slot.type])
+            td.data("created_by", slot.created_by)
+            td.data("timestamp", slot.timestamp)
           else if slot.token
             td.addClass("available")
             td.data("token", slot.token)
@@ -133,6 +158,15 @@ class WSRC_court_booking
     datepicker = $("#booking_datepicker_container input")
     datepicker.datepicker("setDate", @model.date)
     @view.refresh_table(@model.earliest, @model.latest, @model.courts, @model.day_courts, 15)
+    $("td.booking").on("click", (evt) =>
+      source_cell = $(evt.target)
+      popup = $('#booking_tooltip')
+      popup.find("td:last-child").each (idx, elt) ->
+        field = $(elt).data("field")
+        val = source_cell.data(field)
+        elt.textContent = val
+      popup.popup("open")
+    )
 
   load_for_date: (aDate, offset) ->
     d1 = new Date(aDate.getTime())

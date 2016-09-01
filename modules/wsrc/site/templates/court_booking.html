@@ -19,6 +19,19 @@
   </tbody>
 </table>
 
+<div data-role="popup" id="booking_tooltip" class="ui-content" data-theme="a" style="max-width:350px;">
+  <table>
+    <tbody>
+      <tr><td>Name:</td><td data-field="name"></td></tr>
+      <tr><td>Start:</td><td data-field="time"></td></tr>
+      <tr><td>Duration:</td><td data-field="duration"></td></tr>
+      <tr><td>Type:</td><td data-field="type"></td></tr>
+      <tr><td>Created By:</td><td data-field="created_by"x></td></tr>
+      <tr><td>Last Updated:</td><td data-field="timestamp"></td></tr>
+    </tbody>
+  </table>
+</div>
+
 <script>
 window.WSRC_court_bookings = {{ bookings|safe }};
 window.WSRC_court_bookings_date = '{{ date|date:"Y-m-d" }}';
