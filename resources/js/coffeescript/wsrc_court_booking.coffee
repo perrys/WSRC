@@ -68,6 +68,8 @@ class WSRC_court_booking_view
         slot = data[court][row_time]
         last_td = null
         if slot
+          if rowcounts[court] # should not happen - inconsistent data provided            
+            continue
           rowspan = slot.duration_mins / resolution
           rowcounts[court] = rowspan-1
           td = $("<td class='slot' rowspan='#{ rowspan }'>#{ @create_booking_cell_content(slot, court) }</td>")
