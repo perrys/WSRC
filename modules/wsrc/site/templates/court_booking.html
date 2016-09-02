@@ -33,6 +33,10 @@
   </table>
 </div>
 
+<form>
+{% csrf_token %}
+</form>
+
 <script>
 window.WSRC_court_bookings = {{ bookings|safe }};
 window.WSRC_court_bookings_date = '{{ date|date:"Y-m-d" }}';
