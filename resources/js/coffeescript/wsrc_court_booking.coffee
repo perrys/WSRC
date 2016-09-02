@@ -152,6 +152,12 @@ class WSRC_court_booking
     $("table.booking_day").on("swiperight", () =>
       @load_for_date(@model.date, -1)
     )
+    qp = (val) ->
+      vals = val.split("=")
+      k = vals.shift()
+      return [k, vals.join("=")]
+    params = (qp(v) for v in location.search.substr(1).split("&"))
+    @params = wsrc.utils.list_of_tuples_to_map(params)
       
     @update_view()
 
@@ -186,6 +192,8 @@ class WSRC_court_booking
         @update_view()
       failureCB: (xhr, status) =>
         if xhr.status == 0 and not using_proxy
+          if @params.debug
+            alert("Failed to load directly from booking system, falling back to proxy")
           @use_proxy = true
           @load_for_date(aDate, offset)
         else
