@@ -39,7 +39,7 @@ from django.shortcuts import render
 from django.template import Template, Context
 from django.template.response import TemplateResponse
 from django.utils import timezone
-from django.views.decorators.http import require_safe
+from django.views.decorators.http import require_safe, require_http_methods
 from django.db.models import Q
 
 import rest_framework.generics as rest_generics
@@ -132,6 +132,14 @@ def booking_view(request, date=None):
         "bookings": bookings,
         "booking_system_url": settings.BOOKING_SYSTEM_URL
     })
+
+@require_http_methods(["POST"])
+def booking_proxy_view(request):
+    req_vars = json.loads(request.body)
+    url = req_vars.pop("url")
+    h = httplib2.Http()
+    (resp_headers, content) = h.request(url, headers=req_vars)
+    return HttpResponse(content, resp_headers.get("content-type"))
         
 
 def generate_tokens(date):
