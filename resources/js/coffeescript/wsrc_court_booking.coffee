@@ -128,6 +128,7 @@ class WSRC_court_booking
 
   constructor: (@model, @server_base_url) ->
     @view = new WSRC_court_booking_view()
+    @use_proxy = false
     options =
       dateFormat: "D, d M yy"
       showOtherMonths: true
@@ -177,14 +178,25 @@ class WSRC_court_booking
     d2.setDate(d2.getDate() + 1)
     tomorrow_str = wsrc.utils.js_to_iso_date_str(d2)
     url = @server_base_url + "/api/entries.php?start_date=#{ today_str }&end_date=#{ tomorrow_str }&with_tokens=1"
+    using_proxy = @use_proxy
     opts =
       successCB: (data) =>
         @model.date = d1
         @model.refresh(data[today_str])
         @update_view()
-      failureCB: (xhr, status) -> 
-        alert("ERROR #{ xhr.status }: #{ xhr.statusText }\nResponse: #{ xhr.responseText }\n\nUnable to fetch court bookings.")
-    wsrc.ajax.GET(url, opts)
+      failureCB: (xhr, status) =>
+        if xhr.status == 0 and not using_proxy
+          @use_proxy = true
+          @load_for_date(aDate, offset)
+        else
+          alert("ERROR #{ xhr.status }: #{ xhr.statusText }\nResponse: #{ xhr.responseText }\n\nUnable to fetch court bookings.")
+    if using_proxy
+      opts.csrf_token = $("input[name='csrfmiddlewaretoken']").val()
+      payload =
+        url: url
+      wsrc.ajax.POST("/court_booking/proxy/", payload, opts)
+    else
+      wsrc.ajax.GET(url, opts)
 
   handle_date_selected: (picker) ->
     date = new Date(picker.selectedYear, picker.selectedMonth, picker.selectedDay)
