@@ -38,8 +38,8 @@ class WSRC_ajax
     if method == "GET"
       settings.dataType = "json" # expected return value
     else
-      contentType: "application/json"
-      data: JSON.stringify(data)
+      settings.contentType = "application/json"
+      settings.data = JSON.stringify(data)
       settings.processData = false
     jQuery.ajax(settings)
     return null
