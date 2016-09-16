@@ -330,7 +330,7 @@ class WSRC_kiosk
     @view.show_panels()
 
   handle_message_court_bookings_update: (event, data, kiosk_settings) ->
-    @court_bookings = data
+    @court_bookings = if data?.bookings then data.bookings else []
     unless @court_update_started
       updater = () => @view.update_courts(@court_bookings)
       updater()
