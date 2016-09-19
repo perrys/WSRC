@@ -487,7 +487,7 @@ class SendCompetitionEmail(CompetitionEditorPermissionedAPIView):
         from_address   = request.data.pop('from_address')
 
         competition = Competition.objects.get(pk=competition_id)
-        to_list = [entrant.player.user.email for entrant in competition.entrant_set.all()]
+        to_list = [entrant.player1.user.email for entrant in competition.entrant_set.all()]
         email_template = EmailContent.objects.get(name=template_name)
         email_template = Template(email_template.markup)
         
