@@ -16,6 +16,7 @@
 import datetime
 import logging
 import httplib
+import json
 import sys
 from django.db import transaction
 
@@ -35,8 +36,8 @@ class BookingSystemSession:
   LOGIN_PAGE          = "/admin.php"
   BOOKING_PAGE        = "/edit_entry_handler_fixed.php"
   DELETE_BOOKING_PAGE = "/del_entry.php"
-  WEEK_VIEW_PAGE      = '/week.php'
   USER_LIST_PAGE      = '/edit_users.php'
+  ENTRIES_API         = '/api/entries.php'
 
   def __init__(self, username=None, password=None):
     self.client = url_utils.SimpleHttpClient(BookingSystemSession.BASE_URL)
@@ -124,36 +125,39 @@ class BookingSystemSession:
       raise Exception("conflict! failed to book court %(court)d@%(timestring)s" % locals())
     raise Exception("unexpected status returned for booking request: %(status)d, response body: %(body)s" % locals())
 
-  def get_week_view(self, year, month, day, court):
+  def get_week_view(self, date):
     "Retrieve the week view for a given court from the online booking system"
     params = {
-      'year': str(year),
-      'month': "%02d" % month,
-      'day': "%02d" % day,
-      'area': '1',
-      'room': int(court)
+      'start_date': date.strftime(time_utils.ISO_DATE_FMT),
       }
-    response = self.client.get(BookingSystemSession.WEEK_VIEW_PAGE, params)
+    response = self.client.get(BookingSystemSession.ENTRIES_API, params)
     status = response.getcode()
     body = response.read()
     if status != httplib.OK:
       raise Exception("failed to retrieve week view, status: %(status)d, body: %(body)s" % locals())
-    return body
+    return json.loads(body)
     
   def get_booked_courts(self, start_date=None):
+
+    if start_date is None:
+      start_date = datetime.date.today()
+    from wsrc.site.models import BookingSystemEvent
     bookingSystemEvents = []
-    date = time_utils.nearest_last_monday(start_date)
-    start_date = date
-    # Loop over this week and next week:
-    for td in (datetime.timedelta(0), datetime.timedelta(days=7)):
-      date = date + td
-      # Loop over courts 1..3
-      for court in range(1,4):
-        # Get data from the bookings system for this week and court:
-        bookingSystemEventData = self.get_week_view(date.year, date.month, date.day, court)
-        events = scrape_page.scrape_week_events(bookingSystemEventData, date, court)
-        LOGGER.info("Found {0} court booking(s) for court {1} week starting {2}".format(len(events), court, date.isoformat()))
-        bookingSystemEvents.extend([event for event in events])
+    data = self.get_week_view(start_date)
+    for date_str, court_data in data.iteritems():
+      for court, entries_data in court_data.iteritems():
+        for time_str, entry in entries_data.iteritems():
+          start_time = datetime.datetime.strptime("{0}T{1}".format(date_str, time_str), "%Y-%m-%dT%H:%M")
+          start_time.replace(tzinfo=time_utils.UK_TZINFO)
+          end_time = start_time + datetime.timedelta(minutes=entry["duration_mins"])
+          event = BookingSystemEvent(start_time=start_time,
+                                     end_time=end_time,
+                                     court=court,
+                                     name=entry["name"],
+                                     event_id=entry["id"],
+                                     description=entry["description"])
+          bookingSystemEvents.append(event)
+          
     return bookingSystemEvents, start_date
 
   def get_memberlist(self):
