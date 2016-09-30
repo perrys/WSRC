@@ -148,7 +148,7 @@ class BookingSystemSession:
       for court, entries_data in court_data.iteritems():
         for time_str, entry in entries_data.iteritems():
           start_time = datetime.datetime.strptime("{0}T{1}".format(date_str, time_str), "%Y-%m-%dT%H:%M")
-          start_time.replace(tzinfo=time_utils.UK_TZINFO)
+          start_time = start_time.replace(tzinfo=time_utils.UK_TZINFO)
           end_time = start_time + datetime.timedelta(minutes=entry["duration_mins"])
           event = BookingSystemEvent(start_time=start_time,
                                      end_time=end_time,
