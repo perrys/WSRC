@@ -5,6 +5,7 @@ import hmac
 
 from django.db import models
 from django.contrib.auth.models import User
+from django.utils import timezone
 import wsrc.site.settings
 
 import re
@@ -55,7 +56,8 @@ class BookingSystemEvent(models.Model):
     return hmac.new(wsrc.site.settings.settings.BOOKING_SYSTEM_HMAC_KEY, msg).hexdigest()
 
   def hmac_token(self):
-    return BookingSystemEvent.generate_hmac_token(self.start_time, self.court)
+    start_time = timezone.localtime(self.start_time)
+    return BookingSystemEvent.generate_hmac_token(start_time, self.court)
 
   def __unicode__(self):
     if self.start_time is None or self.end_time is None:
