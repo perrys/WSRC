@@ -25,7 +25,7 @@ utils =
     mi = this.toint(dt_str.substr(14,2))
     se = this.toint(dt_str.substr(17,4))
     offset_mi = 0
-    if dt_str.length > 19
+    if dt_str.length >= 25
       offset_ho = this.toint(dt_str.substr(20,2))
       offset_mi = this.toint(dt_str.substr(23,2))
       offset_mi += offset_ho * 60
