@@ -55,6 +55,10 @@ class BookingSystemEvent(models.Model):
     msg = "{start_time:%Y-%m-%dT%H:%M}/{court}".format(**locals())
     return hmac.new(wsrc.site.settings.settings.BOOKING_SYSTEM_HMAC_KEY, msg).hexdigest()
 
+  @staticmethod
+  def generate_hmac_token_raw(msg):
+    return hmac.new(wsrc.site.settings.settings.BOOKING_SYSTEM_HMAC_KEY, msg).hexdigest()
+
   def hmac_token(self):
     start_time = timezone.localtime(self.start_time)
     return BookingSystemEvent.generate_hmac_token(start_time, self.court)
