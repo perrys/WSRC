@@ -528,15 +528,49 @@ tr.odd > td {
     background-color: #f9f9f9;
 }
 
-div#booking_datepicker_container:after {
-    background-color: @color-a-bar-background;
-    filter: Alpha(Opacity=50);
-    opacity: .5;
+div#booking_datepicker_container {
+    text-align: center;
+    & > div {
+        margin: 0.25em 0;
+    }
+    & > .ui-input-text {
+        position: relative; 
+        display: inline-block; 
+        width: 15em;
+    }
+    .ui-btn {
+        font-weight: normal;
+    }
+    .ui-btn-icon-left:after, .ui-btn-icon-right:after {
+        background-color: transparent; 
+        filter: Alpha(Opacity=50);
+        opacity: .5;
+    }
+    &:after {
+        margin-bottom: 1em;
+    }
 }
 
 div#booking_tooltip {
+    tr {
+        line-height: 1.5em;
+    }
     td:last-child {
         padding-left: 1em;
+    }
+    a.cancel {
+        border-radius: 1em;
+        border: 0;
+    }
+    div.inline-buttons {
+        margin-top: 1em;
+        .align-right {
+            float: right;
+            margin-right: 0;
+        }
+    }
+    .ui-state-disabled {
+        opacity: 0.5;
     }
 }
 
