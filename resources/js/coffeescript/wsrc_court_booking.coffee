@@ -249,7 +249,6 @@ class WSRC_court_booking
           return window.WSRC_booking_user_name
         source_cell.data(field)
       @view.show_popup('', fetcher, true, "Create")
-#      @new_entry(@model.date, source_cell.data("start_mins"), source_cell.data("duration_mins"), source_cell.data("court"), source_cell.data("token"))
     )
 
   create_or_update_entry: (source) ->
@@ -310,6 +309,7 @@ class WSRC_court_booking
         @load_for_date(@model.date)
       failureCB: (xhr, status) =>
         alert("ERROR #{ xhr.status }: #{ xhr.statusText }\nResponse: #{ xhr.responseText }\n\nUnable to delete entry #{ id }.")
+    # cannot send DELETE cross-origin, always need to go via proxy:
     wsrc.ajax.POST("/court_booking/proxy/", payload, opts)
 
   load_for_date: (aDate, offset) ->
