@@ -38,7 +38,7 @@ class WSRC_ajax
     if method == "GET"
       settings.dataType = "json" # expected return value
     else
-      settings.contentType = "application/json"
+      settings.contentType = opts.content_type or "application/json"
       settings.data = JSON.stringify(data)
       settings.processData = false
     jQuery.ajax(settings)
@@ -53,5 +53,8 @@ class WSRC_ajax
   @PUT: (url, data, opts) ->
     this.ajax_helper(url, data, opts, "PUT")
 
+  @PATCH: (url, data, opts) ->
+    this.ajax_helper(url, data, opts, "PATCH")
+    
 
 wsrc.utils.add_to_namespace("ajax", WSRC_ajax)
