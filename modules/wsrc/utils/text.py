@@ -21,7 +21,11 @@ def formatTable(dataTable, hasHeader = False, nspaces=1):
   return buf
 
 def plural(l, extra=""):
-  if len(l) == 1:
+  if isinstance(l, int):
+    n = l
+  else:
+    n = len(l)
+  if n == 1:
     return ""
   return extra + "s"
 
