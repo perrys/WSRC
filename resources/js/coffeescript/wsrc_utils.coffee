@@ -183,6 +183,11 @@ class WSRC_utils
       result += " #{ year }"
     return result
 
+  @is_same_date: (d1, d2) ->
+    d1.getUTCFullYear() == d2.getUTCFullYear() && 
+    d1.getUTCMonth()    == d2.getUTCMonth() && 
+    d1.getUTCDate()     == d2.getUTCDate()
+
   @sum: (l) ->
     sum = 0.0
     for a in l
