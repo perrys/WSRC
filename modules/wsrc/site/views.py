@@ -125,21 +125,34 @@ def booking_view(request, date=None):
       (resp_headers, content) = h.request(url, "GET")
       if resp_headers.status != httplib.OK:
           raise Exception("unable to fetch bookings data, status = " + str(resp_headers.status) + ", response: " +  content)
-      return content
-    bookings = get_bookings(date)
-    return render(request, 'court_booking.html', {
+      return resp_headers["date"], content
+    server_date, bookings = get_bookings(date)
+    context = {
         "date": date,
+        "server_date": server_date,
         "bookings": bookings,
-        "booking_system_url": settings.BOOKING_SYSTEM_URL
-    })
+        "booking_system_url": settings.BOOKING_SYSTEM_URL,
+        "starts": range(420, 1380, 15),
+        "durations": [30, 45, 60, 75, 90, 120, 180, 240]
+    }
+    if request.user.is_authenticated() and request.user.player is not None:
+      player = request.user.player
+      booking_user_id = 10 # player.booking_user_id
+      context["booking_user_id"] = booking_user_id
+      context["booking_user_auth_token"] = BookingSystemEvent.generate_hmac_token_raw("id:{booking_user_id}".format(**locals()))
+      context["booking_user_name"] = player.get_full_name()
 
-@require_http_methods(["POST"])
+    return render(request, 'court_booking.html', context)
+
+@require_http_methods(["GET", "POST", "DELETE", "PATCH"])
 def booking_proxy_view(request):
     req_vars = json.loads(request.body)
     url = req_vars.pop("url")
+    method = req_vars.pop("method", None) or request.method
+    headers = req_vars.pop("headers", None)
     h = httplib2.Http()
-    (resp_headers, content) = h.request(url, headers=req_vars)
-    return HttpResponse(content, resp_headers.get("content-type"))
+    (resp, content) = h.request(url, headers=headers, method=method, body=json.dumps(req_vars))
+    return HttpResponse(content, resp.get("content-type"), status=resp.status)
         
 
 def generate_tokens(date):
