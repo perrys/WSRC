@@ -26,6 +26,21 @@ def keyvalue(dict, key):
 def parse_float(str):    
     return float(str)
 
+@register.filter
+def mins_to_duration_str(n):    
+    hours = n / 60
+    mins  = n % 60
+    result = ""
+    if hours > 0:
+      result += "{hours} hour{p} ".format(hours=hours, p=text_utils.plural(hours))
+    if mins > 0:
+      result += "{mins} min{p} ".format(mins=mins, p=text_utils.plural(mins))
+    return result
+
+@register.filter
+def mins_to_time_str(n):    
+    return "{0:02d}:{1:02d}".format(n/60, n%60)
+
 @register.tag
 def make_text_table(parser, token):
     tag_name = "make_text_table"
