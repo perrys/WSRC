@@ -65,7 +65,7 @@ class WSRC_court_booking_view
       """
 
 
-  refresh_table: (earliest, latest, courts, data, resolution, current_mins) ->
+  refresh_table: (earliest, latest, courts, data, resolution, today_current_mins) ->
     table = $(".booking_day")
     header_row = table.find("thead tr")
     header_row.find("th").remove()
@@ -90,9 +90,9 @@ class WSRC_court_booking_view
           rowspan = slot.duration_mins / resolution
           rowcounts[court] = rowspan-1
           td = $("<td class='slot' rowspan='#{ rowspan }'>#{ @create_booking_cell_content(slot, court) }</td>")
-          if current_mins
+          if today_current_mins
             td.addClass("today")
-            if row_mins + slot.duration_mins < current_mins
+            if row_mins + slot.duration_mins < today_current_mins
               td.addClass("expired")
           if slot.id
             td.addClass("booking")
@@ -222,10 +222,11 @@ class WSRC_court_booking
   update_view: () ->
     datepicker = $("#booking_datepicker_container input")
     datepicker.datepicker("setDate", @model.date)
-    current_mins = null
-    if wsrc.utils.is_same_date(@model.date, @model.server_date)
-      current_mins = @model.server_date.getHours() * 60 + @model.server_date.getMinutes()
-    @view.refresh_table(@model.earliest, @model.latest, @model.courts, @model.day_courts, 15, current_mins)
+    today_current_mins = null
+    right_now = new Date()
+    if wsrc.utils.is_same_date(@model.date, right_now)
+      today_current_mins = right_now.getHours() * 60 + right_now.getMinutes()
+    @view.refresh_table(@model.earliest, @model.latest, @model.courts, @model.day_courts, 15, today_current_mins)
     $("td.booking").on("click", (evt) =>
       source_cell = $(evt.target)
       fetcher = (field, for_display) ->
@@ -324,7 +325,7 @@ class WSRC_court_booking
     using_proxy = @use_proxy
     opts =
       successCB: (data, status, jqxhr) =>
-        ts_str = jqxhr.getResponseHeader('Date')
+        ts_str = jqxhr.getResponseHeader('date')
         @model.server_date = new Date(Date.parse(ts_str))
         @model.date = d1
         @model.refresh(data[today_str])
