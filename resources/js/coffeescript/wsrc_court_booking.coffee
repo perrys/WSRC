@@ -29,7 +29,7 @@ utils =
 
 class WSRC_court_booking_model
    
-  constructor: (day_courts, @date, @server_date) ->
+  constructor: (day_courts, @date) ->
     @refresh(day_courts)
 
   refresh: (day_courts) ->
@@ -223,7 +223,7 @@ class WSRC_court_booking
     datepicker = $("#booking_datepicker_container input")
     datepicker.datepicker("setDate", @model.date)
     today_current_mins = null
-    right_now = new Date()
+    right_now = new Date() # note - relies on local clock being accurate and in the correct timezone
     if wsrc.utils.is_same_date(@model.date, right_now)
       today_current_mins = right_now.getHours() * 60 + right_now.getMinutes()
     @view.refresh_table(@model.earliest, @model.latest, @model.courts, @model.day_courts, 15, today_current_mins)
@@ -325,8 +325,6 @@ class WSRC_court_booking
     using_proxy = @use_proxy
     opts =
       successCB: (data, status, jqxhr) =>
-        ts_str = jqxhr.getResponseHeader('date')
-        @model.server_date = new Date(Date.parse(ts_str))
         @model.date = d1
         @model.refresh(data[today_str])
         @update_view()
@@ -351,9 +349,9 @@ class WSRC_court_booking
     date = new Date(picker.selectedYear, picker.selectedMonth, picker.selectedDay)
     @load_for_date(date)
     
-  @onReady: (day_courts, date_str, url, server_date_str) ->
+  @onReady: (day_courts, date_str, url) ->
     date = wsrc.utils.iso_to_js_date(date_str)
-    model = new WSRC_court_booking_model(day_courts[date_str], date, new Date(Date.parse(server_date_str)))
+    model = new WSRC_court_booking_model(day_courts[date_str], date)
     @instance = new WSRC_court_booking(model, url)
 
 window.wsrc.court_booking = WSRC_court_booking
