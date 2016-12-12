@@ -239,6 +239,7 @@ class WSRC_court_booking
     if wsrc.utils.is_same_date(@model.date, right_now)
       today_current_mins = right_now.getHours() * 60 + right_now.getMinutes()
     @view.refresh_table(@model.earliest, @model.latest, @model.courts, @model.day_courts, 15, today_current_mins)
+    $("#booking_footer div.date").text($.datepicker.formatDate("D, d M yy", @model.date))
     $("td.booking").on("click", (evt) =>
       source_cell = $(evt.target)
       fetcher = (field, for_display) ->
