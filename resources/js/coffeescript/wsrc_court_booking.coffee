@@ -194,6 +194,18 @@ class WSRC_court_booking
     $("table.booking_day").on("swiperight", () =>
       @load_for_date(@model.date, -1)
     )
+    $(document).keydown( (e) =>
+      if e.altKey and e.which == 82 # 'r' key 
+        e.preventDefault()
+        @load_for_date(@model.date, 0)
+      if e.altKey and e.which == 80 # 'p' key 
+        e.preventDefault()
+        @load_for_date(@model.date, -1)
+      if e.altKey and e.which == 78 # 'n' key 
+        e.preventDefault()
+        @load_for_date(@model.date, 1)
+    )
+    
     $("#booking_tooltip button.delete").on("click", (evt) =>
       id = wsrc.utils.to_int($("#booking_tooltip input[name='id']").val())
       if confirm('Are you sure you want to delete this entry?\n')
