@@ -125,11 +125,10 @@ def booking_view(request, date=None):
       (resp_headers, content) = h.request(url, "GET")
       if resp_headers.status != httplib.OK:
           raise Exception("unable to fetch bookings data, status = " + str(resp_headers.status) + ", response: " +  content)
-      return resp_headers["date"], content
-    server_date, bookings = get_bookings(date)
+      return content
+    bookings = get_bookings(date)
     context = {
         "date": date,
-        "server_date": server_date,
         "bookings": bookings,
         "booking_system_url": settings.BOOKING_SYSTEM_URL,
         "starts": range(420, 1380, 15),
