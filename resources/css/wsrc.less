@@ -652,6 +652,13 @@ table.booking_day {
                     };
                     .media-guard(@ruleset-largescreen, @breakpoint-widen-frontpage);
                 }
+                &.booking.today.expired {
+                    display: none;
+                    @ruleset-largescreen: {
+                        display: table-cell;
+                    };
+                    .media-guard(@ruleset-largescreen, @breakpoint-widen-frontpage);
+                }
                 &.booking {
                     &.I {
                         background: @color-booking-user;
