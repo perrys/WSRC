@@ -68,6 +68,7 @@ div.ui-controlgroup-label {
     display: none;
 }
 
+
 /* add support for individual corner radii */
 .ui-corner-all,
 .ui-corner-top,
@@ -679,6 +680,13 @@ table.booking_day {
                         background-color: @color-booking-highlight;
                     }
                 }
+                &.mobile-unhidden {
+                    display: block !important;
+                    @ruleset-largescreen: {
+                        display: table-cell !important;
+                    };
+                    .media-guard(@ruleset-largescreen, @breakpoint-widen-frontpage);
+                }                    
             }
         }
     }
@@ -689,6 +697,19 @@ div#booking_footer {
     text-align:center;
     & > div {
         display: inline-block;
+    }
+}
+
+div#booking_header {
+    padding: 0.1em 0.5em;
+    text-align:right;
+    & > div {
+        font-size: 0.8em;
+        display: inline-block;
+        @ruleset-largescreen: {
+            display: none;
+        };
+        .media-guard(@ruleset-largescreen, @breakpoint-widen-frontpage);
     }
 }
 

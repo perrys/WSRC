@@ -77,6 +77,7 @@ class WSRC_court_booking_view
     rowcounts = {}
     last_cells = {}
     last_cell = null
+    is_full_view = $("#booking_header a.full").hasClass("toggled")
     while row_mins < latest
       row_time = utils.time_str(row_mins)
       row = $("<tr></tr>")
@@ -94,6 +95,8 @@ class WSRC_court_booking_view
             td.addClass("today")
             if row_mins + slot.duration_mins < today_current_mins
               td.addClass("expired")
+          if is_full_view
+            td.addClass("mobile-unhidden")
           if slot.id
             td.addClass("booking")
             td.addClass(slot.type)
@@ -221,6 +224,14 @@ class WSRC_court_booking
       fetcher = (field) ->
         return popup_form.find(":input[name='#{ field }']").val()
       @create_or_update_entry(fetcher)
+    )
+    $("#booking_header a.compact").on("click", (evt) ->
+      $("td.slot").removeClass("mobile-unhidden")
+      wsrc.utils.toggle(evt)
+    )
+    $("#booking_header a.full").on("click", (evt) ->
+      $("td.slot").addClass("mobile-unhidden")
+      wsrc.utils.toggle(evt)
     )
     qp = (val) ->
       vals = val.split("=")
