@@ -46,6 +46,7 @@ urlpatterns = patterns('',
     url(r'^courts/?$', wsrc.site.views.booking_view, name="court_booking"),
     url(r'^courts/(\d{4}-\d{2}-\d{2})/?$', wsrc.site.views.booking_view, name="court_booking"),
     url(r'^court_booking/proxy/?$', wsrc.site.views.booking_proxy_view),
+    url(r'^court_booking/cal_invite/send', wsrc.site.views.SendCalendarEmail.as_view()),
 
     url(r'^boxes/admin/activate/',              wsrc.site.competitions.views.SetCompetitionGroupLive.as_view()),
     url(r'^boxes/admin/email/',                 wsrc.site.competitions.views.SendCompetitionEmail.as_view()),
