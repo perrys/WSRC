@@ -93,3 +93,15 @@ def nearest_last_monday(date=None):
     date = datetime.date.today()
   return date - datetime.timedelta(days=date.weekday())
 
+def duration_str(duration):
+  mins = int(duration.seconds/60)
+  hours = int(mins/60)
+  mins  = mins % 60
+  result = ""
+  from wsrc.utils.text import plural
+  if hours > 0:
+    result += "{hours} hour{s} ".format(hours=hours, s=plural(hours))
+  if mins > 0:
+    result += "{mins} min{s}".format(mins=mins, s=plural(mins))
+  return result
+
