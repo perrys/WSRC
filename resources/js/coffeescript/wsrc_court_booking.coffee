@@ -49,6 +49,15 @@ class WSRC_court_booking_model
     @earliest    = earliest
     @latest      = latest
     @day_courts  = day_courts
+
+  get_entry: (id) =>
+    for court, time_map of @day_courts
+      for time, slot of time_map
+        if slot.id == id
+          ret = $.extend({}, slot)
+          ret.date = @date
+          ret.court = court
+          return ret
     
 
 ################################################################################
@@ -283,20 +292,31 @@ class WSRC_court_booking
       date: wsrc.utils.js_to_iso_date_str(@model.date)
     for field in ["name", "description", "type"]
       data[field] = source(field)
-    id = source("id") # updating an existing entry
+    id = wsrc.utils.to_int(source("id")) # updating an existing entry
     if id
       data.id = id
+      event_type = "update"
     else
-      for field in ["start_mins", "duration_mins", "court", "token"]
+      event_type = "create"
+      for field in ["start_mins", "duration_mins", "court"]
+        data[field] = wsrc.utils.to_int(source(field))
+      for field in ["token"]
         data[field] = source(field)
       
     using_proxy = @use_proxy
     url = @server_base_url + "/api/entries.php"
     opts =
       content_type: "text/plain"
-      successCB: (data) =>
+      successCB: (returned_data) =>
         @view.hide_popup()
-        @load_for_date(@model.date)
+        callback = () =>
+          unless id
+            id = returned_data.id
+          entry = @model.get_entry(id)
+          entry.date = wsrc.utils.js_to_iso_date_str(entry.date)
+          entry.event_type = event_type
+          @send_email_update(entry)
+        @load_for_date(@model.date, 0, callback)
       failureCB: (xhr, status) =>
         alert("ERROR #{ xhr.status }: #{ xhr.statusText }\nResponse: #{ xhr.responseText }\n\nUnable to update booking.")
 
@@ -331,13 +351,18 @@ class WSRC_court_booking
       csrf_token: $("input[name='csrfmiddlewaretoken']").val()
       successCB: (data) =>
         @view.hide_popup()
+        entry = @model.get_entry(id)
+        entry.date = wsrc.utils.js_to_iso_date_str(entry.date)
+        entry.event_type = "delete"
         @load_for_date(@model.date)
+        @send_email_update(entry)
+        
       failureCB: (xhr, status) =>
         alert("ERROR #{ xhr.status }: #{ xhr.statusText }\nResponse: #{ xhr.responseText }\n\nUnable to delete entry #{ id }.")
     # cannot send DELETE cross-origin, always need to go via proxy:
     wsrc.ajax.POST("/court_booking/proxy/", payload, opts)
 
-  load_for_date: (aDate, offset) ->
+  load_for_date: (aDate, offset, callback) ->
     d1 = new Date(aDate.getTime())
     if offset
       d1.setDate(d1.getDate()+offset)
@@ -352,12 +377,14 @@ class WSRC_court_booking
         @model.date = d1
         @model.refresh(data[today_str])
         @update_view()
+        if callback
+          callback()
       failureCB: (xhr, status) =>
         if xhr.status == 0 and not using_proxy
           if @params.debug
             alert("Failed to load directly from booking system, falling back to proxy")
           @use_proxy = true
-          @load_for_date(aDate, offset)
+          @load_for_date(aDate, offset, callback)
         else
           alert("ERROR #{ xhr.status }: #{ xhr.statusText }\nResponse: #{ xhr.responseText }\n\nUnable to fetch court bookings.")
     if using_proxy
@@ -368,6 +395,14 @@ class WSRC_court_booking
       wsrc.ajax.POST("/court_booking/proxy/", payload, opts)
     else
       wsrc.ajax.GET(url, opts) 
+
+  send_email_update: (entry) ->
+    opts =
+      csrf_token: $("input[name='csrfmiddlewaretoken']").val()
+      failureCB: (xhr, status) =>
+        alert("ERROR #{ xhr.status }: #{ xhr.statusText }\nResponse: #{ xhr.responseText }\n\nFailed to email the calendar event.")
+    wsrc.ajax.PUT("court_booking/cal_invite/send", entry, opts);
+    
 
   handle_date_selected: (picker) ->
     date = new Date(picker.selectedYear, picker.selectedMonth, picker.selectedDay)
