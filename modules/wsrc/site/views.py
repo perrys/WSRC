@@ -49,6 +49,8 @@ from rest_framework.parsers import JSONParser
 from rest_framework.views import APIView
 from rest_framework.utils.serializer_helpers import ReturnDict
 
+from icalendar import Calendar, Event, vCalAddress, vText
+
 import collections
 import markdown
 import datetime
@@ -68,8 +70,9 @@ FACEBOOK_GRAPH_ACCESS_TOKEN_URL = FACEBOOK_GRAPH_URL + "oauth/access_token"
 WSRC_FACEBOOK_PAGE_ID = 576441019131008
 COURT_SLOT_LENGTH = datetime.timedelta(minutes=45)
 
-COMMITTEE_EMAIL_ADDRESS = "committee@wokingsquashclub.org"
-MAINT_OFFICER_EMAIL_ADRESS = "maintenance@wokingsquashclub.org"
+COMMITTEE_EMAIL_ADDRESS     = "committee@wokingsquashclub.org"
+MAINT_OFFICER_EMAIL_ADRESS  = "maintenance@wokingsquashclub.org"
+BOOKING_SYSTEM_EMAIL_ADRESS = "court_booking@wokingsquashclub.org"
 
 HOME_TEAM_SHORT_NAMES = {
     u"Woking 1": "1sts",
@@ -374,6 +377,67 @@ class SendEmail(APIView):
           email_utils.send_email(**email_data)
         return HttpResponse(status=204)
 
+class SendCalendarEmail(APIView):
+    parser_classes = (JSONParser,)
+    def put(self, request, format="json"):
+        if not request.user.is_authenticated():
+            raise PermissionDenied()
+        cal_data = request.data
+        start_datetime = datetime.datetime.strptime(cal_data["date"], timezones.ISO_DATE_FMT)
+        start_datetime += datetime.timedelta(minutes=cal_data["start_mins"])
+        start_datetime.replace(tzinfo=timezones.UK_TZINFO)
+        duration = datetime.timedelta(minutes=cal_data["duration_mins"])
+
+        # could use last update timestamp (cal_data["timestamp"]) from
+        # the event, except when it is a deletion. For simplicity we
+        # will just use the current time - this ensures that the
+        # recipient calendar always accepts the event as the latest
+        # version
+        timestamp = datetime.datetime.now(timezones.UK_TZINFO)
+
+        cal = Calendar()
+        cal.add("version", "2.0")
+        cal.add("prodid", "-//Woking Squash Rackets Club//NONSGML court_booking//EN")
+
+        evt = Event()
+        evt.add("uid", "WSRC_booking_{id}".format(**cal_data))
+        organizer = vCalAddress("MAILTO:{email}".format(email=BOOKING_SYSTEM_EMAIL_ADRESS))
+        organizer.params["cn"] = vText("Woking Squash Club")
+        evt.add("organizer", organizer)
+        attendee = vCalAddress("MAILTO:{email}".format(email=request.user.email))
+        attendee.params["cn"] = vText(request.user.player.get_full_name())
+        attendee.params["ROLE"] = vText("REQ-PARTICIPANT")
+        evt.add('attendee', attendee, encode=0)
+        evt.add("dtstamp", timestamp)    
+        evt.add("dtstart", start_datetime)
+        evt.add("duration", duration)
+        evt.add("summary", "WSRC Court Booking: " + cal_data["name"])
+        evt.add("location", "Court {court}".format(**cal_data))
+        evt.add("description", cal_data.get("description", ""))
+
+        if cal_data["event_type"] == "delete":
+            cal.add("method", "CANCEL")
+            evt.add("status", "CANCELLED")
+        else:
+            cal.add("method", "REQUEST")
+
+        cal.add_component(evt)
+        attachments = {
+            "text/calendar": cal.to_ical()
+        }
+        context = {
+            "start": start_datetime,
+            "duration": timezones.duration_str(duration)
+        }
+        context.update(cal_data)
+        notify("BookingUpdate", context, 
+               subject="WSRC Court Booking - {start:%Y-%m-%d %H:%M} Court {court}".format(start=start_datetime, court=cal_data["court"]), 
+               to_list=[request.user.email],
+               cc_list=None, 
+               from_address=BOOKING_SYSTEM_EMAIL_ADRESS, 
+               attachments=attachments)
+        return HttpResponse(status=204)
+
 class UserForm(ModelForm):
     def __init__(self, *args, **kwargs):
         super(UserForm, self).__init__(*args, **kwargs)
@@ -509,7 +573,7 @@ class SuggestionForm(ModelForm):
             "description": Textarea(attrs={"rows": "6"})
         }
 
-def notify(template_name, kwargs, subject, to_list, cc_list, from_address):
+def notify(template_name, kwargs, subject, to_list, cc_list, from_address, attachments=None):
     template_obj = EmailContent.objects.get(name=template_name)
     email_template = Template(template_obj.markup)
     context = Context(kwargs)
@@ -517,7 +581,7 @@ def notify(template_name, kwargs, subject, to_list, cc_list, from_address):
     html_body = markdown.markdown(email_template.render(context))
     context["content_type"] = "text/plain"
     text_body = email_template.render(context)
-    email_utils.send_email(subject, text_body, html_body, from_address, to_list, cc_list=cc_list)
+    email_utils.send_email(subject, text_body, html_body, from_address, to_list, cc_list=cc_list, extra_attachments=attachments)
 
 @login_required
 def maintenance_view(request):
