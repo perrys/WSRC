@@ -14,7 +14,7 @@ LOGGER.setLevel(logging.DEBUG)
 
 EMAIL_DELAY_PERIOD = 2
 
-def send_email(subject, text_body, html_body, from_address, to_list, bcc_list=None, reply_to_address=None, cc_list=None):
+def send_email(subject, text_body, html_body, from_address, to_list, bcc_list=None, reply_to_address=None, cc_list=None, extra_attachments=None):
   headers = {}
   if reply_to_address is not None:
     headers['Reply-To'] = reply_to_address
@@ -22,6 +22,9 @@ def send_email(subject, text_body, html_body, from_address, to_list, bcc_list=No
     msg = EmailMultiAlternatives(subject, text_body, from_address,
                                  to_list, bcc_list, headers=headers, cc=cc_list)
     msg.attach_alternative(html_body, "text/html")
+    if extra_attachments is not None:
+      for content_type, data in extra_attachments.items():
+        msg.attach_alternative(data, content_type)        
   else:
     msg = EmailMessage(subject, text_body, from_address,
                        to_list, bcc_list, headers=headers, cc=cc_list)
