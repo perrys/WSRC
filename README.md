@@ -34,6 +34,7 @@ $ pip insatll Jinja2
 $ pip install --upgrade google-api-python-client
 $ pip install xlrd
 $ pip install xlsxwriter
+$ pip install iCalendar
 ```
 
 for development:
