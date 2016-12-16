@@ -172,6 +172,10 @@ def match_spreadsheet_with_db_record(ss_row, db_record):
   return False
 
 def match_booking_system_contact_with_db_record(bs_row, db_record):
+  def nontrivial_equals(lhs, rhs):
+    return lhs is not None and lhs == rhs
+  if nontrivial_equals(bs_row["row_id"], db_record["booking_system_id"]):
+    return True
   return bs_row["Name"] == u"{0} {1}".format(db_record["user.first_name"], db_record["user.last_name"])
 
 def split_first_and_last_names(name):
@@ -207,6 +211,7 @@ def compare_booking_system_contact_with_db_record(bs_contact, db_record):
     ComparisonSpec('last_name', 'user.last_name'),
     ComparisonSpec('first_name', 'user.first_name'),
     ComparisonSpec('Email address', 'user.email'),
+    ComparisonSpec('row_id', 'booking_system_id'),
     ComparisonSpec('Mobile', 'cell_phone'),
     ComparisonSpec('Telephone', 'other_phone'),
   ]
@@ -258,6 +263,7 @@ def get_differences_bs_vs_db(bs_records, db_records):
   db_records = NullifingWrapper.wrap_records(db_records, "user.last_name", "user.first_name", "user.email", "cell_phone", "other_phone")
 
   bs_records = NullifingWrapper.wrap_records(bs_records, "last_name", "first_name", "Email address", "Mobile", "Telephone")
+  bs_records = IntegerFieldWrapper.wrap_records(bs_records, "row_id")
 
   return get_differences(bs_records, db_records, match_booking_system_contact_with_db_record, compare_booking_system_contact_with_db_record)
 
