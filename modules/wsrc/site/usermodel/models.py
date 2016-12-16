@@ -32,7 +32,7 @@ class Player(models.Model):
   membership_type = models.CharField(("Membership Type"), max_length=16, choices=MEMBERSHIP_TYPES)
   wsrc_id  = models.IntegerField(("WSRC ID"), db_index=True, blank=True, null=True,
                                  help_text="Index in the membership spreadsheet")
-  booking_system_id  = models.IntegerField(("Booking ID"), db_index=True, blank=True, null=True,
+  booking_system_id  = models.IntegerField(("Booking Site ID"), db_index=True, blank=True, null=True,
                                            help_text="ID in the booking system")
   cardnumber  = models.IntegerField(("Cardnumber"), db_index=True, blank=True, null=True,
                                     help_text="The number on your door entry card")
