@@ -114,6 +114,7 @@ class WSRC_admin_memberlist_view
       {className: alignment.text,   title: 'E-Mail',          data: 'user.email'},
       {className: alignment.text,   title: 'Receive?',        data: 'prefs_receive_email', render: yesno, searchable: false},
       {className: alignment.number, title: 'WSRC ID',         data: 'wsrc_id'},
+      {className: alignment.number, title: 'Booking ID',      data: 'booking_system_id'},
       {className: alignment.number, title: 'Door Card #',     data: 'cardnumber'},
       {className: alignment.number, title: 'SquashLevels ID', data: 'squashlevels_id'},
       {className: alignment.number, title: 'Mobile',          data: 'cell_phone'},
@@ -135,6 +136,7 @@ class WSRC_admin_memberlist_view
     ]
 
     bs_membership_api_colspec = [
+      {className: alignment.number, title: 'Id',          data: 'row_id'},
       {className: alignment.text,   title: 'Last Name',   data: 'last_name'},
       {className: alignment.text,   title: 'First Name',  data: 'first_name'},
       {className: alignment.text,   title: 'EMail',       data: 'Email address'},
