@@ -200,12 +200,19 @@ def scrape_table_generic(headerrow):
   headers = [cvt_nbsp(th.get_text()).strip() for th in headerrow.find_all("th")]
   rows = headerrow.find_next_siblings("tr")
   def process_row(row):
-    return [CellContent(td) for td in row.find_all("td")]
+    row_id = row.get("data-id")    
+    row_data = [CellContent(td) for td in row.find_all("td")]
+    return (row_id, row_data)
   def filtfunc(cell):
     return hasattr(cell, "name") and cell.name == 'tr'
   result = [process_row(r) for r in tag_generator(headerrow.next_sibling, filt=filtfunc)]
-  result = [r for r in result if len(r) == len(headers)]
-  return [dict(zip(headers, row)) for row in result]
+  result = [r for r in result if len(r[1]) == len(headers)]
+  def get_dict(row_id, row_data):
+    result = dict(zip(headers, row_data))
+    if row_id is not None:
+      result['row_id'] = row_id
+    return result
+  return [get_dict(row_id, row_data) for row_id, row_data in result]
 
 def scrape_fixtures_table(data):
   soup = BeautifulSoup(data, "lxml")
