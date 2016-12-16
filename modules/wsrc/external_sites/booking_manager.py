@@ -23,6 +23,7 @@ from django.db import transaction
 import wsrc.utils.timezones as time_utils
 import wsrc.utils.url_utils as url_utils
 import scrape_page
+import wsrc.site.settings.settings as settings
 
 LOGGER = logging.getLogger(__name__)
 LOGGER.setLevel(logging.INFO)
@@ -32,7 +33,6 @@ UK_TZINFO = time_utils.GBEireTimeZone()
 
 class BookingSystemSession:
 
-  BASE_URL            = "http://booking.wokingsquashclub.org"
   LOGIN_PAGE          = "/admin.php"
   BOOKING_PAGE        = "/edit_entry_handler_fixed.php"
   DELETE_BOOKING_PAGE = "/del_entry.php"
@@ -40,7 +40,8 @@ class BookingSystemSession:
   ENTRIES_API         = '/api/entries.php'
 
   def __init__(self, username=None, password=None):
-    self.client = url_utils.SimpleHttpClient(BookingSystemSession.BASE_URL)
+    self.base_url = url = settings.BOOKING_SYSTEM_URL
+    self.client = url_utils.SimpleHttpClient(url)
 
     if username is None: # don't attempt to log in if no username supplied.
       return
@@ -57,7 +58,7 @@ class BookingSystemSession:
 
     if "You are %(username)s" % self.__dict__ not in body:
       status = response.getcode()
-      raise Exception("Login failed - username not reported, status: %(status)d, body: %(body)s" % locals())
+      raise Exception("Login failed - username not reported, url: %(url)s, status: %(status)d, body: %(body)s" % locals())
 
     LOGGER.info("logged in sucessfully." % locals())
 
@@ -92,7 +93,7 @@ class BookingSystemSession:
       return datetime.year, datetime.month, datetime.day, datetime.hour, datetime.minute
 
     (year, month, day, hour, minute) = parse_datetime(starttime)
-    returnURL = BookingSystemSession.BASE_URL + "/day.php?year=%(year)s&month=%(month)s&day=%(day)s&area=1" % locals()
+    returnURL = self.base_url + "/day.php?year=%(year)s&month=%(month)s&day=%(day)s&area=1" % locals()
     params = {
       "year" : year,
       "month" : month,
