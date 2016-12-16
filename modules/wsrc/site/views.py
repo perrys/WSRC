@@ -139,7 +139,7 @@ def booking_view(request, date=None):
     }
     if request.user.is_authenticated() and request.user.player is not None:
       player = request.user.player
-      booking_user_id = 10 # player.booking_user_id
+      booking_user_id = player.booking_system_id
       context["booking_user_id"] = booking_user_id
       context["booking_user_auth_token"] = BookingSystemEvent.generate_hmac_token_raw("id:{booking_user_id}".format(**locals()))
       context["booking_user_name"] = player.get_full_name()
