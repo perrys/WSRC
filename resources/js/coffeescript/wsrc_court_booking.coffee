@@ -161,7 +161,14 @@ class WSRC_court_booking_view
   hide_popup: () ->
     popup = $('#booking_tooltip')
     popup.popup("close")
-        
+
+  set_popup_editable_fields: (is_update) ->
+    if @is_admin
+      
+      $("input.admin-updatable").textinput("enable").removeAttr("readonly")
+      $("select.admin-updatable").selectmenu("enable")
+      method = if is_update then "disable" else "enable"
+      $("select.admin-settable").selectmenu(method)
 
 
 ################################################################################
@@ -227,6 +234,7 @@ class WSRC_court_booking
     $("#booking_tooltip button.edit").on("click", (evt) =>
       popup = $("#booking_tooltip")
       wsrc.utils.toggle(popup)
+      @view.set_popup_editable_fields(true)
     )
     $("#booking_tooltip button.update").on("click", (evt) =>
       popup_form = $("#booking_tooltip form")
@@ -248,6 +256,7 @@ class WSRC_court_booking
       return [k, vals.join("=")]
     params = (qp(v) for v in location.search.substr(1).split("&"))
     @params = wsrc.utils.list_of_tuples_to_map(params)
+    @view.is_admin = @params.admin      
       
     @update_view()
 
@@ -283,6 +292,7 @@ class WSRC_court_booking
           return window.WSRC_booking_user_name
         source_cell.data(field)
       @view.show_popup('', fetcher, true, "Create")
+      @view.set_popup_editable_fields(false)
     )
 
   create_or_update_entry: (source) ->

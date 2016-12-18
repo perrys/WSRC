@@ -57,7 +57,7 @@ window.WSRC_booking_user_auth_token = "{{ booking_user_auth_token }}";
           <td>Name:</td>
           <td>
             <span class="togglable"></span>
-            <div class="toggled"><input name="name" type="text" readonly="readonly" disabled="disabled"></div>
+            <div class="toggled"><input name="name" type="text" readonly="readonly" disabled="disabled" class="admin-updatable"></div>
           </td>
         </tr>
         <tr>
@@ -72,7 +72,7 @@ window.WSRC_booking_user_auth_token = "{{ booking_user_auth_token }}";
           <td>
             <span class="togglable"></span>
             <div class="toggled">
-              <select name="court" readonly="readonly" disabled="disabled">
+              <select name="court" readonly="readonly" disabled="disabled" class="admin-settable">
                 <option value="1">1</option>
                 <option value="2">2</option>
                 <option value="3">3</option>
@@ -85,7 +85,7 @@ window.WSRC_booking_user_auth_token = "{{ booking_user_auth_token }}";
           <td>
             <span class="togglable"></span>
             <div class="toggled">
-              <select name="start_mins" readonly="readonly" disabled="disabled">
+              <select name="start_mins" readonly="readonly" disabled="disabled" class="admin-settable">
                 {% for mins in starts %}
                 <option value="{{ mins }}">{{ mins|mins_to_time_str }}</option>
                 {% endfor %}
@@ -98,7 +98,7 @@ window.WSRC_booking_user_auth_token = "{{ booking_user_auth_token }}";
           <td>
             <span class="togglable"></span>
             <div class="toggled">
-              <select name="duration_mins" readonly="readonly" disabled="disabled">
+              <select name="duration_mins" readonly="readonly" disabled="disabled" class="admin-settable">
                 {% for mins in durations %}
                 <option value="{{ mins }}">{{ mins|mins_to_duration_str }}</option>
                 {% endfor %}
@@ -111,7 +111,7 @@ window.WSRC_booking_user_auth_token = "{{ booking_user_auth_token }}";
           <td>
             <span class="togglable"></span>
             <div class="toggled">
-              <select name="type" readonly="readonly" disabled="disabled">
+              <select name="type" readonly="readonly" disabled="disabled" class="admin-updatable">
                 <option value="I" selected="selected">Member</option>
                 <option value="E">Club</option>
               </select>
