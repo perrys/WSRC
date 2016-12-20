@@ -60,8 +60,8 @@ window.WSRC_box_data = {{ box_data|safe }};
           <thead>
             <tr>
               <th colspan="2"></th>
-{% for i in competition.maxplayers|as_range %}<td class="ui-bar-a">{{ i|add:"1" }}</td>{% endfor %}
-              <td class="ui-bar-a">Σ</td>
+{% for i in competition.maxplayers|as_range %}<td class="ui-bar-b">{{ i|add:"1" }}</td>{% endfor %}
+              <td class="ui-bar-b">Σ</td>
             </tr>
           </thead>
           <tbody>
@@ -69,9 +69,9 @@ window.WSRC_box_data = {{ box_data|safe }};
 {% resolve box_config.entrants i as entrant %}
             <tr data-id="{{ entrant.id }}">
               <th {% if user.is_authenticated and user.player.id == entrant.player1.id %}class="wsrc-currentuser"{% endif %}>{% if user.is_authenticated %}<a href="{% url 'member_list' %}?filter-ids={{ entrant.player1.id }}">{% endif %}{{ entrant.player1.get_full_name }}{% if entrant.handicap != None %} ({{ entrant.handicap }}){% endif %}{% if user.is_authenticated %}</a>{% endif %}</th>
-              <td class="ui-bar-a">{{ i|add:"1" }}</td>
+              <td class="ui-bar-b">{{ i|add:"1" }}</td>
 {% for j in competition.maxplayers|as_range %}
-              <td class="{% if i == j %}ui-bar-a{% else %}points{% endif %}"> </td>
+              <td class="{% if i == j %}ui-bar-b{% else %}points{% endif %}"> </td>
 {% endfor %}
               <td class="points score_total"> </td>
             </tr>
@@ -82,13 +82,13 @@ window.WSRC_box_data = {{ box_data|safe }};
 	<thead>
 	  <tr>
 	    <th data-priority="persist" class=""></th>
-	    <td data-priority="2" class="ui-bar-a">P</td>
-	    <td data-priority="3" class="ui-bar-a">W</td>
-	    <td data-priority="4" class="ui-bar-a">D</td>
-	    <td data-priority="5" class="ui-bar-a">L</td>
-	    <td data-priority="4" class="ui-bar-a">F</td>
-	    <td data-priority="5" class="ui-bar-a">A</td>
-	    <td data-priority="5" class="ui-bar-a" style="max-width: 1em;">Pts</td>
+	    <td data-priority="2" class="ui-bar-b">P</td>
+	    <td data-priority="3" class="ui-bar-b">W</td>
+	    <td data-priority="4" class="ui-bar-b">D</td>
+	    <td data-priority="5" class="ui-bar-b">L</td>
+	    <td data-priority="4" class="ui-bar-b">F</td>
+	    <td data-priority="5" class="ui-bar-b">A</td>
+	    <td data-priority="5" class="ui-bar-b" style="max-width: 1em;">Pts</td>
 	  </tr>
 	</thead>
         <tbody>
@@ -121,7 +121,7 @@ window.WSRC_box_data = {{ box_data|safe }};
 {% block extra_page_content %}
 {{ block.super }}
 <div data-role="popup" id="score_entry_dialog" data-overlay-theme="b" data-theme="a" data-dismissible="true">
-  <div data-role="header" data-theme="a">
+  <div data-role="header" data-theme="b">
     <h2>Match Result</h2>
     <a href="#" data-rel="back" class="ui-btn ui-corner-all ui-shadow ui-btn-a ui-icon-delete ui-btn-icon-notext ui-btn-right">Close</a>
   </div>
@@ -133,7 +133,7 @@ window.WSRC_box_data = {{ box_data|safe }};
 </div>
 
 <div data-role="popup" id="box_results_dialog" data-overlay-theme="b" data-theme="a" data-dismissible="true">
-  <div data-role="header" data-theme="a">
+  <div data-role="header" data-theme="b">
     <h2>Results</h2>
     <a href="#" data-rel="back" class="ui-btn ui-corner-all ui-shadow ui-btn-a ui-icon-delete ui-btn-icon-notext ui-btn-right">Close</a>
   </div>
