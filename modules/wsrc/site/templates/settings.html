@@ -32,7 +32,7 @@
 {% usekwacro createfield user_form.username %}
 <div class="ui-field-contain">
  <label>Password:</label>
- <label><input id="id_password" type="checkbox" checked="checked" onclick="document.location='{% url 'password_change' %}'; this.checked=true; return false;"> Set (click to change)</label>
+ <label class="ui-btn-c"><input id="id_password" type="checkbox" checked="checked" onclick="document.location='{% url 'password_change' %}'; this.checked=true; return false;"> Set (click to change)</label>
 </div>
 </fieldset>
 
