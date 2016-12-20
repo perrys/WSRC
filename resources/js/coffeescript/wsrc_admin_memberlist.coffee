@@ -262,6 +262,7 @@ class WSRC_admin_memberlist_view
       dialogClass: "new_member_form_dialog"
     )
     jqdialog.dialog("open")
+    jqform.find("input[value='Update']").focus()
     
   hide_change_member_form: () ->
     jqdialog = $("#change_member_form_dialog")
