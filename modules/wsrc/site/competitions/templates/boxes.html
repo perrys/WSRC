@@ -27,7 +27,7 @@ window.WSRC_box_data = {{ box_data|safe }};
       </select>
     </div>
     <div class="right-control-box">
-      <fieldset data-role="controlgroup" data-type="horizontal" data-shadow="true">
+      <fieldset data-role="controlgroup" data-type="horizontal" data-shadow="true" data-theme="c">
         <input type="radio" name="view_type" id="view_type_boxes" value="boxes" checked="checked" />
         <label for="view_type_boxes">Boxes</label>
         <input type="radio" name="view_type" id="view_type_tables" value="tables" />
@@ -121,7 +121,7 @@ window.WSRC_box_data = {{ box_data|safe }};
 {% block extra_page_content %}
 {{ block.super }}
 <div data-role="popup" id="score_entry_dialog" data-overlay-theme="b" data-theme="a" data-dismissible="true">
-  <div data-role="header" data-theme="b">
+  <div data-role="header">
     <h2>Match Result</h2>
     <a href="#" data-rel="back" class="ui-btn ui-corner-all ui-shadow ui-btn-a ui-icon-delete ui-btn-icon-notext ui-btn-right">Close</a>
   </div>
@@ -133,7 +133,7 @@ window.WSRC_box_data = {{ box_data|safe }};
 </div>
 
 <div data-role="popup" id="box_results_dialog" data-overlay-theme="b" data-theme="a" data-dismissible="true">
-  <div data-role="header" data-theme="b">
+  <div data-role="header">
     <h2>Results</h2>
     <a href="#" data-rel="back" class="ui-btn ui-corner-all ui-shadow ui-btn-a ui-icon-delete ui-btn-icon-notext ui-btn-right">Close</a>
   </div>
