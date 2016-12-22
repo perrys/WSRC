@@ -331,10 +331,13 @@ class WSRC_court_booking
         alert("ERROR #{ xhr.status }: #{ xhr.statusText }\nResponse: #{ xhr.responseText }\n\nUnable to update booking.")
 
     if id # updating, need to send a PATCH
-      url += "?id=#{ id }"
+      # NOTE - there were some problems sending PATCH requests to the
+      # booking system server (ICAP proxy headers) so we send it a
+      # POST with a method override parameter
+      url += "?id=#{ id }&method=PATCH"
       data.url = url
       opts.csrf_token = $("input[name='csrfmiddlewaretoken']").val()
-      wsrc.ajax.PATCH("/court_booking/proxy/", data, opts) # PATCH must be sent via the proxy
+      wsrc.ajax.POST("/court_booking/proxy/", data, opts)
     else # new entry - this is a POST
       if using_proxy
         opts.csrf_token = $("input[name='csrfmiddlewaretoken']").val()
@@ -352,11 +355,13 @@ class WSRC_court_booking
         wsrc.ajax.POST(url, data, opts)
   
   delete_entry: (id) ->
+    # NOTE - there was an issue sending DELETE requests to the booking
+    # system server (method not accepted) so we send it a POST with a
+    # method override parameter
     payload =
       user_id: window.WSRC_booking_user_id
       user_token: window.WSRC_booking_user_auth_token
-      url: @server_base_url + "/api/entries.php?id=#{ id }"
-      method: "DELETE"
+      url: @server_base_url + "/api/entries.php?id=#{ id }&method=DELETE"
     opts =
       csrf_token: $("input[name='csrfmiddlewaretoken']").val()
       successCB: (data) =>
