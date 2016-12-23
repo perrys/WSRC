@@ -140,7 +140,7 @@ class WSRC_court_booking_view
       cell.addClass("column-last")
     last_cell.addClass("last")
 
-  show_popup: (id, fetcher, edit_mode, update_button_text) ->
+  show_popup: (id, fetcher, edit_mode, update_button_text, is_authorized) ->
     popup = $('#booking_tooltip')
     update_button = popup.find('button.update')
     update_button.text(update_button_text)
@@ -157,6 +157,11 @@ class WSRC_court_booking_view
       $(elt).find("span").html(display_val)
     popup.popup("open")
     popup.find("select").selectmenu("refresh", true)
+    buttons = popup.find(".inline-buttons button")
+    if is_authorized
+      buttons.removeAttr("disabled")
+    else
+      buttons.attr("disabled", "disabled")
 
   hide_popup: () ->
     popup = $('#booking_tooltip')
@@ -281,9 +286,13 @@ class WSRC_court_booking
           if field == "duration_mins"
             return utils.duration_str(val)
         return val
-      @view.show_popup(source_cell.data("id"), fetcher, false, "Update")
+      @view.show_popup(source_cell.data("id"), fetcher, false, "Update", WSRC_booking_user_auth_token?)
     )
     $("td.available").on("click", (evt) =>
+      unless window.WSRC_booking_user_auth_token
+        window.location.href = "/login?next=" + encodeURIComponent(document.location.pathname)
+        return null
+
       source_cell = $(evt.target)
       unless source_cell.hasClass("slot")
         source_cell = source_cell.parents("td.slot")
@@ -291,7 +300,7 @@ class WSRC_court_booking
         if field == "name"
           return window.WSRC_booking_user_name
         source_cell.data(field)
-      @view.show_popup('', fetcher, true, "Create")
+      @view.show_popup('', fetcher, true, "Create", WSRC_booking_user_auth_token?)
       @view.set_popup_editable_fields(false)
     )
 
