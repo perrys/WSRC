@@ -175,6 +175,11 @@ class WSRC_court_booking_view
       method = if is_update then "disable" else "enable"
       $("select.admin-settable").selectmenu(method)
 
+  show_dialog: (title, content) ->
+    dialog = $("#popup_dialog")
+    dialog.find("h1").text(title)
+    dialog.find(".content").html(content)
+    dialog.popup().popup("open")
 
 ################################################################################
 # Controller - initialize and respond to events
@@ -289,9 +294,12 @@ class WSRC_court_booking
       @view.show_popup(source_cell.data("id"), fetcher, false, "Update", WSRC_booking_user_auth_token?)
     )
     $("td.available").on("click", (evt) =>
-      unless window.WSRC_booking_user_auth_token
+      unless window.WSRC_username
         window.location.href = "/login?next=" + encodeURIComponent(document.location.pathname)
         return null
+      unless window.WSRC_booking_user_id
+        @view.show_dialog("ERROR", "<p>Sorry, your login is not set up to book courts from this website.</p><p>Please contact <a href='mailto:webmaster@wokingsquashclub.org'>webmaster@wokingsquashclub.org</a> to get this fixed, and use the <a href='#{ window.WSRC_court_bookings_url }'>old booking site</a> in the meantime.</p>")
+        return null 
 
       source_cell = $(evt.target)
       unless source_cell.hasClass("slot")

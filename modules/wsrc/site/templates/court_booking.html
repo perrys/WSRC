@@ -130,6 +130,16 @@ window.WSRC_booking_user_auth_token = "{{ booking_user_auth_token }}";
   </div>
 </div>
 
+<div data-role="popup" id="popup_dialog" data-overlay-theme="b" data-theme="b" data-dismissible="false">
+  <div data-role="header" data-theme="a">
+    <h1></h1>
+  </div>
+  <div role="main" class="ui-content">
+    <div class="content"></div>
+    <a href="#" class="ui-btn ui-corner-all ui-shadow ui-btn-inline ui-btn-b" data-rel="back">Ok</a>
+  </div>
+</div>
+
 <form>
 {% csrf_token %}
 </form>
