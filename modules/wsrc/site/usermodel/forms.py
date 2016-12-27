@@ -20,9 +20,7 @@ from django.contrib.auth.forms import AuthenticationForm
 class SpaceTranslatingCharField(CharField):
     def to_python(self, value):
         value = super(SpaceTranslatingCharField, self).to_python(value)
-        print value
         value = value.replace(" ", "_")
-        print value
         return value
 
 class SpaceTranslatingAuthenticationForm(AuthenticationForm):
