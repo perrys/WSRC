@@ -43,14 +43,6 @@ class Player(models.Model):
   prefs_receive_email  = models.NullBooleanField(("Receive Email"), default=True, null=True, blank=True,
                                                  help_text="Uncheck if you do *not* want to receive emails from the club&emdash; match reminders, social events etc.")
 
-  # TODO - remove, as it replicates method of same name in User class
-  def get_full_name(self):
-      """
-      Returns the first_name plus the last_name, with a space in between.
-      """
-      full_name = '%s %s' % (self.user.first_name, self.user.last_name)
-      return full_name.strip()
-
   def get_ordered_name(self):
       """
       Returns the last_name plus the first_name, with a comma in between.

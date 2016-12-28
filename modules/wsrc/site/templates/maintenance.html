@@ -21,7 +21,7 @@ This page keeps track of maintenance issues at the club. To report a new problem
 {% for row in data %}
           <tr>
             <td>{{ row.description }}</td>
-            <td>{{ row.reporter.get_full_name }}</td>
+            <td>{{ row.reporter.user.get_full_name }}</td>
             <td>{{ row.reported_date|date:'d M Y' }}</td>
             <td><span class="{{ row.status }}">{{ row.get_status_display }}</span></td>
             <td>{{ row.target_date|date:'d M Y' }}</td>

@@ -47,7 +47,7 @@ class Notifier:
     players = [Player.objects.get(pk=id) for id in id_list]
     contact_details = [["Name", "E-Mail", "Mobile Phone", "Other Phone"]]
     for player in players:
-      contact_details.append([player.get_full_name(), player.user.email, player.cell_phone, player.other_phone])
+      contact_details.append([player.user.get_full_name(), player.user.email, player.cell_phone, player.other_phone])
     context = Context({
       "event": event,
       "content_type": "text/html",
@@ -89,7 +89,7 @@ class Notifier:
     # for each id, convert event filter list into combined filter:
     for id, filters in userfilters.iteritems():
       player = Player.objects.get(pk=id)
-      not_userfilt = evt_filters.Not(evt_filters.IsPerson(player.get_full_name()))
+      not_userfilt = evt_filters.Not(evt_filters.IsPerson(player.user.get_full_name()))
       playerfilt = evt_filters.And([not_userfilt, cuttoff_filter, evt_filters.Or(filters)])
       userfilters[id] = playerfilt
     return userfilters
@@ -161,7 +161,7 @@ if __name__ == "__main__":
 
       not_user = get_instance_from_list(lst1, evt_filters.Not)
       self.assertIsInstance(not_user.filter, evt_filters.IsPerson)
-      self.assertEqual(not_user.filter.person, self.player1.get_full_name())
+      self.assertEqual(not_user.filter.person, self.player1.user.get_full_name())
 
       cuttoff = get_instance_from_list(lst1, evt_filters.Not, 2)
       self.assertIsInstance(cuttoff.filter, evt_filters.IsFutureEvent)

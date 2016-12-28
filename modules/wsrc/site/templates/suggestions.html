@@ -25,7 +25,7 @@ If you have a suggestion, please submit it using the form below. You will receiv
 {% for row in data %}
           <tr>
             <td style="text-align: justify;">{{ row.description }}</td>
-            <td>{{ row.suggester.get_full_name }}</td>
+            <td>{{ row.suggester.user.get_full_name }}</td>
             <td>{{ row.submitted_date|date:'d M Y' }}</td>
             <td>{{ row.reviewed_date|date:'d M Y' }}</td>
             <td>{{ row.comment|default:"" }}</td>

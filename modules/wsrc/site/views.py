@@ -143,7 +143,7 @@ def booking_view(request, date=None):
           booking_user_id = player.booking_system_id
           context["booking_user_id"] = booking_user_id
           context["booking_user_auth_token"] = BookingSystemEvent.generate_hmac_token_raw("id:{booking_user_id}".format(**locals()))
-          context["booking_user_name"] = player.get_full_name()
+          context["booking_user_name"] = player.user.get_full_name()
 
     return render(request, 'court_booking.html', context)
 
@@ -406,7 +406,7 @@ class SendCalendarEmail(APIView):
         organizer.params["cn"] = vText("Woking Squash Club")
         evt.add("organizer", organizer)
         attendee = vCalAddress("MAILTO:{email}".format(email=request.user.email))
-        attendee.params["cn"] = vText(request.user.player.get_full_name())
+        attendee.params["cn"] = vText(request.user.get_full_name())
         attendee.params["ROLE"] = vText("REQ-PARTICIPANT")
         evt.add('attendee', attendee, encode=0)
         evt.add("dtstamp", timestamp)    

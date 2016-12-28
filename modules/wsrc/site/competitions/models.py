@@ -93,7 +93,7 @@ class Entrant(models.Model):
     if opponents is None:
       return None
     if len(opponents) == 1:
-      return opponents[0].get_full_name()
+      return opponents[0].user.get_full_name()
     return " & ".join([p.get_short_name() for p in opponents])
 
   def __unicode__(self):

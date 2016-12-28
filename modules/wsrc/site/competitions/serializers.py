@@ -51,7 +51,7 @@ class UserSerializer(serializers.ModelSerializer):
 
 
 class PlayerSerializer(serializers.ModelSerializer):
-  full_name = serializers.CharField(source="get_full_name", read_only="True")
+  full_name = serializers.CharField(source="user.get_full_name", read_only="True")
   short_name = serializers.CharField(source="get_short_name", read_only="True")
   class Meta:
     model = Player

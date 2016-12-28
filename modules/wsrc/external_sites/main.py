@@ -334,7 +334,7 @@ def cmdline_add_old_league(args):
     return result.lower()
 
   players = Player.objects.all()
-  players = dict([(convert(p.get_full_name()), p) for p in players])
+  players = dict([(convert(p.user.get_full_name()), p) for p in players])
 
   existing = CompetitionGroup.objects.filter(comp_type="wsrc_boxes", end_date=end_date)
   if len(existing) > 0:

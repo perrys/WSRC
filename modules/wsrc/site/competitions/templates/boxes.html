@@ -68,7 +68,7 @@ window.WSRC_box_data = {{ box_data|safe }};
 {% for i in competition.maxplayers|as_range %}
 {% resolve box_config.entrants i as entrant %}
             <tr data-id="{{ entrant.id }}">
-              <th {% if user.is_authenticated and user.player.id == entrant.player1.id %}class="wsrc-currentuser"{% endif %}>{% if user.is_authenticated %}<a href="{% url 'member_list' %}?filter-ids={{ entrant.player1.id }}">{% endif %}{{ entrant.player1.get_full_name }}{% if entrant.handicap != None %} ({{ entrant.handicap }}){% endif %}{% if user.is_authenticated %}</a>{% endif %}</th>
+              <th {% if user.is_authenticated and user.player.id == entrant.player1.id %}class="wsrc-currentuser"{% endif %}>{% if user.is_authenticated %}<a href="{% url 'member_list' %}?filter-ids={{ entrant.player1.id }}">{% endif %}{{ entrant.player1.user.get_full_name }}{% if entrant.handicap != None %} ({{ entrant.handicap }}){% endif %}{% if user.is_authenticated %}</a>{% endif %}</th>
               <td class="ui-bar-b">{{ i|add:"1" }}</td>
 {% for j in competition.maxplayers|as_range %}
               <td class="{% if i == j %}ui-bar-b{% else %}points{% endif %}"> </td>
@@ -95,7 +95,7 @@ window.WSRC_box_data = {{ box_data|safe }};
 {% for i in competition.maxplayers|as_range %}
 {% resolve box_config.entrants i as entrant %}
           <tr data-id="{{ entrant.id }}">
-            <th>{% if user.is_authenticated %}<a href="{% url 'member_list' %}?filter-ids={{ entrant.player1.id }}">{% endif %}{{ entrant.player1.get_full_name }}{% if user.is_authenticated %}</a>{% endif %}</th>
+            <th>{% if user.is_authenticated %}<a href="{% url 'member_list' %}?filter-ids={{ entrant.player1.id }}">{% endif %}{{ entrant.player1.user.get_full_name }}{% if user.is_authenticated %}</a>{% endif %}</th>
 	    <td class="points"></td>
 	    <td class="points"></td>
 	    <td class="points"></td>
