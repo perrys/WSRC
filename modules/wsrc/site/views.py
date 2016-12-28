@@ -430,13 +430,22 @@ class SendCalendarEmail(APIView):
             "duration": timezones.duration_str(duration)
         }
         context.update(cal_data)
-        notify("BookingUpdate", context, 
-               subject="WSRC Court Booking - {start:%Y-%m-%d %H:%M} Court {court}".format(start=start_datetime, court=cal_data["court"]), 
-               to_list=[request.user.email],
-               cc_list=None, 
-               from_address=BOOKING_SYSTEM_EMAIL_ADRESS, 
-               attachments=attachments)
-        return HttpResponse(status=204)
+        try:
+            notify("BookingUpdate", context, 
+                   subject="WSRC Court Booking - {start:%Y-%m-%d %H:%M} Court {court}".format(start=start_datetime, court=cal_data["court"]), 
+                   to_list=[request.user.email],
+                   cc_list=None, 
+                   from_address=BOOKING_SYSTEM_EMAIL_ADRESS, 
+                   attachments=attachments)
+            return HttpResponse(status=204)
+        except Exception, e:
+            err = ""
+            if hasattr(e, "smtp_code"):
+                err += "EMAIL SERVER ERROR [{smtp_code:d}] {smtp_error:s} ".format(**e.__dict__)
+                if e.message:
+                    err += " - "
+            err += e.message
+            return HttpResponse(err, status=503)
 
 class UserForm(ModelForm):
     def __init__(self, *args, **kwargs):
