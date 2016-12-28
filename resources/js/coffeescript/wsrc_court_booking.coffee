@@ -432,7 +432,7 @@ class WSRC_court_booking
     opts =
       csrf_token: $("input[name='csrfmiddlewaretoken']").val()
       failureCB: (xhr, status) =>
-        alert("ERROR #{ xhr.status }: #{ xhr.statusText }\nResponse: #{ xhr.responseText }\n\nFailed to email the calendar event.")
+        alert("ERROR #{ xhr.status }: #{ xhr.statusText }\nResponse: #{ xhr.responseText }\n\nBooking was updated, but failed to email calendar event.")
     wsrc.ajax.PUT("court_booking/cal_invite/send", entry, opts);
     
 
