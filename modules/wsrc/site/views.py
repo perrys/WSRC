@@ -137,12 +137,13 @@ def booking_view(request, date=None):
         "starts": range(420, 1380, 15),
         "durations": [30, 45, 60, 75, 90, 120, 180, 240]
     }
-    if request.user.is_authenticated() and request.user.player is not None:
-      player = request.user.player
-      booking_user_id = player.booking_system_id
-      context["booking_user_id"] = booking_user_id
-      context["booking_user_auth_token"] = BookingSystemEvent.generate_hmac_token_raw("id:{booking_user_id}".format(**locals()))
-      context["booking_user_name"] = player.get_full_name()
+    if request.user.is_authenticated():
+      player = Player.get_player_for_user(request.user)
+      if player is not None:
+          booking_user_id = player.booking_system_id
+          context["booking_user_id"] = booking_user_id
+          context["booking_user_auth_token"] = BookingSystemEvent.generate_hmac_token_raw("id:{booking_user_id}".format(**locals()))
+          context["booking_user_name"] = player.get_full_name()
 
     return render(request, 'court_booking.html', context)
 
@@ -527,12 +528,12 @@ def settings_view(request):
 
     max_filters = 7
     success = False
-    player = request.user.player
+    player = Player.get_player_for_user(request.user)
     events = EventFilter.objects.filter(player=player)
     filter_formset_factory = create_notifier_filter_formset_factory(max_filters)
     initial = [{'player': player}] * (max_filters)
     if request.method == 'POST': 
-        pform = PlayerForm(request.POST, instance=request.user.player)
+        pform = PlayerForm(request.POST, instance=player)
         uform = UserForm(request.POST, instance=request.user)
         eformset = filter_formset_factory(request.POST, queryset=events, initial=initial)
         if pform.is_valid() and uform.is_valid() and eformset.is_valid(): 
@@ -551,11 +552,11 @@ def settings_view(request):
                     eformset = filter_formset_factory(queryset=events, initial=initial)
                 success = True
     else:
-        pform = PlayerForm(instance=request.user.player)
+        pform = PlayerForm(instance=player)
         uform = UserForm(instance=request.user)
         eformset = filter_formset_factory(queryset=events, initial=initial)
 
-    iform = InfoForm(instance=request.user.player)
+    iform = InfoForm(instance=player)
 
     return render(request, 'settings.html', {
         'player_form':     pform,
