@@ -72,7 +72,7 @@ class Player(models.Model):
     return player
 
   def __unicode__(self):
-    return self.get_full_name()
+    return self.user.get_full_name()
 
   class Meta:
     ordering=["user__first_name", "user__last_name"]
