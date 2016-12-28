@@ -70,6 +70,15 @@ class Player(models.Model):
       """
       send_mail(subject, message, from_email, [self.user.email])
 
+  @staticmethod
+  def get_player_for_user(user):
+    player = None
+    try:
+      player = user.player
+    except Player.DoesNotExist:
+      pass
+    return player
+
   def __unicode__(self):
     return self.get_full_name()
 
