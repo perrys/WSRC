@@ -277,6 +277,9 @@ class WSRC_court_booking
     right_now = new Date() # note - relies on local clock being accurate and in the correct timezone
     if wsrc.utils.is_same_date(@model.date, right_now)
       today_current_mins = right_now.getHours() * 60 + right_now.getMinutes()
+    if history
+      url = "/courts/" + wsrc.utils.js_to_iso_date_str(@model.date)
+      history.pushState({}, "", url)
     @view.refresh_table(@model.earliest, @model.latest, @model.courts, @model.day_courts, 15, today_current_mins)
     $("#booking_footer div.date").text($.datepicker.formatDate("D, d M yy", @model.date))
     $("td.booking").on("click", (evt) =>
