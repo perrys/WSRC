@@ -146,9 +146,7 @@ window.WSRC_booking_user_auth_token = "{{ booking_user_auth_token }}";
 
 <script>
 window.WSRC_court_bookings = {{ bookings|safe }};
-window.WSRC_court_bookings_date = '{{ date|date:"Y-m-d" }}';
-window.WSRC_court_bookings_url = '{{ booking_system_url }}';
-wsrc.court_booking.onReady(WSRC_court_bookings, WSRC_court_bookings_date, WSRC_court_bookings_url);
+wsrc.court_booking.onReady(WSRC_court_bookings, '{{ date|date:"Y-m-d" }}', '{{ booking_system_origin }}', '{{ booking_system_path }}');
 </script>
 
 

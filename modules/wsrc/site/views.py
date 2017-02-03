@@ -123,7 +123,7 @@ def booking_view(request, date=None):
     def get_bookings(date):
       today_str    = timezones.as_iso_date(date)
       tomorrow_str = timezones.as_iso_date(date + datetime.timedelta(days=1))
-      url = settings.BOOKING_SYSTEM_URL + "/api/entries.php?start_date={today_str}&end_date={tomorrow_str}&with_tokens=1".format(**locals())
+      url = settings.BOOKING_SYSTEM_ORIGIN + settings.BOOKING_SYSTEM_PATH + "?start_date={today_str}&end_date={tomorrow_str}&with_tokens=1".format(**locals())
       h = httplib2.Http()
       (resp_headers, content) = h.request(url, "GET")
       if resp_headers.status != httplib.OK:
@@ -133,7 +133,8 @@ def booking_view(request, date=None):
     context = {
         "date": date,
         "bookings": bookings,
-        "booking_system_url": settings.BOOKING_SYSTEM_URL,
+        "booking_system_origin": settings.BOOKING_SYSTEM_ORIGIN,
+        "booking_system_path":   settings.BOOKING_SYSTEM_PATH,
         "starts": range(420, 1380, 15),
         "durations": [30, 45, 60, 75, 90, 120, 180, 240]
     }

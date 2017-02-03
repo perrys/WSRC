@@ -188,7 +188,7 @@ class WSRC_court_booking_view
 
 class WSRC_court_booking
 
-  constructor: (@model, @server_base_url) ->
+  constructor: (@model, @server_origin, @server_path) ->
     @view = new WSRC_court_booking_view()
     @use_proxy = false
     options =
@@ -298,7 +298,7 @@ class WSRC_court_booking
         window.location.href = "/login?next=" + encodeURIComponent(document.location.pathname)
         return null
       unless window.WSRC_booking_user_id
-        @view.show_dialog("ERROR", "<p>Sorry, your login is not set up to book courts from this website.</p><p>Please contact <a href='mailto:webmaster@wokingsquashclub.org'>webmaster@wokingsquashclub.org</a> to get this fixed, and use the <a href='#{ window.WSRC_court_bookings_url }'>old booking site</a> in the meantime.</p>")
+        @view.show_dialog("ERROR", "<p>Sorry, your login is not set up to book courts from this website.</p><p>Please contact <a href='mailto:webmaster@wokingsquashclub.org'>webmaster@wokingsquashclub.org</a> to get this fixed, and use the <a href='#{ @server_origin }'>old booking site</a> in the meantime.</p>")
         return null 
 
       source_cell = $(evt.target)
@@ -331,7 +331,7 @@ class WSRC_court_booking
         data[field] = source(field)
       
     using_proxy = @use_proxy
-    url = @server_base_url + "/api/entries.php"
+    url = @server_origin + @server_path
     opts =
       content_type: "text/plain"
       successCB: (returned_data) =>
@@ -378,7 +378,7 @@ class WSRC_court_booking
     payload =
       user_id: window.WSRC_booking_user_id
       user_token: window.WSRC_booking_user_auth_token
-      url: @server_base_url + "/api/entries.php?id=#{ id }&method=DELETE"
+      url: @server_origin + @server_path + "?id=#{ id }&method=DELETE"
     opts =
       csrf_token: $("input[name='csrfmiddlewaretoken']").val()
       successCB: (data) =>
@@ -402,7 +402,7 @@ class WSRC_court_booking
     d2 = new Date(d1.getTime())
     d2.setDate(d2.getDate() + 1)
     tomorrow_str = wsrc.utils.js_to_iso_date_str(d2)
-    url = @server_base_url + "/api/entries.php?start_date=#{ today_str }&end_date=#{ tomorrow_str }&with_tokens=1"
+    url = @server_origin + @server_path + "?start_date=#{ today_str }&end_date=#{ tomorrow_str }&with_tokens=1"
     using_proxy = @use_proxy
     opts =
       successCB: (data, status, jqxhr) =>
@@ -440,9 +440,9 @@ class WSRC_court_booking
     date = new Date(picker.selectedYear, picker.selectedMonth, picker.selectedDay)
     @load_for_date(date)
     
-  @onReady: (day_courts, date_str, url) ->
+  @onReady: (day_courts, date_str, origin, path) ->
     date = wsrc.utils.iso_to_js_date(date_str)
     model = new WSRC_court_booking_model(day_courts[date_str], date)
-    @instance = new WSRC_court_booking(model, url)
+    @instance = new WSRC_court_booking(model, origin, path)
 
 window.wsrc.court_booking = WSRC_court_booking
