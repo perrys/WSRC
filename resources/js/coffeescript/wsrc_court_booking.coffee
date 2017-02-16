@@ -118,6 +118,8 @@ class WSRC_court_booking_view
             td.data("description", slot.description)
             td.data("created_by", slot.created_by)
             td.data("timestamp", slot.timestamp)
+            if slot.description
+              td.attr("title", slot.description)
           else if slot.token
             td.addClass("available")
             td.data("token", slot.token)
@@ -436,7 +438,7 @@ class WSRC_court_booking
       csrf_token: $("input[name='csrfmiddlewaretoken']").val()
       failureCB: (xhr, status) =>
         alert("ERROR #{ xhr.status }: #{ xhr.statusText }\nResponse: #{ xhr.responseText }\n\nBooking was updated, but failed to email calendar event.")
-    wsrc.ajax.PUT("court_booking/cal_invite/send", entry, opts);
+    wsrc.ajax.PUT("/court_booking/cal_invite/send", entry, opts);
     
 
   handle_date_selected: (picker) ->
