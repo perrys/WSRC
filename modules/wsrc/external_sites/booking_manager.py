@@ -40,7 +40,7 @@ class BookingSystemSession:
   ENTRIES_API         = '/api/entries.php'
 
   def __init__(self, username=None, password=None):
-    self.base_url = url = settings.BOOKING_SYSTEM_URL
+    self.base_url = url = settings.BOOKING_SYSTEM_ORIGIN
     self.client = url_utils.SimpleHttpClient(url)
 
     if username is None: # don't attempt to log in if no username supplied.
