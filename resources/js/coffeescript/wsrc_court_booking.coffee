@@ -349,8 +349,13 @@ class WSRC_court_booking
           entry.event_type = event_type
           @send_email_update(entry)
         @load_for_date(@model.date, 0, callback)
-      failureCB: (xhr, status) =>
-        alert("ERROR #{ xhr.status }: #{ xhr.statusText }\nResponse: #{ xhr.responseText }\n\nUnable to update booking.")
+      failureCB: (xhr) =>
+        if xhr.status == 409
+          @view.hide_popup()
+          alert("#{ xhr.responseText }\n\nUnable to create booking.")
+          @load_for_date(@model.date)
+        else          
+          alert("ERROR #{ xhr.status }: #{ xhr.statusText }\nResponse: #{ xhr.responseText }\n\nUnable to update booking.")
 
     if id # updating, need to send a PATCH
       # NOTE - there were some problems sending PATCH requests to the
