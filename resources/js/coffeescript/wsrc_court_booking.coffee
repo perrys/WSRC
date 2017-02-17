@@ -7,6 +7,11 @@ utils =
       if n < 10 then "0#{ n }" else n
     return "#{ pad_zeros(Math.floor(mins/60)) }:#{ pad_zeros(mins%60) }"
 
+  time_str_to_mins:  (time_str) ->
+    return wsrc.utils.to_int(time_str.substr(0,2)) * 60 +
+           wsrc.utils.to_int(time_str.substr(3, 5))
+
+
   duration_str:  (mins) ->
     hours = Math.floor(mins/60)
     mins  = mins % 60
@@ -58,6 +63,7 @@ class WSRC_court_booking_model
           ret.date = @date
           ret.court = court
           return ret
+
     
 
 ################################################################################
@@ -142,6 +148,15 @@ class WSRC_court_booking_view
       cell.addClass("column-last")
     last_cell.addClass("last")
 
+  get_slot_for_time: (time_str) ->
+    start_mins = utils.time_str_to_mins(time_str)
+    if isNaN(start_mins)
+      throw "Invalid time: #{ time_str }"
+    slot = $("td.available").filter (idx, elt) =>
+      $(elt).data("start_mins") == start_mins
+    return if slot.length == 1 then slot else null
+    
+
   show_popup: (id, fetcher, edit_mode, update_button_text, is_authorized) ->
     popup = $('#booking_tooltip')
     update_button = popup.find('button.update')
@@ -183,6 +198,14 @@ class WSRC_court_booking_view
     dialog.find(".content").html(content)
     dialog.popup().popup("open")
 
+  show_create_dialog_for_slot: (source_cell) ->
+    fetcher = (field) ->
+      if field == "name"
+        return window.WSRC_booking_user_name
+      source_cell.data(field)
+    @show_popup('', fetcher, true, "Create", WSRC_booking_user_auth_token?)
+    @set_popup_editable_fields(false)
+    
 ################################################################################
 # Controller - initialize and respond to events
 ################################################################################
@@ -270,16 +293,16 @@ class WSRC_court_booking
     @params = wsrc.utils.list_of_tuples_to_map(params)
     @view.is_admin = @params.admin      
       
-    @update_view()
+    @update_view(true)
 
-  update_view: () ->
+  update_view: (skip_history_update) ->
     datepicker = $("#booking_datepicker_container input")
     datepicker.datepicker("setDate", @model.date)
     today_current_mins = null
     right_now = new Date() # note - relies on local clock being accurate and in the correct timezone
     if wsrc.utils.is_same_date(@model.date, right_now)
       today_current_mins = right_now.getHours() * 60 + right_now.getMinutes()
-    if history
+    if history and not skip_history_update
       url = "/courts/" + wsrc.utils.js_to_iso_date_str(@model.date)
       history.pushState({}, "", url)
     @view.refresh_table(@model.earliest, @model.latest, @model.courts, @model.day_courts, 15, today_current_mins)
@@ -309,12 +332,7 @@ class WSRC_court_booking
       source_cell = $(evt.target)
       unless source_cell.hasClass("slot")
         source_cell = source_cell.parents("td.slot")
-      fetcher = (field) ->
-        if field == "name"
-          return window.WSRC_booking_user_name
-        source_cell.data(field)
-      @view.show_popup('', fetcher, true, "Create", WSRC_booking_user_auth_token?)
-      @view.set_popup_editable_fields(false)
+      @view.show_create_dialog_for_slot(source_cell)
     )
 
   create_or_update_entry: (source) ->
@@ -444,8 +462,17 @@ class WSRC_court_booking
       failureCB: (xhr, status) =>
         alert("ERROR #{ xhr.status }: #{ xhr.statusText }\nResponse: #{ xhr.responseText }\n\nBooking was updated, but failed to email calendar event.")
     wsrc.ajax.PUT("/court_booking/cal_invite/send", entry, opts);
-    
 
+  init_create_booking: (time_str) ->
+    try 
+      source_cell = @view.get_slot_for_time(time_str)
+      if source_cell
+        @view.show_create_dialog_for_slot(source_cell)
+      else
+        alert("Sorry - no courts available at #{ time_str } on this date")
+    catch err
+      alert(err)
+    
   handle_date_selected: (picker) ->
     date = new Date(picker.selectedYear, picker.selectedMonth, picker.selectedDay)
     @load_for_date(date)

@@ -99,7 +99,7 @@ window.WSRC =
     else if pagetype == "memberlist"
       document.getElementById("filterTable-input").focus()
     else if pagetype == "login"
-      document.getElementById("id_username").focus()
+      document.getElementById("id_username").focus()      
 
     location.search.substr(1).split("&").forEach( (pair) ->
       if (pair == "")
@@ -118,6 +118,13 @@ window.WSRC =
         )
         $( partitioned.unfiltered ).addClass( "ui-screen-hidden" )
         $( partitioned.filtered ).removeClass( "ui-screen-hidden" )
+      else if parts[0] == "new_booking_time" and pagetype == "courts"
+        unless window.WSRC_username
+          window.location.href = "/login?next=" + encodeURIComponent(document.location.pathname + document.location.search)
+      
+        callback = () ->
+          wsrc.court_booking.instance.init_create_booking(parts[1])
+        window.setTimeout(callback, 500)
     )
 
   
