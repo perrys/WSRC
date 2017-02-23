@@ -210,7 +210,7 @@ def get_unplayed_matches(comp):
     def exclude_played_matches(queryset):
       predicate = (Q(team1_score1__isnull=True) | Q(team2_score1__isnull=True)) & Q(walkover__isnull=True)
       return queryset.filter(predicate)
-    if comp.group.comp_type == "wsrc_qualifiers":
+    if comp.group.comp_type in ("wsrc_qualifiers", "wsrc_boxes"):
       unplayed_matches = []
       entrants = comp.entrant_set.all()
       nentrants = len(entrants)
