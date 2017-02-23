@@ -108,8 +108,39 @@ def email_report_overdue_tournament_matches():
   to_list = [COMMITTEE_EMAIL_ADDRESS]
   email_utils.send_email(subject, text_body, html_body, from_address, to_list)
 
+def email_outstanding_box_matches():
+  import wsrc.site.competitions.tournament as tournament_utils
+  import wsrc.site.competitions.models as comp_models;
+  import wsrc.site.models as site_models;
 
-  
+  boxes_group = comp_models.CompetitionGroup.objects.filter(comp_type="wsrc_boxes").get(active=True)
+  boxes = [c for c in boxes_group.competition_set.all()]
+  email_template = site_models.EmailContent.objects.get(name="EndOfLeagueReminder")
+  email_template = Template(email_template.markup)
+
+  for box in boxes:
+    matches = tournament_utils.get_unplayed_matches(box)
+    opponent_set = set()
+    for match in matches:
+      opponent_set.add(match.get_team(1))
+      opponent_set.add(match.get_team(2))
+    
+    to_list = [entrant.player1.user.email for entrant in opponent_set]
+    
+    context = Context({
+      "competition": box,
+      "opponents": opponent_set,
+      "matches": matches
+    })
+    context["content_type"] = "text/html"
+    html_body = markdown.markdown(email_template.render(context))
+    context["content_type"] = "text/plain"
+    text_body = email_template.render(context)
+    subject = "WSRC {box_name} Box Ending {date:%a %d %b}".format(box_name=box.name, date=box.end_date)
+    from_address = "leagues@wokingsquashclub.org"
+
+    email_utils.send_email(subject, text_body, html_body, from_address, to_list)
+
 
 
 def email_tournament_match_reminders(usernames):
@@ -311,6 +342,9 @@ if __name__ == "__main__":
   elif command in ("send-overdue-match-report"):
     email_report_overdue_tournament_matches()
 
+  elif command in ("send-outstanding-league-match-reminders"):
+    email_outstanding_box_matches()
+    
   elif command in ("add-old-league"):
     wsrc.external_sites.main.cmdline_add_old_league(args)
 
