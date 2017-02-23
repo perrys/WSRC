@@ -61,13 +61,27 @@ class TextTableNode(Node):
     def __init__(self, variable_name, *fields):
         self.variable = Variable(variable_name)
         self.fields = fields
+        
     def render(self, context):
         raw_rows = self.variable.resolve(context)
-        ordered_rows = [[field[0] for field in self.fields]]
+        ordered_rows = []
+        def st(s):
+            if s == "__": return ""
+            return s
+        headers = [st(field[0]) for field in self.fields]
+        has_headers = False
+        for h in headers:
+            if len(h) > 0:
+                has_headers = True
+                break
+        if has_headers:
+            ordered_rows.append(headers)
         for row in raw_rows:
             ordered_rows.append([self.get_val(row, field[1]) for field in self.fields])
-        return text_utils.formatTable(ordered_rows, True)
+        return text_utils.formatTable(ordered_rows, has_headers)
     def get_val(self, record, field):
+        if field.startswith("__"):
+          return field[2:]
         for tok in field.split("."):
             if hasattr(record, tok):
                 record = getattr(record, tok)
