@@ -60,9 +60,10 @@ class Notifier:
     context["content_type"] = "text/plain"
     text_body = self.email_template.render(context)
     to_list = [p.user.email for p in players if '@' in p.user.email]
+    reply_to = "noreply@wokingsquashclub.org"
     LOGGER.debug("sending email to {0}".format(to_list))
     try:
-      self.send_email(subject, text_body, html_body, from_address, to_list)
+      self.send_email(subject, text_body, html_body, from_address, to_list, reply_to_address=reply_to)
     except:
       import traceback
       traceback.print_exc()
