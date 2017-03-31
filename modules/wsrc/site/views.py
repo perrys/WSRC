@@ -270,11 +270,13 @@ def facebook_view(request):
           "client_secret": settings.FB_APP_SECRET,
           }
       url = FACEBOOK_GRAPH_ACCESS_TOKEN_URL +  "?" + urllib.urlencode(params)
-      return fb_get(url)
+      data = json.loads(fb_get(url))
+      token = data.get("access_token")
+      return token
 
     # First get an access token (using a pre-configured app ID) then use that to get the page feed
     token = obtain_auth_token()
-    url = FACEBOOK_GRAPH_URL + str(WSRC_FACEBOOK_PAGE_ID) + "/feed?" + token
+    url = FACEBOOK_GRAPH_URL + str(WSRC_FACEBOOK_PAGE_ID) + "/feed?" + urllib.urlencode({"access_token": token})
     try:
         # the response is JSON so pass it straight through
         return HttpResponse(fb_get(url), content_type="application/json")
