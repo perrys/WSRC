@@ -19,6 +19,7 @@
 @color-booking-highlight: #aabbff;
 
 @max-page-width: 1200px;
+@kiosk-page-margin: 1em;
 
 html, body {
     height: 100%;
@@ -1095,6 +1096,42 @@ div.thumbnail-container div.copy {
         float: right;
         width: 80%;
 }
+}
+
+#page_content.kiosk {
+
+    display: table;
+    width: 100%;
+    padding: 0 0 0 0;
+                 
+    .menu-wrapper {
+        padding-left: @kiosk-page-margin;
+        display: table;
+        div.menu-container {
+            display: table-cell;
+            vertical-align: middle;
+        }
+    }
+    
+    div.left, div.right {
+        display: table-cell;
+        width: 25%;
+        vertical-align: top;
+    }
+
+    .clock {
+        position: absolute;
+        top: 0.5em;
+        text-align: right;
+        right: @kiosk-page-margin;
+    }
+
+    .logo {
+        position: fixed;
+        bottom: @kiosk-page-margin;
+        right: @kiosk-page-margin;
+    }
+
 }
 
 /******************************************************************************** 
