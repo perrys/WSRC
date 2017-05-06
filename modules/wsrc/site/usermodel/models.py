@@ -7,6 +7,8 @@ from django.utils.translation import ugettext_lazy as _
 
 import re
 
+import wsrc.site.accounts.models as account_models
+
 class Player(models.Model):
 
   MEMBERSHIP_TYPES = (
@@ -77,3 +79,34 @@ class Player(models.Model):
   class Meta:
     ordering=["user__first_name", "user__last_name"]
 
+
+
+class Subscription(models.Model):
+  MEMBERSHIP_TYPES = (
+    ("coach", "Coach"),
+    ("compl", "Complimentary"),
+    ("full", "Full"),
+    ("junior", "Junior"),
+    ("off_peak", "Off-Peak"),
+    ("non_playing", "Non-Playing"),
+    ("y_adult", "Young Adult"),
+    )
+  PAYMENT_TYPES = (
+    ("annual", "Annual"),
+    ("monthly", "Monthly SO"),
+  )
+  
+  player = models.ForeignKey(Player)
+  subscription_type = models.CharField(("Membership Type"), max_length=16, choices=MEMBERSHIP_TYPES)
+  start_date = models.DateField()
+  end_date = models.DateField()
+  family_subscription = models.ForeignKey("FamilySubscription", null=True, blank=True)
+
+class FamilySubscription(models.Model):
+  parent_subscription = models.ForeignKey(Subscription)
+  discount = models.FloatField()
+
+class SubscriptionPayment(models.Model):
+  subscription = models.ForeignKey(Subscription)
+  transaction = models.ForeignKey(account_models.Transaction)
+  
