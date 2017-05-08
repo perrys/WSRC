@@ -158,6 +158,23 @@ class WSRC_utils
     # dateformat: 2001-12-31
     toint = (start, len) => @to_int(str.substr(start, len))
     new Date(toint(0,4), toint(5,2)-1, toint(8,2)) # gotcha - JS dates use 0-offset months...
+    
+  @iso_to_js_datetime: (dt_str) ->
+    y = this.toint(dt_str.substr(0,4))
+    m = this.toint(dt_str.substr(5,2))
+    d = this.toint(dt_str.substr(8,2))
+    ho = this.toint(dt_str.substr(11,2))
+    mi = this.toint(dt_str.substr(14,2))
+    se = this.toint(dt_str.substr(17,4))
+    offset_mi = 0
+    if dt_str.length >= 25
+      offset_ho = this.toint(dt_str.substr(20,2))
+      offset_mi = this.toint(dt_str.substr(23,2))
+      offset_mi += offset_ho * 60
+      if dt_str.substr(19,1) != "-"
+        offset_mi = offset_mi * -1
+    date = new Date(Date.UTC(y, m-1, d, ho, mi + offset_mi, se)) 
+    return date
 
   @british_to_js_date: (str) ->
     # dateformat: 31/12/2001
