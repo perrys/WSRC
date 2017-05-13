@@ -200,6 +200,20 @@ class WSRC_utils
       result += " #{ year }"
     return result
 
+  @js_to_12h_time_str: (dt, with_am_pm) ->
+    hour = dt.getHours()
+    ampm = ""
+    if with_am_pm
+      ampm = if hour < 12 then " AM" else " PM"
+    if hour > 12
+      hour -= 12
+    else if hour == 0
+      hour = 12
+    min = dt.getMinutes()
+    if min < 10
+      min = "0#{ min }"
+    return "#{ hour }:#{ min }#{ ampm }"
+    
   @is_same_date: (d1, d2) ->
     d1.getFullYear() == d2.getFullYear() && 
     d1.getMonth()    == d2.getMonth() && 
