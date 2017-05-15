@@ -16,7 +16,7 @@
 
 import sys
 
-from wsrc.site.models import PageContent, SquashLevels, LeagueMasterFixtures, BookingSystemEvent, EventFilter, MaintenanceIssue, Suggestion, EmailContent, ClubEvent
+from wsrc.site.models import PageContent, SquashLevels, LeagueMasterFixtures, BookingSystemEvent, EventFilter, MaintenanceIssue, Suggestion, EmailContent, ClubEvent, CommitteeMeetingMinutes
 from wsrc.site.competitions.models import CompetitionGroup
 from wsrc.site.usermodel.models import Player
 import wsrc.site.settings.settings as settings
@@ -38,6 +38,7 @@ from django.shortcuts import redirect
 from django.shortcuts import render
 from django.template import Template, Context
 from django.template.response import TemplateResponse
+from django.template.loader import render_to_string
 from django.utils import timezone
 from django.views.decorators.http import require_safe, require_http_methods
 from django.db.models import Q
@@ -113,6 +114,16 @@ def generic_view(request, page):
     "Informational views rendered directly from markdown content stored in the DB"
     ctx = get_pagecontent_ctx(page)
     return TemplateResponse(request, 'generic_page.html', ctx)
+
+@require_safe
+def committee_view(request):
+    # need a two-pass render for the committee page
+    page = 'Committee'
+    ctx = get_pagecontent_ctx(page)
+    unexpanded_content = render_to_string('generic_page.html', ctx)
+    template = Template(unexpanded_content)
+    response = template.render(Context({'meetings': CommitteeMeetingMinutes.objects.all()}))
+    return HttpResponse(response)
 
 @require_safe
 def booking_view(request, date=None):

@@ -94,5 +94,6 @@ urlpatterns = patterns('',
     url(r'^tournaments/index.html',   perm_redirect('/tournament')),
 
 
+    url(r'^committee/?$', wsrc.site.views.committee_view),
     url(r'^(?P<page>[a-z_]+)$', wsrc.site.views.generic_view),
 )
