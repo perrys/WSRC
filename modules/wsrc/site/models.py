@@ -42,6 +42,15 @@ class ClubEvent(models.Model):
     date_str = self.display_date is not None and "{display_date:%Y-%m-%d}".format(**self.__dict__) or ""
     return "{title} {date}".format(title=self.title, date=date_str) 
 
+class CommitteeMeetingMinutes(models.Model):
+  date = models.DateField()
+  pdf_file = models.FileField(("PDF File"), upload_to="actions")
+  class Meta:
+    verbose_name = "Committee Actions"
+    verbose_name_plural = "Committee Actions"
+    ordering=["-date"]
+  
+  
 class BookingSystemEvent(models.Model):
   start_time = models.DateTimeField()
   end_time = models.DateTimeField()
