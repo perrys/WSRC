@@ -36,7 +36,7 @@ from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
 from django.shortcuts import redirect
 from django.shortcuts import render
-from django.template import Template, Context
+from django.template import Template, Context, RequestContext
 from django.template.response import TemplateResponse
 from django.template.loader import render_to_string
 from django.utils import timezone
@@ -120,7 +120,7 @@ def committee_view(request):
     # need a two-pass render for the committee page
     page = 'Committee'
     ctx = get_pagecontent_ctx(page)
-    unexpanded_content = render_to_string('generic_page.html', ctx)
+    unexpanded_content = render_to_string('generic_page.html', RequestContext(request, ctx))
     template = Template(unexpanded_content)
     response = template.render(Context({'meetings': CommitteeMeetingMinutes.objects.all()}))
     return HttpResponse(response)
