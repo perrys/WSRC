@@ -98,11 +98,11 @@ LW_REQUEST = collections.namedtuple('LW_REQUEST', ['query_params'])
 LOGGER = logging.getLogger(__name__)
 LOGGER.setLevel(logging.WARNING)
 
-def get_pagecontent_ctx(page):
+def get_pagecontent_ctx(page, title=None):
     data = get_object_or_404(PageContent, page__iexact=page)
     result = {
         "pagedata": {
-            "title": data.page,
+            "title": title is not None and title or data.page,
             "content": markdown.markdown(data.markup),
             "last_updated": data.last_updated,
             },
@@ -119,7 +119,7 @@ def generic_view(request, page):
 def committee_view(request):
     # need a two-pass render for the committee page
     page = 'Committee'
-    ctx = get_pagecontent_ctx(page)
+    ctx = get_pagecontent_ctx(page, "Management")
     unexpanded_content = render_to_string('generic_page.html', RequestContext(request, ctx))
     template = Template(unexpanded_content)
     response = template.render(Context({'meetings': CommitteeMeetingMinutes.objects.all()}))
