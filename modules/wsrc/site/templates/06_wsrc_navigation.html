@@ -46,7 +46,7 @@ $( document ).on( "pagecreate", ".wsrc-site", function( event ) {
       <li data-icon="calendar"><a href="{% url 'court_booking' %}" data-ajax="false" onclick="$.mobile.loading('show')">Courts (new)</a></li>
 {% if user.is_authenticated %}
       <li data-icon="phone"><a href="{% url 'member_list' %}">Members' Details</a></li>
-      <li><a href="/committee">Club Management</a></li>
+      <li><a href="/club_management">Club Management</a></li>
       <li data-icon="comment"><a href="/suggestions">Feedback</a></li>
 <!--
       <li data-icon="shop"><a href="/merchandise">Merchandise</a></li>
