@@ -126,6 +126,8 @@ class WSRC_court_booking_view
             td.data("timestamp", slot.timestamp)
             if slot.description
               td.attr("title", slot.description)
+            if slot.no_show
+              td.append('<span class="noshow">NO SHOW</span>')
           else if slot.token
             td.addClass("available")
             td.data("token", slot.token)
