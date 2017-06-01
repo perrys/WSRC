@@ -146,6 +146,7 @@ def booking_view(request, date=None):
         "bookings": bookings,
         "booking_system_origin": settings.BOOKING_SYSTEM_ORIGIN,
         "booking_system_path":   settings.BOOKING_SYSTEM_PATH,
+        "booking_system_noshow": settings.BOOKING_SYSTEM_NOSHOW,
         "starts": range(420, 1380, 15),
         "durations": [30, 45, 60, 75, 90, 120, 180, 240]
     }
