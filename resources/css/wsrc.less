@@ -669,6 +669,18 @@ table.booking_day {
                     &:hover {
                         background-color: @color-booking-highlight;
                     }
+                    .noshow {
+                        display: inline;
+                        margin-left: 0.5em;
+                        padding: 0 0.2em 0 0.2em;
+                        color: white;
+                        background: #FF0000;
+                        @ruleset-largescreen: {
+                            display: table;
+                            margin-left: 0;
+                        };
+                        .media-guard(@ruleset-largescreen, @breakpoint-widen-frontpage);
+                    }
                 }
                 &.available {
                     span.available {
