@@ -159,11 +159,11 @@ class WSRC_court_booking_view
     return if slot.length == 1 then slot else null
     
 
-  show_popup: (id, fetcher, edit_mode, update_button_text, is_authorized) ->
+  show_popup: (id, fetcher, edit_mode, update_button_text, is_authorized, delta_mins, is_same_date) ->
     popup = $('#booking_tooltip')
     update_button = popup.find('button.update')
     update_button.text(update_button_text)
-    is_edit_mode = update_button.hasClass("togglable")
+    is_edit_mode = update_button.parent().hasClass("togglable")
     if edit_mode != is_edit_mode
       wsrc.utils.toggle(popup)
     popup.find("input[name='id']").val(id)
@@ -176,11 +176,21 @@ class WSRC_court_booking_view
       $(elt).find("span").html(display_val)
     popup.popup("open")
     popup.find("select").selectmenu("refresh", true)
-    buttons = popup.find(".inline-buttons button")
+    buttons = popup.find(".inline-buttons button.switchable")
     if is_authorized
       buttons.removeAttr("disabled")
     else
       buttons.attr("disabled", "disabled")
+    popup.find("button.noshow").hide()
+    if not edit_mode
+      if delta_mins > 0
+        popup.find("button.delete").hide()
+        popup.find("button.edit").hide()
+        if delta_mins >= 15 and is_same_date
+          popup.find("button.noshow").show()
+      else
+        popup.find("button.delete").show()
+        popup.find("button.edit").show()
 
   hide_popup: () ->
     popup = $('#booking_tooltip')
@@ -215,7 +225,7 @@ class WSRC_court_booking_view
 
 class WSRC_court_booking
 
-  constructor: (@model, @server_origin, @server_path) ->
+  constructor: (@model, @server_origin, @server_path, @server_noshow_path) ->
     @view = new WSRC_court_booking_view()
     @use_proxy = false
     options =
@@ -279,6 +289,17 @@ class WSRC_court_booking
         return popup_form.find(":input[name='#{ field }']").val()
       @create_or_update_entry(fetcher)
     )
+    $("#booking_tooltip button.noshow").on("click", (evt) =>
+      id = wsrc.utils.to_int($("#booking_tooltip input[name='id']").val())
+      entry = @model.get_entry(id)
+      if entry.no_show
+        if confirm('Do you want to remove this No Show?\n')
+          @report_noshow(id, true)
+      else
+        if confirm('Are you sure you want to report a No Show?\n')
+          @report_noshow(id)
+      $("#booking_tooltip").popup("close")
+    )
     $("#booking_header a.compact").on("click", (evt) ->
       $("td.slot").removeClass("mobile-unhidden")
       wsrc.utils.toggle(evt)
@@ -302,7 +323,8 @@ class WSRC_court_booking
     datepicker.datepicker("setDate", @model.date)
     today_current_mins = null
     right_now = new Date() # note - relies on local clock being accurate and in the correct timezone
-    if wsrc.utils.is_same_date(@model.date, right_now)
+    is_same_date = wsrc.utils.is_same_date(@model.date, right_now)
+    if is_same_date
       today_current_mins = right_now.getHours() * 60 + right_now.getMinutes()
     if history and not skip_history_update
       url = "/courts/" + wsrc.utils.js_to_iso_date_str(@model.date)
@@ -321,7 +343,10 @@ class WSRC_court_booking
           if field == "duration_mins"
             return utils.duration_str(val)
         return val
-      @view.show_popup(source_cell.data("id"), fetcher, false, "Update", WSRC_booking_user_auth_token?)
+      right_now = new Date() # fetch current time at time of click
+      delta_mins =  (right_now.getTime()/60000 - @model.date.getTime()/60000 - source_cell.data("start_mins"))
+      is_same_date = wsrc.utils.is_same_date(@model.date, right_now)
+      @view.show_popup(source_cell.data("id"), fetcher, false, "Update", WSRC_booking_user_auth_token?, delta_mins, is_same_date)
     )
     $("td.available").on("click", (evt) =>
       unless window.WSRC_username
@@ -424,6 +449,24 @@ class WSRC_court_booking
     # cannot send DELETE cross-origin, always need to go via proxy:
     wsrc.ajax.POST("/court_booking/proxy/", payload, opts)
 
+  report_noshow: (id, remove) ->
+    payload =
+      user_id: window.WSRC_booking_user_id
+      user_token: window.WSRC_booking_user_auth_token
+      url: @server_origin + @server_noshow_path + "?id=#{ id }"
+    if remove
+      payload.url += "&method=DELETE"
+    opts =
+      csrf_token: $("input[name='csrfmiddlewaretoken']").val()
+      successCB: (data) =>
+        @view.hide_popup()
+        @load_for_date(@model.date)
+        
+      failureCB: (xhr, status) =>
+        alert("ERROR #{ xhr.status }: #{ xhr.statusText }\nResponse: #{ xhr.responseText }\n\nUnable to complete noshow change for #{ id }.")
+    # cannot send DELETE cross-origin, always need to go via proxy:
+    wsrc.ajax.POST("/court_booking/proxy/", payload, opts)
+
   load_for_date: (aDate, offset, callback) ->
     d1 = new Date(aDate.getTime())
     if offset
@@ -479,9 +522,9 @@ class WSRC_court_booking
     date = new Date(picker.selectedYear, picker.selectedMonth, picker.selectedDay)
     @load_for_date(date)
     
-  @onReady: (day_courts, date_str, origin, path) ->
+  @onReady: (day_courts, date_str, origin, path, noshow_path) ->
     date = wsrc.utils.iso_to_js_date(date_str)
     model = new WSRC_court_booking_model(day_courts[date_str], date)
-    @instance = new WSRC_court_booking(model, origin, path)
+    @instance = new WSRC_court_booking(model, origin, path, noshow_path)
 
 window.wsrc.court_booking = WSRC_court_booking
