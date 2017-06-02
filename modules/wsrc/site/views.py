@@ -252,7 +252,7 @@ def index_view(request):
 def facebook_view(request):
     "Proxy view for the FB graph data from the WSRC page feed"
 
-    def FBException(Exception):
+    class FBException(Exception):
         def __init__(self, message, errortype, statuscode):
             super(FBException, self).__init__(message)
             self.statuscode = statuscode
