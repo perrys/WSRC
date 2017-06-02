@@ -256,7 +256,7 @@ def facebook_view(request):
         def __init__(self, message, errortype, statuscode):
             super(FBException, self).__init__(message)
             self.statuscode = statuscode
-            self.errortype = type
+            self.errortype = errortype
 
     def fb_get(url):
       h = httplib2.Http()
@@ -264,14 +264,17 @@ def facebook_view(request):
       if resp_headers.status != httplib.OK:
           LOGGER.error("unable to fetch FB data, status = " + str(resp_headers.status) + ", response: " +  content)
           if len(content) > 0:
+              exception = None
               try:
                   response = json.loads(content)
                   error = response.get("error")
                   if error is not None:
-                      raise FBException(error["message"], error["errortype"], error["code"])
+                      exception = FBException(error.get("message"), error.get("type"), error.get("code"))
               except:
                   pass
-          raise FBException(content, resp_headers.reason, resp_headers.status)
+          if exception is None:
+              exception = FBException(content or "(no content)", resp_headers.reason, resp_headers.status)
+          raise exception
       return content
     
     def obtain_auth_token():
@@ -293,7 +296,7 @@ def facebook_view(request):
         # the response is JSON so pass it straight through
         return HttpResponse(fb_get(url), content_type="application/json")
     except FBException, e:
-        msg = "ERROR: Unable to fetch Facebook page: %s [%d] - %s" % [e.reason, e.statuscode, e.message]
+        msg = "ERROR: Unable to fetch Facebook page: {msg} [{code}] - {type}".format(msg=str(e), code=e.statuscode, type=e.errortype)
         return HttpResponse(content=msg,
                             content_type="text/plain", 
                             status=httplib.SERVICE_UNAVAILABLE)
