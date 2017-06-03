@@ -63,7 +63,10 @@ class MatchAdmin(admin.ModelAdmin):
 admin.site.register(comp_models.Match, MatchAdmin)
 
 class EntrantAdmin(admin.ModelAdmin):
-    list_display = ("competition", "player1", "player2", "ordering", "handicap")
+    list_display = ("competition", "player1", "player2", "ordering", "handicap", "seeded")
     list_filter = ('competition__group', 'competition__name')
+    list_editable = ('handicap', 'seeded')
+
+    
 admin.site.register(comp_models.Entrant, EntrantAdmin)
 
