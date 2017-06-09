@@ -28,6 +28,7 @@ from django.forms.widgets import Select, CheckboxSelectMultiple, HiddenInput, Te
 from django.forms.models import modelformset_factory
 from django.contrib.auth.models import User
 from django.middleware.csrf import get_token
+from django.core.mail import SafeMIMEMultipart, SafeMIMEText
 from django.core.exceptions import PermissionDenied
 from django.core.urlresolvers import reverse as reverse_url
 from django.db import transaction
@@ -441,21 +442,23 @@ class SendCalendarEmail(APIView):
             cal.add("method", "REQUEST")
 
         cal.add_component(evt)
-        attachments = {
-            "text/calendar": cal.to_ical()
-        }
+        encoding = settings.DEFAULT_CHARSET
+        msg_cal = SafeMIMEText(cal.to_ical(), "calendar", encoding)
         context = {
             "start": start_datetime,
             "duration": timezones.duration_str(duration)
         }
         context.update(cal_data)
         try:
-            notify("BookingUpdate", context, 
-                   subject="WSRC Court Booking - {start:%Y-%m-%d %H:%M} Court {court}".format(start=start_datetime, court=cal_data["court"]), 
-                   to_list=[request.user.email],
-                   cc_list=None, 
-                   from_address=BOOKING_SYSTEM_EMAIL_ADRESS, 
-                   attachments=attachments)
+            text_body, html_body = get_email_bodies("BookingUpdate", context)
+            msg_bodies = SafeMIMEMultipart(_subtype="alternative", encoding=encoding)
+            msg_bodies.attach(SafeMIMEText(text_body, "plain", encoding))
+            msg_bodies.attach(SafeMIMEText(html_body, "html", encoding))
+            subject="WSRC Court Booking - {start:%Y-%m-%d %H:%M} Court {court}".format(start=start_datetime, court=cal_data["court"])
+            email_utils.send_email(subject, None, None,
+                                   from_address=BOOKING_SYSTEM_EMAIL_ADRESS,
+                                   to_list=[request.user.email], cc_list=None,
+                                   extra_attachments=[msg_bodies, msg_cal])
             return HttpResponse(status=204)
         except Exception, e:
             err = ""
@@ -601,7 +604,7 @@ class SuggestionForm(ModelForm):
             "description": Textarea(attrs={"rows": "6"})
         }
 
-def notify(template_name, kwargs, subject, to_list, cc_list, from_address, attachments=None):
+def get_email_bodies(template_name, kwargs):
     template_obj = EmailContent.objects.get(name=template_name)
     email_template = Template(template_obj.markup)
     context = Context(kwargs)
@@ -609,6 +612,10 @@ def notify(template_name, kwargs, subject, to_list, cc_list, from_address, attac
     html_body = markdown.markdown(email_template.render(context))
     context["content_type"] = "text/plain"
     text_body = email_template.render(context)
+    return text_body, html_body
+        
+def notify(template_name, kwargs, subject, to_list, cc_list, from_address, attachments=None):
+    text_body, html_body = get_email_bodies(template_name, kwargs)
     email_utils.send_email(subject, text_body, html_body, from_address, to_list, cc_list=cc_list, extra_attachments=attachments)
 
 @login_required

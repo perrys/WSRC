@@ -28,6 +28,9 @@ def send_email(subject, text_body, html_body, from_address, to_list, bcc_list=No
   else:
     msg = EmailMessage(subject, text_body, from_address,
                        to_list, bcc_list, headers=headers, cc=cc_list)
+    if extra_attachments is not None:
+      for data in extra_attachments:
+        msg.attach(data)        
   LOGGER.debug("sending mail, subject=\"{subject}\", from={from_address}, to_list={to_list}, cc_list={cc_list}, bcc_list={bcc_list}, headers={headers}".format(**locals()))
   msg.send(fail_silently=False)
 
