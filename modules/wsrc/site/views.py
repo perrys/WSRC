@@ -407,6 +407,7 @@ class SendCalendarEmail(APIView):
         start_datetime += datetime.timedelta(minutes=cal_data["start_mins"])
         start_datetime.replace(tzinfo=timezones.UK_TZINFO)
         duration = datetime.timedelta(minutes=cal_data["duration_mins"])
+        url = request.build_absolute_uri("/courts/{date:%Y-%m-%d}".format(date=start_datetime))
 
         # could use last update timestamp (cal_data["timestamp"]) from
         # the event, except when it is a deletion. For simplicity we
@@ -432,6 +433,7 @@ class SendCalendarEmail(APIView):
         evt.add("dtstart", start_datetime)
         evt.add("duration", duration)
         evt.add("summary", "WSRC Court Booking: " + cal_data["name"])
+        evt.add("url", url)
         evt.add("location", "Court {court}".format(**cal_data))
         evt.add("description", cal_data.get("description", ""))
 
@@ -446,7 +448,8 @@ class SendCalendarEmail(APIView):
         msg_cal = SafeMIMEText(cal.to_ical(), "calendar", encoding)
         context = {
             "start": start_datetime,
-            "duration": timezones.duration_str(duration)
+            "duration": timezones.duration_str(duration),
+            "url": url
         }
         context.update(cal_data)
         try:
