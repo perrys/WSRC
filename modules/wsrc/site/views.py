@@ -438,14 +438,16 @@ class SendCalendarEmail(APIView):
         evt.add("description", cal_data.get("description", ""))
 
         if cal_data["event_type"] == "delete":
-            cal.add("method", "CANCEL")
+            method = "CANCEL"
             evt.add("status", "CANCELLED")
         else:
-            cal.add("method", "REQUEST")
+            method = "REQUEST"
+        cal.add("method", method)
 
         cal.add_component(evt)
         encoding = settings.DEFAULT_CHARSET
         msg_cal = SafeMIMEText(cal.to_ical(), "calendar", encoding)
+        msg_cal.set_param("method", method)
         context = {
             "start": start_datetime,
             "duration": timezones.duration_str(duration),
