@@ -210,6 +210,13 @@ class Match(models.Model):
       return self.get_round().end_date
     return self.competition.end_date
 
+  def get_reverse_gray(self):
+    if self.competition_match_id:
+      gray = wsrc.utils.bracket.binary_to_gray(self.competition_match_id)
+      rev_gray = wsrc.utils.bracket.reverse(gray, wsrc.utils.bracket.most_significant_bit(gray))
+      return wsrc.utils.bracket.gray_to_binary(rev_gray)
+    return None
+
   def __unicode__(self):
     teams = u""
     if self.team1 is not None:
