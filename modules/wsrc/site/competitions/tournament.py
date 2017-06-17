@@ -60,6 +60,7 @@ def render_match(table, col, row, bracketIndex, matchIndex, idPrefix):
         for ii in range(0, SETS_PER_MATCH):
             last = addToRow("score empty-match", NON_BRK_SPACE)
         last.attrs["class"] += " ui-corner-%(pos_identifier)sr" % attrs
+#        last.content = str(binomialId)
 
     addOpponent(True)
     cursor.col = col
