@@ -455,7 +455,7 @@ class SendCalendarEmail(APIView):
         }
         context.update(cal_data)
         try:
-            text_body, html_body = get_email_bodies("BookingUpdate", context)
+            text_body, html_body = email_utils.get_email_bodies("BookingUpdate", context)
             msg_bodies = SafeMIMEMultipart(_subtype="alternative", encoding=encoding)
             msg_bodies.attach(SafeMIMEText(text_body, "plain", encoding))
             msg_bodies.attach(SafeMIMEText(html_body, "html", encoding))
@@ -609,18 +609,8 @@ class SuggestionForm(ModelForm):
             "description": Textarea(attrs={"rows": "6"})
         }
 
-def get_email_bodies(template_name, kwargs):
-    template_obj = EmailContent.objects.get(name=template_name)
-    email_template = Template(template_obj.markup)
-    context = Context(kwargs)
-    context["content_type"] = "text/html"
-    html_body = markdown.markdown(email_template.render(context))
-    context["content_type"] = "text/plain"
-    text_body = email_template.render(context)
-    return text_body, html_body
-        
 def notify(template_name, kwargs, subject, to_list, cc_list, from_address, attachments=None):
-    text_body, html_body = get_email_bodies(template_name, kwargs)
+    text_body, html_body = email_utils.get_email_bodies(template_name, kwargs)
     email_utils.send_email(subject, text_body, html_body, from_address, to_list, cc_list=cc_list, extra_attachments=attachments)
 
 @login_required
