@@ -142,3 +142,34 @@ class Suggestion(models.Model):
   reviewed_date = models.DateField(blank=True, null=True)
   comment = models.TextField(blank=True, null=True)
 
+class BookingOffence(models.Model):
+  player = models.ForeignKey(user_models.Player)
+  OFFENCE_VALUES = (
+    ("lc", "Late Cancelation"),
+    ("ns", "No Show"),
+    )
+  offence = models.CharField(max_length=2, choices=OFFENCE_VALUES)
+  entry_id = models.IntegerField()
+  start_time = models.DateTimeField()
+  duration_mins = models.IntegerField()
+  court = models.SmallIntegerField()
+  name = models.CharField(max_length=64)
+  description = models.CharField(max_length=128, blank=True, null=True)
+  owner = models.CharField(max_length=64)
+  cancellation_time  = models.DateTimeField(blank=True, null=True)
+  penalty_points = models.SmallIntegerField()
+  comment = models.TextField(blank=True, null=True)
+  def __unicode__(self):
+    ctx = {"offence": self.get_offence_display().lower(),
+           "name": self.name,
+           "start": self.start_time,
+           "court": self.court}
+    msg = "{start:%Y-%m-%d} {name} court {court} {start:%H:%M} - {offence}".format(**ctx)
+    if self.offence == "lc":
+      msg += " ({time:%H:%M:%S})".format(time=self.cancellation_time)
+    msg += ". Penalty points: {points}".format(points=self.penalty_points)
+    return msg
+  class Meta:
+    verbose_name = "Booking Offence"
+    verbose_name_plural = "Booking Offences"
+    ordering=["-start_time"]
