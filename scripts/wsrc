@@ -348,6 +348,31 @@ if __name__ == "__main__":
   elif command in ("add-old-league"):
     wsrc.external_sites.main.cmdline_add_old_league(args)
 
+  elif command in ("monitor_bookings"):
+    def usage():
+      sys.stderr.write("USAGE: %s %s [--date=<YYYY-MM-DD>] [--ndays=<n>]\n" % (prog, command))
+    try:
+      optlist, args = getopt.getopt(sys.argv[2:], "d:n:", ["date=", "ndays="])
+    except getopt.GetoptError as err:
+      sys.stderr.write(str(err) + "\n")
+      usage()
+      sys.exit(2)
+
+    date = datetime.date.today()
+    ndays = 1
+
+    user_list = None
+    for opt,val in optlist:
+      if opt in ["-d", "--date"]:
+        date = timezone_utils.parse_iso_date_to_naive(val)
+      elif opt in ["-n", "--ndays"]:
+        ndays = int(val)
+
+    from wsrc.external_sites.booking_monitor import process_date
+    while ndays > 0:
+      process_date(date)
+      date = date + datetime.timedelta(days=1)
+      ndays -= 1
             
 
 # Local Variables:
