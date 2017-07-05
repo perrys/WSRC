@@ -99,7 +99,7 @@ def email_report_overdue_tournament_matches():
 
   context = Context({"tournaments": overdue_match_map, "today": today})
   text_body, html_body = email_utils.get_email_bodies("Overdue Tournament Matches", context)
-  subject = "Overdue Tournament Match Report".format(**locals())
+  subject = "Overdue Match Report".format(**locals())
   from_address = TOURNAMENTS_EMAIL_ADDRESS
   to_list = [TOURNAMENTS_EMAIL_ADDRESS]
   email_utils.send_email(subject, text_body, html_body, from_address, to_list)
