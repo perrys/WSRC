@@ -48,7 +48,8 @@ POINTS_SYSTEM = [
 
 ANNUAL_POINT_LIMIT = 11
 ANNUAL_CUTOFF_DAYS = 183
-
+ADMIN_USERIDS = [3, 5, 400]
+                 
 def get_points(dt_hours):
   for p in POINTS_SYSTEM:
     if dt_hours <= p["max"]:
@@ -114,6 +115,8 @@ def audit_filter(today, data, item):
   if item["update_type"] != "delete":
     return True
   if booked_another_court(data, item):
+    return True
+  if item['update_userid'] in ADMIN_USERIDS:
     return True
   return False
 
@@ -222,7 +225,7 @@ def report_errors(date, errors):
   email_utils.send_email(subject, None, None, from_address, [to_address], extra_attachments=attachments)
 
 def report_offences(date, player, offences, total_offences):
-  subject = "Cancelled/Unused Court Bookings - {date:%Y-%m-%d}".format(date=date)
+  subject = "Cancelled/Unused Courts - {name} - {date:%Y-%m-%d}".format(name=player.user.get_full_name(), date=date)
   from_address = "committee@wokingsquashclub.org"
 #  to_list = [player.user.email or None]
   to_list = None
