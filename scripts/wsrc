@@ -20,6 +20,7 @@ from wsrc.utils.text import formatTable as format_text_table
 from wsrc.utils.html_table import formatTable as format_html_table
 
 COMMITTEE_EMAIL_ADDRESS = "committee@wokingsquashclub.org"
+TOURNAMENTS_EMAIL_ADDRESS = "tournaments@wokingsquashclub.org"
 
 def manage_tournament_bookings(username, password):
 
@@ -100,12 +101,12 @@ def email_report_overdue_tournament_matches():
   email_template = Template(email_template.markup)
   context = Context({"tournaments": overdue_match_map})
   subject = "Overdue Tournament Match Report".format(**locals())
-  from_address = "tournaments@wokingsquashclub.org"
+  from_address = TOURNAMENTS_EMAIL_ADDRESS
   context["content_type"] = "text/html"
   html_body = markdown.markdown(email_template.render(context))
   context["content_type"] = "text/plain"
   text_body = email_template.render(context)
-  to_list = [COMMITTEE_EMAIL_ADDRESS]
+  to_list = [TOURNAMENTS_EMAIL_ADDRESS]
   email_utils.send_email(subject, text_body, html_body, from_address, to_list)
 
 def email_outstanding_box_matches():
@@ -211,7 +212,7 @@ def email_tournament_match_reminders(usernames):
       match_rows.append([comp_name + " [" + comp_round + "]", opponent_desc, match.get_deadline().strftime("%a %d %b"), match.competition.url])
     opponent_rows = [["Name", "Email", "Telephone", "Mobile"]]
     for opponent in opponent_set:
-      opponent_rows.append([opponent.get_full_name(), opponent.user.email, opponent.other_phone, opponent.cell_phone]) 
+      opponent_rows.append([opponent.user.get_full_name(), opponent.user.email, opponent.other_phone, opponent.cell_phone]) 
     player_to_match_table_map[player_id] = match_rows
     player_to_opponent_table_map[player_id] = opponent_rows
 
@@ -241,7 +242,7 @@ def email_tournament_match_reminders(usernames):
     if usernames == [] or p.user.username in usernames:
       if p.user.email.find('@') > 0:
         subject = "{year} Tournaments".format(**locals())
-        from_address = "tournaments@wokingsquashclub.org"
+        from_address = TOURNAMENTS_EMAIL_ADDRESS
         html_body = markdown.markdown(email_template.render(context))
         context["content_type"] = "text/plain"
         text_body = email_template.render(context)
@@ -358,7 +359,7 @@ if __name__ == "__main__":
       usage()
       sys.exit(2)
 
-    date = datetime.date.today()
+    date = (datetime.datetime.now() - datetime.timedelta(days=1)).date()
     ndays = 1
 
     user_list = None
