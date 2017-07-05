@@ -85,27 +85,22 @@ def email_report_overdue_tournament_matches():
         return "(PREVIOUS MATCH UNRESOLVED)"
     return match_descr(match, team_number_1_or_2)
 
-  for tourament, overdue_matches in overdue_match_map.iteritems():
-    match_table = [["Match", "Deadline"]]
+  for tournament, overdue_matches in overdue_match_map.iteritems():
+    match_table = [["Comp", "Match", "Deadline"]]
     for match in overdue_matches:
       t1 = get_opponent_desc(match, 1)
       t2 = get_opponent_desc(match, 2)
-      match_table.append(["%(t1)s vs %(t2)s" % locals(), match.get_deadline().strftime("%a %d %b")])
-    overdue_match_map[tourament] = {
+      match_table.append([tournament.name, "%(t1)s vs %(t2)s" % locals(), match.get_deadline().strftime("%a %d %b")])
+    overdue_match_map[tournament] = {
         "raw_data": match_table,
         "text/plain": format_text_table(match_table, hasHeader=True, nspaces=2),
         "text/html":  format_html_table(match_table, hasHeader=True),
         }
 
-  email_template = site_models.EmailContent.objects.get(name="Overdue Tournament Matches")
-  email_template = Template(email_template.markup)
-  context = Context({"tournaments": overdue_match_map})
+  context = Context({"tournaments": overdue_match_map, "today": today})
+  text_body, html_body = email_utils.get_email_bodies("Overdue Tournament Matches", context)
   subject = "Overdue Tournament Match Report".format(**locals())
   from_address = TOURNAMENTS_EMAIL_ADDRESS
-  context["content_type"] = "text/html"
-  html_body = markdown.markdown(email_template.render(context))
-  context["content_type"] = "text/plain"
-  text_body = email_template.render(context)
   to_list = [TOURNAMENTS_EMAIL_ADDRESS]
   email_utils.send_email(subject, text_body, html_body, from_address, to_list)
 
