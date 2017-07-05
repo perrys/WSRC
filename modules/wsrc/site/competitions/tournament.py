@@ -252,7 +252,7 @@ def get_team_number(match, player_id):
       if team is not None:
         for player in team.get_players():
           if player.id == player_id:
-            return team
+            return team_number
     return None
 
 def other_team_number(team_number):
