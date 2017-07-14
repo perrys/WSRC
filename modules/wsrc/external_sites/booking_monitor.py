@@ -226,10 +226,10 @@ def report_errors(date, errors):
 
 def report_offences(date, player, offences, total_offences):
   subject = "Cancelled/Unused Courts - {name} - {date:%Y-%m-%d}".format(name=player.user.get_full_name(), date=date)
-  from_address = "committee@wokingsquashclub.org"
-#  to_list = [player.user.email or None]
+  from_address = "booking.monitor@wokingsquashclub.org"
+  to_list = [player.user.email or None]
   to_list = None
-  cc_address = "committee@wokingsquashclub.org"
+  cc_address = "booking.monitor@wokingsquashclub.org"
   context = {
     "date": date,
     "player": player,
