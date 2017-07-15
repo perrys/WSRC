@@ -227,7 +227,11 @@ def report_errors(date, errors):
 def report_offences(date, player, offences, total_offences):
   subject = "Cancelled/Unused Courts - {name} - {date:%Y-%m-%d}".format(name=player.user.get_full_name(), date=date)
   from_address = "booking.monitor@wokingsquashclub.org"
-  to_list = [player.user.email or None]
+  # temporarilly report only no shows
+  daily_total = reduce(lambda x,y: x + y.penalty_points, offences, 0)
+  to_list = None
+  if daily_total >= POINTS_SYSTEM[0]["points"]:
+    to_list = [player.user.email or None]
   cc_address = "booking.monitor@wokingsquashclub.org"
   context = {
     "date": date,
