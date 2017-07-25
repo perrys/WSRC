@@ -58,7 +58,7 @@ class OffendersListFilter(admin.SimpleListFilter):
         return queryset        
     
 class BookingOffenceAdmin(admin.ModelAdmin):
-    list_display = ("player", "entry_id", "offence", "start_time", "cancellation_time", "penalty_points")
+    list_display = ("player", "entry_id", "offence", "start_time", "creation_time", "cancellation_time", "penalty_points")
     list_editable = ("penalty_points",)
     list_filter = (OffendersListFilter,)
     date_hierarchy = "start_time"

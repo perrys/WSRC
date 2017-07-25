@@ -156,6 +156,7 @@ class BookingOffence(models.Model):
   name = models.CharField(max_length=64)
   description = models.CharField(max_length=128, blank=True, null=True)
   owner = models.CharField(max_length=64)
+  creation_time = models.DateTimeField()
   cancellation_time  = models.DateTimeField(blank=True, null=True)
   penalty_points = models.SmallIntegerField()
   comment = models.TextField(blank=True, null=True)

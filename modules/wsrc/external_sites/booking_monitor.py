@@ -163,6 +163,7 @@ def process_audit_table(data, offence_code, player_offence_map, error_list, filt
       name = item["name"],
       description = item["description"],
       owner = item["owner"],
+      creation_time = item["created_ts"],
       cancellation_time = cancellation_time,
       penalty_points = points
     )
