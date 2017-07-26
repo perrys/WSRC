@@ -158,6 +158,7 @@ class BookingOffence(models.Model):
   owner = models.CharField(max_length=64)
   creation_time = models.DateTimeField()
   cancellation_time  = models.DateTimeField(blank=True, null=True)
+  rebooked = models.BooleanField()
   penalty_points = models.SmallIntegerField()
   comment = models.TextField(blank=True, null=True)
   def __unicode__(self):

@@ -166,6 +166,8 @@ def process_audit_table(data, offence_code, player_offence_map, error_list, filt
       error_list.append({"msg": msg, "data": item})
       LOGGER.warning(msg)      
       continue
+    if 'rebooked' not in item:
+      item['rebooked'] = court_rebooked(data, item)
     points = get_points(delta_t_hours)
     offence = site_models.BookingOffence(
       player  = player,
@@ -179,6 +181,7 @@ def process_audit_table(data, offence_code, player_offence_map, error_list, filt
       owner = item["owner"],
       creation_time = item["created_ts"],
       cancellation_time = cancellation_time,
+      rebooked = item['rebooked'],
       penalty_points = points
     )
     offence.save()
@@ -261,6 +264,8 @@ def process_date(date):
   LOGGER.info("processing date %s", as_iso_date(date))
   
   (noshows, audit_table) = get_audit_table_and_noshows(date)
+  for item in noshows:
+    item['rebooked'] = False
 
   remove_description_updates(audit_table)
   filter = lambda(i): audit_filter(date, audit_table, i)
