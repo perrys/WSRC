@@ -23,7 +23,6 @@ import unittest
 import markdown
 
 from django.core.mail import SafeMIMEMultipart, SafeMIMEText
-from django.db.models import Sum
 
 from email.mime.application import MIMEApplication
 
@@ -108,6 +107,21 @@ def booked_another_court(data, cancelled_item):
   if rebooked:
     LOGGER.info("entry filtered as another court booked: %s", cancelled_item)
   return rebooked
+
+def court_rebooked(data, cancelled_item):
+  last_item = None
+  for item in data:
+    match = True
+    for field in ["date", "time", "court"]:
+      if item.get(field) != cancelled_item.get(field):
+        match = False
+        break
+    if match:
+      last_item = item
+  assert(last_item is not None)
+  if "delete" == last_item.get("update_type"):
+    return False
+  return True
 
 def audit_filter(today, data, item): 
   if item["date"] != today:
@@ -226,6 +240,7 @@ def report_errors(date, errors):
   email_utils.send_email(subject, None, None, from_address, [to_address], extra_attachments=attachments)
 
 def report_offences(date, player, offences, total_offences):
+  from django.db.models import Sum
   subject = "Cancelled/Unused Courts - {name} - {date:%Y-%m-%d}".format(name=player.user.get_full_name(), date=date)
   from_address = "booking.monitor@wokingsquashclub.org"
   to_list = [player.user.email or None]
@@ -280,14 +295,14 @@ class Tester(unittest.TestCase):
 
   def setUp(self):
     self.date = datetime.date(2001, 1, 1)
-    self.cutoff = datetime.datetime.combine(self.date, self.create_time("0:0")) + datetime.timedelta(days=1)
+    self.cutoff = datetime.datetime.combine(self.date, self.make_uk_time("0:0")) + datetime.timedelta(days=1)
     self.counter = 0;
     self.clean_db()
 
   def tearDown(self):
     self.clean_db()
     
-  def create_time(self, s):
+  def make_uk_time(self, s):
     (hour, minute) = [int(x) for x in s.split(":")]
     return datetime.time(hour, minute, tzinfo=UK_TZINFO)
 
@@ -296,18 +311,20 @@ class Tester(unittest.TestCase):
       entry_id = self.counter
       self.counter += 1
     date = datetime.date(2001, 1, 1)
+    creation_ts = datetime.datetime.combine(date, self.make_uk_time(update_time))
     return {
       'duration_mins': 45,
       'court': court,
       'name': name,
-      'update_timestamp': datetime.datetime.combine(date, self.create_time(update_time)),
+      'update_timestamp': creation_ts,
+      'created_ts': creation_ts,
       'update_userid': user_id,
       'update_username': name,
       'owner': name,
       'update_gui': 'booking_website',
       'entry_id': entry_id,
       'update_type': update_type,
-      'time': self.create_time(time),
+      'time': self.make_uk_time(time),
       'date': date,
       'type': 'I',
       'description': ''
@@ -333,7 +350,7 @@ class Tester(unittest.TestCase):
     offence = offences.get(entry_id=id)
     self.assertEqual("lc", offence.offence)
     self.assertEqual(name, offence.owner)
-    self.assertEqual(datetime.datetime.combine(self.date, self.create_time("19:00")), offence.start_time)
+    self.assertEqual(datetime.datetime.combine(self.date, self.make_uk_time("19:00")), offence.start_time)
 
   def test_GIVEN_deleted_entry_WHEN_filtering_THEN_untouched(self):
     data = [
@@ -409,6 +426,42 @@ class Tester(unittest.TestCase):
     remove_description_updates(data)
     self.assertEqual(2, len(data))
     
+  def test_GIVEN_change_list_WHEN_checking_rebooked_THEN_positive(self):
+    data = [
+      self.create_entry("13:01", "19:30", 2, 'create', entry_id=2),
+      self.create_entry("13:02", "19:30", 2, 'delete', entry_id=2),
+      self.create_entry("13:03", "19:30", 2, 'create', entry_id=3),
+    ]
+    item = data[0]
+    self.assertTrue(court_rebooked(data, item))
+    
+  def test_GIVEN_change_list_WHEN_checking_rebooked_after_update_THEN_positive(self):
+    data = [
+      self.create_entry("13:01", "19:30", 2, 'create', entry_id=2),
+      self.create_entry("13:02", "19:30", 2, 'delete', entry_id=2),
+      self.create_entry("13:03", "19:30", 2, 'create', entry_id=3),
+      self.create_entry("13:04", "19:30", 2, 'update', entry_id=3),
+    ]
+    item = data[0]
+    self.assertTrue(court_rebooked(data, item))
+    
+  def test_GIVEN_change_list_WHEN_checking_rebooked_after_first_delete_THEN_negative(self):
+    data = [
+      self.create_entry("13:01", "19:30", 2, 'create', entry_id=2),
+      self.create_entry("13:02", "19:30", 2, 'delete', entry_id=2),
+    ]
+    item = data[0]
+    self.assertFalse(court_rebooked(data, item))
+    
+  def test_GIVEN_change_list_WHEN_checking_rebooked_after_second_delete_THEN_negative(self):
+    data = [
+      self.create_entry("13:01", "19:30", 2, 'create', entry_id=2),
+      self.create_entry("13:02", "19:30", 2, 'delete', entry_id=2),
+      self.create_entry("13:03", "19:30", 2, 'create', entry_id=3),
+      self.create_entry("13:04", "19:30", 2, 'delete', entry_id=3),
+    ]
+    item = data[0]
+    self.assertFalse(court_rebooked(data, item))
 if __name__ == "__main__":
   import wsrc.external_sites # call __init__.py
   LOGGER.setLevel(logging.WARNING)
