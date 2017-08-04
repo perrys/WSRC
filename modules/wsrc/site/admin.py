@@ -58,12 +58,13 @@ class OffendersListFilter(admin.SimpleListFilter):
         return queryset        
     
 class BookingOffenceAdmin(admin.ModelAdmin):
-    list_display = ("player", "entry_id", "offence", "start_time", "creation_time", "cancellation_time", "rebooked", "penalty_points")
-    list_editable = ("penalty_points",)
+    list_display = ("player", "entry_id", "offence", "start_time", "creation_time", "cancellation_time", "rebooked", "penalty_points", "comment")
+    list_editable = ("penalty_points", "comment")
     list_filter = (OffendersListFilter,)
     date_hierarchy = "start_time"
     formfield_overrides = {
-        models.TextField: {'widget': forms.Textarea(attrs={'cols': 100, 'rows': 5})},
+        models.TextField: {'widget': forms.Textarea(attrs={'cols': 30, 'rows': 1})},
+        models.IntegerField: {'widget': forms.NumberInput(attrs={'style': 'width: 3em;'})},
     }
 
 
