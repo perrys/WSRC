@@ -37,22 +37,26 @@ from wsrc.utils.timezones import UK_TZINFO
 from wsrc.utils import email_utils
 
 POINTS_SYSTEM = [
-  {"max": 0, "points": 6},
-  {"max": 1, "points": 5},
-  {"max": 2, "points": 4},
-  {"max": 3, "points": 3},
-  {"max": 6, "points": 2},
-  {"max": 12, "points": 1},
+  {"cancel_period_max": 0,  "points": [(0, 6)]},
+  {"cancel_period_max": 1,  "points": [(12, 4), (8, 3), (5, 2), (3, 1)]},
+  {"cancel_period_max": 2,  "points": [(12, 3), (7, 2), (4, 1)]},
+  {"cancel_period_max": 3,  "points": [(12, 2), (5, 1)]},
+  {"cancel_period_max": 4,  "points": [(12, 2), (6, 1)]},
+  {"cancel_period_max": 5,  "points": [(7, 1)]},
+  {"cancel_period_max": 12, "points": [(10, 1)]},
 ]
 
 ANNUAL_POINT_LIMIT = 11
 ANNUAL_CUTOFF_DAYS = 183
 ADMIN_USERIDS = [3, 5, 400]
                  
-def get_points(dt_hours):
+def get_points(dt_hours, prebook_hours):
   for p in POINTS_SYSTEM:
-    if dt_hours <= p["max"]:
-      return p["points"]
+    if dt_hours <= p["cancel_period_max"]:
+      for (pbh, points) in p["points"]:
+        if prebook_hours > pbh:
+          return points
+        return 0
   return 0
 
 def datetime_parser(dct):
@@ -62,6 +66,7 @@ def datetime_parser(dct):
   converters = {
     "date": lambda(s): parse_date(s, "%Y-%m-%d").date(),
     "time": lambda(s): parse_date(s, "%H:%M").timetz(),
+    "created_ts": lambda(s): parse_date(s, "%Y-%m-%d %H:%M:%S"),
     "update_timestamp": lambda(s): parse_date(s, "%Y-%m-%d %H:%M:%S"),
   }
   for k, v in dct.items():
@@ -147,7 +152,9 @@ def process_audit_table(data, offence_code, player_offence_map, error_list, filt
     if filter is not None and filter(item):
       continue
     start_time = datetime.datetime.combine(item["date"], item["time"])
+    creation_time = item.get("created_ts")
     delta_t_hours = 0
+    prebook_hours = (start_time - creation_time).total_seconds() / 3600.0
     cancellation_time = item.get("update_timestamp")
     if cancellation_time is not None:
       delta_t_hours = (start_time - cancellation_time).total_seconds() / 3600.0
@@ -168,7 +175,9 @@ def process_audit_table(data, offence_code, player_offence_map, error_list, filt
       continue
     if 'rebooked' not in item:
       item['rebooked'] = court_rebooked(data, item)
-    points = get_points(delta_t_hours)
+    points = get_points(delta_t_hours, prebook_hours)
+    if points == 0:
+      continue
     offence = site_models.BookingOffence(
       player  = player,
       offence = offence_code,
@@ -179,7 +188,7 @@ def process_audit_table(data, offence_code, player_offence_map, error_list, filt
       name = item["name"],
       description = item["description"],
       owner = item["owner"],
-      creation_time = item["created_ts"],
+      creation_time = creation_time,
       cancellation_time = cancellation_time,
       rebooked = item['rebooked'],
       penalty_points = points
