@@ -302,6 +302,10 @@ def facebook_view(request):
                             content_type="text/plain", 
                             status=httplib.SERVICE_UNAVAILABLE)
     
+@require_safe
+def kiosk_view(request):
+    return TemplateResponse(request, 'kiosk.html', {})
+
 @login_required
 def change_password_view(request):
 
@@ -403,6 +407,9 @@ class SendCalendarEmail(APIView):
         if not request.user.is_authenticated():
             raise PermissionDenied()
         cal_data = request.data
+        import pprint
+        print pprint.pprint( cal_data)
+        sys.stdout.flush()
         start_datetime = datetime.datetime.strptime(cal_data["date"], timezones.ISO_DATE_FMT)
         start_datetime += datetime.timedelta(minutes=cal_data["start_mins"])
         start_datetime.replace(tzinfo=timezones.UK_TZINFO)

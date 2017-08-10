@@ -65,6 +65,9 @@ urlpatterns = patterns('',
 
     url(r'^settings/?$', wsrc.site.views.settings_view, name="settings"),
 
+    url(r'^kiosk/?$', wsrc.site.views.kiosk_view, name="kiosk"),
+                       
+
     url(r'^data/facebook$', wsrc.site.views.facebook_view),
     url(r'^data/bookings$', wsrc.site.views.BookingList.as_view()),
     url(r'^data/accounts/',  include(wsrc.site.accounts.data_urls)),
