@@ -162,12 +162,12 @@ class BookingOffence(models.Model):
   penalty_points = models.SmallIntegerField("Points")
   comment = models.TextField(blank=True, null=True)
   def get_prebook_period(self):
-    delta_t = self.start_time - self.cancellation_time
+    delta_t = self.start_time - self.creation_time
     if delta_t.days > 0:
       return "{days} day{plural}".format(days=delta_t.days, plural = delta_t.days == 1 and "" or "s")
     hours = delta_t.seconds / 3600
     mins = (delta_t.seconds % 3600) / 60
-    return "{hours}h {mins}m".format(**locals), 
+    return "{hours}h {mins}m".format(**locals())
   def __unicode__(self):
     ctx = {"offence": self.get_offence_display().lower(),
            "name": self.name,
