@@ -123,6 +123,7 @@ window.WSRC_booking_user_auth_token = "{{ booking_user_auth_token }}";
         <tr class="togglable"><td>Last Updated:</td> <td><span></span><input type="hidden" name="timestamp"/></td></tr>
       </tbody>
     </table>
+    <input type="hidden" name="opponent_username" />
   </form>
   <div class="inline-buttons">
     <div class="toggled">
@@ -152,7 +153,10 @@ window.WSRC_booking_user_auth_token = "{{ booking_user_auth_token }}";
 
 <script>
 window.WSRC_court_bookings = {{ bookings|safe }};
-wsrc.court_booking.onReady(WSRC_court_bookings, '{{ date|date:"Y-m-d" }}', '{{ booking_system_origin }}', '{{ booking_system_path }}', '{{ booking_system_noshow }}');
+window.WSRC_usernames = {
+{% for player in usernames %}{% if forloop.counter0 > 0 %},{% endif %} "{{ player.user.username }}": "{{ player.user.get_full_name }}"{% endfor %}
+};
+wsrc.court_booking.onReady(WSRC_court_bookings, WSRC_usernames, '{{ date|date:"Y-m-d" }}', '{{ booking_system_origin }}', '{{ booking_system_path }}', '{{ booking_system_noshow }}');
 </script>
 
 
