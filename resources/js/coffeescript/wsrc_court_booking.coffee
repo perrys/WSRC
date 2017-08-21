@@ -34,8 +34,11 @@ utils =
 
 class WSRC_court_booking_model
    
-  constructor: (day_courts, @date) ->
+  constructor: (day_courts, @date, users) ->
     @refresh(day_courts)
+    @users = ([username, name, name.toLowerCase()] for username, name of users)
+    @users.sort((lhs, rhs) -> lhs[2] - rhs[2])
+      
 
   refresh: (day_courts) ->
     courts = (wsrc.utils.to_int(court) for court, slots of day_courts)
@@ -63,6 +66,17 @@ class WSRC_court_booking_model
           ret.date = @date
           ret.court = court
           return ret
+
+  vs_complete: (val, callback) =>
+    val = val.term.toLowerCase()
+    result = []
+    if val.startsWith("vs ")
+      val = val.slice(3)
+      for [id, name, lcasename] in @users
+        if lcasename.startsWith(val)
+          result.push({value: "vs " + name, "id": id})
+    callback(result)
+      
 
     
 
@@ -286,7 +300,8 @@ class WSRC_court_booking
     $("#booking_tooltip button.update").on("click", (evt) =>
       popup_form = $("#booking_tooltip form")
       fetcher = (field) ->
-        return popup_form.find(":input[name='#{ field }']").val()
+        input = popup_form.find(":input[name='#{ field }']")
+        return input.val()
       @create_or_update_entry(fetcher)
     )
     $("#booking_tooltip button.noshow").on("click", (evt) =>
@@ -308,6 +323,21 @@ class WSRC_court_booking
       $("td.slot").addClass("mobile-unhidden")
       wsrc.utils.toggle(evt)
     )
+    description_input = $("#booking_tooltip input[name='description']")
+    opponent_username_input = $("#booking_tooltip input[name='opponent_username']")
+    autocomplete_opts = 
+      source: (val, callback) => @model.vs_complete(val, callback)
+      minLength: 5
+      appendTo: description_input.parent()
+      select: (evt, ui) =>
+        opponent_username_input.val(ui.item.id)
+    description_input.autocomplete(autocomplete_opts)
+    description_input.on("change", (evt) =>
+      input = $(evt.target)
+      if ! input.val().toLowerCase().startsWith("vs")
+        opponent_username_input.val(null)        
+    )        
+    
     qp = (val) ->
       vals = val.split("=")
       k = vals.shift()
@@ -370,6 +400,7 @@ class WSRC_court_booking
     for field in ["name", "description", "type"]
       data[field] = source(field)
     id = wsrc.utils.to_int(source("id")) # updating an existing entry
+    opponent_username = source("opponent_username")
     if id
       data.id = id
       event_type = "update"
@@ -392,6 +423,8 @@ class WSRC_court_booking
           entry = @model.get_entry(id)
           entry.date = wsrc.utils.js_to_iso_date_str(entry.date)
           entry.event_type = event_type
+          if opponent_username
+            entry.opponent_username = opponent_username
           @send_email_update(entry)
         @load_for_date(@model.date, 0, callback)
       failureCB: (xhr) =>
@@ -522,9 +555,9 @@ class WSRC_court_booking
     date = new Date(picker.selectedYear, picker.selectedMonth, picker.selectedDay)
     @load_for_date(date)
     
-  @onReady: (day_courts, date_str, origin, path, noshow_path) ->
+  @onReady: (day_courts, users, date_str, origin, path, noshow_path) ->
     date = wsrc.utils.iso_to_js_date(date_str)
-    model = new WSRC_court_booking_model(day_courts[date_str], date)
+    model = new WSRC_court_booking_model(day_courts[date_str], date, users)
     @instance = new WSRC_court_booking(model, origin, path, noshow_path)
 
 window.wsrc.court_booking = WSRC_court_booking
