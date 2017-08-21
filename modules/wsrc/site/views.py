@@ -158,6 +158,7 @@ def booking_view(request, date=None):
           context["booking_user_id"] = booking_user_id
           context["booking_user_auth_token"] = BookingSystemEvent.generate_hmac_token_raw("id:{booking_user_id}".format(**locals()))
           context["booking_user_name"] = player.user.get_full_name()
+          context["usernames"] = Player.objects.filter(user__is_active=True)
 
     return render(request, 'court_booking.html', context)
 
@@ -432,10 +433,16 @@ class SendCalendarEmail(APIView):
         organizer = vCalAddress("MAILTO:{email}".format(email=BOOKING_SYSTEM_EMAIL_ADRESS))
         organizer.params["cn"] = vText("Woking Squash Club")
         evt.add("organizer", organizer)
-        attendee = vCalAddress("MAILTO:{email}".format(email=request.user.email))
-        attendee.params["cn"] = vText(request.user.get_full_name())
-        attendee.params["ROLE"] = vText("REQ-PARTICIPANT")
-        evt.add('attendee', attendee, encode=0)
+        def add_attendee(user):
+          attendee = vCalAddress("MAILTO:{email}".format(email=user.email))
+          attendee.params["cn"] = vText(user.get_full_name())
+          attendee.params["ROLE"] = vText("REQ-PARTICIPANT")
+          evt.add('attendee', attendee, encode=0)
+        add_attendee(request.user)
+        opponent = cal_data.get("opponent_username")
+        if opponent is not None:
+            opponent = Player.objects.get(user__username = opponent)
+            add_attendee(opponent.user)
         evt.add("dtstamp", timestamp)    
         evt.add("dtstart", start_datetime)
         evt.add("duration", duration)
@@ -466,10 +473,13 @@ class SendCalendarEmail(APIView):
             msg_bodies = SafeMIMEMultipart(_subtype="alternative", encoding=encoding)
             msg_bodies.attach(SafeMIMEText(text_body, "plain", encoding))
             msg_bodies.attach(SafeMIMEText(html_body, "html", encoding))
+            to_list = [request.user.email]
+            if opponent is not None and opponent.user.email is not None:
+                to_list.append(opponent.user.email)
             subject="WSRC Court Booking - {start:%Y-%m-%d %H:%M} Court {court}".format(start=start_datetime, court=cal_data["court"])
             email_utils.send_email(subject, None, None,
                                    from_address=BOOKING_SYSTEM_EMAIL_ADRESS,
-                                   to_list=[request.user.email], cc_list=None,
+                                   to_list=to_list, cc_list=None,
                                    extra_attachments=[msg_bodies, msg_cal])
             return HttpResponse(status=204)
         except Exception, e:
