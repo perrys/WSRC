@@ -12,7 +12,7 @@ window.WSRC_homepage =
       table.find("tr").remove()
       odd = true
       for e in data.data[0..10]
-        dt = e.updated_time
+        dt = e.updated_time or e.created_time
         dt = dt.substring(8,10) + " " + this.MONTHS_OF_YEAR[parseInt(dt.substring(5,7))-1]
         title = if e.message? then e.message else e.description
         unless title
