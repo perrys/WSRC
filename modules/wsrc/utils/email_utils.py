@@ -45,7 +45,7 @@ def get_email_bodies(template_name, params):
   email_template = Template(template_obj.markup)
   context = Context(params)
   context["content_type"] = "text/html"
-  html_body = markdown.markdown(email_template.render(context))
+  html_body = markdown.markdown(email_template.render(context), extensions=['markdown.extensions.extra'])
   context["content_type"] = "text/plain"
   text_body = email_template.render(context)
   return text_body, html_body
