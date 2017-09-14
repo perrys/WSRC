@@ -4,6 +4,8 @@ import datetime
 
 UK_TIMEZONE = "Europe/London"
 ISO_DATE_FMT = "%Y-%m-%d"
+ISO_TIME_FMT = "%H:%M:%S"
+ISO_TIME_MINS_FMT = "%H:%M"
 ISO_DATETIME_FMT = "%Y-%m-%dT%H:%M:%S"
 
 class GBEireTimeZone(datetime.tzinfo):
@@ -80,6 +82,13 @@ def as_iso_date(d):
 
 def as_iso_datetime(d):
   return d.strftime(ISO_DATETIME_FMT)
+
+def as_iso_time_mins(d):
+  return d.strftime(ISO_TIME_MINS_FMT)
+
+def to_time(minutes):
+  return datetime.time(minutes/60, minutes%60)
+  
 
 def naive_utc_to_local(dt, tz):
   dt = dt.replace(tzinfo=UTC_TZINFO)
