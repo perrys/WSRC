@@ -14,6 +14,8 @@ resources/css/_*.css
 resources/images/sources
 resources/images/icons-png
 
+scripts/ephemeral
+
 chrome_app/js/*.js
 chrome_app/css/*.css
 chrome_app/*.zip
