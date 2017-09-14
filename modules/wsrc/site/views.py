@@ -383,7 +383,7 @@ class SendEmail(APIView):
         body = email_data.pop('body')
         if fmt == 'mixed':
             email_data['text_body'] = body
-            email_data['html_body'] = markdown.markdown(body)
+            email_data['html_body'] = markdown.markdown(body, extensions=['markdown.extensions.extra'])
         elif fmt == 'text':
             email_data['text_body'] = body
             email_data['html_body'] = None
