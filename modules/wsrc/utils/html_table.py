@@ -14,6 +14,7 @@
 # along with WSRC.  If not, see <http://www.gnu.org/licenses/>.
 
 import lxml.etree as etree
+import lxml.html
 
 class NullCell:
   "Represents a table cell which has not been initialized"
@@ -25,8 +26,12 @@ class NullCell:
 class Cell:
   "A regular table cell of unit width and height"
 
-  def __init__(self, content, attrs=None, isHeader=False):
-    self.content = unicode(content)
+  def __init__(self, content, attrs=None, isHeader=False, isHTML=False):
+    self.isHTML = isHTML
+    if isHTML:
+      self.content = content
+    else:
+      self.content = unicode(content)
     if attrs is None:
       attrs = dict()
     self.attrs = dict(attrs)
@@ -36,15 +41,19 @@ class Cell:
 
   def toHtml(self, builder):
     tag = self.isHeader and "th" or "td"
-    builder.start(tag, self.attrs)
-    first = True
-    for line in self.content.split("\n"):
-      if first:
-        first = False
-      else:
-        builder.start("br", {})
-        builder.end("br")
-      builder.data(line)
+    node = builder.start(tag, self.attrs)
+    if self.isHTML:
+      child = lxml.html.fromstring(self.content)
+      node.append(child)
+    else:
+      first = True
+      for line in self.content.split("\n"):
+        if first:
+          first = False
+        else:
+          builder.start("br", {})
+          builder.end("br")
+        builder.data(line)
     builder.end(tag)
     
 class SpanningCell(Cell):
@@ -59,11 +68,11 @@ class SpanningCell(Cell):
       ncols = int(elt.attrib["colspan"])
     return cls(ncols, nrows, elt.text, elt.attrib)
     
-  def __init__(self, ncols, nrows, content, attrs=None, isHeader=False):
+  def __init__(self, ncols, nrows, content, attrs=None, isHeader=False, isHTML=False):
     if attrs is None:
       attrs = dict()
     attrs.update({"rowspan": str(nrows or 1), "colspan": str(ncols or 1)})
-    Cell.__init__(self, content, attrs, isHeader)
+    Cell.__init__(self, content, attrs, isHeader, isHTML)
     self.nrows = nrows
     self.ncols = ncols
 
@@ -134,9 +143,12 @@ class Table:
       if blockstart >= 0:
         compressBlocks(blockstart, len(row))
             
-  def toHtml(self):
+  def toHtml(self, table_head=None):
     bld = etree.TreeBuilder();
-    bld.start("table", self.attribs)
+    root = bld.start("table", self.attribs)
+    if table_head is not None:
+      root.append(lxml.html.fromstring(table_head))
+    bld.start("tbody", {})
 
     i = 0
     while (i < self.nrows):
@@ -149,9 +161,12 @@ class Table:
         bld.end("tr")
         i += 1
 
+    bld.end("tbody")
     bld.end("table")
     return bld.close()
 
+  def toHtmlString(self, table_head=None):
+    return etree.tostring(self.toHtml(table_head), encoding='UTF-8', method='html')
 
 def formatTable(dataTable, hasHeader = False, col_prefixes=None):
   nrows = len(dataTable)
