@@ -683,22 +683,6 @@ div#booking_footer {
     }
 }
 
-div#booking_header {
-    padding: 0.1em 0.5em;
-    text-align:right;
-    & > div {
-        font-size: 0.8em;
-        display: inline-block;
-        @ruleset-largescreen: {
-            display: none;
-        };
-        .media-guard(@ruleset-largescreen, @breakpoint-widen-frontpage);
-    }
-    @ruleset-largescreen: {
-        padding-top: 1em;
-    };
-    .media-guard(@ruleset-largescreen, @breakpoint-widen-frontpage);
-}
 
 /* admin dialogs */
 form.settings-form {
