@@ -36,6 +36,7 @@ INSTALLED_APPS = (
     'wsrc.site',
     'wsrc.site.accounts',
     'wsrc.site.usermodel',
+    'wsrc.site.courts',
     'wsrc.site.competitions',
 )
 

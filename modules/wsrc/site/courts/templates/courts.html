@@ -17,34 +17,22 @@ window.WSRC_booking_user_auth_token = "{{ booking_user_auth_token }}";
 <form>
   <div id="booking_datepicker_container" >
   <div class="ui-input-text ui-body-inherit ui-corner-all ui-alt-icon  ui-icon-calendar ui-btn-icon-left">
-    <input type="text" class="date-input" data-enhanced="true" readonly="readonly">
+    <input type="text" class="date-input" data-enhanced="true" readonly="readonly" value='{{ date|date:"D, j N Y" }}'>
   </div>
   <div data-role="controlgroup" data-type="horizontal">
-    <a class="ui-btn ui-alt-icon ui-btn-icon-left  ui-btn-inline ui-icon-carat-l previous" title="Go to previous day [Alt-P]">Prev.</a>
-    <a class="ui-btn ui-alt-icon ui-btn-icon-left  ui-btn-inline ui-icon-refresh refresh" title="Refresh all data [Alt-R]">Refresh</a>
-    <a class="ui-btn ui-alt-icon ui-btn-icon-right ui-btn-inline ui-icon-carat-r next" title="Go to next day [Alt-N]">Next</a>
+    <a class="ui-btn ui-alt-icon ui-btn-icon-left  ui-btn-inline ui-icon-carat-l previous" title="Go to previous day [Alt-P]" href='{% url 'courts' %}/{{ prev_date|date:"Y-m-d" }}' data-ajax='false'>Prev.</a>
+    <a class="ui-btn ui-alt-icon ui-btn-icon-left  ui-btn-inline ui-icon-refresh refresh" title="Refresh all data [Alt-R]" href='{% url 'courts' %}/{{ date|date:"Y-m-d" }}' data-ajax='false'>Refresh</a>
+    <a class="ui-btn ui-alt-icon ui-btn-icon-right ui-btn-inline ui-icon-carat-r next" title="Go to next day [Alt-N]" href='{% url 'courts' %}/{{ next_date|date:"Y-m-d" }}' data-ajax='false'>Next</a>
   </div>
   </div>
 </form>
 
-<div id="booking_header" class="toggle-root">
-  <div>
-    <a href="#" class="togglable compact">(compact view)</a>
-    <a href="#" class="toggled full">(show all)</a>
-  </div>
+<div id="booking-day">
+  {{ day_table|safe }}
 </div>
 
-<table class="booking_day">
-  <thead>
-    <tr>
-      <td class="time-col"></td>
-    </tr>
-  </thead>
-  <tbody>
-  </tbody>
-</table>
 <div id="booking_footer">
-<div class="date"></div>
+<div class="date">{{ date|date:"D, j N Y" }}</div>
 <div class="toggler"></div>
 </div>
 
@@ -152,11 +140,7 @@ window.WSRC_booking_user_auth_token = "{{ booking_user_auth_token }}";
 </form>
 
 <script>
-window.WSRC_court_bookings = {{ bookings|safe }};
-window.WSRC_usernames = {
-{% for player in usernames %}{% if forloop.counter0 > 0 %},{% endif %} "{{ player.user.username }}": "{{ player.user.get_full_name }}"{% endfor %}
-};
-wsrc.court_booking.onReady(WSRC_court_bookings, WSRC_usernames, '{{ date|date:"Y-m-d" }}', '{{ booking_system_origin }}', '{{ booking_system_path }}', '{{ booking_system_noshow }}');
+// wsrc.court_booking.onReady('{{ date|date:"Y-m-d" }}', '{% url "courts" %}');
 </script>
 
 

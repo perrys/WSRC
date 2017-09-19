@@ -1,0 +1,43 @@
+{% extends "06_wsrc_navigation.html" %}
+{% block pagetitle %}Court Booking{% endblock %}
+{% block page_classes %}edit-entry{% endblock %}
+{% load kwacros %}
+{% loadkwacros 'form_macros.html' %}
+{% block centered_page_content %}
+
+<form method="{% if mode == 'view' %}GET{% else %}POST{% endif %}" action="{% url 'wsrc.site.courts.views.edit_entry_view' %}{% if mode == 'update' %}/{{ booking_form.booking_id.value }}?method='PATCH'{% endif %}" data-ajax="false" class="settings-form">
+  
+
+{% if booking_form.errors %}
+<span class="form_error_message ui-btn-icon ui-btn-icon-left ui-icon-alert">Validation Error. Please correct the problem(s) below and resubmit.</span>
+
+{% for err in booking_form.non_field_errors %}
+  <div class="form_error_message">{{ err }}</div>
+{% endfor %}
+
+
+  {% endif %}
+
+<fieldset>
+<legend>{% if mode == 'create' %}New Booking{% elif mode == 'update' %}Update Booking{% else %}Booking Details{% endif %}</legend>
+
+    {% include "form_snippet.html" with form=booking_form %}
+
+<div class="buttonset">
+{% if mode ==  'create' %}
+<button class="ui-btn ui-btn-inline ui-corner-all ui-btn-icon-left ui-icon-check" type="submit">Book this Court</button>
+{% else %}
+ {% if mode == 'update' %}
+<button class="ui-btn ui-btn-inline ui-corner-all ui-btn-icon-left ui-icon-check" type="submit">Update</button>
+<button class="ui-btn ui-btn-inline ui-corner-all ui-btn-icon-left ui-icon-delete">Delete</button>
+ {% endif %}
+<button class="ui-btn ui-btn-inline ui-corner-all ui-btn-icon-left ui-icon-calendar">Send Invite</button>
+{% endif %}
+<a class="ui-btn ui-btn-inline ui-corner-all ui-btn-icon-left ui-icon-back" href="{{ back_url }}" data-role="back" data-ajax='false'>Back</a>
+</div>
+
+</fieldset>
+</form>
+
+{% endblock %}
+
