@@ -688,6 +688,10 @@ div#booking_footer {
 /* admin dialogs */
 form.settings-form {
     max-width: 40em;
+    .buttonset {
+        padding-top: 1em;
+        text-align: center;
+    }
 }
 form.settings-form fieldset > legend {
     color: @color-yellow-dot;
@@ -734,8 +738,9 @@ span.field-error {
     }
 }
 .settings-form .ui-select .ui-btn.ui-state-disabled,
-.settings-form .ui-state-disabled {
-    opacity: 0.6;
+.settings-form .ui-state-disabled,
+.settings-form input.readonly {
+    opacity: 0.5;
 }
 .wsrc-disabled {
     opacity: 0.3;
