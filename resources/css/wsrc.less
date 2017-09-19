@@ -582,26 +582,23 @@ table.booking_day {
     padding: 0;
     border: 0;
     border-collapse: separate;
-    border-spacing: 0.5em 0;
+    @ruleset-largescreen: {
+        border-spacing: 0.5em 0;
+    };
+    .media-guard(@ruleset-largescreen, @breakpoint-widen-frontpage);    
     .time-col {
-        width: 6.5%;
+        width: 0;
+    }
+    a {
+        font-weight: 400;
+        text-decoration: none;
     }
     thead th {
-        display: none;
-        @ruleset-largescreen: {
-            display: table-cell;
-        };
-        .media-guard(@ruleset-largescreen, @breakpoint-widen-frontpage);
         text-align: center;
         font-weight: normal;
     }
     tbody {
         th {
-            display: none;
-            @ruleset-largescreen: {
-                display: table-cell;
-            };
-            .media-guard(@ruleset-largescreen, @breakpoint-widen-frontpage);
             height: 1.2em;
             vertical-align: top;
             font-weight: normal;
@@ -613,31 +610,25 @@ table.booking_day {
             }
         }
         td {
-            display: none;
-            @ruleset-largescreen: {
-                display: table-cell;
-                .court {
-                    display: none;
-                }
-            };
-            .media-guard(@ruleset-largescreen, @breakpoint-widen-frontpage);
+            .court {
+                display: none;
+            }
             &.slot {
                 position: relative;
                 height: 2em;
                 border-width: 1px 1px 0 1px;
                 border-style: solid;
                 border-color: #cccccc; 
-                padding: 1em 0 0 2px;
+                padding: 0.5em 0.1em 0.1em 0.2em;
                 &.last {
                     border-bottom-width: 1px;
                 }
-                @ruleset-largescreen: {
-                    padding: 0 0 0 2px;
-                    &.column-last {
-                        border-bottom-width: 1px;
-                    }
-                };
-                .media-guard(@ruleset-largescreen, @breakpoint-widen-frontpage);
+                &.column-last {
+                    border-bottom-width: 1px;
+                }
+                &>div {
+                    overflow: hidden;
+                }
                 div.slot_time {
                     position: absolute;
                     top: 1px;
@@ -647,18 +638,10 @@ table.booking_day {
                 }
                 &.booking, &.available {
                     cursor: pointer;
-                    display: block;
-                    @ruleset-largescreen: {
-                        display: table-cell;
-                    };
-                    .media-guard(@ruleset-largescreen, @breakpoint-widen-frontpage);
-                }
-                &.booking.today.expired {
-                    display: none;
-                    @ruleset-largescreen: {
-                        display: table-cell;
-                    };
-                    .media-guard(@ruleset-largescreen, @breakpoint-widen-frontpage);
+                    display: table-cell;
+                    a {
+                        color: inherit;
+                    }
                 }
                 &.booking {
                     &.I {
@@ -671,16 +654,11 @@ table.booking_day {
                         background-color: @color-booking-highlight;
                     }
                     .noshow {
-                        display: inline;
-                        margin-left: 0.5em;
+                        display: table;
+                        margin-left: 0;
                         padding: 0 0.2em 0 0.2em;
                         color: white;
                         background: #FF0000;
-                        @ruleset-largescreen: {
-                            display: table;
-                            margin-left: 0;
-                        };
-                        .media-guard(@ruleset-largescreen, @breakpoint-widen-frontpage);
                     }
                 }
                 &.available {
@@ -692,13 +670,6 @@ table.booking_day {
                         background-color: @color-booking-highlight;
                     }
                 }
-                &.mobile-unhidden {
-                    display: block !important;
-                    @ruleset-largescreen: {
-                        display: table-cell !important;
-                    };
-                    .media-guard(@ruleset-largescreen, @breakpoint-widen-frontpage);
-                }                    
             }
         }
     }
