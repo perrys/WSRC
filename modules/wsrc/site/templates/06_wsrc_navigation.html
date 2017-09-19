@@ -43,7 +43,7 @@ $( document ).on( "pagecreate", ".wsrc-site", function( event ) {
       <li><a href="{% url 'tournaments' %}" data-ajax="false" onclick="$.mobile.loading('show')">Club Tournaments</a></li>
 
       <li data-icon="calendar"><a href="http://booking.wokingsquashclub.org/" data-ajax="false" onclick="$.mobile.loading('show')">Court Booking</a></li>
-      <li data-icon="calendar"><a href="{% url 'court_booking' %}" data-ajax="false" onclick="$.mobile.loading('show')">Courts (new)</a></li>
+      <li data-icon="calendar"><a href="{% url 'courts' %}" data-ajax="false" onclick="$.mobile.loading('show')">Courts (new)</a></li>
 {% if user.is_authenticated %}
       <li data-icon="phone"><a href="{% url 'member_list' %}">Members' Details</a></li>
       <li><a href="/club_management">Club Management</a></li>
