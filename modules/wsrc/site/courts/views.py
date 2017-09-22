@@ -378,9 +378,8 @@ def edit_entry_view(request, id=None):
       booking_form = BookingForm(request.POST)
       if booking_form.is_valid():
         update_booking(booking_user_id, id, booking_form.cleaned_data)
-        back = reverse_url(day_view)
-        if booking_form.is_valid():
-          back += "/" + timezones.as_iso_date(booking_form.cleaned_data["date"])        
+        send_calendar_invite(request, booking_form.cleaned_data, [request.user], "update")
+        back = reverse_url(day_view) + "/" + timezones.as_iso_date(booking_form.cleaned_data["date"])        
         return redirect(back)
     except RemoteException, e:
       if e.status == httplib.NOT_FOUND:
