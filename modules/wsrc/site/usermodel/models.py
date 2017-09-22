@@ -66,7 +66,8 @@ class Player(models.Model):
   def get_player_for_user(user):
     player = None
     try:
-      player = user.player
+      if hasattr(user, "player"):
+        player = user.player
     except Player.DoesNotExist:
       pass
     return player
