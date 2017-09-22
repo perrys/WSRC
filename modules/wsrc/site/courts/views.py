@@ -25,12 +25,16 @@ import urllib
 from django import forms
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import ValidationError, SuspiciousOperation, PermissionDenied
+from django.core.mail import SafeMIMEMultipart, SafeMIMEText
 from django.core.urlresolvers import reverse as reverse_url
 from django.http import HttpResponse
 from django.shortcuts import render, redirect
 from django.template import Template, Context, RequestContext
 from django.template.response import TemplateResponse
-from django.views.decorators.http import require_safe
+from django.views.decorators.http import require_safe, require_http_methods
+
+from icalendar import Calendar, Event, vCalAddress, vText
+
 import wsrc.site.settings.settings as settings
 from wsrc.site.models import BookingSystemEvent
 from wsrc.site.usermodel.models import Player
@@ -45,6 +49,8 @@ EMPTY_DUR  = 3 * RESOLUTION
 START_TIMES = [datetime.time(hour=t/60, minute=t%60) for t in range(START_TIME, END_TIME-RESOLUTION, RESOLUTION)]
 DURATIONS = [datetime.timedelta(minutes=i) for i in range(15, END_TIME-START_TIME, 15)]
 
+BOOKING_SYSTEM_EMAIL_ADRESS = "court_booking@wokingsquashclub.org"
+
 class RemoteException(Exception):
   def __init__(self, body, status):
     msg = "Error {code} [{name}] - {body}".format(code=status, name=httplib.responses[status], body=body)
@@ -52,6 +58,9 @@ class RemoteException(Exception):
     self.status = status
     self.body = body
 
+class EmailingException(Exception):
+  pass
+    
 def get_server_time(headers):
   for (key,val) in headers:
     if key.lower() == "date":
@@ -290,8 +299,13 @@ def edit_entry_view(request, id=None):
     if booking_form.is_valid():
       try:
         new_booking = create_booking(booking_user_id, booking_form.cleaned_data)
+        booking_data = dict(booking_form.cleaned_data)
+        booking_data["booking_id"] = new_booking.get("id")
+        send_calendar_invite(request, booking_data, [request.user], "create")
         return redirect(reverse_url(day_view) + "/" + timezones.as_iso_date(booking_form.cleaned_data["date"]))
       except RemoteException, e:
+        booking_form.add_error(None, str(e))
+      except EmailingException, e:
         booking_form.add_error(None, str(e))
 
   else:
@@ -357,3 +371,93 @@ def edit_entry_view(request, id=None):
   }
   return render(request, 'booking.html', context)
 
+def send_calendar_invite(request, slot, recipients, event_type):
+  method = "CANCEL" if event_type == "delete" else "REQUEST"
+  cal = create_icalendar(request, slot, recipients, method)
+  encoding = settings.DEFAULT_CHARSET
+  msg_cal = SafeMIMEText(cal.to_ical(), "calendar", encoding)
+  msg_cal.set_param("method", method)
+  context = {
+    'event_type': event_type
+  }
+  context.update(slot)
+  text_body, html_body = email_utils.get_email_bodies("BookingUpdate", context)
+  msg_bodies = SafeMIMEMultipart(_subtype="alternative", encoding=encoding)
+  msg_bodies.attach(SafeMIMEText(text_body, "plain", encoding))
+  msg_bodies.attach(SafeMIMEText(html_body, "html", encoding))
+  to_list = [user.email for user in recipients]
+  subject="WSRC Court Booking - {date:%Y-%m-%d} {start_time:%H:%M} Court {court}".format(**slot)
+  try:
+    email_utils.send_email(subject, None, None,
+                           from_address=BOOKING_SYSTEM_EMAIL_ADRESS,
+                           to_list=to_list, cc_list=None,
+                           extra_attachments=[msg_bodies, msg_cal])
+  except Exception, e:
+    err = ""
+    if hasattr(e, "smtp_code"):
+      err += "EMAIL SERVER ERROR [{smtp_code:d}] {smtp_error:s} ".format(**e.__dict__)
+      if e.message:
+        err += " - "
+    err += e.message
+    raise EmailingException(err)
+    
+    
+def create_icalendar(request, cal_data, recipients, method):
+  
+  start_datetime = datetime.datetime.combine(cal_data["date"], cal_data["start_time"])
+  duration = datetime.timedelta(minutes=int(cal_data["duration"]))
+  url = request.build_absolute_uri("/courts/booking/{booking_id}".format(**cal_data))
+  # could use last update timestamp (cal_data["timestamp"]) from
+  # the event, except when it is a deletion. For simplicity we
+  # will just use the current time - this ensures that the
+  # recipient calendar always accepts the event as the latest
+  # version
+  timestamp = datetime.datetime.now(timezones.UK_TZINFO)
+  
+  cal = Calendar()
+  cal.add("version", "2.0")
+  cal.add("prodid", "-//Woking Squash Rackets Club//NONSGML court_booking//EN")
+  evt = Event()
+  evt.add("uid", "WSRC_booking_{booking_id}".format(**cal_data))
+  organizer = vCalAddress("MAILTO:{email}".format(email=BOOKING_SYSTEM_EMAIL_ADRESS))
+  organizer.params["cn"] = vText("Woking Squash Club")
+  evt.add("organizer", organizer)
+  def add_attendee(user):
+    attendee = vCalAddress("MAILTO:{email}".format(email=user.email))
+    attendee.params["cn"] = vText(user.get_full_name())
+    attendee.params["ROLE"] = vText("REQ-PARTICIPANT")
+    evt.add('attendee', attendee, encode=0)
+  for user in recipients:
+    add_attendee(user)
+
+  evt.add("dtstamp", timestamp)    
+  evt.add("dtstart", start_datetime)
+  evt.add("duration", duration)
+  evt.add("summary", "WSRC Court Booking: " + cal_data["name"])
+  evt.add("url", url)
+  evt.add("location", "Court {court}".format(**cal_data))
+  evt.add("description", cal_data.get("description", ""))
+
+  if method == "CANCEL":
+    evt.add("status", "CANCELLED")
+  cal.add("method", method)
+
+  cal.add_component(evt)
+  return cal
+    
+
+@require_http_methods(["POST"])
+def send_calendar_invite_view(request, id):
+  if not request.user.is_authenticated():
+    raise PermissionDenied()
+  try:
+    send_calendar_invite()
+  except Exception, e:
+    err = ""
+    if hasattr(e, "smtp_code"):
+      err += "EMAIL SERVER ERROR [{smtp_code:d}] {smtp_error:s} ".format(**e.__dict__)
+      if e.message:
+        err += " - "
+      err += e.message
+      raise Exception(err)
+  
