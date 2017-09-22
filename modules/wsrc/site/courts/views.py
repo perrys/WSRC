@@ -24,14 +24,13 @@ import urllib
 
 from django import forms
 from django.contrib.auth.decorators import login_required
-from django.core.exceptions import ValidationError, SuspiciousOperation
+from django.core.exceptions import ValidationError, SuspiciousOperation, PermissionDenied
 from django.core.urlresolvers import reverse as reverse_url
 from django.http import HttpResponse
 from django.shortcuts import render, redirect
 from django.template import Template, Context, RequestContext
 from django.template.response import TemplateResponse
 from django.views.decorators.http import require_safe
-
 import wsrc.site.settings.settings as settings
 from wsrc.site.models import BookingSystemEvent
 from wsrc.site.usermodel.models import Player
@@ -46,14 +45,38 @@ EMPTY_DUR  = 3 * RESOLUTION
 START_TIMES = [datetime.time(hour=t/60, minute=t%60) for t in range(START_TIME, END_TIME-RESOLUTION, RESOLUTION)]
 DURATIONS = [datetime.timedelta(minutes=i) for i in range(15, END_TIME-START_TIME, 15)]
 
+class RemoteException(Exception):
+  def __init__(self, body, status):
+    msg = "Error {code} [{name}] - {body}".format(code=status, name=httplib.responses[status], body=body)
+    super(RemoteException, self).__init__(msg)
+    self.status = status
+    self.body = body
+
+def get_server_time(headers):
+  for (key,val) in headers:
+    if key.lower() == "date":
+      if not (val.endswith("GMT") or val.endswith("UTC")):
+        raise Exception("Expected server time to be returned in GMT")
+      date = datetime.datetime.strptime(val, "%a, %d %b %Y %H:%M:%S %Z")
+      return timezones.naive_utc_to_local(date, timezones.UK_TZINFO)
+
 def query_booking_system(query_params={}, body=None, method="GET"):
   url = settings.BOOKING_SYSTEM_ORIGIN + settings.BOOKING_SYSTEM_PATH + "?" + urllib.urlencode(query_params)
   h = httplib2.Http()
   (resp_headers, content) = h.request(url, method=method, body=body)
+  server_time = get_server_time(resp_headers.items())
   if resp_headers.status != httplib.OK:
-      raise Exception("unable to fetch bookings data, status = " + str(resp_headers.status) + ", response: " +  content)
-  return json.loads(content)
-  
+      raise RemoteException(content, resp_headers.status)
+  return server_time, json.loads(content)
+
+def auth_query_booking_system(booking_user_id, data={}, query_params={}, method="POST"):
+  booking_user_token = BookingSystemEvent.generate_hmac_token_raw("id:{booking_user_id}".format(**locals()))
+  data = dict(data)
+  data.update({
+    "user_id": booking_user_id,
+    "user_token": booking_user_token
+  })
+  return query_booking_system(query_params, json.dumps(data), method)
 
 def get_bookings(date):
   today_str    = timezones.as_iso_date(date)
@@ -63,26 +86,27 @@ def get_bookings(date):
     "end_date": tomorrow_str,
     "with_tokens": 1
   }
-  data = query_booking_system(params)
+  server_time, data = query_booking_system(params)
   courts = data[today_str]
-  return dict([(int(i), v) for i,v in courts.iteritems()])
+  return server_time, dict([(int(i), v) for i,v in courts.iteritems()])
 
 def get_booking(id):
   params = {
     "id": id,
     "with_tokens": 1
   }
-  data = query_booking_system(params)
+  server_time, data = query_booking_system(params)
   result = None
-  for date,courts in data.iteritems():
-    for court, start_times in courts.iteritems():
-      for start_time, slot in start_times.iteritems():
-        slot["court"] = int(court)
-        slot["date"] = date
-        result = slot
-  return result
-  
-def create_booking(booking_user_id, booking_user_token, slot):
+  if data is not None and len(data) > 0:
+    for date,courts in data.iteritems():
+      for court, start_times in courts.iteritems():
+        for start_time, slot in start_times.iteritems():
+          slot["court"] = int(court)
+          slot["date"] = date
+          result = slot
+  return server_time, result
+
+def create_booking(booking_user_id, slot):
   start_time = slot["start_time"]
   data = {
     "date": timezones.as_iso_date(slot["date"]),
@@ -93,11 +117,10 @@ def create_booking(booking_user_id, booking_user_token, slot):
     "description": slot["description"],
     "type": slot["booking_type"],
     "token": slot["token"],
-    "user_id": booking_user_id,
-    "user_token": booking_user_token
   }
-  return query_booking_system(body=json.dumps(data), method="POST")
-  
+  server_time, data = auth_query_booking_system(booking_user_id, data)
+  return data
+
 def create_booking_cell_content (slot, court, date):
   start_mins = slot["start_mins"]
   start = timezones.to_time(start_mins)
@@ -119,7 +142,7 @@ def create_booking_cell_content (slot, court, date):
   return result
     
 
-def render_day_table(court_slots, date):
+def render_day_table(court_slots, date, server_time):
   start = START_TIME
   end   = END_TIME
   for (court, slots) in court_slots.iteritems():    
@@ -129,7 +152,7 @@ def render_day_table(court_slots, date):
       start = min(t1, start)
       end   = max(t2, end)
   nrows = (end - start) / RESOLUTION
-  table = Table(len(COURTS)+1, nrows, {"class": "booking_day"})
+  table = Table(len(COURTS)+1, nrows, {"class": "booking_day", "data-server-time": timezones.as_iso_datetime(server_time)})
   for i in range(0,nrows):
     table.addCell(Cell("", attrs={"class": "time-col"}, isHeader=True), 0, i)
   
@@ -182,8 +205,8 @@ def day_view(request, date=None):
         date = datetime.date.today()
     else:
         date = timezones.parse_iso_date_to_naive(date)
-    bookings = get_bookings(date)
-    table_html = render_day_table(bookings, date)
+    server_time, bookings = get_bookings(date)
+    table_html = render_day_table(bookings, date, server_time)
     if request.GET.get("table_only") is not None:
       return HttpResponse(table_html)
     context = {
@@ -231,6 +254,7 @@ class BookingForm(forms.Form):
   timestamp  = forms.DateTimeField(label="Last Updated", input_formats=make_datetime_formats(), widget=make_readonly_widget(), required=False)
   
   booking_id = forms.IntegerField(required=False, widget=forms.HiddenInput())
+  created_by_id = forms.IntegerField(required=False, widget=forms.HiddenInput())
   token = forms.CharField(max_length=32, required=False, widget=forms.HiddenInput())
 
   @staticmethod
@@ -251,18 +275,23 @@ class BookingForm(forms.Form):
 def edit_entry_view(request, id=None):
   player = Player.get_player_for_user(request.user)
   booking_user_id = None if player is None else player.booking_system_id
+  method = request.method
+  if method == "POST" and  "method" in request.GET: # allow method override in query string of POST request, for html forms
+    method = request.GET["method"]
 
-  if request.method == "POST":
+  if method == "POST":
     if not request.user.is_authenticated():
       raise SuspiciousOperation()
 #      return redirect('/login/?next=%s' % request.path)
-    if player is None or player.booking_system_id is None:
+    if booking_user_id is None:
       return HttpResponseForbidden("<p>Sorry, your login is not set up to book courts from this website.</p><p>Please contact <a href='mailto:webmaster@wokingsquashclub.org'>webmaster@wokingsquashclub.org</a> to get this fixed, and use the <a href='{server}'>old booking site</a> in the meantime.</p>".format(server=settings.BOOKING_SYSTEM_ORIGIN))    
     booking_form = BookingForm(request.POST)
     if booking_form.is_valid():
-      user_auth_token = BookingSystemEvent.generate_hmac_token_raw("id:{booking_user_id}".format(**locals()))
-      create_booking(booking_user_id, user_auth_token, booking_form.cleaned_data)
-      return redirect(reverse_url(day_view) + "/" + timezones.as_iso_date(booking_form.cleaned_data["date"]))
+      try:
+        new_booking = create_booking(booking_user_id, booking_form.cleaned_data)
+        return redirect(reverse_url(day_view) + "/" + timezones.as_iso_date(booking_form.cleaned_data["date"]))
+      except RemoteException, e:
+        booking_form.add_error(None, str(e))
 
   else:
     if id is None:
@@ -287,12 +316,16 @@ def edit_entry_view(request, id=None):
   readonly_fields = ['name', 'date', 'start_time', 'duration', 'court']
   hidden_fields = ['booking_type']
   
+  days_diff = seconds_diff = None
   if id is None:
     mode = "create"
     hidden_fields.extend(['created_ts', 'created_by', 'timestamp'])
   else:
     mode = "view"
-    if booking_user_id is not None and booking_user_id == initial_data.get("created_by_id"):
+    if booking_form.is_valid():
+      days_diff = server_time.date().toordinal() - booking_form.cleaned_data['date'].toordinal()
+      seconds_diff = timezones.to_seconds(server_time.time()) - timezones.to_seconds(booking_form.cleaned_data['start_time'])
+    if booking_user_id is not None and booking_form.is_valid() and booking_user_id == booking_form.cleaned_data.get("created_by_id"):
       mode = "update"
     elif is_admin:
       mode = "update"
@@ -308,10 +341,18 @@ def edit_entry_view(request, id=None):
   for field in hidden_fields:
     booking_form.fields[field].widget = forms.HiddenInput()
 
+  back = request.POST.get("next")
+  if back is None:
+    back = reverse_url(day_view)
+    if booking_form.is_valid():
+      back += "/" + timezones.as_iso_date(booking_form.cleaned_data["date"])
+
   context = {
     'booking_form': booking_form,
     'mode': mode,
-    'back_url': reverse_url(day_view) + "/" + timezones.as_iso_date(booking_form.cleaned_data["date"])
+    'back_url':  back,
+    'days_diff': days_diff,
+    'seconds_diff': seconds_diff
   }
   return render(request, 'booking.html', context)
 
