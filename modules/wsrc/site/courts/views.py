@@ -240,7 +240,8 @@ def format_date(val, fmts):
   
 class BookingForm(forms.Form):
   name = forms.CharField(max_length=80)
-  description = forms.CharField(required=False)
+  description = forms.CharField(required=False, widget=forms.TextInput(attrs={'autofocus': '1'})
+)
 
   date = forms.DateField(input_formats=make_date_formats())
   start_time = forms.TimeField(label="Time", input_formats=['%H:%M'], validators=[validate_quarter_hour],
