@@ -130,6 +130,28 @@ def create_booking(booking_user_id, slot):
   server_time, data = auth_query_booking_system(booking_user_id, data)
   return data
 
+def update_booking(booking_user_id, id, slot):
+  params = {
+    "id": id,
+    "method": "PATCH"
+  }
+  data = {
+    "name": slot["name"],
+    "description": slot["description"],
+    "type": slot["booking_type"],
+  }
+  server_time, data = auth_query_booking_system(booking_user_id, data, query_params=params)
+  return data
+
+
+def delete_booking(booking_user_id, id):
+  params = {
+    "id": id,
+    "method": "DELETE"
+  }
+  server_time, data = auth_query_booking_system(booking_user_id, query_params=params)
+  return data
+
 def create_booking_cell_content (slot, court, date):
   start_mins = slot["start_mins"]
   start = timezones.to_time(start_mins)
@@ -282,6 +304,29 @@ class BookingForm(forms.Form):
     format_date1("timestamp", make_datetime_formats())
     return slot
 
+  @staticmethod
+  def transform_booking_system_deleted_entry(entry):
+    timestamp = datetime.datetime.utcfromtimestamp(int(entry["start_time"]))
+    timestamp = timezones.naive_utc_to_local(timestamp, timezones.UK_TZINFO)
+    duration = (int(entry["end_time"]) - int(entry["start_time"]))/60
+    data = {
+      "date": timestamp.date(),
+      "start_time": timestamp.time(),
+      "duration": duration,
+      "court": entry["room_id"],
+      "name": entry["name"],
+      "description": entry["description"],
+    }
+    return data
+
+  @staticmethod
+  def empty_form(error=None):
+    booking_form = BookingForm(empty_permitted=True,data={})
+    booking_form.is_valid() # initializes cleaned_data
+    if error is not None:
+      booking_form.add_error(None, error)
+    return booking_form
+
 def edit_entry_view(request, id=None):
   player = Player.get_player_for_user(request.user)
   booking_user_id = None if player is None else player.booking_system_id
@@ -308,7 +353,44 @@ def edit_entry_view(request, id=None):
       except EmailingException, e:
         booking_form.add_error(None, str(e))
 
-  else:
+  elif method == "DELETE":
+    if id is None or booking_user_id is None:
+      raise SuspiciousOperation()
+    try:
+      data = BookingForm.transform_booking_system_deleted_entry(delete_booking(booking_user_id, id))
+      data["booking_id"] = id
+      send_calendar_invite(request, data, [request.user], "delete")
+      return redirect(request.POST.get("next"))
+    except RemoteException, e:
+      if e.status == httplib.NOT_FOUND:
+        error = "Booking not found - has it already been deleted?"
+        id = None
+      else:
+        error = str(e)
+      booking_form = BookingForm.empty_form(error)
+    except EmailingException, e:
+      booking_form.add_error(None, str(e))
+
+  elif method == "PATCH":
+    if id is None or booking_user_id is None:
+      raise SuspiciousOperation()
+    try:
+      booking_form = BookingForm(request.POST)
+      if booking_form.is_valid():
+        update_booking(booking_user_id, id, booking_form.cleaned_data)
+        back = reverse_url(day_view)
+        if booking_form.is_valid():
+          back += "/" + timezones.as_iso_date(booking_form.cleaned_data["date"])        
+        return redirect(back)
+    except RemoteException, e:
+      if e.status == httplib.NOT_FOUND:
+        error = "Booking not found - has it already been deleted?"
+        id = None
+      else:
+        error = str(e)
+      booking_form = BookingForm.empty_form(error)
+
+  else: # GET request
     if id is None:
       initial_data = {
         'name': request.user.get_full_name(),
@@ -321,10 +403,16 @@ def edit_entry_view(request, id=None):
         if field == 'date':
           val = format_date(val, make_date_formats())
         initial_data[field] = val
+      booking_form = BookingForm(data=initial_data)
     else:
-      initial_data = BookingForm.transform_booking_system_entry(get_booking(id))
-    booking_form = BookingForm(data=initial_data)
-    booking_form.is_valid()
+      server_time, booking_data = get_booking(id)
+      if booking_data is None:
+        error = "Booking not found - has it already been deleted?"
+        booking_form = BookingForm.empty_form(error)
+        id = None
+      else:
+        initial_data = BookingForm.transform_booking_system_entry(booking_data)
+        booking_form = BookingForm(data=initial_data)
 
   
   is_admin = False # TODO: keep these writable for admin
