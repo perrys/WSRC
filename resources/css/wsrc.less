@@ -720,9 +720,15 @@ span.field-error {
 .form_success_message {
     color: @color-winner;
 }
-.form_error_message {
-    color: @color-loser
+div.form_error_message {
+    color: @color-loser;
+    padding-top: 1em;
+    padding-bottom: 1em;
+    ul > li {
+        font-weight: normal !important;
+    }
 }
+
 
 .form_error_message:after {
     left: inherit;
