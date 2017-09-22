@@ -271,8 +271,7 @@ def format_date(val, fmts):
   
 class BookingForm(forms.Form):
   name = forms.CharField(max_length=80)
-  description = forms.CharField(required=False, widget=forms.TextInput(attrs={'autofocus': '1'})
-)
+  description = forms.CharField(required=False, widget=forms.TextInput(attrs={'autofocus': '1'}))
 
   date = forms.DateField(input_formats=make_date_formats())
   start_time = forms.TimeField(label="Time", input_formats=['%H:%M'], validators=[validate_quarter_hour],
@@ -438,8 +437,7 @@ def edit_entry_view(request, id=None):
   
 
   for field in readonly_fields:    
-    widget = forms.TextInput(attrs={'class': 'readonly', 'readonly': 'readonly', 'style': 'text-align: left'})
-    booking_form.fields[field].widget = widget
+    booking_form.fields[field].widget = make_readonly_widget()
   for field in hidden_fields:
     booking_form.fields[field].widget = forms.HiddenInput()
 
