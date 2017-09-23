@@ -24,6 +24,7 @@ import urllib
 
 from django import forms
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError, SuspiciousOperation, PermissionDenied
 from django.core.mail import SafeMIMEMultipart, SafeMIMEText
 from django.core.urlresolvers import reverse as reverse_url
@@ -344,7 +345,7 @@ def edit_entry_view(request, id=None):
       try:
         new_booking = create_booking(booking_user_id, booking_form.cleaned_data)
         booking_data = dict(booking_form.cleaned_data)
-        booking_data["booking_id"] = new_booking.get("id")
+        id = booking_data["booking_id"] = new_booking.get("id")
         send_calendar_invite(request, booking_data, [request.user], "create")
         return redirect(reverse_url(day_view) + "/" + timezones.as_iso_date(booking_form.cleaned_data["date"]))
       except RemoteException, e:
@@ -387,6 +388,8 @@ def edit_entry_view(request, id=None):
       else:
         error = str(e)
       booking_form = BookingForm.empty_form(error)
+    except EmailingException, e:
+      booking_form.add_error(None, str(e))
 
   else: # GET request
     if id is None:
@@ -452,7 +455,8 @@ def edit_entry_view(request, id=None):
     'mode': mode,
     'back_url':  back,
     'days_diff': days_diff,
-    'seconds_diff': seconds_diff
+    'seconds_diff': seconds_diff,
+    'booking_id': id
   }
   return render(request, 'booking.html', context)
 
@@ -498,6 +502,12 @@ def create_icalendar(request, cal_data, recipients, method):
   # recipient calendar always accepts the event as the latest
   # version
   timestamp = datetime.datetime.now(timezones.UK_TZINFO)
+  summary = cal_data.get("summary")
+  if summary is None:
+    summary = CalendarInviteForm.get_summary(cal_data)
+  location = cal_data.get("location")
+  if location is None:
+    location = CalendarInviteForm.get_location(cal_data)
   
   cal = Calendar()
   cal.add("version", "2.0")
@@ -518,9 +528,9 @@ def create_icalendar(request, cal_data, recipients, method):
   evt.add("dtstamp", timestamp)    
   evt.add("dtstart", start_datetime)
   evt.add("duration", duration)
-  evt.add("summary", "WSRC Court Booking: " + cal_data["name"])
+  evt.add("summary", summary)
   evt.add("url", url)
-  evt.add("location", "Court {court}".format(**cal_data))
+  evt.add("location", location)
   evt.add("description", cal_data.get("description", ""))
 
   if method == "CANCEL":
@@ -529,20 +539,66 @@ def create_icalendar(request, cal_data, recipients, method):
 
   cal.add_component(evt)
   return cal
-    
 
-@require_http_methods(["POST"])
-def send_calendar_invite_view(request, id):
-  if not request.user.is_authenticated():
-    raise PermissionDenied()
-  try:
-    send_calendar_invite()
-  except Exception, e:
-    err = ""
-    if hasattr(e, "smtp_code"):
-      err += "EMAIL SERVER ERROR [{smtp_code:d}] {smtp_error:s} ".format(**e.__dict__)
-      if e.message:
-        err += " - "
-      err += e.message
-      raise Exception(err)
+def get_active_player_choices():
+  return [(None, '')] + [(u.id, u.get_full_name()) for u in User.objects.filter(is_active=True).filter(player__isnull=False).order_by('first_name', 'last_name')]
+
+class CalendarInviteForm(forms.Form):
+  summary = forms.CharField(label="Summary", max_length=80, widget=make_readonly_widget())
+  description = forms.CharField(required=False)
+  date = forms.DateField(input_formats=make_date_formats(), widget=make_readonly_widget())
+  start_time = forms.TimeField(label="Time", input_formats=['%H:%M'], validators=[validate_quarter_hour],
+                               widget=make_readonly_widget())
+  duration = forms.ChoiceField(choices=[(i.seconds/60, timezones.duration_str(i)) for i in DURATIONS], widget=make_readonly_widget())
+  location = forms.CharField(widget=make_readonly_widget())
+  booking_id = forms.IntegerField(widget=forms.HiddenInput())
+  court = forms.IntegerField(widget=forms.HiddenInput())
+  invitee_1 = forms.ChoiceField(choices=get_active_player_choices(), widget=forms.Select(attrs={'autofocus': '1'}))
+  invitee_2 = forms.ChoiceField(choices=get_active_player_choices(), required=False)
+  invitee_3 = forms.ChoiceField(choices=get_active_player_choices(), required=False)
+
+  @staticmethod
+  def get_location(booking_data):
+    return "Court {court}, Woking Squash Club, Horsell Moor, Woking GU21 4NR".format(**booking_data)    
+
+  @staticmethod
+  def get_summary(booking_data):
+    return "WSRC Court Booking - {name}".format(**booking_data)
+  
+@login_required
+def calendar_invite_view(request, id):
+  if request.method == "POST":
+    form = CalendarInviteForm(request.POST)
+    if form.is_valid():
+      try:
+        invitees = [request.user]
+        for i in range(1,3):
+          user_id = form.cleaned_data.get("invitee_{i}".format(i=i))
+          if user_id is not None and len(user_id) > 0:
+            invitees.append(User.objects.get(pk=user_id)) 
+        send_calendar_invite(request, form.cleaned_data, invitees, "update")
+        back = reverse_url(day_view) + "/" + timezones.as_iso_date(form.cleaned_data["date"])
+        return redirect(back)
+      except EmailingException, e:
+        form.add_error(None, str(e))
+        
+  else:
+    server_time, booking_data = get_booking(id)
+    if booking_data is None:
+      error = "Booking not found - has it already been deleted?"
+      form = CalendarInviteForm(empty_permitted=True)
+      form.is_valid() # initializes cleaned_data
+      form.add_error(None, error)
+    else:
+      booking_data = BookingForm.transform_booking_system_entry(booking_data)
+      booking_data["location"] = CalendarInviteForm.get_location(booking_data)
+      booking_data["summary"] = CalendarInviteForm.get_summary(booking_data)
+      form = CalendarInviteForm(initial=booking_data)
+      
+    
+  context = {
+    'form': form,
+    'id': id,
+  }
+  return render(request, 'cal_invite.html', context)
   
