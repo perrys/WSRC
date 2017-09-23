@@ -459,7 +459,8 @@ def edit_entry_view(request, id=None):
     'back_url':  back,
     'days_diff': days_diff,
     'seconds_diff': seconds_diff,
-    'booking_id': id
+    'booking_id': id,
+    'booking_user_id': booking_user_id    
   }
   return render(request, 'booking.html', context)
 
