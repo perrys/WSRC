@@ -26,7 +26,7 @@
   {% endif %}
  {% endif %}
  {% if days_diff < 0 or seconds_diff < 0 %} 
-<button class="ui-btn ui-btn-inline ui-corner-all ui-btn-icon-left ui-icon-calendar">Send Invite</button>
+<a class="ui-btn ui-btn-inline ui-corner-all ui-btn-icon-left ui-icon-calendar" href="{% url 'cal_invite' %}/{{ booking_id }}" data-ajax='false'>Send Invite</a>
  {% endif %}
  {% if days_diff == 0 and seconds_diff > 900 %} 
 <button class="ui-btn ui-btn-inline ui-corner-all ui-btn-icon-left ui-icon-alert">Report a No-show</button>
