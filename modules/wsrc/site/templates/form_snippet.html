@@ -1,0 +1,25 @@
+
+{% csrf_token %}
+{% for hidden in form.hidden_fields %}
+{{ hidden }}
+{% endfor %}
+
+{% if form.errors %}
+<div class="form_error_message">ERROR. Please correct the problem(s) below and resubmit, or hit "Back" to revert.
+<ul>
+{% for err in form.non_field_errors %}
+  <li class="form_error_message">{{ err }}</li>
+  {% endfor %}
+</ul>
+</div>
+{% endif %}
+
+{% for field in form.visible_fields %}
+<div class="ui-field-contain {% if field.errors %}field-error{% endif %}">
+{% if field.errors %}
+<label>&nbsp;</label><span class="field-error">{% for err in field.errors %}{{ err }}. {% endfor %}</span>
+<div class="clear-all"></div>
+{% endif %}  
+{{ field.label_tag }} {{ field }}
+</div>
+{% endfor %}
