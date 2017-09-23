@@ -40,7 +40,7 @@
 
 {% if mode == "update" %}
 {% if days_diff < 0 or seconds_diff < 0 %}
-<form id="booking_delete_form" action="{% url 'wsrc.site.courts.views.edit_entry_view' %}/{{ booking_form.booking_id.value }}?method=DELETE" method="POST">
+<form id="booking_delete_form" action="{% url 'booking' %}/{{ booking_form.booking_id.value }}?method=DELETE" method="POST">
   {% csrf_token %}
   <input type="hidden" name="next" value="{{ back_url }}"/>
 </form>
