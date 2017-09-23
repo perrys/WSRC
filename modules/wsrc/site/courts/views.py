@@ -385,6 +385,9 @@ def edit_entry_view(request, id=None):
       if e.status == httplib.NOT_FOUND:
         error = "Booking not found - has it already been deleted?"
         id = None
+      elif e.status == httplib.NOT_MODIFIED:
+        back = reverse_url(day_view) + "/" + timezones.as_iso_date(booking_form.cleaned_data["date"])        
+        return redirect(back)
       else:
         error = str(e)
       booking_form = BookingForm.empty_form(error)
