@@ -331,13 +331,13 @@ def edit_entry_view(request, id=None):
   player = Player.get_player_for_user(request.user)
   booking_user_id = None if player is None else player.booking_system_id
   method = request.method
+  
   if method == "POST" and  "method" in request.GET: # allow method override in query string of POST request, for html forms
     method = request.GET["method"]
 
   if method == "POST":
     if not request.user.is_authenticated():
       raise SuspiciousOperation()
-#      return redirect('/login/?next=%s' % request.path)
     if booking_user_id is None:
       return HttpResponseForbidden("<p>Sorry, your login is not set up to book courts from this website.</p><p>Please contact <a href='mailto:webmaster@wokingsquashclub.org'>webmaster@wokingsquashclub.org</a> to get this fixed, and use the <a href='{server}'>old booking site</a> in the meantime.</p>".format(server=settings.BOOKING_SYSTEM_ORIGIN))    
     booking_form = BookingForm(request.POST)
@@ -396,6 +396,8 @@ def edit_entry_view(request, id=None):
 
   else: # GET request
     if id is None:
+      if booking_user_id is None:
+        return redirect('/login/?next=%s' % urllib.quote(request.get_full_path()))
       initial_data = {
         'name': request.user.get_full_name(),
         'booking_type': 'I'
