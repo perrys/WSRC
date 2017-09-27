@@ -16,8 +16,8 @@
     {% include "form_snippet.html" %}
     
 <div class="buttonset">
-  <button class="ui-btn ui-btn-inline ui-corner-all ui-btn-icon-left ui-icon-calendar">Send</button>
-  <a class="ui-btn ui-btn-inline ui-corner-all ui-btn-icon-left ui-icon-delete" href="{% url 'booking' }}/{{ id }}" data-role="back" data-ajax='false'>Cancel</a>
+  <button class="ui-btn ui-btn-inline ui-corner-all ui-btn-icon-left ui-icon-check">Send Invite</button>
+  <a data-referer="{{ referer }}" class="ui-btn ui-btn-inline ui-corner-all ui-btn-icon-left ui-icon-back" href="{{ back_url }}" data-role="back" data-ajax='false'>Back</a>
 </div>
 </fieldset>
   </form>

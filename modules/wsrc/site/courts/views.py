@@ -605,6 +605,7 @@ def calendar_invite_view(request, id):
   context = {
     'form': form,
     'id': id,
+    'back_url': reverse_url('booking') + "/{id}".format(**locals()),
   }
   return render(request, 'cal_invite.html', context)
   
