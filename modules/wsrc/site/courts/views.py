@@ -345,10 +345,8 @@ def edit_entry_view(request, id=None):
     method = request.GET["method"]
 
   if method == "POST":
-    if not request.user.is_authenticated():
-      raise SuspiciousOperation()
     if booking_user_id is None:
-      return HttpResponseForbidden("<p>Sorry, your login is not set up to book courts from this website.</p><p>Please contact <a href='mailto:webmaster@wokingsquashclub.org'>webmaster@wokingsquashclub.org</a> to get this fixed, and use the <a href='{server}'>old booking site</a> in the meantime.</p>".format(server=settings.BOOKING_SYSTEM_ORIGIN))    
+      raise SuspiciousOperation()
     booking_form = BookingForm(request.POST)
     if booking_form.is_valid():
       try:
@@ -405,7 +403,7 @@ def edit_entry_view(request, id=None):
 
   else: # GET request
     if id is None:
-      if booking_user_id is None:
+      if not request.user.is_authenticated():
         return redirect('/login/?next=%s' % urllib.quote(request.get_full_path()))
       initial_data = {
         'name': request.user.get_full_name(),
@@ -419,6 +417,15 @@ def edit_entry_view(request, id=None):
           val = format_date(val, make_date_formats())
         initial_data[field] = val
       booking_form = BookingForm(data=initial_data)
+      if booking_user_id is None:
+        link = settings.BOOKING_SYSTEM_ORIGIN + "/day.php"
+        if booking_form.is_valid():
+          link += "?year={date:%Y}&month={date:%m}&day={date:%d}&area=1".format(date=booking_form.cleaned_data["date"])
+        error = """Sorry, your login is not set up to book courts from this website.
+        Please contact <a href='mailto:webmaster@wokingsquashclub.org'>webmaster@wokingsquashclub.org</a> 
+        to get this fixed, and use the <a href='{link}'>old booking site</a> in the meantime.
+        """.format(link=link)
+        booking_form.add_error(None, error)            
     else:
       server_time, booking_data = get_booking(id)
       if booking_data is None:
