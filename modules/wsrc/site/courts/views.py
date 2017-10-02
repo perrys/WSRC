@@ -467,9 +467,13 @@ def edit_entry_view(request, id=None):
 
   back = request.POST.get("next")
   if back is None:
-    back = reverse_url(day_view)
     if booking_form.is_valid():
+      back = reverse_url(day_view)
       back += "/" + timezones.as_iso_date(booking_form.cleaned_data["date"])
+    elif request.META["HTTP_HOST"] in request.META["HTTP_REFERER"]:
+      back = request.META.get("HTTP_REFERER")
+    else:
+      back = reverse_url(day_view)      
 
   context = {
     'booking_form': booking_form,
