@@ -70,8 +70,8 @@ def get_server_time(headers):
       date = datetime.datetime.strptime(val, "%a, %d %b %Y %H:%M:%S %Z")
       return timezones.naive_utc_to_local(date, timezones.UK_TZINFO)
 
-def query_booking_system(query_params={}, body=None, method="GET"):
-  url = settings.BOOKING_SYSTEM_ORIGIN + settings.BOOKING_SYSTEM_PATH + "?" + urllib.urlencode(query_params)
+def query_booking_system(query_params={}, body=None, method="GET", path=settings.BOOKING_SYSTEM_PATH):
+  url = settings.BOOKING_SYSTEM_ORIGIN + path + "?" + urllib.urlencode(query_params)
   h = httplib2.Http()
   (resp_headers, content) = h.request(url, method=method, body=body)
   server_time = get_server_time(resp_headers.items())
@@ -79,14 +79,14 @@ def query_booking_system(query_params={}, body=None, method="GET"):
       raise RemoteException(content, resp_headers.status)
   return server_time, json.loads(content)
 
-def auth_query_booking_system(booking_user_id, data={}, query_params={}, method="POST"):
+def auth_query_booking_system(booking_user_id, data={}, query_params={}, method="POST", path=settings.BOOKING_SYSTEM_PATH):
   booking_user_token = BookingSystemEvent.generate_hmac_token_raw("id:{booking_user_id}".format(**locals()))
   data = dict(data)
   data.update({
     "user_id": booking_user_id,
     "user_token": booking_user_token
   })
-  return query_booking_system(query_params, json.dumps(data), method)
+  return query_booking_system(query_params, json.dumps(data), method, path)
 
 def get_bookings(date):
   today_str    = timezones.as_iso_date(date)
@@ -152,6 +152,15 @@ def delete_booking(booking_user_id, id):
   }
   server_time, data = auth_query_booking_system(booking_user_id, query_params=params)
   return data
+
+def set_noshow(booking_user_id, id, is_noshow):
+  params = {
+    "id": id,
+    "method": "POST" if is_noshow else "DELETE",
+    }
+  server_time, data = auth_query_booking_system(booking_user_id, query_params=params, path=settings.BOOKING_SYSTEM_NOSHOW)
+  return data  
+  
 
 def create_booking_cell_content (slot, court, date):
   start_mins = slot["start_mins"]
