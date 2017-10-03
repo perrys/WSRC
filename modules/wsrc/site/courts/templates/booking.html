@@ -5,8 +5,10 @@
 {% loadkwacros 'form_macros.html' %}
 {% block centered_page_content %}
 
-<form method="{% if mode == 'view' %}GET{% else %}POST{% endif %}" action="{% url 'wsrc.site.courts.views.edit_entry_view' %}{% if mode == 'update' %}/{{ booking_form.booking_id.value }}?method=PATCH{% endif %}" data-ajax="false" class="settings-form">
-  
+<form method="{% if mode == 'view' %}GET{% else %}POST{% endif %}" action="" data-ajax="false" class="settings-form">
+{% if mode == 'update' %}
+  <input type="hidden" name="method" value="PATCH" />
+{% endif %}  
 
 <fieldset>
   <legend>{% if mode == 'create' %}New Booking{% elif mode == 'update' %}Update Booking{% else %}Booking Details{% endif %}</legend>
@@ -62,7 +64,8 @@
 {% endif %}
 
 {% if mode != "create" and booking_user_id and days_diff == 0 and seconds_diff > 900 %}
-<form id="noshow_report_form" action="{% url 'booking' %}/{{ booking_id }}?method=PATCH" method="POST">
+<form id="noshow_report_form" action="" method="POST">
+  <input type="hidden" name="method" value="PATCH" />
   {% csrf_token %}
   {% if booking_form.no_show.value %}
   <input type="hidden" name="action" value="remove_noshow" />
