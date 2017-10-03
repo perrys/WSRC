@@ -38,8 +38,12 @@
  {% if days_diff < 0 or days_diff == 0 and seconds_diff < 0 %} 
 <a class="ui-btn ui-btn-inline ui-corner-all ui-btn-icon-left ui-icon-calendar" href="{% url 'cal_invite' %}/{{ booking_id }}" data-ajax='false' title="Send a calendar invite for this booking">Send Invite</a>
  {% endif %}
- {% if booking_user_id and days_diff == 0 and seconds_diff > 900 %} 
-<button class="ui-btn ui-btn-inline ui-corner-all ui-btn-icon-left ui-icon-alert" onclick="if (confirm('Are you sure you want to report this court as unused?\n')) getElementById('noshow_report_form').submit(); return false;">Report a NO-SHOW</button>
+{% if booking_user_id and days_diff == 0 and seconds_diff > 900 %}
+  {% if not booking_form.no_show.value %}                   
+   <button class="ui-btn ui-btn-inline ui-corner-all ui-btn-icon-left ui-icon-alert" onclick="if (confirm('Are you sure you want to report this court as unused?\n')) getElementById('noshow_report_form').submit(); return false;">Report a NO-SHOW</button>
+  {% else %}
+   <button class="ui-btn ui-btn-inline ui-corner-all ui-btn-icon-left ui-icon-alert" onclick="getElementById('noshow_report_form').submit(); return false;">Remove NO-SHOW</button>   
+  {% endif %}
  {% endif %}
 {% endif %}
 <a class="ui-btn ui-btn-inline ui-corner-all ui-btn-icon-left ui-icon-back" href="{{ back_url }}" data-role="back" data-ajax='false'>Back</a>
@@ -60,7 +64,11 @@
 {% if mode != "create" and booking_user_id and days_diff == 0 and seconds_diff > 900 %}
 <form id="noshow_report_form" action="{% url 'booking' %}/{{ booking_id }}?method=PATCH" method="POST">
   {% csrf_token %}
+  {% if booking_form.no_show.value %}
+  <input type="hidden" name="action" value="remove_noshow" />
+  {% else %}
   <input type="hidden" name="action" value="report_noshow" />
+  {% endif %}
   <input type="hidden" name="next" value="{{ back_url }}"/>
 </form>
 {% endif %}                  
