@@ -75,9 +75,11 @@ def query_booking_system(query_params={}, body=None, method="GET", path=settings
   h = httplib2.Http()
   (resp_headers, content) = h.request(url, method=method, body=body)
   server_time = get_server_time(resp_headers.items())
-  if resp_headers.status != httplib.OK:
-      raise RemoteException(content, resp_headers.status)
-  return server_time, json.loads(content)
+  if resp_headers.status == httplib.CREATED:
+    return server_time, None
+  if resp_headers.status == httplib.OK:
+    return server_time, json.loads(content)
+  raise RemoteException(content, resp_headers.status)
 
 def auth_query_booking_system(booking_user_id, data={}, query_params={}, method="POST", path=settings.BOOKING_SYSTEM_PATH):
   booking_user_token = BookingSystemEvent.generate_hmac_token_raw("id:{booking_user_id}".format(**locals()))
@@ -169,6 +171,9 @@ def create_booking_cell_content (slot, court, date):
   result = "<div><div class='slot_time'>{start:%H:%M}&ndash;{end:%H:%M}<br><span class='court'>Court {court}</span></div></a>".format(**locals())
   if "id" in slot:
     result += "<a href='{path}/{id}' data-ajax='false'>{name}</a>".format(path=reverse_url('booking'), id=slot['id'], name=slot['name'])
+    if slot.get("no_show"):
+      result += '<span class="noshow">NO SHOW</span>'
+    
   elif "token" in slot:
     params = {
       'start_time': slot['start_time'],
@@ -297,6 +302,7 @@ class BookingForm(forms.Form):
   booking_id = forms.IntegerField(required=False, widget=forms.HiddenInput())
   created_by_id = forms.IntegerField(required=False, widget=forms.HiddenInput())
   token = forms.CharField(max_length=32, required=False, widget=forms.HiddenInput())
+  no_show = forms.BooleanField(required=False, widget=forms.HiddenInput())
 
   @staticmethod
   def transform_booking_system_entry(entry):
@@ -340,6 +346,7 @@ def edit_entry_view(request, id=None):
   player = Player.get_player_for_user(request.user)
   booking_user_id = None if player is None else player.booking_system_id
   method = request.method
+  booking_form = None
   
   if method == "POST" and  "method" in request.GET: # allow method override in query string of POST request, for html forms
     method = request.GET["method"]
@@ -382,12 +389,17 @@ def edit_entry_view(request, id=None):
     if id is None or booking_user_id is None:
       raise SuspiciousOperation()
     try:
-      booking_form = BookingForm(request.POST)
-      if booking_form.is_valid():
-        update_booking(booking_user_id, id, booking_form.cleaned_data)
-        send_calendar_invite(request, booking_form.cleaned_data, [request.user], "update")
-        back = reverse_url(day_view) + "/" + timezones.as_iso_date(booking_form.cleaned_data["date"])        
-        return redirect(back)
+      if request.POST.get("action") == "report_noshow":
+        set_noshow(booking_user_id, id, True)
+      elif request.POST.get("action") == "remove_noshow":
+        set_noshow(booking_user_id, id, False)
+      else:
+        booking_form = BookingForm(request.POST)
+        if booking_form.is_valid():
+          update_booking(booking_user_id, id, booking_form.cleaned_data)
+          send_calendar_invite(request, booking_form.cleaned_data, [request.user], "update")
+          back = reverse_url(day_view) + "/" + timezones.as_iso_date(booking_form.cleaned_data["date"])        
+          return redirect(back)
     except RemoteException, e:
       if e.status == httplib.NOT_FOUND:
         error = "Booking not found - has it already been deleted?"
@@ -401,7 +413,7 @@ def edit_entry_view(request, id=None):
     except EmailingException, e:
       booking_form.add_error(None, str(e))
 
-  else: # GET request
+  if booking_form is None: # GET request, or PATCH method
     if id is None:
       if not request.user.is_authenticated():
         return redirect('/login/?next=%s' % urllib.quote(request.get_full_path()))
