@@ -348,8 +348,8 @@ def edit_entry_view(request, id=None):
   method = request.method
   booking_form = None
   
-  if method == "POST" and  "method" in request.GET: # allow method override in query string of POST request, for html forms
-    method = request.GET["method"]
+  if method == "POST" and  "method" in request.REQUEST: # allow method override in query string of POST request, for html forms
+    method = request.REQUEST["method"]
 
   if method == "POST":
     if booking_user_id is None:
