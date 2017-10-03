@@ -75,7 +75,7 @@ def query_booking_system(query_params={}, body=None, method="GET", path=settings
   h = httplib2.Http()
   (resp_headers, content) = h.request(url, method=method, body=body)
   server_time = get_server_time(resp_headers.items())
-  if resp_headers.status == httplib.CREATED:
+  if resp_headers.status in (httplib.CREATED, httplib.ACCEPTED):
     return server_time, None
   if resp_headers.status == httplib.OK:
     return server_time, json.loads(content)
@@ -158,9 +158,9 @@ def delete_booking(booking_user_id, id):
 def set_noshow(booking_user_id, id, is_noshow):
   params = {
     "id": id,
-    "method": "POST" if is_noshow else "DELETE",
-    }
-  server_time, data = auth_query_booking_system(booking_user_id, query_params=params, path=settings.BOOKING_SYSTEM_NOSHOW)
+  }
+  method = "POST" if is_noshow else "DELETE"
+  server_time, data = auth_query_booking_system(booking_user_id, query_params=params, path=settings.BOOKING_SYSTEM_NOSHOW, method=method)
   return data  
   
 
@@ -411,7 +411,7 @@ def edit_entry_view(request, id=None):
         error = str(e)
       booking_form = BookingForm.empty_form(error)
     except EmailingException, e:
-      booking_form.add_error(None, str(e))
+      booking_form = BookingForm.empty_form(str(e))
 
   if booking_form is None: # GET request, or PATCH method
     if id is None:
