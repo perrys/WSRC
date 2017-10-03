@@ -462,7 +462,10 @@ def edit_entry_view(request, id=None):
     if booking_form.is_valid():
       days_diff = server_time.date().toordinal() - booking_form.cleaned_data['date'].toordinal()
       seconds_diff = timezones.to_seconds(server_time.time()) - timezones.to_seconds(booking_form.cleaned_data['start_time'])
-    if booking_user_id is not None and booking_form.is_valid() and booking_user_id == booking_form.cleaned_data.get("created_by_id"):
+    if booking_user_id is not None and \
+       booking_form.is_valid() and \
+       booking_user_id == booking_form.cleaned_data.get("created_by_id") \
+       and (days_diff < 0 or (days_diff == 0 and seconds_diff < 0)):
       mode = "update"
     elif is_admin:
       mode = "update"
