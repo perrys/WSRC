@@ -87,7 +87,7 @@ def as_iso_time_mins(d):
   return d.strftime(ISO_TIME_MINS_FMT)
 
 def to_time(minutes):
-  return datetime.time(minutes/60, minutes%60)
+  return datetime.time((minutes/60)%24, minutes%60)
 
 def to_seconds(time):
   return (time.hour * 3600) + (time.minute * 60) + time.second
