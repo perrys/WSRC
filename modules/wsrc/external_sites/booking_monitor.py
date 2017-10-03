@@ -324,17 +324,18 @@ class Tester(unittest.TestCase):
     (hour, minute) = [int(x) for x in s.split(":")]
     return datetime.time(hour, minute, tzinfo=UK_TZINFO)
 
-  def create_entry(self, update_time, time, court, update_type = 'create', entry_id = None, user_id = 4, name = "Foo Bar"):
+  def create_entry(self, update_time, time, court, update_type = 'create', entry_id = None, user_id = 4, name = "Foo Bar", create_date_offset=0):
     if entry_id is None:
       entry_id = self.counter
       self.counter += 1
     date = datetime.date(2001, 1, 1)
-    creation_ts = datetime.datetime.combine(date, self.make_uk_time(update_time))
+    update_ts = datetime.datetime.combine(date, self.make_uk_time(update_time))
+    creation_ts = update_ts + datetime.timedelta(days=create_date_offset)
     return {
       'duration_mins': 45,
       'court': court,
       'name': name,
-      'update_timestamp': creation_ts,
+      'update_timestamp': update_ts,
       'created_ts': creation_ts,
       'update_userid': user_id,
       'update_username': name,
@@ -356,7 +357,7 @@ class Tester(unittest.TestCase):
     id = 123
     name = "Foo Bar"
     data = [
-      self.create_entry("13:00", "19:00", 2, 'delete', entry_id=id, name=name)
+      self.create_entry("13:00", "19:00", 2, 'delete', entry_id=id, name=name, create_date_offset=-1)
     ]
     errors = list()
     player_offence_map = dict()
