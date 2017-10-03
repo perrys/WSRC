@@ -128,9 +128,7 @@ def court_rebooked(data, cancelled_item):
     return False
   return True
 
-def audit_filter(today, data, item): 
-  if item["date"] != today:
-    return True
+def audit_filter(data, item): 
   if item["update_type"] != "delete":
     return True
   if booked_another_court(data, item):
@@ -139,6 +137,8 @@ def audit_filter(today, data, item):
     return True
   return False
 
+def remove_other_dates(data, today):
+  data[:] = [item for item in data if item["date"] == today]
 
 def process_audit_table(data, offence_code, player_offence_map, error_list, filter=None):
   import wsrc.site.models as site_models
@@ -278,7 +278,9 @@ def process_date(date):
     item['rebooked'] = False
 
   remove_description_updates(audit_table)
-  filter = lambda(i): audit_filter(date, audit_table, i)
+  remove_other_dates(audit_table, date)
+  
+  filter = lambda(i): audit_filter(audit_table, i)
 
   midnight_today = datetime.datetime.combine(date, datetime.time(0, 0, tzinfo=UK_TZINFO))
   midnight_tomorrow = midnight_today + datetime.timedelta(days=1)
@@ -321,11 +323,11 @@ class Tester(unittest.TestCase):
     (hour, minute) = [int(x) for x in s.split(":")]
     return datetime.time(hour, minute, tzinfo=UK_TZINFO)
 
-  def create_entry(self, update_time, time, court, update_type = 'create', entry_id = None, user_id = 4, name = "Foo Bar", create_date_offset=0):
+  def create_entry(self, update_time, time, court, update_type = 'create', entry_id = None, user_id = 4, name = "Foo Bar", create_date_offset=0, date_offset=0):
     if entry_id is None:
       entry_id = self.counter
       self.counter += 1
-    date = datetime.date(2001, 1, 1)
+    date = datetime.date(2001, 1, 1) + datetime.timedelta(days=date_offset)
     update_ts = datetime.datetime.combine(date, self.make_uk_time(update_time))
     creation_ts = update_ts + datetime.timedelta(days=create_date_offset)
     return {
@@ -368,11 +370,33 @@ class Tester(unittest.TestCase):
     self.assertEqual(name, offence.owner)
     self.assertEqual(datetime.datetime.combine(self.date, self.make_uk_time("19:00")), offence.start_time)
 
+  def test_GIVEN_cancelled_entry_WHEN_booked_another_day_THEN_offence_registered(self):
+    id = 123
+    name = "Foo Bar"
+    data = [
+      self.create_entry("13:00", "19:00", 2, 'create', entry_id=id-1, name=name, date_offset=1),
+      self.create_entry("13:00", "19:00", 2, 'delete', entry_id=id,   name=name, create_date_offset=-1)
+    ]
+    remove_other_dates(data, self.date)
+    filter = lambda(i): audit_filter(data, i)
+
+    errors = list()
+    player_offence_map = dict()
+    process_audit_table(data, 'lc', player_offence_map, errors, filter)
+    self.assertEqual(0, len(errors))
+    self.assertEqual(1, len(player_offence_map))
+    offences = self.get_booking_offences(start_time__lt=self.cutoff)
+    self.assertEqual(1, offences.count())
+    offence = offences.get(entry_id=id)
+    self.assertEqual("lc", offence.offence)
+    self.assertEqual(name, offence.owner)
+    self.assertEqual(datetime.datetime.combine(self.date, self.make_uk_time("19:00")), offence.start_time)
+
   def test_GIVEN_deleted_entry_WHEN_filtering_THEN_untouched(self):
     data = [
       self.create_entry("13:00", "19:00", 2, 'delete'),
     ]
-    data = [d for d in data if not audit_filter(self.date, data, d)]
+    data = [d for d in data if not audit_filter(data, d)]
     self.assertEqual(1, len(data))
 
     
@@ -382,7 +406,7 @@ class Tester(unittest.TestCase):
       self.create_entry("13:00", "19:30", 2, 'create'),
       self.create_entry("13:00", "20:15", 2, 'create')
     ]
-    data = [d for d in data if not audit_filter(self.date, data, d)]
+    data = [d for d in data if not audit_filter(data, d)]
     self.assertEqual(0, len(data))
     
   def test_GIVEN_moved_entry_WHEN_filtering_THEN_filtered_out_second_ordering(self):
@@ -391,7 +415,7 @@ class Tester(unittest.TestCase):
       self.create_entry("13:00", "19:00", 2, 'delete'),
       self.create_entry("13:00", "20:15", 2, 'create')
     ]
-    data = [d for d in data if not audit_filter(self.date, data, d)]
+    data = [d for d in data if not audit_filter(data, d)]
     self.assertEqual(0, len(data))
     
   def test_GIVEN_moved_entry_WHEN_filtering_THEN_filtered_out_third_ordering(self):
@@ -400,7 +424,7 @@ class Tester(unittest.TestCase):
       self.create_entry("13:00", "20:15", 2, 'create'),
       self.create_entry("13:00", "19:00", 2, 'delete'),
     ]
-    data = [d for d in data if not audit_filter(self.date, data, d)]
+    data = [d for d in data if not audit_filter(data, d)]
     self.assertEqual(0, len(data))
 
   def test_GIVEN_random_entries_WHEN_removing_updates_THEN_returned_sorted(self):
