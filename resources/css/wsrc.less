@@ -576,6 +576,21 @@ div#booking_tooltip {
     }
 }
 
+.noshow {
+    color: white;
+    background: #FF0000;
+    border-top-left-radius: .2em /*{global-radii-blocks}*/;
+    border-top-right-radius: .2em /*{global-radii-blocks}*/;
+    border-bottom-left-radius: .2em /*{global-radii-blocks}*/;
+    border-bottom-right-radius: .2em /*{global-radii-blocks}*/;
+}
+
+.ui-field-contain .noshow {
+    padding: 0.5em;
+    display: table-cell;
+    width: 40em;
+}
+
 table.booking_day {
     width: 100%;
     table-layout: fixed;
@@ -656,10 +671,9 @@ table.booking_day {
                     }
                     .noshow {
                         display: table;
-                        margin-left: 0;
+                        margin-left: auto;
+                        margin-right: 0.2em;
                         padding: 0 0.2em 0 0.2em;
-                        color: white;
-                        background: #FF0000;
                     }
                 }
                 &.available {
