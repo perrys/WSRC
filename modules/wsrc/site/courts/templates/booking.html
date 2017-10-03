@@ -35,7 +35,7 @@
 <button class="ui-btn ui-btn-inline ui-corner-all ui-btn-icon-left ui-icon-delete" onclick="if (confirm('Are you sure you want to delete this entry?\n')) getElementById('booking_delete_form').submit(); return false;">Delete</button>
   {% endif %}
  {% endif %}
- {% if days_diff < 0 or seconds_diff < 0 %} 
+ {% if days_diff < 0 or days_diff == 0 and seconds_diff < 0 %} 
 <a class="ui-btn ui-btn-inline ui-corner-all ui-btn-icon-left ui-icon-calendar" href="{% url 'cal_invite' %}/{{ booking_id }}" data-ajax='false' title="Send a calendar invite for this booking">Send Invite</a>
  {% endif %}
  {% if booking_user_id and days_diff == 0 and seconds_diff > 900 %} 
@@ -49,7 +49,7 @@
 </form>
 
 {% if mode == "update" %}
-{% if days_diff < 0 or seconds_diff < 0 %}
+{% if days_diff < 0 or days_diff == 0 and seconds_diff < 0 %}
 <form id="booking_delete_form" action="{% url 'booking' %}/{{ booking_form.booking_id.value }}?method=DELETE" method="POST">
   {% csrf_token %}
   <input type="hidden" name="next" value="{{ back_url }}"/>
