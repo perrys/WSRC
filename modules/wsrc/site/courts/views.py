@@ -23,6 +23,7 @@ import sys
 import urllib
 
 from django import forms
+from django.forms.fields import BaseTemporalField
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError, SuspiciousOperation, PermissionDenied
@@ -123,7 +124,7 @@ def create_booking(booking_user_id, slot):
   data = {
     "date": timezones.as_iso_date(slot["date"]),
     "start_mins": start_time.hour * 60 + start_time.minute,
-    "duration_mins": slot["duration"],
+    "duration_mins": slot["duration"].total_seconds()/60,
     "court": slot["court"],
     "name": slot["name"],
     "description": slot["description"],
@@ -178,7 +179,7 @@ def create_booking_cell_content (slot, court, date):
     params = {
       'start_time': slot['start_time'],
       'date': timezones.as_iso_date(date),
-      'duration': slot['duration_mins'],
+      'duration_mins': slot['duration_mins'],
       'court': court,
       'token': slot['token']
     }
@@ -263,13 +264,21 @@ def day_view(request, date=None):
     }    
     return render(request, 'courts.html', context)
 
-def validate_quarter_hour_duration(value):
+def validate_15_minute_multiple(value):
   rem = value % 15
   if rem != 0:
     raise ValidationError("{value} is not a 15-minute multiple".format(**locals()))
 
 def validate_quarter_hour(value):
-  validate_quarter_hour_duration(value.minute)
+  if value.second != 0 or value.microsecond != 0:
+    raise ValidationError("{value} has less than minute resolution".format(**locals()))
+  validate_15_minute_multiple(value.minute)
+
+def validate_quarter_hour_duration(value):
+  value = value.total_seconds()  
+  if (value % 60) != 0:
+    raise ValidationError("{value} has less than minute resolution".format(**locals()))
+  validate_15_minute_multiple(value/60)
 
 def make_readonly_widget():
   return forms.TextInput(attrs={'class': 'readonly', 'readonly': 'readonly', 'style': 'text-align: left'})
@@ -283,7 +292,16 @@ def make_datetime_formats():
 def format_date(val, fmts):
   v = datetime.datetime.strptime(val, fmts[1])
   return v.strftime(fmts[0])
-  
+
+class HourAndMinuteDurationField(BaseTemporalField):
+  def strptime(self, value, format):
+    print "value=" + str(value)
+    return timezones.parse_duration(value)
+  def to_python(self, value):
+    if value in self.empty_values:
+      return None
+    return super(HourAndMinuteDurationField, self).to_python(value)
+
 class BookingForm(forms.Form):
   name = forms.CharField(max_length=80)
   description = forms.CharField(required=False, widget=forms.TextInput(attrs={'autofocus': '1'}))
@@ -291,7 +309,8 @@ class BookingForm(forms.Form):
   date = forms.DateField(input_formats=make_date_formats())
   start_time = forms.TimeField(label="Time", input_formats=['%H:%M'], validators=[validate_quarter_hour],
                                widget=forms.Select(choices=[(t.strftime("%H:%M"), t.strftime("%H:%M")) for t in START_TIMES]))
-  duration = forms.ChoiceField(choices=[(i.seconds/60, timezones.duration_str(i)) for i in DURATIONS])
+  duration = HourAndMinuteDurationField(validators=[validate_quarter_hour_duration], input_formats=[None],
+                                        widget=forms.Select(choices=[(i.seconds/60, timezones.duration_str(i)) for i in DURATIONS]))
   court = forms.ChoiceField(choices=[(i, str(i)) for i in COURTS])
   booking_type = forms.ChoiceField(choices=[("I", "Member"), ("E", "Club")])
 
@@ -317,13 +336,14 @@ class BookingForm(forms.Form):
     format_date1("date", make_date_formats())
     format_date1("created_ts", make_datetime_formats())
     format_date1("timestamp", make_datetime_formats())
+    slot["duration"] = timezones.duration_str(datetime.timedelta(minutes=slot["duration"]))
     return slot
 
   @staticmethod
   def transform_booking_system_deleted_entry(entry):
     timestamp = datetime.datetime.utcfromtimestamp(int(entry["start_time"]))
     timestamp = timezones.naive_utc_to_local(timestamp, timezones.UK_TZINFO)
-    duration = (int(entry["end_time"]) - int(entry["start_time"]))/60
+    duration = datetime.timedelta(seconds=(int(entry["end_time"]) - int(entry["start_time"])))
     data = {
       "date": timestamp.date(),
       "start_time": timestamp.time(),
@@ -420,14 +440,19 @@ def edit_entry_view(request, id=None):
       initial_data = {
         'name': request.user.get_full_name(),
         'booking_type': 'I'
-      }    
-      for field in ['date', 'start_time', 'duration', 'court', 'token']:
+      }
+      def get(field):
         val = request.GET.get(field)
         if val is None:
-          raise SuspiciousOperation("missing booking data")
+          raise SuspiciousOperation("missing booking data for '{field}'".format(**locals()))
+        return val
+      for field in ['date', 'start_time', 'court', 'token']:
+        val = get(field)
         if field == 'date':
           val = format_date(val, make_date_formats())
         initial_data[field] = val
+      val = get("duration_mins")
+      initial_data["duration"] = timezones.duration_str(datetime.timedelta(minutes=int(val)))
       booking_form = BookingForm(data=initial_data)
       if booking_user_id is None:
         link = settings.BOOKING_SYSTEM_ORIGIN + "/day.php"
@@ -535,7 +560,7 @@ def send_calendar_invite(request, slot, recipients, event_type):
 def create_icalendar(request, cal_data, recipients, method):
   
   start_datetime = datetime.datetime.combine(cal_data["date"], cal_data["start_time"])
-  duration = datetime.timedelta(minutes=int(cal_data["duration"]))
+  duration = cal_data["duration"]
   url = request.build_absolute_uri("/courts/booking/{booking_id}".format(**cal_data))
   # could use last update timestamp (cal_data["timestamp"]) from
   # the event, except when it is a deletion. For simplicity we
