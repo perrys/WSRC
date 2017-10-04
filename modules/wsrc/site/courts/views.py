@@ -310,7 +310,7 @@ class BookingForm(forms.Form):
   start_time = forms.TimeField(label="Time", input_formats=['%H:%M'], validators=[validate_quarter_hour],
                                widget=forms.Select(choices=[(t.strftime("%H:%M"), t.strftime("%H:%M")) for t in START_TIMES]))
   duration = HourAndMinuteDurationField(validators=[validate_quarter_hour_duration], input_formats=[None],
-                                        widget=forms.Select(choices=[(i.seconds/60, timezones.duration_str(i)) for i in DURATIONS]))
+                                        widget=forms.Select(choices=[(timezones.duration_str(i), timezones.duration_str(i)) for i in DURATIONS]))
   court = forms.ChoiceField(choices=[(i, str(i)) for i in COURTS])
   booking_type = forms.ChoiceField(choices=[("I", "Member"), ("E", "Club")])
 
