@@ -628,7 +628,7 @@ class CalendarInviteForm(forms.Form):
   start_time = forms.TimeField(label="Time", input_formats=['%H:%M'], validators=[validate_quarter_hour],
                                widget=make_readonly_widget())
   duration = HourAndMinuteDurationField(validators=[validate_quarter_hour_duration], input_formats=[None],
-                                        widget=forms.Select(choices=[(timezones.duration_str(i), timezones.duration_str(i)) for i in DURATIONS]))
+                                        widget=make_readonly_widget())
   location = forms.CharField(widget=make_readonly_widget())
   booking_id = forms.IntegerField(widget=forms.HiddenInput())
   court = forms.IntegerField(widget=forms.HiddenInput())
