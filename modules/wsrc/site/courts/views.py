@@ -199,7 +199,13 @@ def render_day_table(court_slots, date, server_time):
       start = min(t1, start)
       end   = max(t2, end)
   nrows = (end - start) / RESOLUTION
-  table = Table(len(COURTS)+1, nrows, {"class": "booking_day", "data-server-time": timezones.as_iso_datetime(server_time)})
+  attrs = {
+    "class": "booking_day",
+    "data-server-time": timezones.as_iso_datetime(server_time),
+    "data-date": timezones.as_iso_date(date),
+    "data-date_str": date.strftime(make_date_formats()[0])
+  }
+  table = Table(len(COURTS)+1, nrows, attrs)
   for i in range(0,nrows):
     table.addCell(Cell("", attrs={"class": "time-col"}, isHeader=True), 0, i)
   
@@ -221,7 +227,7 @@ def render_day_table(court_slots, date, server_time):
         attrs['onclick'] = "document.location.href='{path}/{id}'".format(path=reverse_url('booking'), id=slot['id'])
         classes.append("booking")
         classes.append(slot["type"])
-        for k in ["id", "type", "start_mins", "duration_mins", "created_by", "timestamp"]:
+        for k in ["id"]:
           attrs["data-" + k] = str(slot[k])
         descr = slot.get("description")
         if descr:
@@ -229,7 +235,7 @@ def render_day_table(court_slots, date, server_time):
       elif "token" in slot:
         attrs["onclick"] = "wsrc.court_booking.instance.handle_booking_request(event, this)"
         classes.append("available")
-        for k in ["token", "start_mins", "duration_mins"]:
+        for k in ["token", "start_time", "duration_mins"]:
           attrs["data-" + k] = str(slot[k])
       attrs["class"] = " ".join(classes)
       content = create_booking_cell_content(slot, court, date)
@@ -261,6 +267,7 @@ def day_view(request, date=None):
       "prev_date": date - datetime.timedelta(days=1),
       "next_date": date + datetime.timedelta(days=1),
       "day_table": table_html,
+      "booking_user_name": request.user.get_full_name()
     }    
     return render(request, 'courts.html', context)
 
