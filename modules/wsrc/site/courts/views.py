@@ -131,8 +131,7 @@ def create_booking(booking_user_id, slot):
     "type": slot["booking_type"],
     "token": slot["token"],
   }
-  server_time, data = auth_query_booking_system(booking_user_id, data)
-  return data
+  return auth_query_booking_system(booking_user_id, data)
 
 def update_booking(booking_user_id, id, slot):
   params = {
@@ -144,8 +143,7 @@ def update_booking(booking_user_id, id, slot):
     "description": slot["description"],
     "type": slot["booking_type"],
   }
-  server_time, data = auth_query_booking_system(booking_user_id, data, query_params=params)
-  return data
+  return auth_query_booking_system(booking_user_id, data, query_params=params)
 
 
 def delete_booking(booking_user_id, id):
@@ -153,16 +151,14 @@ def delete_booking(booking_user_id, id):
     "id": id,
     "method": "DELETE"
   }
-  server_time, data = auth_query_booking_system(booking_user_id, query_params=params)
-  return data
+  return auth_query_booking_system(booking_user_id, query_params=params)
 
 def set_noshow(booking_user_id, id, is_noshow):
   params = {
     "id": id,
   }
   method = "POST" if is_noshow else "DELETE"
-  server_time, data = auth_query_booking_system(booking_user_id, query_params=params, path=settings.BOOKING_SYSTEM_NOSHOW, method=method)
-  return data  
+  return auth_query_booking_system(booking_user_id, query_params=params, path=settings.BOOKING_SYSTEM_NOSHOW, method=method)
   
 
 def create_booking_cell_content (slot, court, date):
@@ -374,6 +370,7 @@ def edit_entry_view(request, id=None):
   booking_user_id = None if player is None else player.booking_system_id
   method = request.method
   booking_form = None
+  server_time = datetime.datetime.now()
   
   if method == "POST":
     action = request.REQUEST.get("action") or ""
@@ -383,12 +380,12 @@ def edit_entry_view(request, id=None):
       method = "PATCH"
 
   if method == "POST":
+    booking_form = BookingForm(request.REQUEST)
     if booking_user_id is None:
       raise SuspiciousOperation()
-    booking_form = BookingForm(request.POST)
     if booking_form.is_valid():
       try:
-        new_booking = create_booking(booking_user_id, booking_form.cleaned_data)
+        server_time, new_booking = create_booking(booking_user_id, booking_form.cleaned_data)
         booking_data = dict(booking_form.cleaned_data)
         id = booking_data["booking_id"] = new_booking.get("id")
         send_calendar_invite(request, booking_data, [request.user], "create")
@@ -399,52 +396,56 @@ def edit_entry_view(request, id=None):
         booking_form.add_error(None, str(e))
 
   elif method == "DELETE":
+    booking_form = BookingForm(request.REQUEST)
     if id is None or booking_user_id is None:
       raise SuspiciousOperation()
     try:
-      data = BookingForm.transform_booking_system_deleted_entry(delete_booking(booking_user_id, id))
+      server_time, data = delete_booking(booking_user_id, id)
+      data = BookingForm.transform_booking_system_deleted_entry(data)
       data["booking_id"] = id
       send_calendar_invite(request, data, [request.user], "delete")
       return redirect(request.POST.get("next"))
     except RemoteException, e:
       if e.status == httplib.NOT_FOUND:
-        error = "Booking not found - has it already been deleted?"
         id = None
+        error = "Booking not found - has it already been deleted?"
+        booking_form = BookingForm.empty_form(error)
       else:
         error = str(e)
-      booking_form = BookingForm.empty_form(error)
+        booking_form = add_error(error)
     except EmailingException, e:
       booking_form.add_error(None, str(e))
 
   elif method == "PATCH":
+    booking_form = BookingForm(request.REQUEST)
     if id is None or booking_user_id is None:
       raise SuspiciousOperation()
+    booking_form.is_valid()
     try:
       if request.POST.get("action") == "report_noshow":
-        set_noshow(booking_user_id, id, True)
+        server_time, data = set_noshow(booking_user_id, id, True)
       elif request.POST.get("action") == "remove_noshow":
-        set_noshow(booking_user_id, id, False)
+        server_time, data = set_noshow(booking_user_id, id, False)
       else:
-        booking_form = BookingForm(request.POST)
         if booking_form.is_valid():
-          update_booking(booking_user_id, id, booking_form.cleaned_data)
+          server_time, data = update_booking(booking_user_id, id, booking_form.cleaned_data)
           send_calendar_invite(request, booking_form.cleaned_data, [request.user], "update")
           back = reverse_url(day_view) + "/" + timezones.as_iso_date(booking_form.cleaned_data["date"])        
           return redirect(back)
     except RemoteException, e:
-      if e.status == httplib.NOT_FOUND:
-        error = "Booking not found - has it already been deleted?"
-        id = None
-      elif e.status == httplib.NOT_MODIFIED:
+      if e.status == httplib.NOT_MODIFIED:
         back = reverse_url(day_view) + "/" + timezones.as_iso_date(booking_form.cleaned_data["date"])        
         return redirect(back)
+      if e.status == httplib.NOT_FOUND:
+        id = None
+        error = "Booking not found - has it already been deleted?"
+        booking_form = BookingForm.empty_form(error)
       else:
-        error = str(e)
-      booking_form = BookingForm.empty_form(error)
+        booking_form.add_error(None, str(e))
     except EmailingException, e:
-      booking_form = BookingForm.empty_form(str(e))
+      booking_form.add_error(None, error)
 
-  if booking_form is None: # GET request, or PATCH method
+  elif method == "GET":
     if id is None:
       if not request.user.is_authenticated():
         return redirect('/login/?next=%s' % urllib.quote(request.get_full_path()))
