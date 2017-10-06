@@ -368,8 +368,12 @@ def edit_entry_view(request, id=None):
   method = request.method
   booking_form = None
   
-  if method == "POST" and  "method" in request.REQUEST: # allow method override in query string of POST request, for html forms
-    method = request.REQUEST["method"]
+  if method == "POST":
+    action = request.REQUEST.get("action") or ""
+    if action.upper() == "DELETE":
+      method = "DELETE"
+    elif action.upper() in ("UPDATE", "REPORT_NOSHOW", "REMOVE_NOSHOW"):
+      method = "PATCH"
 
   if method == "POST":
     if booking_user_id is None:
@@ -615,7 +619,6 @@ class CalendarInviteForm(forms.Form):
   date = forms.DateField(input_formats=make_date_formats(), widget=make_readonly_widget())
   start_time = forms.TimeField(label="Time", input_formats=['%H:%M'], validators=[validate_quarter_hour],
                                widget=make_readonly_widget())
-  duration = forms.ChoiceField(choices=[(i.seconds/60, timezones.duration_str(i)) for i in DURATIONS], widget=make_readonly_widget())
   location = forms.CharField(widget=make_readonly_widget())
   booking_id = forms.IntegerField(widget=forms.HiddenInput())
   court = forms.IntegerField(widget=forms.HiddenInput())
