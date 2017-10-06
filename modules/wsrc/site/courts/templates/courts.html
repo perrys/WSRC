@@ -37,12 +37,19 @@ window.WSRC_booking_user_auth_token = "{{ booking_user_auth_token }}";
 </div>
 
 
-<form>
+<form id="court_booking_form" method="POST" action="{% url 'booking' %}">
 {% csrf_token %}
+<input type="hidden" name="name" value="{{ booking_user_name }}"/>
+<input type="hidden" name="booking_type" value="I" />
+<input type="hidden" name="date" />
+<input type="hidden" name="duration" />
+<input type="hidden" name="start_time" />
+<input type="hidden" name="court" />
+<input type="hidden" name="token" />
 </form>
 
 <script>
-// wsrc.court_booking.onReady('{{ date|date:"Y-m-d" }}', '{% url "courts" %}');
+wsrc.court_booking.onReady('{{ date|date:"Y-m-d" }}', '{% url "courts" %}');
 </script>
 
 
