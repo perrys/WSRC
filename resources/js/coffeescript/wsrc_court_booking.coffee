@@ -38,10 +38,10 @@ class WSRC_court_booking
     $("#booking_datepicker_container a.previous").attr("href", "javascript:wsrc.court_booking.on('load_day_table', -1)")
     $("#booking_datepicker_container a.refresh").attr("href",  "javascript:wsrc.court_booking.on('load_day_table')")
     $("#booking_datepicker_container a.next").attr("href",     "javascript:wsrc.court_booking.on('load_day_table', 1)")
-    $("div#booking_day").on("swipeleft", () =>
+    $("div#booking-day").on("swipeleft", () =>
       @load_day_table(1)
     )
-    $("div#booking_day").on("swiperight", () =>
+    $("div#booking-day").on("swiperight", () =>
       @load_day_table(-1)
     )
     $(document).keydown( (e) =>
