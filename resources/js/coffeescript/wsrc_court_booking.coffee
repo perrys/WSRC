@@ -101,9 +101,6 @@ class WSRC_court_booking
     url = @base_path + "/" +  wsrc.utils.js_to_iso_date_str(d1)
     $("#booking_datepicker_container a.next").attr("href", url)
 
-  create_entry: (date, court, start_time, duration) ->
-    console.log(date)
-    
   load_day_table: (offset) ->
     table = $("div#booking-day table")    
     d1 = new Date(table.data("date"))
