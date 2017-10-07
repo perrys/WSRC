@@ -420,15 +420,18 @@ def edit_entry_view(request, id=None):
       booking_form.add_error(None, str(e))
 
   elif method == "PATCH":
-    booking_form = BookingForm(request.REQUEST)
+    booking_form = BookingForm(dict(request.REQUEST))
     if id is None or booking_user_id is None:
       raise SuspiciousOperation()
-    booking_form.is_valid()
     try:
       if request.POST.get("action") == "report_noshow":
         server_time, data = set_noshow(booking_user_id, id, True)
+        booking_form.data["no_show"] = True
+        booking_form.is_valid()
       elif request.POST.get("action") == "remove_noshow":
         server_time, data = set_noshow(booking_user_id, id, False)
+        booking_form.data["no_show"] = False
+        booking_form.is_valid()
       else:
         if booking_form.is_valid():
           server_time, data = update_booking(booking_user_id, id, booking_form.cleaned_data)
