@@ -90,6 +90,7 @@ class WSRC_court_booking
     if offset
       d1.setDate(d1.getDate()+offset)
     @fast_load_day(d1)
+    return undefined
 
   handle_booking_request: (e, elt) ->
     e.stopPropagation()
