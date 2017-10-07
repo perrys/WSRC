@@ -35,18 +35,9 @@ class WSRC_court_booking
       datepicker.datepicker("show") 
     )
     
-    $("#booking_datepicker_container a.previous").on("click", (e) =>
-      @load_day_table(-1)
-      return false
-    )
-    $("#booking_datepicker_container a.refresh").on("click", (e) =>
-      @load_day_table(0)
-      return false
-    )
-    $("#booking_datepicker_container a.next").on("click", (e) =>
-      @load_day_table(1)
-      return false
-    )
+    $("#booking_datepicker_container a.previous").attr("href", "javascript:wsrc.court_booking.on('load_day_table', -1)")
+    $("#booking_datepicker_container a.refresh").attr("href",  "javascript:wsrc.court_booking.on('load_day_table')")
+    $("#booking_datepicker_container a.next").attr("href",     "javascript:wsrc.court_booking.on('load_day_table', 1)")
     $("div#booking_day").on("swipeleft", () =>
       @load_day_table(1)
     )
@@ -89,17 +80,9 @@ class WSRC_court_booking
     datepicker = $("#booking_datepicker_container input.date-input")
     datepicker.datepicker("setDate", date)
     $("#booking_footer div.date").text($.datepicker.formatDate("D, d M yy", date))
-    url = @base_path + "/" +  wsrc.utils.js_to_iso_date_str(date)
-    $("#booking_datepicker_container a.refresh").attr("href", url)
     if history
+      url = @base_path + "/" +  wsrc.utils.js_to_iso_date_str(date)
       history.pushState({}, "", url)
-    d1 = new Date(date.valueOf())
-    d1.setDate(date.getDate()-1)
-    url = @base_path + "/" +  wsrc.utils.js_to_iso_date_str(d1)
-    $("#booking_datepicker_container a.previous").attr("href", url)
-    d1.setDate(date.getDate()+1)
-    url = @base_path + "/" +  wsrc.utils.js_to_iso_date_str(d1)
-    $("#booking_datepicker_container a.next").attr("href", url)
 
   load_day_table: (offset) ->
     table = $("div#booking-day table")    
@@ -132,6 +115,10 @@ class WSRC_court_booking
     date = new Date(picker.selectedYear, picker.selectedMonth, picker.selectedDay)
     @fast_load_day(date)
     
+  @on: (method) ->
+    args = $.fn.toArray.call(arguments)
+    @instance[method].apply(@instance, args[1..])
+
   @onReady: (base_path) ->
     @instance = new WSRC_court_booking(base_path)
         
