@@ -300,6 +300,10 @@ def format_date(val, fmts):
   return v.strftime(fmts[0])
 
 class HourAndMinuteDurationField(BaseTemporalField):
+  default_error_messages = {
+    'required': 'This field is required.',
+    'invalid': 'Enter a valid duration.',
+  }
   def strptime(self, value, format):
     print "value=" + str(value)
     return timezones.parse_duration(value)
@@ -638,9 +642,10 @@ class CalendarInviteForm(forms.Form):
   location = forms.CharField(widget=make_readonly_widget())
   booking_id = forms.IntegerField(widget=forms.HiddenInput())
   court = forms.IntegerField(widget=forms.HiddenInput())
-  invitee_1 = forms.ChoiceField(choices=get_active_player_choices(), widget=forms.Select(attrs={'autofocus': '1'}))
-  invitee_2 = forms.ChoiceField(choices=get_active_player_choices(), required=False)
+  invitee_1 = forms.ChoiceField(choices=get_active_player_choices(), widget=forms.Select(attrs={'disabled': 'disabled', 'class': 'readonly'}))
+  invitee_2 = forms.ChoiceField(choices=get_active_player_choices(), widget=forms.Select(attrs={'autofocus': '1'}))
   invitee_3 = forms.ChoiceField(choices=get_active_player_choices(), required=False)
+  invitee_4 = forms.ChoiceField(choices=get_active_player_choices(), required=False)
 
   @staticmethod
   def get_location(booking_data):
@@ -653,11 +658,13 @@ class CalendarInviteForm(forms.Form):
 @login_required
 def calendar_invite_view(request, id):
   if request.method == "POST":
-    form = CalendarInviteForm(request.POST)
+    data = dict(request.REQUEST)
+    data["invitee_1"] = request.user.id
+    form = CalendarInviteForm(data)
     if form.is_valid():
       try:
-        invitees = [request.user]
-        for i in range(1,3):
+        invitees = []
+        for i in range(1,4):
           user_id = form.cleaned_data.get("invitee_{i}".format(i=i))
           if user_id is not None and len(user_id) > 0:
             invitees.append(User.objects.get(pk=user_id)) 
@@ -675,9 +682,17 @@ def calendar_invite_view(request, id):
       form.is_valid() # initializes cleaned_data
       form.add_error(None, error)
     else:
+      created_by_id = booking_data["created_by_id"]
       booking_data = BookingForm.transform_booking_system_entry(booking_data)
       booking_data["location"] = CalendarInviteForm.get_location(booking_data)
       booking_data["summary"] = CalendarInviteForm.get_summary(booking_data)
+      booking_data["invitee_1"] = request.user.id
+      try:
+        court_booker = Player.objects.get(booking_system_id = created_by_id)
+        if court_booker.user.id != request.user.id:
+          booking_data["invitee_2"] = court_booker.user.id
+      except Player.DoesNotExist:
+        pass
       form = CalendarInviteForm(initial=booking_data)
       
     
