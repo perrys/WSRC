@@ -185,7 +185,7 @@ def create_booking_cell_content (slot, court, date):
   return result
     
 
-def render_day_table(court_slots, date, server_time):
+def render_day_table(court_slots, date, server_time, allow_booking_shortcut):
   start = START_TIME
   end   = END_TIME
   for (court, slots) in court_slots.iteritems():    
@@ -229,7 +229,8 @@ def render_day_table(court_slots, date, server_time):
         if descr:
           attrs["title"] = descr
       elif "token" in slot:
-        attrs["onclick"] = "wsrc.court_booking.instance.handle_booking_request(event, this)"
+        if allow_booking_shortcut:
+          attrs["onclick"] = "wsrc.court_booking.instance.handle_booking_request(event, this)"
         classes.append("available")
         for k in ["token", "start_time", "duration_mins"]:
           attrs["data-" + k] = str(slot[k])
@@ -254,8 +255,10 @@ def day_view(request, date=None):
         date = datetime.date.today()
     else:
         date = timezones.parse_iso_date_to_naive(date)
+    player = Player.get_player_for_user(request.user)
+    booking_user_id = None if player is None else player.booking_system_id    
     server_time, bookings = get_bookings(date)
-    table_html = render_day_table(bookings, date, server_time)
+    table_html = render_day_table(bookings, date, server_time, booking_user_id is not None)
     if request.GET.get("table_only") is not None:
       return HttpResponse(table_html)
     context = {
@@ -263,7 +266,7 @@ def day_view(request, date=None):
       "prev_date": date - datetime.timedelta(days=1),
       "next_date": date + datetime.timedelta(days=1),
       "day_table": table_html,
-      "booking_user_name": request.user.get_full_name()
+      "booking_user_name": request.user.get_full_name() if booking_user_id is not None else '' 
     }    
     return render(request, 'courts.html', context)
 
