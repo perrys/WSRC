@@ -201,9 +201,10 @@ def render_day_table(court_slots, date, server_time, allow_booking_shortcut):
     "data-date": timezones.as_iso_date(date),
     "data-date_str": date.strftime(make_date_formats()[0])
   }
-  table = Table(len(COURTS)+1, nrows, attrs)
+  table = Table(len(COURTS)+2, nrows, attrs)
   for i in range(0,nrows):
     table.addCell(Cell("", attrs={"class": "time-col"}, isHeader=True), 0, i)
+    table.addCell(Cell("", attrs={"class": "time-col"}, isHeader=True), 4, i)
   
       
   for court in COURTS:
@@ -245,7 +246,7 @@ def render_day_table(court_slots, date, server_time, allow_booking_shortcut):
 
   table.compress()
   court_headers = "".join(["<th>Court {d}</th>".format(d=court) for court in COURTS])
-  table_head = "<thead><tr><td class='time-col'></td>{courts}</tr></thead>".format(courts=court_headers)  
+  table_head = "<thead><tr><td class='time-col'></td>{courts}<td class='time-col'></td></tr></thead>".format(courts=court_headers)  
   return table.toHtmlString(table_head)
 
 
@@ -695,7 +696,6 @@ def calendar_invite_view(request, id):
         pass
       form = CalendarInviteForm(initial=booking_data)
       
-    
   context = {
     'form': form,
     'id': id,
