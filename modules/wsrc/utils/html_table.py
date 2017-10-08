@@ -15,6 +15,7 @@
 
 import lxml.etree as etree
 import lxml.html
+import sys
 
 class NullCell:
   "Represents a table cell which has not been initialized"
