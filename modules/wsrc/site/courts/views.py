@@ -38,6 +38,7 @@ from django.views.decorators.http import require_safe, require_http_methods
 from icalendar import Calendar, Event, vCalAddress, vText
 
 import wsrc.site.settings.settings as settings
+from wsrc.utils.form_utils import LabeledSelect
 from wsrc.site.models import BookingSystemEvent
 from wsrc.site.usermodel.models import Player
 from wsrc.utils.html_table import Table, Cell, SpanningCell
@@ -315,7 +316,7 @@ class HourAndMinuteDurationField(BaseTemporalField):
 
 class BookingForm(forms.Form):
   name = forms.CharField(max_length=80)
-  description = forms.CharField(required=False, widget=forms.TextInput(attrs={'autofocus': '1'}))
+  description = forms.CharField(required=False, widget=forms.TextInput(attrs={'autofocus': 'autofocus'}))
 
   date = forms.DateField(input_formats=make_date_formats())
   start_time = forms.TimeField(label="Time", input_formats=['%H:%M'], validators=[validate_quarter_hour],
@@ -331,7 +332,7 @@ class BookingForm(forms.Form):
   
   booking_id = forms.IntegerField(required=False, widget=forms.HiddenInput())
   created_by_id = forms.IntegerField(required=False, widget=forms.HiddenInput())
-  token = forms.CharField(max_length=32, required=False, widget=forms.HiddenInput())
+  token = forms.CharField(required=False, widget=forms.HiddenInput())
   no_show = forms.BooleanField(required=False, widget=forms.HiddenInput())
 
   @staticmethod
@@ -641,10 +642,10 @@ class CalendarInviteForm(forms.Form):
   location = forms.CharField(widget=make_readonly_widget())
   booking_id = forms.IntegerField(widget=forms.HiddenInput())
   court = forms.IntegerField(widget=forms.HiddenInput())
-  invitee_1 = forms.ChoiceField(choices=get_active_player_choices(), widget=forms.Select(attrs={'disabled': 'disabled', 'class': 'readonly'}))
-  invitee_2 = forms.ChoiceField(choices=get_active_player_choices(), widget=forms.Select(attrs={'autofocus': '1'}))
-  invitee_3 = forms.ChoiceField(choices=get_active_player_choices(), required=False)
-  invitee_4 = forms.ChoiceField(choices=get_active_player_choices(), required=False)
+  invitee_1 = forms.ChoiceField(choices=get_active_player_choices(), widget=LabeledSelect(attrs={'disabled': 'disabled', 'class': 'readonly'}))
+  invitee_2 = forms.ChoiceField(choices=get_active_player_choices(), widget=LabeledSelect(attrs={'autofocus': 'autofocus'}))
+  invitee_3 = forms.ChoiceField(choices=get_active_player_choices(), widget=LabeledSelect, required=False)
+  invitee_4 = forms.ChoiceField(choices=get_active_player_choices(), widget=LabeledSelect, required=False)
 
   @staticmethod
   def get_location(booking_data):
