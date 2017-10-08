@@ -87,8 +87,10 @@ def as_iso_time_mins(d):
   return d.strftime(ISO_TIME_MINS_FMT)
 
 def to_time(minutes):
-  return datetime.time(minutes/60, minutes%60)
-  
+  return datetime.time((minutes/60)%24, minutes%60)
+
+def to_seconds(time):
+  return (time.hour * 3600) + (time.minute * 60) + time.second
 
 def naive_utc_to_local(dt, tz):
   dt = dt.replace(tzinfo=UTC_TZINFO)
@@ -109,8 +111,29 @@ def duration_str(duration):
   result = ""
   from wsrc.utils.text import plural
   if hours > 0:
-    result += "{hours} hour{s} ".format(hours=hours, s=plural(hours))
+    result += "{hours} hour{s}".format(hours=hours, s=plural(hours))
   if mins > 0:
+    if len(result) > 0:
+      result += " and "
     result += "{mins} min{s}".format(mins=mins, s=plural(mins))
   return result
 
+def parse_duration(s):
+  tokens = s.split()
+  seconds = 0
+  while len(tokens) >= 2:
+    if tokens[0] == "and":
+      tokens = tokens[1:]
+      continue
+    val = int(tokens[0])
+    unit = tokens[1]
+    if unit.startswith("hour"):
+      seconds += val * 3600
+    elif unit.startswith("min"): 
+      seconds += val * 60
+    elif unit.startswith("sec"): 
+      seconds += val
+    else:
+      raise Exception("Unrecognised unit: \"{unit}\"".format(**locals()))
+    tokens = tokens[2:]
+  return datetime.timedelta(seconds=seconds)

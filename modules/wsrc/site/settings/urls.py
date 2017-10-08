@@ -14,6 +14,7 @@ from wsrc.site.usermodel.forms import SpaceTranslatingAuthenticationForm
 import wsrc.site.views
 import wsrc.site.accounts.views
 import wsrc.site.competitions.views
+import wsrc.site.courts.views
 import wsrc.site.usermodel.views
 
 def perm_redirect(view, permanent=True):
@@ -43,8 +44,14 @@ urlpatterns = patterns('',
     url(r'^memberlist/?$', wsrc.site.usermodel.views.MemberListView.as_view(), name="member_list"),
     url(r'^maintenance/?$', wsrc.site.views.maintenance_view, name="maintenance"),
     url(r'^suggestions/?$', wsrc.site.views.suggestions_view, name="suggestions"),
-    url(r'^courts/?$', wsrc.site.views.booking_view, name="court_booking"),
-    url(r'^courts/(\d{4}-\d{2}-\d{2})/?$', wsrc.site.views.booking_view, name="court_booking"),
+                       
+    url(r'^courts/?$', wsrc.site.courts.views.day_view, name="courts"),
+    url(r'^courts/(\d{4}-\d{2}-\d{2})/?$', wsrc.site.courts.views.day_view),
+    url(r'^courts/booking/?$', wsrc.site.courts.views.edit_entry_view, name="booking"),
+    url(r'^courts/booking/(\d+)/?$', wsrc.site.courts.views.edit_entry_view),
+    url(r'^courts/cal_invite/?$', wsrc.site.courts.views.calendar_invite_view, name="cal_invite"),
+    url(r'^courts/cal_invite/(\d+)/?$', wsrc.site.courts.views.calendar_invite_view),
+                       
     url(r'^court_booking/proxy/?$', wsrc.site.views.booking_proxy_view),
     url(r'^court_booking/cal_invite/send', wsrc.site.views.SendCalendarEmail.as_view()),
 
