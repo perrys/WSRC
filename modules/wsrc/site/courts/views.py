@@ -312,7 +312,6 @@ class HourAndMinuteDurationField(BaseTemporalField):
     'invalid': 'Enter a valid duration.',
   }
   def strptime(self, value, format):
-    print "value=" + str(value)
     return timezones.parse_duration(value)
   def to_python(self, value):
     if value in self.empty_values:
