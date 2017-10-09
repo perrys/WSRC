@@ -160,7 +160,16 @@ def set_noshow(booking_user_id, id, is_noshow):
   }
   method = "POST" if is_noshow else "DELETE"
   return auth_query_booking_system(booking_user_id, query_params=params, path=settings.BOOKING_SYSTEM_NOSHOW, method=method)
-  
+
+def make_booking_link(slot):
+  params = {
+    'start_time': slot['start_time'],
+    'date': timezones.as_iso_date(slot['date']),
+    'duration_mins': slot['duration_mins'],
+    'court': slot['court'],
+    'token': slot['token']
+  }
+  return '{path}/?{params}'.format(path=reverse_url('booking'), params=urllib.urlencode(params))
 
 def create_booking_cell_content (slot, court, date):
   start_mins = slot["start_mins"]
@@ -173,15 +182,7 @@ def create_booking_cell_content (slot, court, date):
       result += '<span class="noshow">NO SHOW</span>'
     
   elif "token" in slot:
-    params = {
-      'start_time': slot['start_time'],
-      'date': timezones.as_iso_date(date),
-      'duration_mins': slot['duration_mins'],
-      'court': court,
-      'token': slot['token']
-    }
-    slot.update({"court": court, "date": date})
-    result += "<span class='available'><a href='{path}/?{params}' data-ajax='false'>(available)</a></span>".format(path=reverse_url('booking'), params=urllib.urlencode(params))
+    result += "<span class='available'><a href='{href}' data-ajax='false'>(available)</a></span>".format(href=make_booking_link(slot))
   result += "</div>"
   return result
     
@@ -214,6 +215,7 @@ def render_day_table(court_slots, date, server_time, allow_booking_shortcut):
     slots = slots.values()
     slots.sort(key=operator.itemgetter("start_mins"))
     for slot in slots:
+      slot.update({"court": court, "date": date})
       if row_idx == 0:
         blank_rows = (slot["start_mins"] - start) / RESOLUTION
         row_idx += blank_rows
@@ -231,8 +233,11 @@ def render_day_table(court_slots, date, server_time, allow_booking_shortcut):
         if descr:
           attrs["title"] = descr
       elif "token" in slot:
+        attrs["title"] = 'click to book' 
         if allow_booking_shortcut:
           attrs["onclick"] = "wsrc.court_booking.instance.handle_booking_request(event, this)"
+        else:
+          attrs["onclick"] = "document.location.href='{href}'".format(href=make_booking_link(slot))
         classes.append("available")
         for k in ["token", "start_time", "duration_mins"]:
           attrs["data-" + k] = str(slot[k])
