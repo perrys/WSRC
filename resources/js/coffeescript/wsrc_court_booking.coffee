@@ -109,7 +109,21 @@ class WSRC_court_booking
       set("date", table.data("date"))
       set("token", td.data("token"))
       set("duration", "#{ duration } mins")
-      form.submit()
+      opts =
+        url: form.attr("action")
+        type: 'POST'
+        data: form.serialize()
+        success: (data, status, jqxhr) =>
+          jQuery.mobile.loading("hide")
+          @load_day_table(0)
+        error: (xhr, status) =>
+          jQuery.mobile.loading("hide")
+          form.submit()
+      jQuery.mobile.loading("show", 
+        textVisible: false
+        theme: "a"
+      )
+      jQuery.ajax(opts)
     return false
     
   handle_date_selected: (picker) ->
