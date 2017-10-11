@@ -1,0 +1,27 @@
+{% extends "06_wsrc_navigation.html" %}
+{% block pagetitle %}Court Booking{% endblock %}
+{% block page_classes %}edit-entry{% endblock %}
+{% load kwacros %}
+{% loadkwacros 'form_macros.html' %}
+{% block centered_page_content %}
+
+
+<div id="booking_calendar_invite_form">
+  <form method="POST" class="settings-form" data-ajax="false" >
+    <fieldset>
+    <legend>Send Calendar Event</legend>
+    {% csrf_token %}
+    <input type="hidden" name="next" value="{{ back_url }}"/>
+
+    {% include "form_snippet.html" %}
+    
+<div class="buttonset">
+  <button class="ui-btn ui-btn-inline ui-corner-all ui-btn-icon-left ui-icon-check">Send Invite</button>
+  <a data-referer="{{ referer }}" class="ui-btn ui-btn-inline ui-corner-all ui-btn-icon-left ui-icon-back" href="{{ back_url }}" data-role="back" data-ajax='false'>Back</a>
+</div>
+</fieldset>
+  </form>
+</div>
+
+{% endblock %}
+

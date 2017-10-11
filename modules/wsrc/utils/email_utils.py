@@ -8,6 +8,7 @@ import traceback
 import unittest
 
 from django.core.mail import EmailMessage, EmailMultiAlternatives
+from django.template import Template, Context
 
 LOGGER = logging.getLogger(__name__)
 LOGGER.setLevel(logging.DEBUG)
@@ -28,6 +29,9 @@ def send_email(subject, text_body, html_body, from_address, to_list, bcc_list=No
   else:
     msg = EmailMessage(subject, text_body, from_address,
                        to_list, bcc_list, headers=headers, cc=cc_list)
+    if extra_attachments is not None:
+      for data in extra_attachments:
+        msg.attach(data)        
   LOGGER.debug("sending mail, subject=\"{subject}\", from={from_address}, to_list={to_list}, cc_list={cc_list}, bcc_list={bcc_list}, headers={headers}".format(**locals()))
   msg.send(fail_silently=False)
 
@@ -35,6 +39,17 @@ def send_markdown_email(subject, markdown_body, from_address, to_list, bcc_list=
   html_content = markdown.markdown(markdown_body)
   send_email(subject, markdown_body, html_content, from_address, to_list, bcc_list, reply_to_address)
 
+def get_email_bodies(template_name, params):
+  from wsrc.site.models import EmailContent
+  template_obj = EmailContent.objects.get(name=template_name)
+  email_template = Template(template_obj.markup)
+  context = Context(params)
+  context["content_type"] = "text/html"
+  html_body = markdown.markdown(email_template.render(context), extensions=['markdown.extensions.extra'])
+  context["content_type"] = "text/plain"
+  text_body = email_template.render(context)
+  return text_body, html_body
+  
 class BatchEmailFailure(Exception):
 
   def __init__(self, message, success_list, reason=None):

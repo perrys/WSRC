@@ -60,6 +60,7 @@ def render_match(table, col, row, bracketIndex, matchIndex, idPrefix):
         for ii in range(0, SETS_PER_MATCH):
             last = addToRow("score empty-match", NON_BRK_SPACE)
         last.attrs["class"] += " ui-corner-%(pos_identifier)sr" % attrs
+#        last.content = str(binomialId)
 
     addOpponent(True)
     cursor.col = col
@@ -251,7 +252,7 @@ def get_team_number(match, player_id):
       if team is not None:
         for player in team.get_players():
           if player.id == player_id:
-            return team
+            return team_number
     return None
 
 def other_team_number(team_number):

@@ -19,6 +19,7 @@
 @color-booking-highlight: #aabbff;
 
 @max-page-width: 1200px;
+@kiosk-page-margin: 1em;
 
 html, body {
     height: 100%;
@@ -329,8 +330,9 @@ div.centered-dialog {
 .wsrc-site .jqm-content .ui-listview {
     padding-left: 0;
 }
-.wsrc-site .jqm-content a,
 .wsrc-site .jqm-content p a,
+.wsrc-site .jqm-content .boxes a,
+.wsrc-site .jqm-content .wsrc-member-list a,
 .wsrc-site .jqm-content ul:not(.jqm-list) li a {
     font-weight: 400;
     text-decoration: none;
@@ -574,33 +576,45 @@ div#booking_tooltip {
     }
 }
 
+.noshow {
+    color: white;
+    background: #FF0000;
+    border-top-left-radius: .2em /*{global-radii-blocks}*/;
+    border-top-right-radius: .2em /*{global-radii-blocks}*/;
+    border-bottom-left-radius: .2em /*{global-radii-blocks}*/;
+    border-bottom-right-radius: .2em /*{global-radii-blocks}*/;
+}
+
+.ui-field-contain .noshow {
+    padding: 0.5em;
+    display: table-cell;
+    width: 40em;
+}
+
 table.booking_day {
     width: 100%;
     table-layout: fixed;
     margin: 0;
-    padding: 0;
+    padding: 1em 0 0 0;
     border: 0;
     border-collapse: separate;
-    border-spacing: 0.5em 0;
+    @ruleset-largescreen: {
+        border-spacing: 0.5em 0;
+    };
+    .media-guard(@ruleset-largescreen, @breakpoint-widen-frontpage);    
     .time-col {
-        width: 6.5%;
+        width: 0;
+    }
+    a {
+        font-weight: 400;
+        text-decoration: none;
     }
     thead th {
-        display: none;
-        @ruleset-largescreen: {
-            display: table-cell;
-        };
-        .media-guard(@ruleset-largescreen, @breakpoint-widen-frontpage);
         text-align: center;
         font-weight: normal;
     }
     tbody {
         th {
-            display: none;
-            @ruleset-largescreen: {
-                display: table-cell;
-            };
-            .media-guard(@ruleset-largescreen, @breakpoint-widen-frontpage);
             height: 1.2em;
             vertical-align: top;
             font-weight: normal;
@@ -612,31 +626,25 @@ table.booking_day {
             }
         }
         td {
-            display: none;
-            @ruleset-largescreen: {
-                display: table-cell;
-                .court {
-                    display: none;
-                }
-            };
-            .media-guard(@ruleset-largescreen, @breakpoint-widen-frontpage);
+            .court {
+                display: none;
+            }
             &.slot {
                 position: relative;
                 height: 2em;
                 border-width: 1px 1px 0 1px;
                 border-style: solid;
                 border-color: #cccccc; 
-                padding: 1em 0 0 2px;
+                padding: 0.5em 0.1em 0.1em 0.2em;
                 &.last {
                     border-bottom-width: 1px;
                 }
-                @ruleset-largescreen: {
-                    padding: 0 0 0 2px;
-                    &.column-last {
-                        border-bottom-width: 1px;
-                    }
-                };
-                .media-guard(@ruleset-largescreen, @breakpoint-widen-frontpage);
+                &.column-last {
+                    border-bottom-width: 1px;
+                }
+                &>div {
+                    overflow: hidden;
+                }
                 div.slot_time {
                     position: absolute;
                     top: 1px;
@@ -646,18 +654,10 @@ table.booking_day {
                 }
                 &.booking, &.available {
                     cursor: pointer;
-                    display: block;
-                    @ruleset-largescreen: {
-                        display: table-cell;
-                    };
-                    .media-guard(@ruleset-largescreen, @breakpoint-widen-frontpage);
-                }
-                &.booking.today.expired {
-                    display: none;
-                    @ruleset-largescreen: {
-                        display: table-cell;
-                    };
-                    .media-guard(@ruleset-largescreen, @breakpoint-widen-frontpage);
+                    display: table-cell;
+                    a {
+                        color: inherit;
+                    }
                 }
                 &.booking {
                     &.I {
@@ -669,6 +669,12 @@ table.booking_day {
                     &:hover {
                         background-color: @color-booking-highlight;
                     }
+                    .noshow {
+                        display: table;
+                        margin-left: auto;
+                        margin-right: 0.2em;
+                        padding: 0 0.2em 0 0.2em;
+                    }
                 }
                 &.available {
                     span.available {
@@ -679,13 +685,6 @@ table.booking_day {
                         background-color: @color-booking-highlight;
                     }
                 }
-                &.mobile-unhidden {
-                    display: block !important;
-                    @ruleset-largescreen: {
-                        display: table-cell !important;
-                    };
-                    .media-guard(@ruleset-largescreen, @breakpoint-widen-frontpage);
-                }                    
             }
         }
     }
@@ -699,26 +698,14 @@ div#booking_footer {
     }
 }
 
-div#booking_header {
-    padding: 0.1em 0.5em;
-    text-align:right;
-    & > div {
-        font-size: 0.8em;
-        display: inline-block;
-        @ruleset-largescreen: {
-            display: none;
-        };
-        .media-guard(@ruleset-largescreen, @breakpoint-widen-frontpage);
-    }
-    @ruleset-largescreen: {
-        padding-top: 1em;
-    };
-    .media-guard(@ruleset-largescreen, @breakpoint-widen-frontpage);
-}
 
 /* admin dialogs */
 form.settings-form {
     max-width: 40em;
+    .buttonset {
+        padding-top: 1em;
+        text-align: center;
+    }
 }
 form.settings-form fieldset > legend {
     color: @color-yellow-dot;
@@ -747,9 +734,18 @@ span.field-error {
 .form_success_message {
     color: @color-winner;
 }
-.form_error_message {
-    color: @color-loser
+div.form_error_message {
+    color: @color-loser;
+    padding-top: 1em;
+    padding-bottom: 1em;
+    ul > li {
+        font-weight: normal !important;
+        a {
+            text-decoration: underline !important;
+        }
+    }
 }
+
 
 .form_error_message:after {
     left: inherit;
@@ -765,8 +761,9 @@ span.field-error {
     }
 }
 .settings-form .ui-select .ui-btn.ui-state-disabled,
-.settings-form .ui-state-disabled {
-    opacity: 0.6;
+.settings-form .ui-state-disabled,
+.settings-form input.readonly {
+    opacity: 0.5;
 }
 .wsrc-disabled {
     opacity: 0.3;
@@ -1085,9 +1082,89 @@ div.thumbnail-container div.copy {
 }
 }
 
+#page_content.kiosk {
+
+    display: table;
+    width: 100%;
+    padding: 0 0 0 0;
+
+    font-family: Helvetica, sans-serif;
+    
+    .menu-wrapper {
+        padding-top: @kiosk-page-margin;
+        padding-left: @kiosk-page-margin;
+        display: table;
+        div.menu-container {
+            display: table-cell;
+            vertical-align: middle;
+        }
+    }
+    
+    div.left, div.right {
+        display: table-cell;
+        width: 25%;
+        vertical-align: top;
+    }
+
+    a.nav-button {
+        width: 20em;
+        display: block;
+        padding: 0;
+        line-height: 5em;
+        font-size: 1em;
+    }
+
+    .content {
+        margin-top: 5em;
+        padding: 0 0.5em 0 0.5em;
+        h1 {
+            text-align: center;
+            width: 100%;
+            font-size: 5em;
+        }
+    }
+    
+    .clock {
+        position: absolute;
+        top: 0.5em;
+        text-align: right;
+        right: @kiosk-page-margin;
+    }
+
+    .courts_now_next {
+        table {
+            position: absolute;
+            top: 5em;
+            right: @kiosk-page-margin;
+            th.court {
+                min-width: 5em;
+                height: 2em;
+                vertical-align: bottom;
+            }
+            td.now_next {
+                text-align: right;
+                padding-right: 0.5em;
+            }
+        }
+    }
+    
+    .logo {
+        position: fixed;
+        bottom: @kiosk-page-margin;
+        right: @kiosk-page-margin;
+    }
+
+}
+
 /******************************************************************************** 
   Larger Screen Media Conditionals
 ********************************************************************************/
+
+.ui-content.courts {
+    padding-left: 1px;
+    padding-right: 1px;
+}
+
 
 .media-guard(@ruleset; @min-width) {
     & when (@iemode) {
@@ -1128,6 +1205,11 @@ div.coaching ul {
    - switch to front page square boxes with scrolling */
 .media-guard(@widen-frontpage-ruleset, @breakpoint-widen-frontpage);
 @widen-frontpage-ruleset: {
+    .ui-content.courts {
+        padding-left: 1em;
+        padding-right: 1em;
+    }
+
     .jqm-block-content > div.restricted{
 	min-height: 16em;
 	max-height: 16em;
@@ -1262,8 +1344,6 @@ div.coaching ul {
 	right: 17em;
     }
 };
-
-
 
 .media-guard (@desktop-ruleset, 70em);
 @desktop-ruleset: {

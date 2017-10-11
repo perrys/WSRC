@@ -13,6 +13,7 @@
 # You should have received a copy of the GNU General Public License
 # along with WSRC.  If not, see <http://www.gnu.org/licenses/>.
 
+from django import forms
 from django.contrib import admin
 
 # Register your models here.
@@ -57,13 +58,23 @@ class CompetitionRoundAdmin(admin.ModelAdmin):
     list_display = ("competition", "round", "end_date")
 admin.site.register(comp_models.CompetitionRound, CompetitionRoundAdmin)
 
+class MatchAdminForm(forms.ModelForm):
+    def __init__(self, *args, **kwargs):
+        super(MatchAdminForm, self).__init__(*args, **kwargs)
+        self.fields['team1'].queryset = self.fields['team2'].queryset = comp_models.Entrant.objects.filter(competition=self.instance.competition)
+
 class MatchAdmin(admin.ModelAdmin):
+    form = MatchAdminForm
     list_filter = ('competition__group', 'competition__name')
-    list_display = ("competition", "team1", "team2", "get_scores_display", "walkover", "last_updated")
+    list_display = ("competition", "team1", "team2", "competition_match_id", "get_scores_display", "walkover", "last_updated")
+    list_editable = ("competition_match_id", )
 admin.site.register(comp_models.Match, MatchAdmin)
 
 class EntrantAdmin(admin.ModelAdmin):
-    list_display = ("competition", "player1", "player2", "ordering", "handicap")
+    list_display = ("competition", "player1", "player2", "ordering", "handicap", "seeded")
     list_filter = ('competition__group', 'competition__name')
+    list_editable = ('handicap', 'seeded')
+
+    
 admin.site.register(comp_models.Entrant, EntrantAdmin)
 

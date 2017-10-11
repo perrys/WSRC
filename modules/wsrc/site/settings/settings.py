@@ -31,10 +31,12 @@ INSTALLED_APPS = (
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'django.contrib.humanize',
     'rest_framework',
     'wsrc.site',
     'wsrc.site.accounts',
     'wsrc.site.usermodel',
+    'wsrc.site.courts',
     'wsrc.site.competitions',
 )
 

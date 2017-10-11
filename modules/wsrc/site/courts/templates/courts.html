@@ -1,0 +1,58 @@
+{% extends "06_wsrc_navigation.html" %}
+{% block pagetitle %}Courts{% endblock %}
+{% block pagetype %}courts{% endblock %}
+{% block html_header_extra %}
+{{ block.super }}
+{% if booking_user_id %}
+<script>
+window.WSRC_booking_user_id = {{ booking_user_id }};
+window.WSRC_booking_user_name = "{{ booking_user_name }}";
+window.WSRC_booking_user_auth_token = "{{ booking_user_auth_token }}";
+</script>
+{% endif %}
+{% endblock %}
+{% block page_content_classes %}{{ block.super }} courts {% endblock %}
+
+{% load wsrc_utils %}
+{% block centered_page_content %}
+
+<form>
+  <div id="booking_datepicker_container" >
+  <div class="ui-input-text ui-body-inherit ui-corner-all ui-alt-icon  ui-icon-calendar ui-btn-icon-left">
+    <input type="text" class="date-input" data-enhanced="true" readonly="readonly" value='{{ date|date:"D, j N Y" }}'>
+  </div>
+  <div data-role="controlgroup" data-type="horizontal">
+    <a class="ui-btn ui-alt-icon ui-btn-icon-left  ui-btn-inline ui-icon-carat-l previous" title="Go to previous day [Alt-P]" href='{% url 'courts' %}/{{ prev_date|date:"Y-m-d" }}' data-ajax='false'>Prev.</a>
+    <a class="ui-btn ui-alt-icon ui-btn-icon-left  ui-btn-inline ui-icon-refresh refresh" title="Refresh all data [Alt-R]" href='{% url 'courts' %}/{{ date|date:"Y-m-d" }}' data-ajax='false'>Refresh</a>
+    <a class="ui-btn ui-alt-icon ui-btn-icon-right ui-btn-inline ui-icon-carat-r next" title="Go to next day [Alt-N]" href='{% url 'courts' %}/{{ next_date|date:"Y-m-d" }}' data-ajax='false'>Next</a>
+  </div>
+  </div>
+</form>
+
+<div id="booking-day">
+  {{ day_table|safe }}
+</div>
+
+<div id="booking_footer">
+<div class="date">{{ date|date:"D, j N Y" }}</div>
+<div class="toggler"></div>
+</div>
+
+
+<form id="court_booking_form" method="POST" action="{% url 'booking' %}">
+{% csrf_token %}
+<input type="hidden" name="name" value="{{ booking_user_name }}"/>
+<input type="hidden" name="booking_type" value="I" />
+<input type="hidden" name="date" />
+<input type="hidden" name="duration" />
+<input type="hidden" name="start_time" />
+<input type="hidden" name="court" />
+<input type="hidden" name="token" />
+</form>
+
+<script>
+wsrc.court_booking.onReady('{% url "courts" %}');
+</script>
+
+
+{% endblock %}

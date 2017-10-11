@@ -1,0 +1,173 @@
+{% extends "03_jqm_page_structure.html" %}
+
+{% block html_header_extra %}
+  <script src="/static/js/wsrc_kiosk.js"></script>
+{% endblock %}
+
+{% block page_content_classes %} kiosk {% endblock %}
+
+{% block page_content %}
+
+<div class="left">
+  <div class="menu-wrapper">
+    <div class="menu-container">
+      <a href="#boxes_popup"       data-rel="popup" data-position-to="window" data-transition="none" class="ui-btn ui-corner-all nav-button">Squash Leagues</a>
+      <a href="#tournaments_popup" data-rel="popup" data-position-to="window" data-transition="none" class="ui-btn ui-corner-all nav-button">Tournaments</a>
+      <a href="#booking_popup"     data-rel="popup" data-position-to="window" data-transition="none" class="ui-btn ui-corner-all nav-button">Court Booking</a>
+    </div>
+  </div>
+</div>
+<div class="centre">
+  <div class="content">
+    <h1>Welcome to Woking Squash Club</h1>
+  </div>
+  <webview id="login_webview" data-src="/login/" partition="wsrc" style="width: 0; height:0;"></webview>
+  <div class="notifications-wrapper">
+  <div id="notifications">
+    <div data-theme="b">
+      <h3 class="heading"></h3>
+      <h4 class="date"></h4>
+    </div>
+    <div>
+      <div class="picture"></div>
+      <div class="ui-body"></div>
+    </div>
+    <div class="pager">
+    </div>
+  </div>
+  </div>
+</div>
+<div class="right">
+  <div class="clock"></div>
+  <div class="courts_now_next">
+    <table>
+      <tbody>
+        <tr>
+          <th class="court">Court 1</th>
+        </tr>
+        <tr id="court1_now">
+          <td class="now_next">Now:</td>
+          <td class="time"></td>
+          <td class="description"></td>
+        </tr>
+        <tr id="court1_next">
+          <td class="now_next">Next:</td>
+          <td class="time"></td>
+          <td class="description"></td>
+        </tr>
+        <tr>
+          <th class="court">Court 2</th>
+        </tr>
+        <tr id="court2_now">
+          <td class="now_next">Now:</td>
+          <td class="time"></td>
+          <td class="description"></td>
+        </tr>
+        <tr id="court2_next">
+          <td class="now_next">Next:</td>
+          <td class="time"></td>
+          <td class="description"></td>
+        </tr>
+        <tr>
+          <th class="court">Court 3</th>
+        </tr>
+        <tr id="court3_now">
+          <td class="now_next">Now:</td>
+          <td class="time"></td>
+          <td class="description"></td>
+        </tr>
+        <tr id="court3_next">
+          <td class="now_next">Next:</td>
+          <td class="time"></td>
+          <td class="description"></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="logo"><img id="yellow_dots_img" src="/static/images/ball_logo_180x180.png" width="180" height="180" /></div>
+  <div id="boxes_popup" data-role="popup" data-position-to="window" data-overlay-theme="b" data-transition="fade" class="popup-timeout">
+    <a href="#" data-rel="back" class="ui-btn ui-corner-all ui-btn-a ui-icon-delete ui-btn-icon-notext ui-btn-right">Close</a>
+    <webview partition="wsrc" class="wsrc-client" data-src="boxes" style="width: 100%;"></webview>
+  </div>
+  <div id="tournaments_popup" data-role="popup" data-position-to="window" data-overlay-theme="b" data-transition="fade" class="popup-timeout">
+    <a href="#" data-rel="back" class="ui-btn ui-corner-all ui-btn-a ui-icon-delete ui-btn-icon-notext ui-btn-right">Close</a>
+    <webview partition="wsrc" class="wsrc-client" data-src="tournaments" style="width: 100%;"></webview>
+  </div>
+  <div id="booking_popup" data-role="popup" data-position-to="window" data-overlay-theme="b" data-transition="fade" class="popup-timeout">
+    <a href="#" data-rel="back" class="ui-btn ui-corner-all ui-btn-a ui-icon-delete ui-btn-icon-notext ui-btn-right">Close</a>
+    <webview src="http://booking.wokingsquashclub.org/" style="width: 100%;"></webview>
+  </div>
+</div> <!-- main -->
+<div id="settings_panel" data-role="panel" data-theme="b"  data-content-theme="a" data-display="overlay" data-position="right">
+  <a href="#my-header" data-rel="close" class="ui-btn ui-corner-all ui-btn-a ui-icon-delete ui-btn-right">Close panel</a>
+    <div data-role="collapsibleset">
+    <div data-role="collapsible" data-iconpos="right">
+      <h3>Settings</h3>
+      <h5 id='app_version_info'>WSRC Kiosk version xxxx</h5>
+      <form>
+        <fieldset data-group="wsrc_credentials">
+          <legend>Main Website Details</legend>
+          <label>Server: <input name="server" /></label>
+          <label>Username: <input name="username" /></label>
+          <label>Password: <input name="password" type="password" /></label>
+        </fieldset>
+        <fieldset data-group="kiosk_settings">
+          <legend>Kiosk Settings</legend>
+          <label>Bookings Sync Freq (mins): <input name="booking_fetch_period" type="range" min="1" max="120"/></label>
+          <label>Events Sync Freq (mins): <input name="events_fetch_period" type="range" min="1" max="120"/></label>
+          <label>Event Display Period (secs): <input name="events_refresh_period" type="range" min="0" max="120"/></label>
+          <label>Webviews Display Timeout (mins): <input name="webview_timeout" type="range" min="0" max="15"/></label>
+          <fieldset data-role="controlgroup" data-type="horizontal">
+            <legend>Soft Keyboard: </legend> 
+            <input id="soft_keyboard_toggle_on"  name="virtual_keyboard" type="radio" value="on" checked="checked"/>
+            <label for="soft_keyboard_toggle_on">On</label>
+            <input id="soft_keyboard_toggle_off" name="virtual_keyboard" type="radio" value="off" />
+            <label for="soft_keyboard_toggle_off">Off</label>
+          </fieldset>
+        </fieldset>
+      </form>
+      <button id="settings_apply_btn">Apply</button>
+    </div>
+    <div id="test_container" class="log-container" data-role="collapsible" data-collapsed="true" data-iconpos="right">
+      <h3>Event Tester</h3>
+      <input name="test_input" class="event_test">
+      <div id="event_log_console" class="log-console">
+      </div>
+    </div>
+    <div id="status_container" class="status-container" data-role="collapsible" data-collapsed="true" data-iconpos="right">
+      <h3>Status</h3>
+      <div class="tables">
+      <table id='cpu_table'>
+        <thead>
+          <tr><th>CPU</th><th>Idle</th><th>User</th><th>Kernel</th></tr>
+        </thead>
+        <tbody>
+        </tbody>
+      </table>
+      <table id='network_interfaces_table'>
+        <thead>
+          <tr><th>Network</th><th>Address</th></tr>
+        </thead>
+        <tbody>
+        </tbody>
+      </table>
+      <table class='wifi_table'>
+        <thead>
+          <tr><th colspan="2"></th></tr>
+        </thead>
+        <tbody>
+        </tbody>
+      </table>
+      </div>
+      <button id="restart_btn">Restart</button>
+    </div>
+    <div id="log_container" class="log-container" data-role="collapsible" data-collapsed="false" data-iconpos="right">
+      <h3>Log</h3>
+      <div id="log_console" class="log-console">
+      </div>
+    </div>
+  </div>
+  </div>
+</div>
+
+{% endblock %}
