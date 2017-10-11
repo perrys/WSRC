@@ -82,6 +82,10 @@ class Player(models.Model):
 
 
 
+class Subscriber(models.Model):  
+  player = models.ForeignKey(Player)
+  transaction_regex  = models.CharField(('Matching (Regular) Expression'), max_length=256)
+
 class Subscription(models.Model):
   MEMBERSHIP_TYPES = (
     ("coach", "Coach"),
@@ -96,18 +100,14 @@ class Subscription(models.Model):
     ("annual", "Annual"),
     ("monthly", "Monthly SO"),
   )
+  subscriber        = models.ForeignKey(Subscriber, db_index=True)
+  membership_type   = models.CharField(("Membership Type"), max_length=16, choices=MEMBERSHIP_TYPES)
+  payment_frequency = models.CharField(("Payment Frequency"), max_length=16, choices=PAYMENT_TYPES)
+  start_date        = models.DateField(db_index=True)
+  end_date          = models.DateField(db_index=True)
+  signed_off        = models.BooleanField(default=False, db_index=True)
   
-  player = models.ForeignKey(Player)
-  subscription_type = models.CharField(("Membership Type"), max_length=16, choices=MEMBERSHIP_TYPES)
-  start_date = models.DateField()
-  end_date = models.DateField()
-  family_subscription = models.ForeignKey("FamilySubscription", null=True, blank=True)
-
-class FamilySubscription(models.Model):
-  parent_subscription = models.ForeignKey(Subscription)
-  discount = models.FloatField()
-
 class SubscriptionPayment(models.Model):
-  subscription = models.ForeignKey(Subscription)
-  transaction = models.ForeignKey(account_models.Transaction)
+  subscription = models.ForeignKey(Subscription, db_index=True)
+  transaction = models.ForeignKey(account_models.Transaction, db_index=True)
   
