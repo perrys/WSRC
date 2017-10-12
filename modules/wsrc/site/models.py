@@ -52,7 +52,7 @@ class CommitteeMeetingMinutes(models.Model):
   
   
 class BookingSystemEvent(models.Model):
-  start_time = models.DateTimeField()
+  start_time = models.DateTimeField(db_index=True)
   end_time = models.DateTimeField()
   court = models.SmallIntegerField()
   name = models.CharField(max_length=64)
