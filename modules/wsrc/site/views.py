@@ -193,7 +193,7 @@ def generate_tokens(date):
 def index_view(request):
 
     ctx = get_pagecontent_ctx('home')
-    levels = SquashLevels.objects.all().order_by('-level')
+    levels = SquashLevels.objects.values('name', 'level', 'player__squashlevels_id').order_by('-level')
     if len(levels) > 0:
         ctx["squashlevels"] = levels
 

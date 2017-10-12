@@ -71,7 +71,7 @@ window.WSRC_today_bookings = {{ bookings|safe }};
         <div class="restricted-with-footnote">
           <table>
 {% for row in squashlevels %}
-<tr class="{% cycle 'odd' 'even' %} {% if forloop.counter > 10 %}toggled{% endif %}"><td>{% if row.player.squashlevels_id %}<a href='http://www.squashlevels.com/player_detail.php?player={{ row.player.squashlevels_id }}&show=last12m'>{{ row.name }}</a>{% else %}{{ row.name }}{% endif %}</td><td class='nobreak'>{{ row.last_match_date|date:'d M' }}</td><td>{{ row.level }}</td></tr>
+<tr class="{% cycle 'odd' 'even' %} {% if forloop.counter > 10 %}toggled{% endif %}"><td>{% if row.player__squashlevels_id %}<a href='http://www.squashlevels.com/player_detail.php?player={{ row.player__squashlevels_id }}&show=last12m'>{{ row.name }}</a>{% else %}{{ row.name }}{% endif %}</td><td class='nobreak'>{{ row.last_match_date|date:'d M' }}</td><td>{{ row.level }}</td></tr>
 {% endfor %}
           </table>
         </div>
