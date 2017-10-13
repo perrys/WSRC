@@ -158,7 +158,7 @@ class BookingOffence(models.Model):
   owner = models.CharField(max_length=64)
   creation_time = models.DateTimeField()
   cancellation_time  = models.DateTimeField(blank=True, null=True)
-  rebooked = models.BooleanField()
+  rebooked = models.BooleanField(default=False)
   penalty_points = models.SmallIntegerField("Points")
   comment = models.TextField(blank=True, null=True)
   def get_prebook_period(self):
