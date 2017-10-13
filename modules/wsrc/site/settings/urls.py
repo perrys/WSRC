@@ -108,3 +108,11 @@ urlpatterns = patterns('',
     url(r'^committee/?$', wsrc.site.views.committee_view),
     url(r'^(?P<page>[a-z_]+)$', wsrc.site.views.generic_view),
 )
+
+from django.conf import settings
+from django.conf.urls import include, url
+if settings.DEBUG:
+    import debug_toolbar
+    urlpatterns = [
+        url(r'^__debug__/', include(debug_toolbar.urls)),
+    ] + urlpatterns

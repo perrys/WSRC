@@ -22,6 +22,8 @@ TEMPLATE_CONTEXT_PROCESSORS = TCP + (
     'django.core.context_processors.request',
 )
 
+DEBUG_TOOLBAR_PATCH_SETTINGS = False
+
 # Application definition
 
 INSTALLED_APPS = (
@@ -38,9 +40,11 @@ INSTALLED_APPS = (
     'wsrc.site.usermodel',
     'wsrc.site.courts',
     'wsrc.site.competitions',
+    'debug_toolbar',
 )
 
 MIDDLEWARE_CLASSES = (
+    'debug_toolbar.middleware.DebugToolbarMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
