@@ -339,7 +339,7 @@ def boxes_view(request, end_date=None, template_name="boxes.html", check_permiss
     ctx["competition_groups"] = competition_groups
     ctx["selector"] = comp_type == "boxes" and get_boxes_links(options, group) or get_tournament_links(options, group)
     ctx["box_data"] = box_data
-    ctx['players'] = Player.objects.all() # TODO - filter to players in comp group
+    ctx['players'] = Player.objects.all().values("id", "user__first_name", "user__last_name") # TODO - filter to players in comp group
     return TemplateResponse(request, template_name, ctx)
     
 

@@ -6,7 +6,7 @@
 {% block html_header_extra %}
 {{ block.super }}
 <script>
-window.WSRC_players  = { {% for p in players %}{% if forloop.counter0 > 0 %},{% endif %}{{ p.id }}: {id: {{ p.id }}, full_name: "{{ p.user.first_name }} {{ p.user.last_name }}"}{% endfor %} };
+window.WSRC_players  = { {% for p in players %}{% if forloop.counter0 > 0 %},{% endif %}{{ p.id }}: {id: {{ p.id }}, full_name: "{{ p.user__first_name }} {{ p.user__last_name }}"}{% endfor %} };
 window.WSRC_box_data = {{ box_data|safe }};
 </script>
 {% endblock %}
