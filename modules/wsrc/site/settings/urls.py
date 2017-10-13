@@ -70,7 +70,7 @@ urlpatterns = patterns('',
     url(r'^tournaments/(\d{4})/([\w\s]+)/?$',       wsrc.site.competitions.views.bracket_view),
     url(r'^tournaments/?',                          wsrc.site.competitions.views.bracket_view, {"year":None, "name":"Open"} , name="tournaments"),
 
-    url(r'^settings/?$', wsrc.site.views.settings_view, name="settings"),
+    url(r'^settings/?$', wsrc.site.usermodel.views.settings_view, name="settings"),
 
     url(r'^kiosk/?$', wsrc.site.views.kiosk_view, name="kiosk"),
                        

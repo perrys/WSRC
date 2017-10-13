@@ -4,7 +4,7 @@
 {% loadkwacros 'form_macros.html' %}
 {% block centered_page_content %}
 
-<form id="settings_form" method="post" action="{% url 'wsrc.site.views.settings_view' %}" data-ajax="false" class="settings-form">
+<form id="settings_form" method="post" action="{% url 'settings' %}" data-ajax="false" class="settings-form">
 {% csrf_token %}
 
 {% if form_saved %}
@@ -26,7 +26,7 @@
 
 {% endif %}
 
-<input type="hidden" name="next" value="{% url 'wsrc.site.views.settings_view' %}" />
+<input type="hidden" name="next" value="{% url 'settings' %}" />
 <fieldset name="login_details">
 <legend>Login</legend>
 {% usekwacro createfield user_form.username %}
