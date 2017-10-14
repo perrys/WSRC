@@ -48,7 +48,7 @@ class SettingsUserForm(ModelForm):
 class SettingsPlayerForm(ModelForm):
     class Meta:
         model = Player
-        fields = ["cell_phone", "other_phone", "short_name", "prefs_receive_email"]
+        fields = ["cell_phone", "other_phone", "short_name", "prefs_receive_email", "prefs_esra_member", "prefs_display_contact_details"]
         exclude = ('user',)
  
 def create_notifier_filter_formset_factory(max_number):
