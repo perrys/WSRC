@@ -42,9 +42,9 @@ class Player(models.Model):
                                            help_text="England Squash Membership Number - it is not normally necessary to change this")
   prefs_receive_email  = models.NullBooleanField(("Receive Email"), default=True, null=True, blank=True,
                                                  help_text="Uncheck if you do *not* want to receive emails from the club&emdash; match reminders, social events etc.")
-  prefs_esra_member  = models.NullBooleanField(("England Squash Affiliation"), default=True, null=True, blank=True,
+  prefs_esra_member  = models.NullBooleanField(("England Squash"), default=True, null=True, blank=True,
                                                help_text="Uncheck if you do *not* want to automatically be signed up for England Squash membership (note you will not be able to play in Surrey league competitions or National competitions).")
-  prefs_display_contact_details  = models.NullBooleanField(("Display Contact Details"), default=True, null=True, blank=True,
+  prefs_display_contact_details  = models.NullBooleanField(("Visible"), default=True, null=True, blank=True,
                                                help_text="Uncheck if you do *not* want your contact details to appear in the membership list (note that this will make it very difficult for anyone to contact you regarding league games etc).")
 
   def get_ordered_name(self):
