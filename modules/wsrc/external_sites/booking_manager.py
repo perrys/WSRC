@@ -142,7 +142,7 @@ class BookingSystemSession:
 
     if start_date is None:
       start_date = datetime.date.today()
-    from wsrc.site.models import BookingSystemEvent
+    from wsrc.site.courts.models import BookingSystemEvent
     bookingSystemEvents = []
     data = self.get_week_view(start_date)
     for date_str, court_data in data.iteritems():
@@ -181,7 +181,7 @@ def sync_db_booking_events(events, start_date, end_date):
 
   """
 
-  from wsrc.site.models import BookingSystemEvent
+  from wsrc.site.courts.models import BookingSystemEvent
 
   midnight = datetime.time(0, 0, 0, tzinfo=UK_TZINFO)
   existing_events_qs = BookingSystemEvent.objects.all()
@@ -237,7 +237,7 @@ if __name__ == "__main__":
   class Tester(unittest.TestCase):
 
     def clean_db(self):
-      from wsrc.site.models import BookingSystemEvent
+      from wsrc.site.courts.models import BookingSystemEvent
       # this test will use the DB. Clear all data before 2000, which we will use for our testing
       old_events = BookingSystemEvent.objects.filter(start_time__lt=datetime.datetime(2000,1,1,0,0))
       old_events.delete()
@@ -271,7 +271,7 @@ if __name__ == "__main__":
         self.assertTrue(event.court <= 3)
 
     def test_GIVEN_events_in_db_WHEN_syncing_new_events_THEN_matching_added_modified_removed_returned(self):
-      from wsrc.site.models import BookingSystemEvent
+      from wsrc.site.courts.models import BookingSystemEvent
 
       start_date = datetime.date(1999, 1, 4) # 4th Jan 1999 was a monday
       end_date   = datetime.date(1999, 1, 18)

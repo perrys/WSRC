@@ -102,7 +102,8 @@ if __name__ == "__main__":
 
   from wsrc.site.usermodel.models import Player
   from django.contrib.auth.models import User
-  from wsrc.site.models import EventFilter, BookingSystemEvent
+  from wsrc.site.models import EventFilter
+  from wsrc.site.courts.models import BookingSystemEvent
   import wsrc.utils.collection_utils as utils
 
   class TestNotifier(Notifier):

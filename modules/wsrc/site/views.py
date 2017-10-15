@@ -16,8 +16,9 @@
 
 import sys
 
-from wsrc.site.models import PageContent, SquashLevels, LeagueMasterFixtures, BookingSystemEvent, MaintenanceIssue, Suggestion, EmailContent, ClubEvent, CommitteeMeetingMinutes
+from wsrc.site.models import PageContent, SquashLevels, LeagueMasterFixtures, MaintenanceIssue, Suggestion, EmailContent, ClubEvent, CommitteeMeetingMinutes
 from wsrc.site.competitions.models import CompetitionGroup
+from wsrc.site.courts.models import BookingSystemEvent
 from wsrc.site.usermodel.models import Player
 import wsrc.site.settings.settings as settings
 from wsrc.utils import timezones, email_utils
