@@ -298,7 +298,7 @@ def process_date(date):
   if len(errors) > 0:
     report_errors(date, errors)
   for player, offences in player_offence_map.items():
-    total_offences = BookingOffence.objects.filter(player=player, start_time__gte=cutoff, start_time__lt=midnight_tomorrow)
+    total_offences = BookingOffence.objects.filter(player=player, start_time__gte=cutoff, start_time__lt=midnight_tomorrow, is_active=True)
     report_offences(date, player, offences, total_offences)
 
 class Tester(unittest.TestCase):
