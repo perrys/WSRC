@@ -38,7 +38,7 @@ class MemberListView(ListView):
         return super(MemberListView, self).dispatch(request, *args, **kwargs)
 
     def get_queryset(self):
-      return Player.objects.filter(user__is_active=True).order_by('user__first_name', 'user__last_name')
+      return Player.objects.values("id", "user__first_name", "user__last_name", "user__email", "other_phone", "cell_phone", "user__is_active").filter(user__is_active=True).order_by('user__first_name', 'user__last_name')
 
     def get_template_names(self):
       return ["memberlist.html"]
