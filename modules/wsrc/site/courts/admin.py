@@ -34,12 +34,18 @@ class OffendersListFilter(admin.SimpleListFilter):
         if val is not None:
             queryset = queryset.filter(player__user__username=val)
         return queryset        
-    
+
+def set_inactive(modeladmin, request, queryset):
+  queryset.update(is_active=False)
+def set_active(modeladmin, request, queryset):
+  queryset.update(is_active=True)
+
 class BookingOffenceAdmin(admin.ModelAdmin):
-    list_display = ("player", "entry_id", "offence", "start_time", "creation_time", "cancellation_time", "rebooked", "penalty_points", "comment")
-    list_editable = ("penalty_points", "comment")
+    list_display = ("player", "entry_id", "offence", "start_time", "creation_time", "cancellation_time", "rebooked", "penalty_points", "is_active", "comment")
+    list_editable = ("penalty_points", "is_active", "comment")
     list_filter = (OffendersListFilter,)
     date_hierarchy = "start_time"
+    actions=(set_inactive, set_active)
     formfield_overrides = {
         models.TextField: {'widget': forms.Textarea(attrs={'cols': 30, 'rows': 1})},
         models.IntegerField: {'widget': forms.NumberInput(attrs={'style': 'width: 3em;'})},

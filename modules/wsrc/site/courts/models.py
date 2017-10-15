@@ -68,6 +68,7 @@ class BookingOffence(models.Model):
   rebooked = models.BooleanField(default=False)
   penalty_points = models.SmallIntegerField("Points")
   comment = models.TextField(blank=True, null=True)
+  is_active = models.BooleanField("Active", default=True)
   def get_prebook_period(self):
     delta_t = self.start_time - self.creation_time
     if delta_t.days > 0:
