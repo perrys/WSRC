@@ -253,10 +253,11 @@ def create_box_config(request, previous_comp, competition, ctx):
             is_second = True
             previous_comp["colspec"] = 'double'
             previous_comp["nthcol"] = 'first'
-    entrants = [p for p in competition.entrant_set.all().order_by("ordering")]
+    fields = ["id", "player1__id", "player1__user__id", "player1__user__first_name", "player1__user__last_name", "handicap"]
+    entrants = [p for p in competition.entrant_set.all().values(*fields).order_by("ordering")]
     def this_user():
         for e in entrants:
-            if e.player1.user.id == request.user.id:
+            if e["player1__user__id"] == request.user.id:
                 return True
         return False
     can_edit = competition.state == "active" and (is_editor or this_user())
@@ -340,6 +341,7 @@ def boxes_view(request, end_date=None, template_name="boxes.html", check_permiss
     ctx["box_data"] = box_data
     ctx['players'] = Player.objects.all().values("id", "user__first_name", "user__last_name") # TODO - filter to players in comp group
     return TemplateResponse(request, template_name, ctx)
+
 
 def bracket_view(request, year, name, template_name="tournaments.html"):
     if year is None:

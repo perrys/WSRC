@@ -47,7 +47,7 @@ window.WSRC_box_data = {{ box_data|safe }};
 {% endif %}
     <div class="ui-corner-all custom-corners boxes {% if box_config.colspec == 'double' %}boxes-{{ box_config.nthcol }}column ui-block-{% if box_config.nthcol == 'first' %}a{% else %}b{% endif %}{% endif %}">
       <div class="ui-bar box-header" data-theme="b" data-role="header">
-        <h2>{% if user.is_authenticated %}<a href="{% url 'member_list' %}?filter-ids={% for e in box_config.entrants %}{% if e.player1.id %}{% if forloop.counter0 > 0 %},{% endif %}{{ e.player1.id }}{% endif %}{% endfor %}">{% endif %}{{ box_config.name }}{% if user.is_authenticated %}</a>{% endif %}</h2>
+        <h2>{% if user.is_authenticated %}<a href="{% url 'member_list' %}?filter-ids={% for e in box_config.entrants %}{% if e.player1__id %}{% if forloop.counter0 > 0 %},{% endif %}{{ e.player1__id }}{% endif %}{% endfor %}">{% endif %}{{ box_config.name }}{% if user.is_authenticated %}</a>{% endif %}</h2>
 {% if box_config.can_edit %}
         <a id="link-{{ box_config.id }}" class="ui-btn ui-btn-icon ui-btn-icon-left ui-icon-edit ui-corner-all ui-btn-right ui-btn-a" onclick="wsrc.boxes.on('handle_edit_clicked', {{ box_config.id }}); return true;">Edit
         </a>

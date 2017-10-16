@@ -14,7 +14,7 @@
   <title>Boxes Admin - Woking Squash Rackets Club</title>
 
   <script type="text/javascript">
-var players  = { {% for p in players %}{% if forloop.counter0 > 0 %},{% endif %}{{ p.id }}: {id: {{ p.id }}, full_name: "{{ p.user.first_name }} {{ p.user.last_name }}"}{% endfor %} };
+var players  = { {% for p in players %}{% if forloop.counter0 > 0 %},{% endif %}{{ p.id }}: {id: {{ p.id }}, full_name: "{{ p.user__first_name }} {{ p.user__last_name }}"}{% endfor %} };
 var initial_competition_group = {{ box_data|safe }};
 var competition_groups = {{ competition_groups|safe }};
 jQuery(document).ready(function(){wsrc.admin.boxes.onReady(players, competition_groups, initial_competition_group)});
