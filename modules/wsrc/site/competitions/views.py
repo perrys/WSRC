@@ -244,6 +244,29 @@ def create_spreadsheet(comp_meta, boxes_config):
     workbook.close()
     return output.getvalue()
 
+def create_box_config(request, previous_comp, competition, ctx):
+    is_second = False
+    is_editor = request.user.has_perm("competitions.change_match")
+    ctx["maxplayers"] = max(ctx["maxplayers"], len(competition.entrant_set.all()))
+    if previous_comp is not None:
+        if previous_comp["name"][:-1] == competition.name[:-1]: # e.g. "League 1A" vs "League 1B"
+            is_second = True
+            previous_comp["colspec"] = 'double'
+            previous_comp["nthcol"] = 'first'
+    entrants = [p for p in competition.entrant_set.all().order_by("ordering")]
+    def this_user():
+        for e in entrants:
+            if e.player1.user.id == request.user.id:
+                return True
+        return False
+    can_edit = competition.state == "active" and (is_editor or this_user())
+    return {"colspec": is_second and "double" or "single",
+            "nthcol": is_second and 'second' or 'first',
+            "name": competition.name,
+            "id": competition.id,
+            "entrants": entrants,
+            "can_edit": can_edit,
+            }
 
 def boxes_view(request, end_date=None, template_name="boxes.html", check_permissions=False, comp_type="boxes", name=None, year=None):
     """Return a view of the Leagues for ending on END_DATE. If
@@ -267,30 +290,7 @@ def boxes_view(request, end_date=None, template_name="boxes.html", check_permiss
 
     box_data = JSON_RENDERER.render(CompetitionGroupSerializer(group, context={"request": FAKE_REQUEST_CONTEXT}).data)
     competition_groups = JSON_RENDERER.render(CompetitionGroupSerializer(queryset, many=True).data)
-    is_editor = request.user.has_perm("competitions.change_match")
 
-    def create_box_config(previous_comp, competition, ctx):
-        is_second = False
-        ctx["maxplayers"] = max(ctx["maxplayers"], len(competition.entrant_set.all()))
-        if previous_comp is not None:
-            if previous_comp["name"][:-1] == competition.name[:-1]: # e.g. "League 1A" vs "League 1B"
-                is_second = True
-                previous_comp["colspec"] = 'double'
-                previous_comp["nthcol"] = 'first'
-        entrants = [p for p in competition.entrant_set.all().order_by("ordering")]
-        def this_user():
-            for e in entrants:
-                if e.player1.user.id == request.user.id:
-                    return True
-            return False
-        can_edit = competition.state == "active" and (is_editor or this_user())
-        return {"colspec": is_second and "double" or "single",
-                "nthcol": is_second and 'second' or 'first',
-                "name": competition.name,
-                "id": competition.id,
-                "entrants": entrants,
-                "can_edit": can_edit,
-                }
 
     def create_new_box_config(idx):
         result = {"id": None, "players": None}
@@ -314,7 +314,7 @@ def boxes_view(request, end_date=None, template_name="boxes.html", check_permiss
     boxes = []
     comp_meta = {"maxplayers": 0, "name": group.name, "id": group.id}
     for league in group.competition_set.all():
-        cfg = create_box_config(last, league, comp_meta)
+        cfg = create_box_config(request, last, league, comp_meta)
         boxes.append(cfg)
         last = cfg
         if cfg["nthcol"] == "second":
@@ -335,13 +335,11 @@ def boxes_view(request, end_date=None, template_name="boxes.html", check_permiss
     new_boxes = [create_new_box_config(i) for i in range(0,21)]
     ctx["boxes"] = boxes
     ctx["new_boxes"] = new_boxes
-    ctx["is_editor"] = is_editor
     ctx["competition_groups"] = competition_groups
     ctx["selector"] = comp_type == "boxes" and get_boxes_links(options, group) or get_tournament_links(options, group)
     ctx["box_data"] = box_data
     ctx['players'] = Player.objects.all().values("id", "user__first_name", "user__last_name") # TODO - filter to players in comp group
     return TemplateResponse(request, template_name, ctx)
-    
 
 def bracket_view(request, year, name, template_name="tournaments.html"):
     if year is None:
