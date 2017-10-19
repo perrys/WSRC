@@ -5,8 +5,7 @@
 {% block html_header_extra %}
 {{ block.super }}
 <script>
-window.WSRC_players  = { {% for p in players %}{% if forloop.counter0 > 0 %},{% endif %}{{ p.id }}: {id: {{ p.id }}, full_name: "{{ p.user__first_name }} {{ p.user__last_name }}"}{% endfor %} };
-window.WSRC_box_data = {{ box_data|safe }};
+  var wsrc_boxes_data = {"matches": {}};
 </script>
 {% endblock %}
 {% block centered_page_content %}
@@ -55,9 +54,9 @@ window.WSRC_box_data = {{ box_data|safe }};
         <a class="ui-btn ui-btn-icon ui-btn-icon-left ui-icon-bullets ui-corner-all ui-btn-left ui-btn-a" data-rel="popup" onclick="wsrc.boxes.on('handle_results_clicked', {{ box_config.id }}); return true;">Results</a>
       </div>
       <div class="ui-body ui-body-a">
-        {% include "box_table.html" %}
-        {% include "league_table.html" %}
-
+        {{ box_config.box_table|safe }}
+        {{ box_config.league_table|safe }}
+        <script>wsrc_boxes_data.matches["{{ box_config.id }}"]={{ box_config.matches_data|safe }};</script>
       </div>
     </div>
 {% if box_config.colspec != 'double' or box_config.nthcol != 'first' %}
