@@ -43,6 +43,17 @@ def toPoints(x, y):
       return (total[1], total[0])
     return total
 
+def get_box_league_points(match, scores=None):
+  if scores is None:
+    scores = match.get_scores()
+  if match.walkover is not None:
+    points = (match.walkover == 1) and [7,2] or [2,7]
+  else:
+    sets_won = match.get_sets_won(scores)
+    points = None
+    if sets_won is not None:
+      points = toPoints(min(sets_won[0],3), min(sets_won[1],3))
+  return points
 
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
@@ -138,13 +149,7 @@ class StatusField(serializers.CharField):
 class CompactMatchField(serializers.RelatedField):
   def to_representation(self, match):
     scores = match.get_scores()
-    if match.walkover is not None:
-      points = (match.walkover == 1) and [7,2] or [2,7]
-    else:
-      sets_won = match.get_sets_won(scores)
-      points = None
-      if sets_won is not None:
-        points = toPoints(min(sets_won[0],3), min(sets_won[1],3))
+    points = get_box_league_points(match, scores)
     def safe_get_id(attr):
         player = getattr(match, attr)
         if player is not None:
