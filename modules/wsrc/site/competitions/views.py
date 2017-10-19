@@ -16,7 +16,8 @@
 from wsrc.site.models import EmailContent
 from wsrc.site.usermodel.models import Player
 from wsrc.site.competitions.models import Competition, CompetitionGroup, Match, Entrant
-from wsrc.site.competitions.serializers import CompetitionSerializer, CompetitionGroupSerializer, MatchSerializer
+from wsrc.site.competitions.serializers import CompetitionSerializer, CompetitionGroupSerializer, MatchSerializer, get_box_league_points
+from wsrc.utils.html_table import Table, Cell, SpanningCell
 from wsrc.utils.timezones import parse_iso_date_to_naive
 from wsrc.utils import email_utils
 
@@ -45,6 +46,7 @@ import markdown
 import StringIO
 import os.path
 import tournament
+from operator import itemgetter
 
 class FakeRequestContext:
     def __init__(self):
@@ -244,20 +246,16 @@ def create_spreadsheet(comp_meta, boxes_config):
     workbook.close()
     return output.getvalue()
 
-def create_box_config(request, previous_comp, competition, ctx):
+def create_box_config(previous_cfg, competition, entrants, auth_user_id, is_editor):
     is_second = False
-    is_editor = request.user.has_perm("competitions.change_match")
-    ctx["maxplayers"] = max(ctx["maxplayers"], len(competition.entrant_set.all()))
-    if previous_comp is not None:
-        if previous_comp["name"][:-1] == competition.name[:-1]: # e.g. "League 1A" vs "League 1B"
+    if previous_cfg is not None:
+        if previous_cfg["name"][:-1] == competition.name[:-1]: # e.g. "League 1A" vs "League 1B"
             is_second = True
-            previous_comp["colspec"] = 'double'
-            previous_comp["nthcol"] = 'first'
-    fields = ["id", "player1__id", "player1__user__id", "player1__user__first_name", "player1__user__last_name", "handicap"]
-    entrants = [p for p in competition.entrant_set.all().values(*fields).order_by("ordering")]
+            previous_cfg["colspec"] = 'double'
+            previous_cfg["nthcol"] = 'first'
     def this_user():
-        for e in entrants:
-            if e["player1__user__id"] == request.user.id:
+        for e in entrants.itervalues():
+            if e["player1__user__id"] == auth_user_id:
                 return True
         return False
     can_edit = competition.state == "active" and (is_editor or this_user())
@@ -265,10 +263,157 @@ def create_box_config(request, previous_comp, competition, ctx):
             "nthcol": is_second and 'second' or 'first',
             "name": competition.name,
             "id": competition.id,
-            "entrants": entrants,
             "can_edit": can_edit,
             }
 
+def enrich_entrants(entrants, matches):
+    entrants = dict([(e["id"], e) for e in entrants])
+    for e in entrants.values():
+        e["Pts"] = 0
+    def append(entrant, field, n):
+        points = entrant.get(field) or 0
+        points += n
+        entrant[field] = points            
+    for match in matches:
+        e1 = entrants[match.team1_id]
+        e2 = entrants[match.team2_id]
+        scores = match.get_scores()
+        points = get_box_league_points(match, scores)
+        sets_won = match.get_sets_won(scores)
+        def totalize(entrant, idx):
+            other_idx = 1 if idx == 0 else 0
+            append(entrant, "P", 1)
+            if sets_won[idx] > sets_won[other_idx]:
+                append(entrant, "W", 1)
+            elif sets_won[idx] < sets_won[other_idx]:
+                append(entrant, "L", 1)
+            else:
+                append(entrant, "D", 1)
+            for s in scores:
+                append(entrant, "F", s[idx])
+                append(entrant, "A", s[other_idx])
+            append(entrant, "Pts", points[idx])
+        totalize(e1, 0)
+        totalize(e2, 1)
+    return entrants
+
+def create_entrant_cell(entrant, auth_user_id):
+    content="{player1__user__first_name} {player1__user__last_name}".format(**entrant)
+    attrs={
+        "class": "text player",
+        "data-player_id":  str(entrant["player1__id"]),
+        "data-entrant_id": str(entrant["id"]),
+    }
+    isHTML=False
+    if auth_user_id is not None:
+        content = "<a href='{url}?filter-ids={id}'>{content}</a>".format(url=reverse("member_list"), id=entrant["player1__id"], content=content)
+        isHTML=True
+        if auth_user_id == entrant["player1__user__id"]:
+            attrs["class"] = "wsrc-currentuser"
+    return Cell(content, attrs, isHeader=True, isHTML=isHTML)
+    
+def create_box_table(competition, n, entrants, matches, auth_user_id):
+    entrants = entrants.values()
+    entrants.sort(key=itemgetter("ordering"))
+    entrant_id_to_index_map = dict([(e["id"], i) for i,e in enumerate(entrants)])
+    attrs = {
+        "id": "box_table_{id}".format(id=competition.id),
+        "data-id": str(competition.id),
+        "data-name": competition.name,
+        "class": "boxes boxtable ui-table",
+    }
+    table = Table(n+3, n+1, attrs)
+    table.addCell(SpanningCell(2, 1, "", {"class": "noborder"}), 0, 0)
+    for i in range(0, n):
+        table.addCell(Cell(content=i+1, attrs={"class": "inverse"}), i+2, 0)
+        table.addCell(Cell(content=i+1, attrs={"class": "inverse"}), 1,   i+1)
+        table.addCell(Cell(content="", attrs={"class": "inverse"}),  i+2, i+1)
+    table.addCell(Cell("<span>&Sigma;</span>", attrs={"class": "inverse"}, isHTML=True) , n+2, 0)
+    for i, entrant in enumerate(entrants):
+        cell = create_entrant_cell(entrant, auth_user_id)
+        table.addCell(cell, 0, i+1)
+    attrs = {"class": "number"}
+    for match in matches:
+        p1 = entrant_id_to_index_map[match.team1_id]
+        p2 = entrant_id_to_index_map[match.team2_id]
+        points = get_box_league_points(match)
+        table.addCell(Cell(points[0], attrs), p2+2, p1+1)
+        table.addCell(Cell(points[1], attrs), p1+2, p2+1)
+    for i, entrant in enumerate(entrants):
+        table.addCell(Cell(entrant.get("Pts") or 0, {"class": "points"}), n+2, i+1) 
+    return table.toHtmlString()
+
+def create_league_table(competition, entrants, auth_user_id, attrs={}):
+    entrants = entrants.values()
+    entrants.sort(key=itemgetter("Pts"), reverse=True)
+    attrs.update({
+        "data-id": str(competition.id),
+        "data-name": competition.name,
+        "class": "boxes leaguetable ui-table",
+    })
+    fields = ["P", "W", "D", "L", "F", "A", "Pts"]
+    table = Table(len(fields)+1, len(entrants)+1, attrs)
+    table.addCell(Cell("", {"class": "noborder"}), 0, 0)
+    for i,field in enumerate(fields):
+        table.addCell(Cell(field, attrs={"class": "inverse"}) , i+1, 0)
+    attrs = {}
+    for i, entrant in enumerate(entrants):
+        cell = create_entrant_cell(entrant, auth_user_id)
+        table.addCell(cell, 0, i+1)
+        for j,field in enumerate(fields):
+            cls = "number points" if field == "Pts" else "number"
+            attrs["class"] = cls
+            table.addCell(Cell(entrant.get(field) or 0, attrs), j+1, i+1)
+    return table.toHtmlString()
+
+
+def box_test_view(request, end_date=None, template_name="boxes.html", check_permissions=False, comp_type="boxes"):
+    queryset = CompetitionGroup.objects.filter(comp_type="wsrc_boxes").exclude(competition__state="not_started").order_by('-end_date')
+    if end_date is None:
+        group = queryset[0]
+    else:
+        end_date = parse_iso_date_to_naive(end_date)
+        group = get_object_or_404(queryset, end_date=end_date)
+
+    auth_user_id = request.user.id if request.user.is_authenticated() else None
+    is_editor = request.user.has_perm("competitions.change_match")
+    boxes = []
+    max_players = 0
+    previous_cfg = None
+    all_matches = [m for m in Match.objects.filter(competition__group=group)]
+    fields = ["id", "player1__id", "player1__user__id", "player1__user__first_name", "player1__user__last_name", "handicap", "ordering", "competition_id"]
+    all_entrants = [p for p in Entrant.objects.filter(competition__group=group).values(*fields)]
+    for comp in group.competition_set.all():
+        matches = [m for m in all_matches if m.competition_id==comp.id]
+        entrants = [e for e in all_entrants if e['competition_id']==comp.id]
+        entrants = enrich_entrants(entrants, matches)
+        max_players = max(max_players, len(entrants))
+        cfg = create_box_config(previous_cfg, comp, entrants, auth_user_id, is_editor)
+        cfg["competition"] = comp
+        cfg["entrants"] = entrants
+        cfg["matches"] = matches
+        boxes.append(cfg)
+        previous_cfg = cfg
+    for box in boxes:
+        box["box_table"]    = create_box_table(box["competition"], max_players, box["entrants"], box["matches"], auth_user_id)
+        box["league_table"] = create_league_table(box["competition"], box["entrants"], auth_user_id, {"style": "display: none;"})
+        def serialize(m):
+            data = MatchSerializer(m).data
+            scores = m.get_scores()
+            data["scores"] = scores
+            data["points"] = get_box_league_points(m, scores)
+            return data
+        matches_data = [serialize(m) for m in box["matches"]]
+        box["matches_data"] = JSON_RENDERER.render(matches_data)
+        
+    ctx = {
+        "competition": {"name": group.name, "id": group.id},
+        "boxes": boxes,
+    }
+    options = set_view_options(request, ctx)
+    ctx["selector"] = comp_type == "boxes" and get_boxes_links(options, group) or get_tournament_links(options, group)
+    return TemplateResponse(request, "boxes.html", ctx)
+    
 def boxes_view(request, end_date=None, template_name="boxes.html", check_permissions=False, comp_type="boxes", name=None, year=None):
     """Return a view of the Leagues for ending on END_DATE. If
     END_DATE is  negative, the current league is shown"""
@@ -517,3 +662,6 @@ class UpdateTournament(CompetitionEditorPermissionedAPIView):
             tournament.set_rounds(comp_id, rounds)
         return HttpResponse(status=201)
 
+# Local Variables:
+# mode: python
+# python-indent-offset: 4
