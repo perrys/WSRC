@@ -299,7 +299,7 @@ class BoxesViewBase(TemplateView):
             content = "<a href='{url}?filter-ids={id}'>{content}</a>".format(url=reverse("member_list"), id=entrant["player1__id"], content=content)
             isHTML=True
             if auth_user_id == entrant["player1__user__id"]:
-                attrs["class"] = "wsrc-currentuser"
+                merge_classes(attrs, "wsrc-currentuser")
         return Cell(content, attrs, isHeader=True, isHTML=isHTML)
         
     def create_box_table(self, competition, n, entrants, matches, auth_user_id, attrs={}):
