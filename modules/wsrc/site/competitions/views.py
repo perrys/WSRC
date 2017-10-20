@@ -17,7 +17,7 @@ from wsrc.site.models import EmailContent
 from wsrc.site.usermodel.models import Player
 from wsrc.site.competitions.models import Competition, CompetitionGroup, Match, Entrant
 from wsrc.site.competitions.serializers import CompetitionSerializer, CompetitionGroupSerializer, MatchSerializer, get_box_league_points
-from wsrc.utils.html_table import Table, Cell, SpanningCell
+from wsrc.utils.html_table import Table, Cell, SpanningCell, merge_classes
 from wsrc.utils.timezones import parse_iso_date_to_naive
 from wsrc.utils import email_utils
 
@@ -30,6 +30,7 @@ from django.template import Template, Context
 from django.template.response import TemplateResponse
 from django.forms import ModelForm, ModelChoiceField
 from django.http import HttpResponse, HttpResponseBadRequest
+from django.views.generic import TemplateView
 
 import rest_framework.filters
 import rest_framework.status
@@ -185,19 +186,6 @@ def get_tournament_links(options, selected_comp_or_group):
                    })
     return {"default_text": "Select Tournament", "links": result}
 
-def get_boxes_links(options, selected_group):
-    leagues = []
-    no_navigation = "no_navigation" in options
-    suffix = no_navigation and "?no_navigation" or ""
-    for group in CompetitionGroup.objects.filter(comp_type="wsrc_boxes").exclude(competition__state="not_started"):
-        leagues.append({"year": group.end_date.year, 
-                        "end_date": group.end_date, 
-                        "name": group.name,
-                        "link": reverse(boxes_view) + "/" + group.end_date.isoformat() + suffix,
-                        "selected": no_navigation and group == selected_group
-                    })
-    return {"default_text": "Leagues Ending", "links": leagues}
-
 def create_spreadsheet(comp_meta, boxes_config):
     import xlsxwriter
     from django.contrib.staticfiles import finders
@@ -297,195 +285,214 @@ def enrich_entrants(entrants, matches):
         totalize(e2, 1)
     return entrants
 
-def create_entrant_cell(entrant, auth_user_id):
-    content="{player1__user__first_name} {player1__user__last_name}".format(**entrant)
-    attrs={
-        "class": "text player",
-        "data-player_id":  str(entrant["player1__id"]),
-        "data-entrant_id": str(entrant["id"]),
-    }
-    isHTML=False
-    if auth_user_id is not None:
-        content = "<a href='{url}?filter-ids={id}'>{content}</a>".format(url=reverse("member_list"), id=entrant["player1__id"], content=content)
-        isHTML=True
-        if auth_user_id == entrant["player1__user__id"]:
-            attrs["class"] = "wsrc-currentuser"
-    return Cell(content, attrs, isHeader=True, isHTML=isHTML)
-    
-def create_box_table(competition, n, entrants, matches, auth_user_id):
-    entrants = entrants.values()
-    entrants.sort(key=itemgetter("ordering"))
-    entrant_id_to_index_map = dict([(e["id"], i) for i,e in enumerate(entrants)])
-    attrs = {
-        "id": "box_table_{id}".format(id=competition.id),
-        "data-id": str(competition.id),
-        "data-name": competition.name,
-        "class": "boxes boxtable ui-table",
-    }
-    table = Table(n+3, n+1, attrs)
-    table.addCell(SpanningCell(2, 1, "", {"class": "noborder"}), 0, 0)
-    for i in range(0, n):
-        table.addCell(Cell(content=i+1, attrs={"class": "inverse"}), i+2, 0)
-        table.addCell(Cell(content=i+1, attrs={"class": "inverse"}), 1,   i+1)
-        table.addCell(Cell(content="", attrs={"class": "inverse"}),  i+2, i+1)
-    table.addCell(Cell("<span>&Sigma;</span>", attrs={"class": "inverse"}, isHTML=True) , n+2, 0)
-    for i, entrant in enumerate(entrants):
-        cell = create_entrant_cell(entrant, auth_user_id)
-        table.addCell(cell, 0, i+1)
-    attrs = {"class": "number"}
-    for match in matches:
-        p1 = entrant_id_to_index_map[match.team1_id]
-        p2 = entrant_id_to_index_map[match.team2_id]
-        points = get_box_league_points(match)
-        table.addCell(Cell(points[0], attrs), p2+2, p1+1)
-        table.addCell(Cell(points[1], attrs), p1+2, p2+1)
-    for i, entrant in enumerate(entrants):
-        table.addCell(Cell(entrant.get("Pts") or 0, {"class": "points"}), n+2, i+1) 
-    return table.toHtmlString()
+class BoxesViewBase(TemplateView):
 
-def create_league_table(competition, entrants, auth_user_id, attrs={}):
-    entrants = entrants.values()
-    entrants.sort(key=itemgetter("Pts"), reverse=True)
-    attrs.update({
-        "data-id": str(competition.id),
-        "data-name": competition.name,
-        "class": "boxes leaguetable ui-table",
-    })
-    fields = ["P", "W", "D", "L", "F", "A", "Pts"]
-    table = Table(len(fields)+1, len(entrants)+1, attrs)
-    table.addCell(Cell("", {"class": "noborder"}), 0, 0)
-    for i,field in enumerate(fields):
-        table.addCell(Cell(field, attrs={"class": "inverse"}) , i+1, 0)
-    attrs = {}
-    for i, entrant in enumerate(entrants):
-        cell = create_entrant_cell(entrant, auth_user_id)
-        table.addCell(cell, 0, i+1)
-        for j,field in enumerate(fields):
-            cls = "number points" if field == "Pts" else "number"
-            attrs["class"] = cls
-            table.addCell(Cell(entrant.get(field) or 0, attrs), j+1, i+1)
-    return table.toHtmlString()
-
-
-def box_test_view(request, end_date=None, template_name="boxes.html", check_permissions=False, comp_type="boxes"):
-    queryset = CompetitionGroup.objects.filter(comp_type="wsrc_boxes").exclude(competition__state="not_started").order_by('-end_date')
-    if end_date is None:
-        group = queryset[0]
-    else:
-        end_date = parse_iso_date_to_naive(end_date)
-        group = get_object_or_404(queryset, end_date=end_date)
-
-    auth_user_id = request.user.id if request.user.is_authenticated() else None
-    is_editor = request.user.has_perm("competitions.change_match")
-    boxes = []
-    max_players = 0
-    previous_cfg = None
-    all_matches = [m for m in Match.objects.filter(competition__group=group)]
-    fields = ["id", "player1__id", "player1__user__id", "player1__user__first_name", "player1__user__last_name", "handicap", "ordering", "competition_id"]
-    all_entrants = [p for p in Entrant.objects.filter(competition__group=group).values(*fields)]
-    for comp in group.competition_set.all():
-        matches = [m for m in all_matches if m.competition_id==comp.id]
-        entrants = [e for e in all_entrants if e['competition_id']==comp.id]
-        entrants = enrich_entrants(entrants, matches)
-        max_players = max(max_players, len(entrants))
-        cfg = create_box_config(previous_cfg, comp, entrants, auth_user_id, is_editor)
-        cfg["competition"] = comp
-        cfg["entrants"] = entrants
-        cfg["matches"] = matches
-        boxes.append(cfg)
-        previous_cfg = cfg
-    for box in boxes:
-        box["box_table"]    = create_box_table(box["competition"], max_players, box["entrants"], box["matches"], auth_user_id)
-        box["league_table"] = create_league_table(box["competition"], box["entrants"], auth_user_id, {"style": "display: none;"})
-        def serialize(m):
-            data = MatchSerializer(m).data
-            scores = m.get_scores()
-            data["scores"] = scores
-            data["points"] = get_box_league_points(m, scores)
-            return data
-        matches_data = [serialize(m) for m in box["matches"]]
-        box["matches_data"] = JSON_RENDERER.render(matches_data)
+    def create_entrant_cell(self, entrant, auth_user_id):
+        content="{player1__user__first_name} {player1__user__last_name}".format(**entrant)
+        attrs={
+            "class": "text player",
+            "data-player_id":  str(entrant["player1__id"]),
+            "data-entrant_id": str(entrant["id"]),
+        }
+        isHTML=False
+        if auth_user_id is not None:
+            content = "<a href='{url}?filter-ids={id}'>{content}</a>".format(url=reverse("member_list"), id=entrant["player1__id"], content=content)
+            isHTML=True
+            if auth_user_id == entrant["player1__user__id"]:
+                attrs["class"] = "wsrc-currentuser"
+        return Cell(content, attrs, isHeader=True, isHTML=isHTML)
         
-    ctx = {
-        "competition": {"name": group.name, "id": group.id},
-        "boxes": boxes,
-    }
-    options = set_view_options(request, ctx)
-    ctx["selector"] = comp_type == "boxes" and get_boxes_links(options, group) or get_tournament_links(options, group)
-    return TemplateResponse(request, "boxes.html", ctx)
+    def create_box_table(self, competition, n, entrants, matches, auth_user_id, attrs={}):
+        entrants = entrants.values()
+        entrants.sort(key=itemgetter("ordering"))
+        entrant_id_to_index_map = dict([(e["id"], i) for i,e in enumerate(entrants)])
+        attrs.update({
+            "id": "box_table_{id}".format(id=competition.id),
+            "data-id": str(competition.id),
+            "data-name": competition.name,
+        })
+        merge_classes(attrs, "boxes boxtable ui-table")
+        table = Table(n+3, n+1, attrs)
+        table.addCell(SpanningCell(2, 1, "", {"class": "noborder"}), 0, 0)
+        for i in range(0, n):
+            table.addCell(Cell(content=i+1, attrs={"class": "inverse"}, isHeader=True), i+2, 0)
+            table.addCell(Cell(content=i+1, attrs={"class": "inverse"}, isHeader=True), 1,   i+1)
+            table.addCell(Cell(content="", attrs={"class": "inverse"}, isHeader=True),  i+2, i+1)
+        table.addCell(Cell("<span>&Sigma;</span>", attrs={"class": "inverse"}, isHTML=True) , n+2, 0)
+        for i, entrant in enumerate(entrants):
+            cell = self.create_entrant_cell(entrant, auth_user_id)
+            table.addCell(cell, 0, i+1)
+        attrs = {"class": "number"}
+        for match in matches:
+            p1 = entrant_id_to_index_map[match.team1_id]
+            p2 = entrant_id_to_index_map[match.team2_id]
+            points = get_box_league_points(match)
+            table.addCell(Cell(points[0], attrs), p2+2, p1+1)
+            table.addCell(Cell(points[1], attrs), p1+2, p2+1)
+        for i, entrant in enumerate(entrants):
+            table.addCell(Cell(entrant.get("Pts") or 0, {"class": "points"}), n+2, i+1) 
+        return table.toHtmlString(self.get_table_head(competition), self.get_table_body_attrs())
     
-def boxes_view(request, end_date=None, template_name="boxes.html", check_permissions=False, comp_type="boxes", name=None, year=None):
-    """Return a view of the Leagues for ending on END_DATE. If
-    END_DATE is  negative, the current league is shown"""
+    def create_league_table(self, competition, entrants, auth_user_id, attrs={}):
+        entrants = entrants.values()
+        entrants.sort(key=itemgetter("Pts"), reverse=True)        
+        attrs.update({
+            "data-id": str(competition.id),
+            "data-name": competition.name,
+        })
+        merge_classes(attrs, "boxes leaguetable ui-table")
 
-    if check_permissions:
+        fields = ["P", "W", "D", "L", "F", "A", "Pts"]
+        table = Table(len(fields)+1, len(entrants)+1, attrs)
+        table.addCell(Cell("", {"class": "noborder"}), 0, 0)
+        for i,field in enumerate(fields):
+            table.addCell(Cell(field, attrs={"class": "inverse"}, isHeader=True) , i+1, 0)
+        attrs = {}
+        for i, entrant in enumerate(entrants):
+            cell = self.create_entrant_cell(entrant, auth_user_id)
+            table.addCell(cell, 0, i+1)
+            for j,field in enumerate(fields):
+                cls = "number points" if field == "Pts" else "number"
+                attrs["class"] = cls
+                table.addCell(Cell(entrant.get(field) or 0, attrs), j+1, i+1)
+        return table.toHtmlString(self.get_table_head(competition), self.get_table_body_attrs())
+    
+    def get_competition_type(self):
+        return "wsrc_boxes"
+
+    def enrich_context(self, context):
+        pass
+
+    def get_box_table_attrs(self):
+        return {}
+
+    def get_league_table_attrs(self):
+        return {}
+
+    def get_table_body_attrs(self):
+        return None
+    
+    def get_table_head(self, comp):
+        return None
+    
+    def get_competition_group(self, end_date=None):
+        group_queryset = CompetitionGroup.objects.filter(comp_type=self.get_competition_type()).exclude(competition__state="not_started").order_by('-end_date')
+        if end_date is None:
+            group = group_queryset[0]
+        else:
+            end_date = parse_iso_date_to_naive(end_date)
+            group = get_object_or_404(group_queryset, end_date=end_date)
+        return (group, group_queryset)
+
+    def add_selector(self, ctx, groups, selected_group):
+        leagues = []
+        for group in groups:
+            leagues.append({"year": group.end_date.year, 
+                            "end_date": group.end_date, 
+                            "name": group.name,
+                            "link": reverse("boxes") + "/" + group.end_date.isoformat(),
+                            "selected": group == selected_group
+                        })
+        ctx["selector"] =  {"default_text": "Leagues Ending", "links": leagues}
+    
+    def get_context_data(self, **kwargs):
+        (group, possible_groups) = self.get_competition_group(*self.args)
+        context = {
+            "competition": {"name": group.name, "id": group.id}
+        }
+        
+        is_editor = self.request.user.has_perm("competitions.change_match")
+        auth_user_id = self.request.user.id
+        context["boxes"] = boxes = []
+        max_players = 0
+        previous_cfg = None
+        all_matches = [m for m in Match.objects.filter(competition__group=group)]
+        fields = ["id", "player1__id", "player1__user__id", "player1__user__first_name", "player1__user__last_name", "handicap", "ordering", "competition_id"]
+        all_entrants = [p for p in Entrant.objects.filter(competition__group=group).values(*fields)]
+        all_leagues = [c for c in group.competition_set.all()]
+        for comp in all_leagues:
+            matches = [m for m in all_matches if m.competition_id==comp.id]
+            entrants = [e for e in all_entrants if e['competition_id']==comp.id]
+            entrants = enrich_entrants(entrants, matches)
+            max_players = max(max_players, len(entrants))
+            cfg = create_box_config(previous_cfg, comp, entrants, auth_user_id, is_editor)
+            cfg["competition"] = comp
+            cfg["entrants"] = entrants
+            cfg["matches"] = matches
+            boxes.append(cfg)
+            previous_cfg = cfg
+        for box in boxes:
+            box["box_table"]    = self.create_box_table(box["competition"], max_players, box["entrants"], box["matches"], auth_user_id, self.get_box_table_attrs())
+            box["league_table"] = self.create_league_table(box["competition"], box["entrants"], auth_user_id, self.get_league_table_attrs())
+            
+        self.add_selector(context, possible_groups, group)
+        self.enrich_context(context)
+        return context
+
+class BoxesUserView(BoxesViewBase):
+    template_name = "boxes.html"
+    
+    def get_league_table_attrs(self):
+        return {"style": "display: none;"}
+
+    def enrich_context(self, context):
+        for box in context["boxes"]:
+            def serialize(m):
+                data = MatchSerializer(m).data
+                scores = m.get_scores()
+                data["scores"] = scores
+                data["points"] = get_box_league_points(m, scores)
+                return data
+            matches_data = [serialize(m) for m in box["matches"]]
+            box["matches_data"] = JSON_RENDERER.render(matches_data)
+
+class BoxesAdminView(BoxesViewBase):    
+    template_name = "boxes_admin.html"
+
+    def get(self, request, *args, **kwargs):
         if (request.user.groups.filter(name="Competition Editor").count() == 0 and not request.user.is_superuser):
             raise PermissionDenied()
+        return super(BoxesAdminView, self).get(request, *args, **kwargs)
 
-    queryset = CompetitionGroup.objects.filter(comp_type="wsrc_" + comp_type)
-    if end_date is None:
-        if year is not None:
-            name = "{comp_type} - {name} {year}".format(**locals())
-            group = get_object_or_404(queryset, end_date__year=year, name__iexact=name)
+    def get_box_table_attrs(self):
+        return {"class": " ui-helper-hidden"}
 
-        groups = queryset.exclude(competition__state="not_started").order_by('-end_date')
-        group = groups[0]
-    else:
-        end_date = parse_iso_date_to_naive(end_date)
-        group = get_object_or_404(queryset, end_date=end_date)
+    def get_table_body_attrs(self):
+        return {"class": "ui-widget-content"}
 
-    box_data = JSON_RENDERER.render(CompetitionGroupSerializer(group, context={"request": FAKE_REQUEST_CONTEXT}).data)
-    competition_groups = JSON_RENDERER.render(CompetitionGroupSerializer(queryset, many=True).data)
+    def get_table_head(self, comp):
+        return "<caption class='ui-widget-header'>{comp.name}<button class='small auto'>Auto-Populate</button></caption>".format(**locals())
 
+    def create_entrant_cell(self, entrant, auth_user_id):
+        cell = super(BoxesAdminView, self).create_entrant_cell(entrant, None)
+        cell.content += " [{id}]".format(id=entrant["player1__id"])
+        return cell
 
-    def create_new_box_config(idx):
-        result = {"id": None, "players": None}
-        if idx == 0:
-            result["colspec"] = "single"
-            result["name"] = "Premier"
-            result["nthcol"] = "first"
-        else:
-            result["colspec"] = "double"
-            suffix = (idx % 2 == 1) and "A" or "B"
-            number = (idx+1)/2
-            result["name"] = "League %(number)d%(suffix)s" % locals()
-            result["nthcol"] = suffix == "A" and "first" or "second"
-        return result
+    def enrich_context(self, context):
+        context['player_data'] = JSON_RENDERER.render(Player.objects.all().values("id", "user__first_name", "user__last_name"))
+        def create_new_box_config(idx):
+            result = {"id": None, "players": None}
+            if idx == 0:
+                result["colspec"] = "single"
+                result["name"] = "Premier"
+                result["nthcol"] = "first"
+            else:
+                result["colspec"] = "double"
+                suffix = (idx % 2 == 1) and "A" or "B"
+                number = (idx+1)/2
+                result["name"] = "League %(number)d%(suffix)s" % locals()
+                result["nthcol"] = suffix == "A" and "first" or "second"
+            return result
+        context['new_boxes'] = [create_new_box_config(i) for i in range(0,21)]
+    
 
-
-    class NP(dict):
-        def get_players_as_string(self): return ""
-    nullplayer = NP({"name": "", "id": ""})
-    last = None
-    boxes = []
-    comp_meta = {"maxplayers": 0, "name": group.name, "id": group.id}
-    for league in group.competition_set.all():
-        cfg = create_box_config(request, last, league, comp_meta)
-        boxes.append(cfg)
-        last = cfg
-        if cfg["nthcol"] == "second":
-          last = None
-    for box in boxes:
-        while len(box["entrants"]) < comp_meta["maxplayers"]:
-            box["entrants"].append(nullplayer)
-
-    if request.GET.get('format') == 'xlsx':
-        payload = create_spreadsheet(comp_meta, boxes)
-        content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-        response = HttpResponse(payload, content_type=content_type)
-        response['Content-Disposition'] = 'attachment; filename="boxes_{date:%Y-%m-%d}.xlsx"'.format(date=group.end_date)
-        return response
-
-    ctx = {"competition": comp_meta}
-    options = set_view_options(request, ctx)
-    new_boxes = [create_new_box_config(i) for i in range(0,21)]
-    ctx["boxes"] = boxes
-    ctx["new_boxes"] = new_boxes
-    ctx["competition_groups"] = competition_groups
-    ctx["selector"] = comp_type == "boxes" and get_boxes_links(options, group) or get_tournament_links(options, group)
-    ctx["box_data"] = box_data
-    ctx['players'] = Player.objects.all().values("id", "user__first_name", "user__last_name") # TODO - filter to players in comp group
-    return TemplateResponse(request, template_name, ctx)
+# TODO: create spreadsheet view
+    # if request.GET.get('format') == 'xlsx':
+    #     payload = create_spreadsheet(comp_meta, boxes)
+    #     content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    #     response = HttpResponse(payload, content_type=content_type)
+    #     response['Content-Disposition'] = 'attachment; filename="boxes_{date:%Y-%m-%d}.xlsx"'.format(date=group.end_date)
+    #     return response
 
 
 def bracket_view(request, year, name, template_name="tournaments.html"):
