@@ -829,7 +829,7 @@ table.boxes {
     font-size: 0.95em;
     font-color: @color-body;
 
-    th {
+    th.player {
         font-weight:300;
         color: #000;
         overflow: hidden;
@@ -839,21 +839,20 @@ table.boxes {
         text-align: left;
         padding-left: 0px;
     }
-    td {
+    td, th.inverse {
         max-width: 6px;
         text-align: center;
         border: @color-a-bar-border  1px solid; /* Should come from a-bar-border in ui theme */
         &.noborder {
             border: 0
         }
-        &.inverse {
-	    background-color: #808080 /*{b-bar-background-color}*/;
-	    border-color: #333 /*{b-bar-border}*/;
-	    color: #ffffff /*{b-bar-color}*/;
-	    text-shadow: 0 /*{b-bar-shadow-x}*/ 0 /*{b-bar-shadow-y}*/ 0 /*{b-bar-shadow-radius}*/ #eeeeee /*{b-bar-shadow-color}*/;
-	    font-weight: bold;
-        }            
     }
+    th.inverse, td.inverse {
+	background-color: #808080 /*{b-bar-background-color}*/;
+	color: #ffffff /*{b-bar-color}*/;
+	text-shadow: 0 /*{b-bar-shadow-x}*/ 0 /*{b-bar-shadow-y}*/ 0 /*{b-bar-shadow-radius}*/ #eeeeee /*{b-bar-shadow-color}*/;
+	font-weight: bold;
+    }            
     td.points {
         background: @color-body-background;
 	font-weight: bold;
