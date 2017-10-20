@@ -57,15 +57,15 @@ urlpatterns = patterns('',
 
     url(r'^boxes/admin/activate/',              wsrc.site.competitions.views.SetCompetitionGroupLive.as_view()),
     url(r'^boxes/admin/email/',                 wsrc.site.competitions.views.SendCompetitionEmail.as_view()),
-    url(r'^boxes/admin/?$',                     wsrc.site.competitions.views.boxes_view, {'template_name': 'boxes_admin.html', 'check_permissions': True}),
-    url(r'^boxes/admin/(\d{4}-\d{2}-\d{2})/?$', wsrc.site.competitions.views.boxes_view, {'template_name': 'boxes_admin.html', 'check_permissions': True}),
+    url(r'^boxes/admin/?$',                     wsrc.site.competitions.views.BoxesAdminView.as_view()),
+    url(r'^boxes/admin/(\d{4}-\d{2}-\d{2})/?$', wsrc.site.competitions.views.BoxesAdminView.as_view()),
 
-    url(r'^boxes/(\d{4}-\d{2}-\d{2})/?$', wsrc.site.competitions.views.boxes_view), # end-date based
-    url(r'^boxes/?$',                     wsrc.site.competitions.views.boxes_view, name="boxes"), # most recent
+    url(r'^boxes/(\d{4}-\d{2}-\d{2})/?$', wsrc.site.competitions.views.BoxesUserView.as_view()), # end-date based
+    url(r'^boxes/?$',                     wsrc.site.competitions.views.BoxesUserView.as_view(), name="boxes"), # most recent
 
     url(r'^tournaments/admin/(\d{4})/([\w\s]+)/?',  wsrc.site.competitions.views.bracket_admin_view),
     url(r'^tournaments/admin/?',                    wsrc.site.competitions.views.bracket_admin_view),
-    url(r'^tournaments/qualifiers/(?P<year>\d{4})/(?P<name>[\w\s]+)?', wsrc.site.competitions.views.boxes_view, {'comp_type': 'qualifiers'}),
+#    url(r'^tournaments/qualifiers/(?P<year>\d{4})/(?P<name>[\w\s]+)?', wsrc.site.competitions.views.boxes_view, {'comp_type': 'qualifiers'}),
     url(r'^tournaments/(\d{4})/([\w\s]+)/print/?$', wsrc.site.competitions.views.bracket_view, {'template_name': 'tournaments_printable.html'}),
     url(r'^tournaments/(\d{4})/([\w\s]+)/?$',       wsrc.site.competitions.views.bracket_view),
     url(r'^tournaments/?',                          wsrc.site.competitions.views.bracket_view, {"year":None, "name":"Open"} , name="tournaments"),
