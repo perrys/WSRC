@@ -14,10 +14,8 @@
   <title>Boxes Admin - Woking Squash Rackets Club</title>
 
   <script type="text/javascript">
-var players  = { {% for p in players %}{% if forloop.counter0 > 0 %},{% endif %}{{ p.id }}: {id: {{ p.id }}, full_name: "{{ p.user__first_name }} {{ p.user__last_name }}"}{% endfor %} };
-var initial_competition_group = {{ box_data|safe }};
-var competition_groups = {{ competition_groups|safe }};
-jQuery(document).ready(function(){wsrc.admin.boxes.onReady(players, competition_groups, initial_competition_group)});
+var players = {{ player_data|safe }};
+jQuery(document).ready(function(){wsrc.admin.boxes.onReady(players)});
   </script>
 
 </head>
@@ -32,6 +30,14 @@ jQuery(document).ready(function(){wsrc.admin.boxes.onReady(players, competition_
           <label for="old_league_end_date">League:</label>
           <select name="league" id="old_league_end_date">
             <option value="">Please Select...</option>
+{% regroup selector.links|dictsortreversed:'year' by year as yearly_links_list %}
+{% for yearly_links in yearly_links_list %}
+        <optgroup label="{{ yearly_links.grouper }}">
+{% for link in yearly_links.list|dictsortreversed:'end_date' %}
+          <option value="{{ link.link }}" {% if link.selected %}selected="selected"{% endif %}>{{ link.name }}</option>
+{% endfor %}
+        </optgroup>
+{% endfor %}
           </select>
         </div>
         <div class="ui-field-contain">
@@ -40,38 +46,13 @@ jQuery(document).ready(function(){wsrc.admin.boxes.onReady(players, competition_
           <input type="radio" name="view_type" id="view_type_tables" value="tables"  checked="checked" />Tables
         </div>
       </div>
-{% for box_config in new_boxes %}
+{% for box_config in boxes %}
 {% if box_config.colspec == "double" and box_config.nthcol == "first" %}
       <div class="hrow">
 {% endif %}
       <div class="{% if box_config.colspec == 'single' %}single-table{% else %}column twin-table{% endif %} table-wrapper">
-        <table class="ui-helper-hidden boxtable" >
-          <caption class="ui-widget-header">{{ box_config.name }}<button class="small auto">Auto-Populate</button></caption>
-          <thead class="ui-widget-content">
-            <tr>
-              <th></th><th></th>
-{% for i in competition.maxplayers|as_range %}<th class="ui-bar-a block">{{ i|add:"1" }}</th>{% endfor %}
-              <th class="ui-bar-a block">Σ</th>
-            </tr>
-          </thead>
-          <tbody class="ui-widget-content"></tbody>
-        </table>
-        <table class="leaguetable" >
-          <caption class="ui-widget-header">{{ box_config.name }}<button class="small auto">Auto-Populate</button></caption>
-          <thead class="ui-widget-content">
-            <tr>
-              <th class="text"></th>
-              <th class="ui-bar-a block">P</th>
-              <th class="ui-bar-a block">W</th>
-              <th class="ui-bar-a block">D</th>
-              <th class="ui-bar-a block">L</th>
-              <th class="ui-bar-a block">F</th>
-              <th class="ui-bar-a block">A</th>
-              <th class="ui-bar-a block" style="max-width: 1.5em;">Pts</th>
-            </tr>
-          </thead>
-          <tbody class="ui-widget-content"></tbody>
-        </table>
+        {{ box_config.box_table|safe }}
+        {{ box_config.league_table|safe }}
       </div>
 {% if box_config.colspec == "double" and box_config.nthcol == "second" %}
       </div>
