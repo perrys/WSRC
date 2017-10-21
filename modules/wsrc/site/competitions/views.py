@@ -287,6 +287,11 @@ def enrich_entrants(entrants, matches):
 
 class BoxesViewBase(TemplateView):
 
+    competition_type = "wsrc_boxes"
+    box_table_attrs = {}
+    league_table_attrs= {}
+    table_body_attrs = None
+
     def create_entrant_cell(self, entrant, auth_user_id):
         content="{player1__user__first_name} {player1__user__last_name}".format(**entrant)
         attrs={
@@ -302,15 +307,16 @@ class BoxesViewBase(TemplateView):
                 merge_classes(attrs, "wsrc-currentuser")
         return Cell(content, attrs, isHeader=True, isHTML=isHTML)
         
-    def create_box_table(self, competition, n, entrants, matches, auth_user_id, attrs={}):
+    def create_box_table(self, competition, n, entrants, matches, auth_user_id):
         entrants = entrants.values()
         entrants.sort(key=itemgetter("ordering"))
         entrant_id_to_index_map = dict([(e["id"], i) for i,e in enumerate(entrants)])
-        attrs.update({
+        attrs = {
             "id": "box_table_{id}".format(id=competition.id),
             "data-id": str(competition.id),
             "data-name": competition.name,
-        })
+        }
+        attrs.update(self.box_table_attrs)
         merge_classes(attrs, "boxes boxtable ui-table")
         table = Table(n+3, n+1, attrs)
         table.addCell(SpanningCell(2, 1, "", {"class": "noborder"}), 0, 0)
@@ -331,15 +337,16 @@ class BoxesViewBase(TemplateView):
             table.addCell(Cell(points[1], attrs), p1+2, p2+1)
         for i, entrant in enumerate(entrants):
             table.addCell(Cell(entrant.get("Pts") or 0, {"class": "points"}), n+2, i+1) 
-        return table.toHtmlString(self.get_table_head(competition), self.get_table_body_attrs())
+        return table.toHtmlString(self.get_table_head(competition), self.table_body_attrs)
     
-    def create_league_table(self, competition, entrants, auth_user_id, attrs={}):
+    def create_league_table(self, competition, entrants, auth_user_id):
         entrants = entrants.values()
         entrants.sort(key=itemgetter("Pts"), reverse=True)        
-        attrs.update({
+        attrs = {
             "data-id": str(competition.id),
             "data-name": competition.name,
-        })
+        }
+        attrs.update(self.league_table_attrs)
         merge_classes(attrs, "boxes leaguetable ui-table")
 
         fields = ["P", "W", "D", "L", "F", "A", "Pts"]
@@ -355,28 +362,13 @@ class BoxesViewBase(TemplateView):
                 cls = "number points" if field == "Pts" else "number"
                 attrs["class"] = cls
                 table.addCell(Cell(entrant.get(field) or 0, attrs), j+1, i+1)
-        return table.toHtmlString(self.get_table_head(competition), self.get_table_body_attrs())
-    
-    def get_competition_type(self):
-        return "wsrc_boxes"
-
-    def enrich_context(self, context):
-        pass
-
-    def get_box_table_attrs(self):
-        return {}
-
-    def get_league_table_attrs(self):
-        return {}
-
-    def get_table_body_attrs(self):
-        return None
+        return table.toHtmlString(self.get_table_head(competition), self.table_body_attrs)
     
     def get_table_head(self, comp):
         return None
     
     def get_competition_group(self, end_date=None):
-        group_queryset = CompetitionGroup.objects.filter(comp_type=self.get_competition_type()).exclude(competition__state="not_started").order_by('-end_date')
+        group_queryset = CompetitionGroup.objects.filter(comp_type=self.competition_type).exclude(competition__state="not_started").order_by('-end_date')
         if end_date is None:
             group = group_queryset[0]
         else:
@@ -422,20 +414,18 @@ class BoxesViewBase(TemplateView):
             boxes.append(cfg)
             previous_cfg = cfg
         for box in boxes:
-            box["box_table"]    = self.create_box_table(box["competition"], max_players, box["entrants"], box["matches"], auth_user_id, self.get_box_table_attrs())
-            box["league_table"] = self.create_league_table(box["competition"], box["entrants"], auth_user_id, self.get_league_table_attrs())
+            box["box_table"]    = self.create_box_table(box["competition"], max_players, box["entrants"], box["matches"], auth_user_id)
+            box["league_table"] = self.create_league_table(box["competition"], box["entrants"], auth_user_id)
             
         self.add_selector(context, possible_groups, group)
-        self.enrich_context(context)
         return context
 
 class BoxesUserView(BoxesViewBase):
     template_name = "boxes.html"
-    
-    def get_league_table_attrs(self):
-        return {"style": "display: none;"}
+    league_table_attrs = {"style": "display: none;"}
 
-    def enrich_context(self, context):
+    def get_context_data(self, **kwargs):
+        context = super(BoxesUserView, self).get_context_data(**kwargs)
         for box in context["boxes"]:
             def serialize(m):
                 data = MatchSerializer(m).data
@@ -445,20 +435,18 @@ class BoxesUserView(BoxesViewBase):
                 return data
             matches_data = [serialize(m) for m in box["matches"]]
             box["matches_data"] = JSON_RENDERER.render(matches_data)
+        return context
 
 class BoxesAdminView(BoxesViewBase):    
     template_name = "boxes_admin.html"
+    box_table_attrs = {"class": " ui-helper-hidden"}
+    table_body_attrs = {"class": "ui-widget-content"}
 
     def get(self, request, *args, **kwargs):
         if (request.user.groups.filter(name="Competition Editor").count() == 0 and not request.user.is_superuser):
             raise PermissionDenied()
         return super(BoxesAdminView, self).get(request, *args, **kwargs)
 
-    def get_box_table_attrs(self):
-        return {"class": " ui-helper-hidden"}
-
-    def get_table_body_attrs(self):
-        return {"class": "ui-widget-content"}
 
     def get_table_head(self, comp):
         return "<caption class='ui-widget-header'>{comp.name}<button class='small auto'>Auto-Populate</button></caption>".format(**locals())
@@ -468,7 +456,8 @@ class BoxesAdminView(BoxesViewBase):
         cell.content += " [{id}]".format(id=entrant["player1__id"])
         return cell
 
-    def enrich_context(self, context):
+    def get_context_data(self, **kwargs):
+        context = super(BoxesAdminView, self).get_context_data(**kwargs)
         context['player_data'] = JSON_RENDERER.render(Player.objects.all().values("id", "user__first_name", "user__last_name"))
         def create_new_box_config(idx):
             result = {"id": None, "players": None}
@@ -484,6 +473,7 @@ class BoxesAdminView(BoxesViewBase):
                 result["nthcol"] = suffix == "A" and "first" or "second"
             return result
         context['new_boxes'] = [create_new_box_config(i) for i in range(0,21)]
+        return context
     
 
 # TODO: create spreadsheet view
