@@ -328,6 +328,8 @@ class BoxesViewBase(TemplateView):
         for i, entrant in enumerate(entrants):
             cell = self.create_entrant_cell(entrant, auth_user_id)
             table.addCell(cell, 0, i+1)
+        for i in range(len(entrants), n):
+            table.addCell(Cell("", {"class": "noborder"}, isHeader=True), 0, i+1)
         attrs = {"class": "number"}
         for match in matches:
             p1 = entrant_id_to_index_map[match.team1_id]
