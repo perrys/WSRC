@@ -30,7 +30,7 @@ from django.template import Template, Context
 from django.template.response import TemplateResponse
 from django.forms import ModelForm, ModelChoiceField
 from django.http import HttpResponse, HttpResponseBadRequest
-from django.views.generic import TemplateView
+from django.views.generic import TemplateView, View
 
 import rest_framework.filters
 import rest_framework.status
@@ -186,60 +186,9 @@ def get_tournament_links(options, selected_comp_or_group):
                    })
     return {"default_text": "Select Tournament", "links": result}
 
-def create_spreadsheet(comp_meta, boxes_config):
-    import xlsxwriter
-    from django.contrib.staticfiles import finders
-    cell_width = 5
-    title_row_height = 20
-    row_height = 18
-    output = StringIO.StringIO()
-    workbook = xlsxwriter.Workbook(output, {'in_memory': True})
-    title_format        = workbook.add_format({'align': 'right',  'valign': 'top',     'bold': True,  'border': 0})
-    header_format       = workbook.add_format({'align': 'center', 'valign': 'vcenter', 'bold': True,  'border': 2})
-    entrant_format      = workbook.add_format({'align': 'left',   'valign': 'vcenter', 'bold': False, 'indent': 0, 'left': 1, 'right': 1})
-    last_entrant_format = workbook.add_format({'align': 'left',   'valign': 'vcenter', 'bold': False, 'indent': 0, 'left': 1, 'right': 1, 'bottom': 1})
-    worksheet = workbook.add_worksheet("Boxes")
-    row = 0
-    worksheet.merge_range(row, 0, row, 2*cell_width, "Squash " + comp_meta['name'], title_format)
-    worksheet.set_column(0, 2 * cell_width + 1, 5)
-    image_path = "images/apple-touch-icon-180x180.png"
-    absolute_path = finders.find(image_path)
-    if absolute_path is None:
-        absolute_path = os.path.join("/usr/local/www", image_path)
-    worksheet.insert_image(0, 0, absolute_path, {'positioning': 3, 'x_scale': 0.4, 'y_scale': 0.4})
-    row += 3
-    for box in boxes_config:
-        row_reset = None
-        if box['colspec'] == "single":
-            col = 1 + cell_width / 2
-        elif box['nthcol'] == 'second':
-            col = cell_width + 1
-        else:
-            row_reset = row
-            col = 0
-        worksheet.set_row(row, title_row_height)
-        worksheet.merge_range(row, col, row, col + cell_width-1, box['name'], header_format)
-        row += 1
-        entrants = box['entrants']
-        for (i,e) in enumerate(entrants):
-            print e
-            worksheet.set_row(row, row_height)
-            fmt = (i+1) < len(entrants) and entrant_format or last_entrant_format
-            worksheet.merge_range(row, col, row, col + cell_width-1, e.get_players_as_string(), fmt)
-            row += 1
-        if row_reset is not None:
-            row = row_reset
-        else:
-            row += 1
-    workbook.close()
-    return output.getvalue()
-
-class BoxesViewBase(TemplateView):
+class BoxesViewBase(object):
 
     competition_type = "wsrc_boxes"
-    box_table_attrs = {}
-    league_table_attrs= {}
-    table_body_attrs = None
 
     @staticmethod
     def create_box_config(previous_cfg, competition, entrants, auth_user_id, is_editor):
@@ -250,7 +199,7 @@ class BoxesViewBase(TemplateView):
                 previous_cfg["colspec"] = 'double'
                 previous_cfg["nthcol"] = 'first'
         def this_user():
-            for e in entrants.itervalues():
+            for e in entrants:
                 if e["player1__user__id"] == auth_user_id:
                     return True
             return False
@@ -261,7 +210,101 @@ class BoxesViewBase(TemplateView):
                 "id": competition.id,
                 "can_edit": can_edit,
                 }
-    
+
+    @staticmethod
+    def get_all_entrants(comp_group):
+        fields = ["id", "player1__id", "player1__user__id", "player1__user__first_name", "player1__user__last_name", "handicap", "ordering", "competition_id"]
+        return [p for p in Entrant.objects.filter(competition__group=comp_group).order_by('ordering').values(*fields)]
+
+    def get_competition_group(self, end_date=None):
+        group_queryset = CompetitionGroup.objects.filter(comp_type=self.competition_type).exclude(competition__state="not_started").order_by('-end_date')
+        if end_date is None:
+            group = group_queryset[0]
+        else:
+            end_date = parse_iso_date_to_naive(end_date)
+            group = get_object_or_404(group_queryset, end_date=end_date)
+        return (group, group_queryset)
+
+
+class BoxesExcelView(BoxesViewBase, View):
+
+    @staticmethod
+    def create_spreadsheet(comp_group, boxes_config):
+        import xlsxwriter
+        from django.contrib.staticfiles import finders
+        cell_width = 5
+        title_row_height = 20
+        row_height = 18
+        output = StringIO.StringIO()
+        workbook = xlsxwriter.Workbook(output, {'in_memory': True})
+        title_format        = workbook.add_format({'align': 'right',  'valign': 'top',     'bold': True,  'border': 0})
+        header_format       = workbook.add_format({'align': 'center', 'valign': 'vcenter', 'bold': True,  'border': 2})
+        entrant_format      = workbook.add_format({'align': 'left',   'valign': 'vcenter', 'bold': False, 'indent': 0, 'left': 1, 'right': 1})
+        last_entrant_format = workbook.add_format({'align': 'left',   'valign': 'vcenter', 'bold': False, 'indent': 0, 'left': 1, 'right': 1, 'bottom': 1})
+        worksheet = workbook.add_worksheet("Boxes")
+        row = 0
+        worksheet.merge_range(row, 0, row, 2*cell_width, "Squash " + comp_group.name, title_format)
+        worksheet.set_column(0, 2 * cell_width + 1, 5)
+        image_path = "images/apple-touch-icon-180x180.png"
+        absolute_path = finders.find(image_path)
+        if absolute_path is None:
+            absolute_path = os.path.join("/usr/local/www", image_path)
+        worksheet.insert_image(0, 0, absolute_path, {'positioning': 3, 'x_scale': 0.4, 'y_scale': 0.4})
+        row += 3
+        for box in boxes_config:
+            row_reset = None
+            if box['colspec'] == "single":
+                col = 1 + cell_width / 2
+            elif box['nthcol'] == 'second':
+                col = cell_width + 1
+            else:
+                row_reset = row
+                col = 0
+            worksheet.set_row(row, title_row_height)
+            worksheet.merge_range(row, col, row, col + cell_width-1, box['name'], header_format)
+            row += 1
+            entrants = box['entrants']
+            for (i,e) in enumerate(entrants):
+                print e
+                worksheet.set_row(row, row_height)
+                fmt = (i+1) < len(entrants) and entrant_format or last_entrant_format
+                worksheet.merge_range(row, col, row, col + cell_width-1, "{player1__user__first_name} {player1__user__last_name}".format(**e), fmt)
+                row += 1
+            if row_reset is not None:
+                row = row_reset
+            else:
+                row += 1
+        workbook.close()
+        return output.getvalue()
+
+    def get(self, request, *args, **kwargs):
+        (group, possible_groups) = self.get_competition_group(*args)
+        boxes = []
+        max_players = 0
+        previous_cfg = None
+        all_entrants = self.get_all_entrants(group)
+        all_leagues = [c for c in group.competition_set.all()]
+        for comp in all_leagues:
+            entrants = [e for e in all_entrants if e['competition_id']==comp.id]
+            max_players = max(max_players, len(entrants))
+            print entrants
+            cfg = self.create_box_config(previous_cfg, comp, entrants, None, None)
+            cfg["competition"] = comp
+            cfg["entrants"] = entrants
+            boxes.append(cfg)
+            previous_cfg = cfg
+        payload = self.create_spreadsheet(group, boxes)
+        content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        response = HttpResponse(payload, content_type=content_type)
+        response['Content-Disposition'] = 'attachment; filename="boxes_{date:%Y-%m-%d}.xlsx"'.format(date=group.end_date)
+        return response
+        
+class BoxesTemplateViewBase(BoxesViewBase, TemplateView):
+
+    box_table_attrs = {}
+    league_table_attrs= {}
+    table_body_attrs = None
+
     @staticmethod
     def enrich_entrants(entrants, matches):
         entrants = dict([(e["id"], e) for e in entrants])
@@ -310,7 +353,7 @@ class BoxesViewBase(TemplateView):
         return Cell(content, attrs, isHeader=True, isHTML=isHTML)
         
     def create_box_table(self, competition, n, entrants, matches, auth_user_id):
-        entrants = entrants.values()
+        entrants = list(entrants)
         entrants.sort(key=itemgetter("ordering"))
         entrant_id_to_index_map = dict([(e["id"], i) for i,e in enumerate(entrants)])
         attrs = {
@@ -344,7 +387,7 @@ class BoxesViewBase(TemplateView):
         return table.toHtmlString(self.get_table_head(competition), self.table_body_attrs)
     
     def create_league_table(self, competition, entrants, auth_user_id):
-        entrants = entrants.values()
+        entrants = list(entrants)
         entrants.sort(key=itemgetter("Pts"), reverse=True)        
         attrs = {
             "data-id": str(competition.id),
@@ -371,15 +414,6 @@ class BoxesViewBase(TemplateView):
     def get_table_head(self, comp):
         return None
     
-    def get_competition_group(self, end_date=None):
-        group_queryset = CompetitionGroup.objects.filter(comp_type=self.competition_type).exclude(competition__state="not_started").order_by('-end_date')
-        if end_date is None:
-            group = group_queryset[0]
-        else:
-            end_date = parse_iso_date_to_naive(end_date)
-            group = get_object_or_404(group_queryset, end_date=end_date)
-        return (group, group_queryset)
-
     def add_selector(self, ctx, groups, selected_group):
         leagues = []
         for group in groups:
@@ -403,13 +437,12 @@ class BoxesViewBase(TemplateView):
         max_players = 0
         previous_cfg = None
         all_matches = [m for m in Match.objects.filter(competition__group=group)]
-        fields = ["id", "player1__id", "player1__user__id", "player1__user__first_name", "player1__user__last_name", "handicap", "ordering", "competition_id"]
-        all_entrants = [p for p in Entrant.objects.filter(competition__group=group).values(*fields)]
+        all_entrants = self.get_all_entrants(group)
         all_leagues = [c for c in group.competition_set.all()]
         for comp in all_leagues:
             matches = [m for m in all_matches if m.competition_id==comp.id]
             entrants = [e for e in all_entrants if e['competition_id']==comp.id]
-            entrants = self.enrich_entrants(entrants, matches)
+            self.enrich_entrants(entrants, matches)
             max_players = max(max_players, len(entrants))
             cfg = self.create_box_config(previous_cfg, comp, entrants, auth_user_id, is_editor)
             cfg["competition"] = comp
@@ -424,7 +457,7 @@ class BoxesViewBase(TemplateView):
         self.add_selector(context, possible_groups, group)
         return context
 
-class BoxesUserView(BoxesViewBase):
+class BoxesUserView(BoxesTemplateViewBase):
     template_name = "boxes.html"
     league_table_attrs = {"style": "display: none;"}
 
@@ -441,7 +474,7 @@ class BoxesUserView(BoxesViewBase):
             box["matches_data"] = JSON_RENDERER.render(matches_data)
         return context
 
-class BoxesAdminView(BoxesViewBase):    
+class BoxesAdminView(BoxesTemplateViewBase):    
     template_name = "boxes_admin.html"
     box_table_attrs = {"class": " ui-helper-hidden"}
     table_body_attrs = {"class": "ui-widget-content"}
@@ -478,16 +511,6 @@ class BoxesAdminView(BoxesViewBase):
             return result
         context['new_boxes'] = [create_new_box_config(i) for i in range(0,21)]
         return context
-    
-
-# TODO: create spreadsheet view
-    # if request.GET.get('format') == 'xlsx':
-    #     payload = create_spreadsheet(comp_meta, boxes)
-    #     content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-    #     response = HttpResponse(payload, content_type=content_type)
-    #     response['Content-Disposition'] = 'attachment; filename="boxes_{date:%Y-%m-%d}.xlsx"'.format(date=group.end_date)
-    #     return response
-
 
 def bracket_view(request, year, name, template_name="tournaments.html"):
     if year is None:
