@@ -234,57 +234,6 @@ def create_spreadsheet(comp_meta, boxes_config):
     workbook.close()
     return output.getvalue()
 
-def create_box_config(previous_cfg, competition, entrants, auth_user_id, is_editor):
-    is_second = False
-    if previous_cfg is not None:
-        if previous_cfg["name"][:-1] == competition.name[:-1]: # e.g. "League 1A" vs "League 1B"
-            is_second = True
-            previous_cfg["colspec"] = 'double'
-            previous_cfg["nthcol"] = 'first'
-    def this_user():
-        for e in entrants.itervalues():
-            if e["player1__user__id"] == auth_user_id:
-                return True
-        return False
-    can_edit = competition.state == "active" and (is_editor or this_user())
-    return {"colspec": is_second and "double" or "single",
-            "nthcol": is_second and 'second' or 'first',
-            "name": competition.name,
-            "id": competition.id,
-            "can_edit": can_edit,
-            }
-
-def enrich_entrants(entrants, matches):
-    entrants = dict([(e["id"], e) for e in entrants])
-    for e in entrants.values():
-        e["Pts"] = 0
-    def append(entrant, field, n):
-        points = entrant.get(field) or 0
-        points += n
-        entrant[field] = points            
-    for match in matches:
-        e1 = entrants[match.team1_id]
-        e2 = entrants[match.team2_id]
-        scores = match.get_scores()
-        points = get_box_league_points(match, scores)
-        sets_won = match.get_sets_won(scores)
-        def totalize(entrant, idx):
-            other_idx = 1 if idx == 0 else 0
-            append(entrant, "P", 1)
-            if sets_won[idx] > sets_won[other_idx]:
-                append(entrant, "W", 1)
-            elif sets_won[idx] < sets_won[other_idx]:
-                append(entrant, "L", 1)
-            else:
-                append(entrant, "D", 1)
-            for s in scores:
-                append(entrant, "F", s[idx])
-                append(entrant, "A", s[other_idx])
-            append(entrant, "Pts", points[idx])
-        totalize(e1, 0)
-        totalize(e2, 1)
-    return entrants
-
 class BoxesViewBase(TemplateView):
 
     competition_type = "wsrc_boxes"
@@ -292,6 +241,59 @@ class BoxesViewBase(TemplateView):
     league_table_attrs= {}
     table_body_attrs = None
 
+    @staticmethod
+    def create_box_config(previous_cfg, competition, entrants, auth_user_id, is_editor):
+        is_second = False
+        if previous_cfg is not None:
+            if previous_cfg["name"][:-1] == competition.name[:-1]: # e.g. "League 1A" vs "League 1B"
+                is_second = True
+                previous_cfg["colspec"] = 'double'
+                previous_cfg["nthcol"] = 'first'
+        def this_user():
+            for e in entrants.itervalues():
+                if e["player1__user__id"] == auth_user_id:
+                    return True
+            return False
+        can_edit = competition.state == "active" and (is_editor or this_user())
+        return {"colspec": is_second and "double" or "single",
+                "nthcol": is_second and 'second' or 'first',
+                "name": competition.name,
+                "id": competition.id,
+                "can_edit": can_edit,
+                }
+    
+    @staticmethod
+    def enrich_entrants(entrants, matches):
+        entrants = dict([(e["id"], e) for e in entrants])
+        for e in entrants.values():
+            e["Pts"] = 0
+        def append(entrant, field, n):
+            points = entrant.get(field) or 0
+            points += n
+            entrant[field] = points            
+        for match in matches:
+            e1 = entrants[match.team1_id]
+            e2 = entrants[match.team2_id]
+            scores = match.get_scores()
+            points = get_box_league_points(match, scores)
+            sets_won = match.get_sets_won(scores)
+            def totalize(entrant, idx):
+                other_idx = 1 if idx == 0 else 0
+                append(entrant, "P", 1)
+                if sets_won[idx] > sets_won[other_idx]:
+                    append(entrant, "W", 1)
+                elif sets_won[idx] < sets_won[other_idx]:
+                    append(entrant, "L", 1)
+                else:
+                    append(entrant, "D", 1)
+                for s in scores:
+                    append(entrant, "F", s[idx])
+                    append(entrant, "A", s[other_idx])
+                append(entrant, "Pts", points[idx])
+            totalize(e1, 0)
+            totalize(e2, 1)
+        return entrants
+    
     def create_entrant_cell(self, entrant, auth_user_id):
         content="{player1__user__first_name} {player1__user__last_name}".format(**entrant)
         attrs={
@@ -407,9 +409,9 @@ class BoxesViewBase(TemplateView):
         for comp in all_leagues:
             matches = [m for m in all_matches if m.competition_id==comp.id]
             entrants = [e for e in all_entrants if e['competition_id']==comp.id]
-            entrants = enrich_entrants(entrants, matches)
+            entrants = self.enrich_entrants(entrants, matches)
             max_players = max(max_players, len(entrants))
-            cfg = create_box_config(previous_cfg, comp, entrants, auth_user_id, is_editor)
+            cfg = self.create_box_config(previous_cfg, comp, entrants, auth_user_id, is_editor)
             cfg["competition"] = comp
             cfg["entrants"] = entrants
             cfg["matches"] = matches
