@@ -216,7 +216,7 @@ class BoxesViewBase(object):
         fields = ["id", "player1__id", "player1__user__id", "player1__user__first_name", "player1__user__last_name", "handicap", "ordering", "competition_id"]
         return [p for p in Entrant.objects.filter(competition__group=comp_group).order_by('ordering').values(*fields)]
 
-    def get_competition_group(self, end_date=None):
+    def get_competition_group(self, end_date=None, group_id=None):
         group_queryset = CompetitionGroup.objects.filter(comp_type=self.competition_type).exclude(competition__state="not_started").order_by('-end_date')
         if end_date is None:
             group = group_queryset[0]
@@ -474,6 +474,10 @@ class BoxesUserView(BoxesTemplateViewBase):
             box["matches_data"] = JSON_RENDERER.render(matches_data)
         return context
 
+class BoxesDataView(BoxesUserView):
+    template_name = "boxes_data.html"
+    league_table_attrs = {}
+    
 class BoxesAdminView(BoxesTemplateViewBase):    
     template_name = "boxes_admin.html"
     box_table_attrs = {"class": " ui-helper-hidden"}
