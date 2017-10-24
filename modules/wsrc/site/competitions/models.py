@@ -175,14 +175,14 @@ class Match(models.Model):
     t2wins = reduce(lambda total, val: (val[1] > val[0]) and total+1 or total, scores, 0)
     return (t1wins, t2wins)
 
-  def get_winner(self):
+  def get_winner(self, scores=None):
     if self.walkover is not None:
       if self.walkover == 1:
         return self.team1
       else:
         return self.team2
 
-    wins = self.get_sets_won()
+    wins = self.get_sets_won(scores)
     if wins is None:
       return None
     winners = None
