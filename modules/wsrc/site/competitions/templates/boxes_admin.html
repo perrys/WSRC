@@ -22,19 +22,19 @@ jQuery(document).ready(function(){wsrc.admin.boxes.onReady(players)});
 <body>
   <div class="column-wrapper ui-widget">
   <div class="hrow">
-    <form class="column" id="source_boxes" method="GET" action="#" onsubmit="return false;">{% csrf_token %}
+    <form class="column" id="source_boxes" method="GET" action="#" onsubmit="return false;" data-id="{{ competition.id }}">{% csrf_token %}
     <fieldset class="ui-corner-all">
       <legend>Old League</legend>
       <div class="top-form-field-container">
         <div class="ui-field-contain">
           <label for="old_league_end_date">League:</label>
-          <select name="league" id="old_league_end_date">
+          <select name="league" id="old_league_end_date" onchange="wsrc.admin.boxes.on('handle_league_changed', this)">
             <option value="">Please Select...</option>
 {% regroup selector.links|dictsortreversed:'year' by year as yearly_links_list %}
 {% for yearly_links in yearly_links_list %}
         <optgroup label="{{ yearly_links.grouper }}">
 {% for link in yearly_links.list|dictsortreversed:'end_date' %}
-          <option value="{{ link.link }}" {% if link.selected %}selected="selected"{% endif %}>{{ link.name }}</option>
+          <option data-id="{{ link.id }}" value="{{ link.link }}" {% if link.selected %}selected="selected"{% endif %}>{{ link.name }}</option>
 {% endfor %}
         </optgroup>
 {% endfor %}
