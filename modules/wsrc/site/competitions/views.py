@@ -319,13 +319,13 @@ class BoxesTemplateViewBase(BoxesViewBase, TemplateView):
             e2 = entrants[match.team2_id]
             scores = match.get_scores()
             points = get_box_league_points(match, scores)
-            sets_won = match.get_sets_won(scores)
-            def totalize(entrant, idx):
+            winner = match.get_winner(scores)
+            def totalize(entrant, other_entrant, idx):
                 other_idx = 1 if idx == 0 else 0
                 append(entrant, "P", 1)
-                if sets_won[idx] > sets_won[other_idx]:
+                if entrant == winner:
                     append(entrant, "W", 1)
-                elif sets_won[idx] < sets_won[other_idx]:
+                elif other_entrant == winner:
                     append(entrant, "L", 1)
                 else:
                     append(entrant, "D", 1)
@@ -333,8 +333,8 @@ class BoxesTemplateViewBase(BoxesViewBase, TemplateView):
                     append(entrant, "F", s[idx])
                     append(entrant, "A", s[other_idx])
                 append(entrant, "Pts", points[idx])
-            totalize(e1, 0)
-            totalize(e2, 1)
+            totalize(e1, e2, 0)
+            totalize(e2, e1, 1)
         return entrants
     
     def create_entrant_cell(self, entrant, auth_user_id):
