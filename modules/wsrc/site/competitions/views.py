@@ -420,7 +420,7 @@ class BoxesTemplateViewBase(BoxesViewBase, TemplateView):
             leagues.append({"year": group.end_date.year, 
                             "end_date": group.end_date, 
                             "name": group.name,
-                            "link": reverse("boxes") + "/" + group.end_date.isoformat(),
+                            "link": reverse(self.reverse_url_name) + "/" + group.end_date.isoformat(),
                             "selected": group == selected_group
                         })
         ctx["selector"] =  {"default_text": "Leagues Ending", "links": leagues}
@@ -460,6 +460,7 @@ class BoxesTemplateViewBase(BoxesViewBase, TemplateView):
 class BoxesUserView(BoxesTemplateViewBase):
     template_name = "boxes.html"
     league_table_attrs = {"style": "display: none;"}
+    reverse_url_name = "boxes"
 
     def get_context_data(self, **kwargs):
         context = super(BoxesUserView, self).get_context_data(**kwargs)
@@ -482,6 +483,7 @@ class BoxesAdminView(BoxesTemplateViewBase):
     template_name = "boxes_admin.html"
     box_table_attrs = {"class": " ui-helper-hidden"}
     table_body_attrs = {"class": "ui-widget-content"}
+    reverse_url_name = "boxes_admin"
 
     def get(self, request, *args, **kwargs):
         if (request.user.groups.filter(name="Competition Editor").count() == 0 and not request.user.is_superuser):
