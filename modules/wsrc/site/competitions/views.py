@@ -420,6 +420,7 @@ class BoxesTemplateViewBase(BoxesViewBase, TemplateView):
             leagues.append({"year": group.end_date.year, 
                             "end_date": group.end_date, 
                             "name": group.name,
+                            "id": group.id,
                             "link": reverse(self.reverse_url_name) + "/" + group.end_date.isoformat(),
                             "selected": group == selected_group
                         })
