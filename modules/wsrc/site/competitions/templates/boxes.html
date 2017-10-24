@@ -38,11 +38,11 @@
     <div class="clear-all"></div>
   </form>
 
-  <div id="source_boxes" class="competition-wrapper">
+  <div id="source_boxes" class="competition-wrapper" data-id="{{ competition.id }}">
 {% for box_config in boxes %}
 <!-- {{ box_config.colspec }} {{ box_config.nthcol }} -->
 {% if box_config.colspec != 'double' or box_config.nthcol != 'second' %}
-  <div class="ui-grid-a boxes-wrapper boxes-wrapper-{{ box_config.colspec }}column">
+  <div class="ui-grid-a boxes-wrapper boxes-wrapper-{{ box_config.colspec }}column" data-id="{{ box_config.id }}">
 {% endif %}
     <div class="ui-corner-all custom-corners boxes {% if box_config.colspec == 'double' %}boxes-{{ box_config.nthcol }}column ui-block-{% if box_config.nthcol == 'first' %}a{% else %}b{% endif %}{% endif %}">
       <div class="ui-bar box-header" data-theme="b" data-role="header">
