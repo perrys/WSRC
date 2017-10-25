@@ -214,7 +214,10 @@ class BoxesViewBase(object):
     @staticmethod
     def get_all_entrants(comp_group):
         fields = ["id", "player1__id", "player1__user__id", "player1__user__first_name", "player1__user__last_name", "handicap", "ordering", "competition_id"]
-        return [p for p in Entrant.objects.filter(competition__group=comp_group).order_by('ordering').values(*fields)]
+        entrants = [p for p in Entrant.objects.filter(competition__group=comp_group).order_by('ordering').values(*fields)]
+        for e in entrants:
+            e["full_name"] = " ".join([e["player1__user__first_name"], e["player1__user__last_name"]])
+        return entrants
 
     def get_competition_group(self, end_date=None, group_id=None):
         group_queryset = CompetitionGroup.objects.filter(comp_type=self.competition_type).exclude(competition__state="not_started").order_by('-end_date')
@@ -268,7 +271,7 @@ class BoxesExcelView(BoxesViewBase, View):
                 print e
                 worksheet.set_row(row, row_height)
                 fmt = (i+1) < len(entrants) and entrant_format or last_entrant_format
-                worksheet.merge_range(row, col, row, col + cell_width-1, "{player1__user__first_name} {player1__user__last_name}".format(**e), fmt)
+                worksheet.merge_range(row, col, row, col + cell_width-1, "{full_name}".format(**e), fmt)
                 row += 1
             if row_reset is not None:
                 row = row_reset
@@ -338,7 +341,7 @@ class BoxesTemplateViewBase(BoxesViewBase, TemplateView):
         return entrants
     
     def create_entrant_cell(self, entrant, auth_user_id):
-        content="{player1__user__first_name} {player1__user__last_name}".format(**entrant)
+        content="{full_name}".format(**entrant)
         attrs={
             "class": "text player",
             "data-player_id":  str(entrant["player1__id"]),
