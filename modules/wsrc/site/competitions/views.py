@@ -505,7 +505,18 @@ class BoxesAdminView(BoxesTemplateViewBase):
 
     def get_context_data(self, **kwargs):
         context = super(BoxesAdminView, self).get_context_data(**kwargs)
-        context['player_data'] = JSON_RENDERER.render(Player.objects.all().values("id", "user__first_name", "user__last_name"))
+        player_data = Player.objects.all().values("id", "user__first_name", "user__last_name")
+        context['player_data'] = JSON_RENDERER.render(dict([(p["id"], p) for p in player_data]))
+        
+        # add any unstarted competition
+        group_queryset = CompetitionGroup.objects.filter(comp_type=self.competition_type).filter(competition__state="not_started").order_by('-end_date')
+        all_entrants = all_leagues = None
+        if group_queryset.count() > 0:
+            group = group_queryset[0]
+            all_entrants = self.get_all_entrants(group)
+            all_leagues = [c for c in group.competition_set.all()]
+            context["new_competition_group"] = group
+        
         def create_new_box_config(idx):
             result = {"id": None, "players": None}
             if idx == 0:
@@ -518,6 +529,14 @@ class BoxesAdminView(BoxesTemplateViewBase):
                 number = (idx+1)/2
                 result["name"] = "League %(number)d%(suffix)s" % locals()
                 result["nthcol"] = suffix == "A" and "first" or "second"
+            result["entrants"] = entrants = []
+            if all_leagues is not None:
+                leagues = [l for l in all_leagues if l.name == result["name"]]
+                if len(leagues) == 1:
+                    result["competition"] = leagues[0]
+                    entrants.extend([e for e in all_entrants if e["competition_id"] == leagues[0].id])
+            while len(entrants) < 6:
+                entrants.append({"id": "", "full_name": ""})                
             return result
         context['new_boxes'] = [create_new_box_config(i) for i in range(0,21)]
         return context
