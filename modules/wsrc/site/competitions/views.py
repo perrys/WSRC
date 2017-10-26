@@ -322,13 +322,13 @@ class BoxesTemplateViewBase(BoxesViewBase, TemplateView):
             e2 = entrants[match.team2_id]
             scores = match.get_scores()
             points = get_box_league_points(match, scores)
-            winner = match.get_winner(scores)
+            winner = match.get_winner(scores, True)
             def totalize(entrant, other_entrant, idx):
                 other_idx = 1 if idx == 0 else 0
                 append(entrant, "P", 1)
-                if entrant == winner:
+                if entrant["id"] == winner:
                     append(entrant, "W", 1)
-                elif other_entrant == winner:
+                elif other_entrant["id"] == winner:
                     append(entrant, "L", 1)
                 else:
                     append(entrant, "D", 1)
