@@ -42,6 +42,10 @@ class BookingSystemEvent(models.Model):
     start_time = timezone.localtime(self.start_time)
     return BookingSystemEvent.generate_hmac_token(start_time, self.court)
 
+  def duration_minutes(self):
+    dt = self.end_time - self.start_time
+    return int(dt.total_seconds() / 60)
+  
   def __unicode__(self):
     if self.start_time is None or self.end_time is None:
       return "Invalid event"
