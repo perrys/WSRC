@@ -63,6 +63,8 @@ urlpatterns = patterns('',
     url(r'^boxes/xl/(\d{4}-\d{2}-\d{2})/?$',    wsrc.site.competitions.views.BoxesExcelView.as_view()),
     url(r'^boxes/data/(?P<group_id>\d+)/?$',    wsrc.site.competitions.views.BoxesDataView.as_view()),
 
+    url(r'^boxes/preview/(?P<group_id>\d+)/?$', wsrc.site.competitions.views.BoxesPreviewView.as_view()), # end-date based
+                       
     url(r'^boxes/(\d{4}-\d{2}-\d{2})/?$', wsrc.site.competitions.views.BoxesUserView.as_view()), # end-date based
     url(r'^boxes/?$',                     wsrc.site.competitions.views.BoxesUserView.as_view(), name=wsrc.site.competitions.views.BoxesUserView.reverse_url_name),
 

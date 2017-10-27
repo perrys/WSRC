@@ -430,7 +430,7 @@ class BoxesTemplateViewBase(BoxesViewBase, TemplateView):
         ctx["selector"] =  {"default_text": "Leagues Ending", "links": leagues}
     
     def get_context_data(self, **kwargs):
-        (group, possible_groups) = self.get_competition_group(*self.args)
+        (group, possible_groups) = self.get_competition_group(*self.args, **kwargs)
         context = {
             "competition": {"name": group.name, "id": group.id}
         }
@@ -479,6 +479,12 @@ class BoxesUserView(BoxesTemplateViewBase):
             box["matches_data"] = JSON_RENDERER.render(matches_data)
         return context
 
+class BoxesPreviewView(BoxesUserView):
+    def get_competition_group(self, group_id):
+        (group, possible_groups) = super(BoxesPreviewView, self).get_competition_group()
+        group = get_object_or_404(CompetitionGroup.objects.filter(comp_type=self.competition_type), pk=group_id)
+        return (group, possible_groups)
+    
 class BoxesDataView(BoxesUserView):
     template_name = "boxes_data.html"
     league_table_attrs = {}
