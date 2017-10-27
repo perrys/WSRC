@@ -60,13 +60,13 @@ jQuery(document).ready(function(){wsrc.admin.boxes.onReady(players)});
 {% endfor %}
     </fieldset>
     </form>
-    <form class="column" id="target_boxes" method="GET" action="#" onsubmit="return false;">  
+    <form class="column" id="target_boxes" method="GET" action="#" onsubmit="return false;" {% if new_competition_group %}data-id="{{ new_competition_group.id }}"{% endif %}>  
     <fieldset class="ui-corner-all">
       <legend>New League</legend>
       <div class="top-form-field-container">
         <div class="ui-field-contain">
           <label for="target_league_end_date">End Date:</label>
-          <input name="end_date" id="target_league_end_date">
+          <input name="end_date" id="target_league_end_date" {% if new_competition_group %}value="{{ new_competition_group.end_date.isoformat }}"{% endif %}>
           <button type="button" name="save" value="save">Save</button>
           <button type="button" name="preview" value="preview">Preview</button>
         </div>
@@ -88,14 +88,18 @@ jQuery(document).ready(function(){wsrc.admin.boxes.onReady(players)});
       <div class="hrow">
 {% endif %}
       <div class="{% if box_config.colspec == 'single' %}single-table{% else %}column twin-table{% endif %} table-wrapper">
-        <table class="newtable"  data-ordering="{{ forloop.counter }}">
+        <table class="newtable"  data-ordering="{{ forloop.counter }}" {% if box_config.competition %}data-id="{{ box_config.competition.id }}"{% endif %}>
           <caption class="ui-widget-header">{{ box_config.name }}<button class="small clear_all">Clear Box</button></caption>
           <thead class="ui-widget-content">
             <tr><th colspan="3"></th></tr>
           </thead>
           <tbody>
-{% for i in "123456" %}
-            <tr><td><span class="handle ui-icon ui-icon-carat-2-n-s"></span></td><th><input class="player" name="player_{{ i }}" /></th><td><button class="small remove">Remove</button></td></tr>
+{% for entrant in box_config.entrants %}
+          <tr>
+            <td><span class="handle ui-icon ui-icon-carat-2-n-s"></span></td>
+            <th><input class="player" name="player_{{ i }}" {% if entrant.id %}value="{{ entrant.full_name }} [{{ entrant.player1__id }}]"{% endif %}/></th>
+            <td><button class="small remove">Remove</button></td>
+          </tr>
 {% endfor %}
           </tbody>
         </table>
