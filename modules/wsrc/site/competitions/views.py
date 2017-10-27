@@ -512,6 +512,8 @@ class BoxesAdminView(BoxesTemplateViewBase):
     def get_context_data(self, **kwargs):
         context = super(BoxesAdminView, self).get_context_data(**kwargs)
         player_data = Player.objects.all().values("id", "user__first_name", "user__last_name")
+        for p in player_data:
+            p["full_name"] = u"{user__first_name} {user__last_name}".format(**p)
         context['player_data'] = JSON_RENDERER.render(dict([(p["id"], p) for p in player_data]))
         
         # add any unstarted competition
