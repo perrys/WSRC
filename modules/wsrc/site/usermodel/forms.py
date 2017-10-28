@@ -18,10 +18,10 @@ from django.contrib.auth.models import User
 from django.contrib.auth.forms import AuthenticationForm
 from django.forms.fields import CharField
 from django.forms import ModelForm
-from django.forms.models import modelformset_factory
+from django.forms.models import modelformset_factory, ModelMultipleChoiceField
 from django.forms.widgets import Select, CheckboxSelectMultiple, HiddenInput, Textarea
 
-from wsrc.site.models import EventFilter
+from wsrc.site.models import EventFilter, DayOfWeek
 from wsrc.site.usermodel.models import Player
 
 class SpaceTranslatingCharField(CharField):
@@ -50,6 +50,12 @@ class SettingsPlayerForm(ModelForm):
         model = Player
         fields = ["cell_phone", "other_phone", "short_name", "prefs_receive_email", "prefs_esra_member", "prefs_display_contact_details"]
         exclude = ('user',)
+
+class NotifierForm(ModelForm):
+    days =  ModelMultipleChoiceField(DayOfWeek.objects.all(), cache_choices=True, widget=CheckboxSelectMultiple())
+    class Meta:
+        model = EventFilter
+        fields = ["earliest", "latest", "notice_period_minutes", "days", "player"]
  
 def create_notifier_filter_formset_factory(max_number):
     time_choices = [
@@ -81,11 +87,11 @@ def create_notifier_filter_formset_factory(max_number):
         (1440, "1 day"),
         ]
     return modelformset_factory(
-        EventFilter, 
+        EventFilter,
+        form=NotifierForm,
         can_delete = True,
         extra=max_number,
         max_num=max_number,
-        fields = ["earliest", "latest", "notice_period_minutes", "days", "player"],
         widgets = {
             "earliest": Select(choices=time_choices),
             "latest": Select(choices=time_choices),
