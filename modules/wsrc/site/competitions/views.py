@@ -268,7 +268,6 @@ class BoxesExcelView(BoxesViewBase, View):
             row += 1
             entrants = box['entrants']
             for (i,e) in enumerate(entrants):
-                print e
                 worksheet.set_row(row, row_height)
                 fmt = (i+1) < len(entrants) and entrant_format or last_entrant_format
                 worksheet.merge_range(row, col, row, col + cell_width-1, "{full_name}".format(**e), fmt)
@@ -290,7 +289,6 @@ class BoxesExcelView(BoxesViewBase, View):
         for comp in all_leagues:
             entrants = [e for e in all_entrants if e['competition_id']==comp.id]
             max_players = max(max_players, len(entrants))
-            print entrants
             cfg = self.create_box_config(previous_cfg, comp, entrants, None, None)
             cfg["competition"] = comp
             cfg["entrants"] = entrants
