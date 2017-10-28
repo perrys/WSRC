@@ -42,7 +42,7 @@
 {% for box_config in boxes %}
 <!-- {{ box_config.colspec }} {{ box_config.nthcol }} -->
 {% if box_config.colspec != 'double' or box_config.nthcol != 'second' %}
-  <div class="ui-grid-a boxes-wrapper boxes-wrapper-{{ box_config.colspec }}column" data-id="{{ box_config.id }}">
+  <div class="ui-grid-a boxes-wrapper boxes-wrapper-{{ box_config.colspec }}column">
 {% endif %}
     <div class="ui-corner-all custom-corners boxes {% if box_config.colspec == 'double' %}boxes-{{ box_config.nthcol }}column ui-block-{% if box_config.nthcol == 'first' %}a{% else %}b{% endif %}{% endif %}">
       <div class="ui-bar box-header" data-theme="b" data-role="header">
@@ -53,7 +53,7 @@
 {% endif %}
         <a class="ui-btn ui-btn-icon ui-btn-icon-left ui-icon-bullets ui-corner-all ui-btn-left ui-btn-a" data-rel="popup" onclick="wsrc.boxes.on('handle_results_clicked', {{ box_config.id }}); return true;">Results</a>
       </div>
-      <div class="ui-body ui-body-a">
+      <div class="ui-body ui-body-a" data-id="{{ box_config.id }}">
         {{ box_config.box_table|safe }}
         {{ box_config.league_table|safe }}
         <script>wsrc_boxes_data.matches["{{ box_config.id }}"]={{ box_config.matches_data|safe }};</script>
