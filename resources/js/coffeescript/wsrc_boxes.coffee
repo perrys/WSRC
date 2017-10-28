@@ -4,24 +4,7 @@
 
 class WSRC_boxes_model
    
-  constructor: (@source_competitiongroup, @member_map, competition_groups) ->
-    @current_competition_groups = []
-    @new_competition_groups = []
-    if competition_groups
-      @competition_group_map = wsrc.utils.list_to_map(competition_groups, 'id')
-      for group in competition_groups
-        if group.comp_type == "wsrc_boxes"
-          status = group.status
-          if status == "empty" or status == "not_started"
-            @new_competition_groups.push(group)
-          else if status == "active" or status == "complete"
-            @current_competition_groups.push(group)
-
-  get_source_competition: (id) ->
-    for comp in @source_competitiongroup.competitions_expanded
-      if comp.id == id
-        return comp
-    return null
+  constructor: (@member_map) ->
 
 
 ################################################################################
@@ -61,69 +44,21 @@ class WSRC_boxes_view
       name += " [#{ player.id }]"
     return name
 
-  populate_box: (box, max_players, points_table, clear_and_add_rows) ->
-    points_map = {}
-    for row in points_table
-      points_map[row.id] = row.pts
-    container = @source_container_map[box.name]
-    table_body = container.find("table.boxtable tbody")
-    if clear_and_add_rows
-      table_body.children().remove()
-    entrant_id_to_index_map = {}
-    rows = []
-    idx = 0
-    for player_spec in box.entrants
-      player = player_spec.player1
-      name = @get_player_name(player)
-      entrant_id_to_index_map[player_spec.id] = idx
-      if clear_and_add_rows
-        current_user_cls = ''
-        block_cls = 'ui-bar-a block'
-        jrow = $("<tr data-id='#{ player.id }'><th class='#{ current_user_cls } text player'>#{ name }</th><th class='#{ block_cls }'>#{ idx+1 }</th></tr>")
-        row = []
-        rows.push(row)
-        for j in [0...max_players]
-          if idx == j
-            jcell = $("<td class='#{ block_cls }'></td>")
-          else
-            jcell = $("<td class='points'></td>")
-          jrow.append(jcell)
-          row.push(jcell.get(0))
-        jrow.append("<td class='number'>#{ points_map[player_spec.id] }</td>")
-        table_body.append(jrow)
-      ++idx
-    unless clear_and_add_rows
-      table_body.children().each (i, elt) ->
-        id = elt.getAttribute("data-id")
-        if id
-          row = []
-          rows.push(row)
-          $.map elt.children, (elt, j) ->
-            row.push(elt) if j > 1
-          elt.lastElementChild.textContent = points_map[id]
-    for match in box.matches
-      p1 = entrant_id_to_index_map[match.team1]
-      p2 = entrant_id_to_index_map[match.team2]
-      rows[p1][p2].textContent = match.points[0]
-      rows[p2][p1].textContent = match.points[1]
-        
-  populate_points_table: (box, max_players, points_totals) ->
-    container = @source_container_map[box.name]
-    table_body = container.find("table.leaguetable tbody")
-    table_body.children().remove()
-    id_map = {}
-    for e in box.entrants
-      id_map[e.id] = e
-    for row in points_totals
-      entrant = id_map[row.id]
-      current_user_cls = '' # if row.id == WSRC_user_player_id then 'wsrc-currentuser' else ''
-      name = entrant.player1.full_name
-      if entrant.handicap?
-        name += " (#{ entrant.handicap })"
-      if @is_admin_view
-        name += " [#{ entrant.player1.id }]"
-      tr = "<tr data-id='#{ entrant.player1.id }'><th class='text player #{ current_user_cls }'>#{ name }</th><td class='number'>#{ row.p }</td><td class='number'>#{ row.w }</td><td class='number'>#{ row.d }</td><td class='number'>#{ row.l }</td><td class='number'>#{ row.f }</td><td class='number'>#{ row.a }</td><td class='number'>#{ row.pts }</td></tr>"
-      table_body.append(tr)
+  update_tables: (nodes) ->
+    targets = $(".boxes-wrapper .ui-body")
+    for node in nodes 
+      comp = $(node)
+      unless comp.hasClass("box-container")
+        continue
+      comp_id = comp.data("id")
+      new_box_table = comp.find("table.boxtable")
+      new_league_table = comp.find("table.leaguetable")
+      new_script = comp.find("script")
+      target = targets.filter (idx, elt) -> $(elt).data("id") == comp_id
+      assert(target.length == 1)
+      target.find("table.boxtable").replaceWith(new_box_table)
+      target.find("table.leaguetable").replaceWith(new_league_table)
+      target.find("script").replaceWith(new_script)
 
   show_results_dialog: (box) ->
     container = $("#box_results_dialog")
@@ -164,17 +99,6 @@ class WSRC_boxes_view
       jqbody.append(tr)
     container.popup("open")
 
-  populate_new_table: (comp) ->
-    container = @target_container_map[comp.name]
-    container.data("id", comp.id)
-    inputs = container.find("input.player")
-    inputs.val("")
-    idx = 0
-    for entrant in comp.entrants
-      inputs.eq(idx).val(@get_player_name(entrant.player1))
-      @set_source_player_ghost(entrant.player1.id)
-      ++idx
-
   clear_new_tables: () ->
     for id, container of @target_container_map
       container.data("id", null)
@@ -189,9 +113,9 @@ class WSRC_boxes_view
       $("table.leaguetable").hide()
       $("table.boxtable").show()
 
-  make_id_filter: (id) ->
+  make_player_id_filter: (id) ->
     return (idx, elt) ->
-      $(elt).data("id") == id
+      $(elt).find("th.player").data("player_id") == id
 
   relocate_player: (player, table_name, index) ->
     target_table = @target_container_map[table_name]
@@ -202,7 +126,7 @@ class WSRC_boxes_view
       draggables.draggable("disable")
         
   set_source_player_ghost: (id) ->
-    rows = $("#source_boxes tr").filter(@make_id_filter(id))
+    rows = $("#source_boxes tr").filter(@make_player_id_filter(id))
     draggables = rows.find("th.player:not(.ui-draggable-dragging)")
     draggables.css("opacity", @ghost_opacity)
     return draggables
@@ -210,30 +134,10 @@ class WSRC_boxes_view
   revert_source_player_ghost: (id) ->
     rows = $("#source_boxes tr")
     if id
-      rows = rows.filter(@make_id_filter(id))
+      rows = rows.filter(@make_player_id_filter(id))
     draggables = rows.find("th.player")
     draggables.css("opacity", 1.0)
     return draggables
-
-  erase_source_leagues: () ->
-    $("#source_boxes div.table-wrapper tbody th.player").html("")
-
-  hide_source_leagues: () ->
-    $("#source_boxes div.table-wrapper").hide()
-        
-  show_source_league: (league) ->
-    @source_container_map[league.name].show()    
-
-  show_new_league_dialog: () ->
-    jqdialog = $("#new_league_form_dialog")
-    jqdialog.dialog(
-      width: 450
-      height: 100
-      autoOpen: false
-      model: true
-      dialogClass: "new_member_form_dialog"
-    )
-    jqdialog.dialog("open")
 
     
 
@@ -246,40 +150,16 @@ class WSRC_boxes
 
   constructor: (@model, is_admin_view) ->
     @view = new WSRC_boxes_view(is_admin_view)
-    @populate_source_competition_group(@model.source_competitiongroup)
     view_radios = $("input[name='view_type']")
     view_radios.on "change", (evt) =>
       @handle_display_type_change(evt)
     $("#box-refresh-button").click (evt) =>
-      @fetch_competition_group @model.source_competitiongroup, (data) =>
-        @model.source_competitiongroup = data
-        @populate_source_competition_group(data)
-      
+      @fetch_competition_group @get_competition_group_id()
 
-  populate_source_competition_group: (competition_group, clear_and_add_rows) ->
-    max_players = 0
-    leagues = competition_group.competitions_expanded
-    for league in leagues
-      max_players = Math.max(max_players, league.entrants.length)
-    @view.erase_source_leagues()
-    @view.hide_source_leagues()
-    for league in leagues
-      points_table = @get_points_totals(league)
-      @view.populate_box(league, max_players, points_table, clear_and_add_rows)
-      @view.populate_points_table(league, max_players, points_table, @model.member_map)
-      @view.show_source_league(league)
+  get_competition_group_id: () ->
+    $("#source_boxes").data("id")
 
-  raw_fetch_competition_group: (group, callback, failure_callback) ->
-    opts =
-      csrf_token:  $("input[name='csrfmiddlewaretoken']").val()
-      successCB: (data, status, jq_xhr) =>
-        callback(data, status, jq_xhr)
-      failureCB: (xhr, status) -> 
-        alert("ERROR #{ xhr.status }: #{ xhr.statusText }\nResponse: #{ xhr.responseText }\n\nUnable to fetch data for '#{ group.name }'.")
-        failure_callback(xhr, status)
-    wsrc.ajax.ajax_bare_helper("/data/competitiongroup/#{ group.id }?expand=1", null, opts, "GET")
-
-  fetch_competition_group: (group, callback) ->
+  fetch_competition_group: (group_id) ->
     jQuery.mobile.loading("show", 
       text: "Loading Competition"
       textVisible: true
@@ -287,12 +167,18 @@ class WSRC_boxes
       theme: "a"
       html: ""
     )
-    successCB = (data, status, jq_xhr) =>
-      jQuery.mobile.loading("hide")
-      callback(data)
-    failureCB = (xhr, status) -> 
-      jQuery.mobile.loading("hide")
-    @raw_fetch_competition_group(group, successCB, failureCB)
+    opts =
+      url: "/boxes/data/#{ group_id }"
+      type: 'GET'
+      success: (data, status, jq_xhr) =>
+        jQuery.mobile.loading("hide")
+        nodes = $.parseHTML($.trim(data), null, true)
+        @view.update_tables(nodes)
+        @handle_display_type_change()
+      failureCB: (xhr, status) -> 
+        alert("ERROR #{ xhr.status }: #{ xhr.statusText }\nResponse: #{ xhr.responseText }\n\nUnable to fetch data for comp group '#{ group_id }'.")
+        jQuery.mobile.loading("hide")
+    jQuery.ajax(opts)
 
 
   get_points_totals: (this_box_config) ->
@@ -330,15 +216,23 @@ class WSRC_boxes
     )
     return entrant_totals
 
+  get_entrants: (comp_id) ->
+    players = $("#box_table_#{comp_id} .player")
+    factory = (jq) -> {
+      id: jq.data("entrant_id")
+      name: jq.text()
+      player1: {full_name: jq.text()}
+    }
+    entrants = (factory($(p)) for p in players)
+    return entrants
+            
   show_score_entry_dialog: (competition_data, permitted_matches, selected_match) ->
     dialog = $('#score_entry_dialog')
     form = dialog.find("form.match-result-form")
     prefix = "Player"
     submit_callback = (data) =>
       dialog.popup("close")
-      @fetch_competition_group @model.source_competitiongroup, (data) =>
-        @model.source_competitiongroup = data
-        @populate_source_competition_group(data)
+      @fetch_competition_group @get_competition_group_id()
     form_controller = new wsrc.result_form(form, competition_data, permitted_matches, selected_match, prefix, submit_callback)
     form.data("controller", form_controller)
     dialog.popup('open')
@@ -349,12 +243,12 @@ class WSRC_boxes
     document.location = link
 
   handle_edit_clicked: (comp_id) ->
-    competition = @model.get_source_competition(comp_id)
-    entrants = competition.entrants
-    possible_matches = if competition.matches then competition.matches.slice() else []
+    matches = wsrc_boxes_data.matches[comp_id]
+    entrants = @get_entrants(comp_id)
+    possible_matches = matches.slice()
     mapping = {}
     # need to calculate the set of possible matches. First get matches already played:
-    for m in possible_matches
+    for m in matches
       p1 = m.team1
       p2 = m.team2
       if p1 > p2
@@ -374,6 +268,9 @@ class WSRC_boxes
             team1: p1
             team2: p2
             scores: []
+    competition =
+      entrants: entrants
+      id: comp_id
     @show_score_entry_dialog(competition, possible_matches)
 
   handle_display_type_change: (evt) ->
@@ -382,9 +279,10 @@ class WSRC_boxes
     @view.set_view_type(view_type)
 
   handle_results_clicked: (comp_id) ->
-    competition = @model.get_source_competition(comp_id)
-    @view.show_results_dialog(competition)
-    
+    entrants = @get_entrants(comp_id)
+    matches = wsrc_boxes_data.matches[comp_id]
+    @view.show_results_dialog({entrants: entrants, matches: matches})
+
   @on: (method) ->
     args = $.fn.toArray.call(arguments)
     @instance[method].apply(@instance, args[1..])
@@ -399,6 +297,11 @@ class WSRC_boxes_admin extends WSRC_boxes
     super model, true
     me = this
 
+    $("#target_boxes input.player").each (idx, elt) =>
+      val = $(elt).val()
+      if val
+        id = @scrape_player_id(val)
+        @view.set_source_player_ghost(id)
     # save and preview buttons
     @view.target_save_button = $("#target_boxes button[value='save']")
     @view.target_preview_button = $("#target_boxes button[value='preview']")
@@ -439,32 +342,19 @@ class WSRC_boxes_admin extends WSRC_boxes
       icons:
         primary: "ui-icon-close"
     ).on("click", (evt, ui) => @handle_target_remove_button_click(evt, ui))
+
+    # make source players draggable:
+    @set_source_draggables()
     
     # Now set up the new league date selector...
     @view.target_end_date = $("#target_boxes input[name='end_date']")
     @mark_save_required(false)
-
-    # On initialization fetch the latest unstarted comp group
-    if @model.new_competition_groups.length > 0
-      group = @model.new_competition_groups[0]
-      @view.target_end_date.val(group.end_date)
-      @fetch_competition_group(group, @populate_target_competition_group)
 
     # Formatting, and mark dirty when the date changes 
     @view.target_end_date.datepicker
       dateFormat: "yy-mm-dd"
       onSelect: (dateText, inst) =>
         @mark_save_required()
-
-    # setup the source league selector, as it is not populated by django in the admin template
-    source_league_selector = $("#source_boxes select[name='league']")
-    for group in @model.current_competition_groups
-      opt = $("<option value='#{ group.id }'>#{ group.name }</option>")
-      source_league_selector.append(opt)
-      if group.id == @model.source_competitiongroup.id
-        opt.prop('selected': true)
-    source_league_selector.on "change", () =>
-      @handle_source_league_changed(source_league_selector.val())
 
     # bulk action inputs:
     @view.bulk_action_selector = $("#target_boxes select[name='action']")
@@ -496,21 +386,7 @@ class WSRC_boxes_admin extends WSRC_boxes
         @revert_target_input($(elt))
       
 
-  fetch_competition_group: (group, callback) ->
-    jqmask  = $("#maskdiv")
-    jqmask.css("z-index", "1")
-    jqmask.mask("Fetching data for \'#{ group.name }\'...")
-    successCB = (data, status, jq_xhr) =>
-      jqmask.unmask()
-      jqmask.css("z-index", "-1")
-      callback(data)
-    failureCB = (xhr, status) -> 
-      jqmask.unmask()
-      jqmask.css("z-index", "-1")
-    @raw_fetch_competition_group(group, successCB, failureCB)
-    
-  populate_source_competition_group: (competition_group) ->
-    super competition_group, true
+  set_source_draggables: () ->
     $("#source_boxes th.player").draggable(
       opacity: 1.0 - @model.ghost_opacity
       helper:  "clone"
@@ -518,17 +394,6 @@ class WSRC_boxes_admin extends WSRC_boxes
       start:   (event, ui) => @handle_source_player_drag_start(event, ui)
       stop:    (event, ui) => @handle_source_player_drag_stop(event, ui)
     )
-
-  populate_target_competition_group: (competition_group) =>
-    @view.revert_source_player_ghost()
-    @view.clear_new_tables()
-    id = null
-    if competition_group
-      id = competition_group.id
-      for comp in competition_group.competitions_expanded
-        @view.populate_new_table(comp)
-    $("#target_boxes").data("id", id)
-    @view.target_preview_button.prop('disabled', false)
 
   auto_populate_new_box: (source_box) ->
     jtable = source_box.parents(".table-wrapper").find(".leaguetable")
@@ -698,18 +563,17 @@ class WSRC_boxes_admin extends WSRC_boxes
         document.location = "/boxes/admin"
     doit()
 
-  handle_source_league_changed: (comp_group_id) ->
-    group = @model.competition_group_map[comp_group_id]
-    @fetch_competition_group(group, (data) =>
-      @model.source_competitiongroup = data
-      @populate_source_competition_group(data)
-      @view.revert_source_player_ghost()
-      league_players_map = @collect_target_league_players()
-      for league_name, comp_data of league_players_map
-        for entrant in comp_data.entrants
-          draggables = @view.set_source_player_ghost(entrant.player1.id)
-          draggables.draggable("disable")
-    )
+  handle_league_changed: (selector) ->
+    selector = $(selector)
+    link = selector.val()
+    if not @view.target_save_button.prop('disabled')
+      if not confirm("Changing league will lose your changes.\n\nProceed?")
+        id = @get_competition_group_id()
+        selected = selector.find("option").filter (idx, elt) ->
+          return $(elt).data("id") == id
+        selector.val(selected.attr("value"))
+        return undefined
+    document.location = link
 
   handle_target_remove_button_click: (evt, ui) ->
     button = $(evt.target)
@@ -744,7 +608,6 @@ class WSRC_boxes_admin extends WSRC_boxes
         jqmask.unmask()
         jqmask.css("z-index", "-1")
         comp_group.id = data.id
-        @model.competition_group_map[data.id] = data
         $("#target_boxes").data("id", comp_group.id)
         @mark_save_required(false)
         if callback
@@ -762,8 +625,8 @@ class WSRC_boxes_admin extends WSRC_boxes
       wsrc.ajax.ajax_bare_helper("/data/competitiongroup/?expand=1", comp_group, opts, "POST")
 
   handle_target_preview_click: (evt, ui) ->
-    end_date = @view.target_end_date.val()
-    window.open("/boxes/#{ end_date }", "boxes_preview")
+    target_group_id = $("#target_boxes").data("id")    
+    window.open("/boxes/preview/#{ target_group_id }", "boxes_preview")
 
   handle_target_autocomplete_select: (evt, ui) ->
     player_str = ui.item.value
@@ -796,7 +659,7 @@ class WSRC_boxes_admin extends WSRC_boxes
   handle_source_player_dropped: (evt, ui, target) ->
     source = ui.draggable
     if source.hasClass("player")
-      id = wsrc.utils.to_int(source.parents("tr").data("id"))
+      id = wsrc.utils.to_int(source.data("player_id"))
       target.val(ui.draggable.text())
       draggables = @view.set_source_player_ghost(id)
       draggables.draggable("disable")
@@ -804,13 +667,13 @@ class WSRC_boxes_admin extends WSRC_boxes
             
   handle_source_player_drag_start: (evt, ui) ->
     source = $(evt.target)
-    id = wsrc.utils.to_int(source.parents("tr").data("id"))
+    id = wsrc.utils.to_int(source.data("player_id"))
     @view.set_source_player_ghost(id)
 
   handle_source_player_drag_stop: (evt, ui) ->
     source = $(evt.target)
     unless source.draggable("option").disabled
-      id = wsrc.utils.to_int(source.parents("tr").data("id"))
+      id = wsrc.utils.to_int(source.data("player_id"))
       @view.revert_source_player_ghost(id)
 
   handle_bulk_action_clear: () ->
@@ -854,8 +717,8 @@ class WSRC_boxes_admin extends WSRC_boxes
     args = $.fn.toArray.call(arguments)
     @instance[method].apply(@instance, args[1..])
 
-  @onReady: (player_list, competition_groups, initial_competition_group) ->
-    model = new WSRC_boxes_model(initial_competition_group, player_list, competition_groups)
+  @onReady: (player_map) ->
+    model = new WSRC_boxes_model(player_map)
     @instance = new WSRC_boxes_admin(model)
 
     
