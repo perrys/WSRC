@@ -475,6 +475,10 @@ class BoxesUserView(BoxesTemplateViewBase):
                 return data
             matches_data = [serialize(m) for m in box["matches"]]
             box["matches_data"] = JSON_RENDERER.render(matches_data)
+
+        set_view_options(self.request, context)
+        if "no_navigation" in context["options"]:
+            del context["selector"]
         return context
 
 class BoxesPreviewView(BoxesUserView):

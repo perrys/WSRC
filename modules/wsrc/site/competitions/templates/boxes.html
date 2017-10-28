@@ -12,6 +12,7 @@
 
   <form id="page-control-form" method="GET" action="#" onsubmit="return false;" >  
     <div class="left-control-box">
+{% if selector %}
       <select name="league_end_date" id="league_end_date" onchange="wsrc.boxes.on('handle_league_changed', this)">
         <option value="" >{{ selector.default_text }} . . .</option>
 {% regroup selector.links|dictsortreversed:'year' by year as yearly_links_list %}
@@ -23,6 +24,7 @@
         </optgroup>
 {% endfor %}
       </select>
+{% endif %}
     </div>
     <div class="right-control-box">
       <fieldset data-role="controlgroup" data-type="horizontal" data-shadow="true" data-theme="c">
