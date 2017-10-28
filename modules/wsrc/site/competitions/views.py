@@ -349,7 +349,7 @@ class BoxesTemplateViewBase(BoxesViewBase, TemplateView):
         }
         isHTML=False
         if auth_user_id is not None:
-            content = "<a href='{url}?filter-ids={id}'>{content}</a>".format(url=reverse("member_list"), id=entrant["player1__id"], content=content)
+            content = "<a href='{url}?filter-ids={id}' class='ui-link'>{content}</a>".format(url=reverse("member_list"), id=entrant["player1__id"], content=content)
             isHTML=True
             if auth_user_id == entrant["player1__user__id"]:
                 merge_classes(attrs, "wsrc-currentuser")
