@@ -74,6 +74,7 @@ class WSRC_boxes_view
         continue
       unless match.points
         continue
+      is_draw = false
       [p1,p2] = [0,1]
       if match.points[0] > match.points[1]
         [entrant1, entrant2] = [match.team1, match.team2]
