@@ -339,7 +339,7 @@ class BoxesTemplateViewBase(BoxesViewBase, TemplateView):
         return entrants
     
     def create_entrant_cell(self, entrant, auth_user_id):
-        content="{full_name}".format(**entrant)
+        content=u"{full_name}".format(**entrant)
         attrs={
             "class": "text player",
             "data-player_id":  str(entrant["player1__id"]),
@@ -347,7 +347,7 @@ class BoxesTemplateViewBase(BoxesViewBase, TemplateView):
         }
         isHTML=False
         if auth_user_id is not None:
-            content = "<a href='{url}?filter-ids={id}' class='ui-link'>{content}</a>".format(url=reverse("member_list"), id=entrant["player1__id"], content=content)
+            content = u"<a href='{url}?filter-ids={id}' class='ui-link'>{content}</a>".format(url=reverse("member_list"), id=entrant["player1__id"], content=content)
             isHTML=True
             if auth_user_id == entrant["player1__user__id"]:
                 merge_classes(attrs, "wsrc-currentuser")
