@@ -13,7 +13,7 @@ class UserProfileInline(admin.StackedInline):
 
 class UserAdmin(AuthUserAdmin):
  inlines = AuthUserAdmin.inlines + [UserProfileInline,]
- list_display = ('username', 'is_active', 'membership_type', 'date_joined_date', 'email', 'first_name', 'last_name', 'is_staff')
+ list_display = ('username', 'is_active', 'membership_type', 'date_joined_date', 'email', 'first_name', 'last_name', 'cardnumber', 'booking_system_id', 'is_staff')
  list_editable = ("is_active",)
 
  list_filter = ('player__membership_type', 'is_active', 'is_staff', 'groups', 'is_superuser')
@@ -28,12 +28,17 @@ class UserAdmin(AuthUserAdmin):
  def booking_system_id(self, obj):
   return obj.player.booking_system_id
  booking_system_id.short_description = "Booking Site ID"
- booking_system_id.short_description = "player__booking_system_id"
+ booking_system_id.admin_order_field = "player__booking_system_id"
 
  def membership_type(self, obj):
   return obj.player.membership_type
  membership_type.short_description = "Type"
  membership_type.admin_order_field = 'player__membership_type'
+
+ def cardnumber(self, obj):
+  return obj.player.cardnumber
+ cardnumber.short_description = "DoorCard #"
+ cardnumber.admin_order_field = 'player__cardnumber'
 
  def date_joined_date(self, obj):
   return obj.date_joined.date()
