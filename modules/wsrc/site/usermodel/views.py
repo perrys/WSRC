@@ -89,7 +89,7 @@ class PlayerSerializer(serializers.ModelSerializer):
 class PlayerView(rest_generics.RetrieveUpdateDestroyAPIView):
     authentication_classes = (SessionAuthentication,)
     permission_classes = (IsAuthenticated,DjangoModelPermissions,)
-    queryset = Player.objects.all()
+    queryset = Player.objects.all().select_related("user")
     serializer_class = PlayerSerializer
 
 class UserView(rest_generics.RetrieveUpdateDestroyAPIView):
@@ -101,7 +101,7 @@ class UserView(rest_generics.RetrieveUpdateDestroyAPIView):
 class PlayerListView(rest_generics.ListCreateAPIView):
     authentication_classes = (SessionAuthentication,)
     permission_classes = (IsAuthenticated,DjangoModelPermissions,)
-    queryset = Player.objects.all()
+    queryset = Player.objects.all().select_related("user")
     serializer_class = PlayerSerializer
     def post(self, request, format="json"):
         player = request.data
@@ -172,7 +172,7 @@ def admin_memberlist_view(request):
     if not request.user.is_authenticated() or (request.user.groups.filter(name="Membership Editor").count() == 0  and not request.user.is_superuser):
         raise PermissionDenied()
 
-    db_rows = Player.objects.order_by('user__last_name', 'user__first_name')
+    db_rows = Player.objects.order_by('user__last_name', 'user__first_name').select_related("user")
     ss_memberlist_rows = []
     upload_form = UploadFileForm()
     ss_vs_db_diffs = {}
