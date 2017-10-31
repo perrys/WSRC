@@ -26,7 +26,11 @@ class CommitteeMeetingMinutesAdmin(admin.ModelAdmin):
     }
 
 class NotifierEventAdmin(admin.ModelAdmin):
-    pass
+    def get_queryset(self, request):
+        qs = super(NotifierEventAdmin, self).get_queryset(request)
+        qs = qs.select_related('player__user')
+        qs = qs.prefetch_related('days')
+        return qs
 
 class MaintenanceIssueAdmin(admin.ModelAdmin):
     list_display = ("description", "reporter", "reported_date", "status",)
@@ -34,12 +38,20 @@ class MaintenanceIssueAdmin(admin.ModelAdmin):
     formfield_overrides = {
         models.TextField: {'widget': forms.Textarea(attrs={'cols': 100, 'rows': 5})},
     }
+    def get_queryset(self, request):
+        qs = super(MaintenanceIssueAdmin, self).get_queryset(request)
+        qs = qs.select_related('reporter__user')
+        return qs
 
 class SuggestionAdmin(admin.ModelAdmin):
     list_display = ("description", "suggester", "submitted_date")
     formfield_overrides = {
         models.TextField: {'widget': forms.Textarea(attrs={'cols': 100, 'rows': 5})},
     }
+    def get_queryset(self, request):
+        qs = super(SuggestionAdmin, self).get_queryset(request)
+        qs = qs.select_related('suggester__user')
+        return qs
 
 
 admin.site.register(PageContent, PageContentAdmin)
