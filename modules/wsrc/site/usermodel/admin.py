@@ -18,6 +18,7 @@ class UserAdmin(AuthUserAdmin):
 
  list_filter = ('player__membership_type', 'is_active', 'is_staff', 'groups', 'is_superuser')
  ordering = ('username', 'first_name', 'last_name')
+ list_per_page = 400
 
  def get_queryset(self, request):
   qs = super(UserAdmin, self).get_queryset(request)
