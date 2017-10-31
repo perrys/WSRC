@@ -24,7 +24,7 @@ class OffendersListFilter(admin.SimpleListFilter):
     parameter_name = "offender"
     def lookups(self, request, model_admin):
         players = dict()
-        for offence in BookingOffence.objects.all():
+        for offence in BookingOffence.objects.all().select_related("player__user"):
             players[offence.player.id] = offence.player
         players = players.values()
         players.sort(cmp = lambda x,y: cmp(x.user.get_full_name(), y.user.get_full_name()))
@@ -50,6 +50,10 @@ class BookingOffenceAdmin(admin.ModelAdmin):
         models.TextField: {'widget': forms.Textarea(attrs={'cols': 30, 'rows': 1})},
         models.IntegerField: {'widget': forms.NumberInput(attrs={'style': 'width: 3em;'})},
     }
+    def get_queryset(self, request):
+        qs = super(BookingOffenceAdmin, self).get_queryset(request)
+        qs = qs.select_related('player__user')
+        return qs
 
 
 admin.site.register(BookingOffence, BookingOffenceAdmin)

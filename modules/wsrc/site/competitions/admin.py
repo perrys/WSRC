@@ -52,10 +52,20 @@ class CompetitionAdmin(admin.ModelAdmin):
 #    inlines = (EntrantInline,MatchInLine,) # TODO: figure out why inlines seem to really kill the CPU
     inlines = (EntrantInline,)
     actions=(set_not_started, set_in_progress, set_concluded)
+    def get_queryset(self, request):
+        qs = super(CompetitionAdmin, self).get_queryset(request)
+        qs = qs.select_related('group')
+        return qs
+    
 admin.site.register(comp_models.Competition, CompetitionAdmin)
+
 
 class CompetitionRoundAdmin(admin.ModelAdmin):
     list_display = ("competition", "round", "end_date")
+    def get_queryset(self, request):
+        qs = super(CompetitionRoundAdmin, self).get_queryset(request)
+        qs = qs.select_related('competition', 'competition__group')
+        return qs
 admin.site.register(comp_models.CompetitionRound, CompetitionRoundAdmin)
 
 class MatchAdminForm(forms.ModelForm):
@@ -68,13 +78,19 @@ class MatchAdmin(admin.ModelAdmin):
     list_filter = ('competition__group', 'competition__name')
     list_display = ("competition", "team1", "team2", "competition_match_id", "get_scores_display", "walkover", "last_updated")
     list_editable = ("competition_match_id", )
+    def get_queryset(self, request):
+        qs = super(MatchAdmin, self).get_queryset(request)
+        qs = qs.select_related('competition__group', 'team1__player1__user', 'team1__player2__user', 'team2__player1__user', 'team2__player2__user')
+        return qs
 admin.site.register(comp_models.Match, MatchAdmin)
 
 class EntrantAdmin(admin.ModelAdmin):
     list_display = ("competition", "player1", "player2", "ordering", "handicap", "seeded")
     list_filter = ('competition__group', 'competition__name')
     list_editable = ('handicap', 'seeded')
-
-    
+    def get_queryset(self, request):
+        qs = super(EntrantAdmin, self).get_queryset(request)
+        qs = qs.select_related('competition__group', 'player1__user', 'player2__user')
+        return qs    
 admin.site.register(comp_models.Entrant, EntrantAdmin)
 
