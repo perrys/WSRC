@@ -13,12 +13,17 @@ class UserProfileInline(admin.StackedInline):
 
 class UserAdmin(AuthUserAdmin):
  inlines = AuthUserAdmin.inlines + [UserProfileInline,]
- list_display = ('username', 'email', 'first_name', 'last_name', 'is_staff', 'membership_type', 'booking_system_id')
- list_editable = ("email", "first_name", "last_name")
+ list_display = ('username', 'is_active', 'email', 'first_name', 'last_name', 'is_staff', 'membership_type', 'booking_system_id')
+ list_editable = ("is_active",)
 
  list_filter = ('player__membership_type', 'is_active', 'is_staff', 'groups', 'is_superuser')
  ordering = ('username', 'first_name', 'last_name')
 
+ def get_queryset(self, request):
+  qs = super(UserAdmin, self).get_queryset(request)
+  qs = qs.select_related('player')
+  return qs
+ 
  def booking_system_id(self, obj):
   return obj.player.booking_system_id
  booking_system_id.short_description = "Booking Site ID"
