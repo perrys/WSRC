@@ -14,9 +14,8 @@ class UserProfileInline(admin.StackedInline):
 class UserAdmin(AuthUserAdmin):
  inlines = AuthUserAdmin.inlines + [UserProfileInline,]
  list_display = ('username', 'is_active', 'membership_type', 'date_joined_date', 'email', 'first_name', 'last_name', 'cardnumber', 'booking_system_id', 'is_staff')
- list_editable = ("is_active",)
 
- list_filter = ('player__membership_type', 'is_active', 'is_staff', 'groups', 'is_superuser')
+ list_filter = ('is_active', 'player__membership_type', 'groups', 'player__prefs_esra_member', 'is_staff', 'is_superuser')
  ordering = ('username', 'first_name', 'last_name')
  list_per_page = 400
 
