@@ -57,20 +57,25 @@ urlpatterns = patterns('',
 
     url(r'^boxes/admin/activate/',              wsrc.site.competitions.views.SetCompetitionGroupLive.as_view()),
     url(r'^boxes/admin/email/',                 wsrc.site.competitions.views.SendCompetitionEmail.as_view()),
-    url(r'^boxes/admin/?$',                     wsrc.site.competitions.views.boxes_view, {'template_name': 'boxes_admin.html', 'check_permissions': True}),
-    url(r'^boxes/admin/(\d{4}-\d{2}-\d{2})/?$', wsrc.site.competitions.views.boxes_view, {'template_name': 'boxes_admin.html', 'check_permissions': True}),
+    url(r'^boxes/admin/?$',                     wsrc.site.competitions.views.BoxesAdminView.as_view(), name=wsrc.site.competitions.views.BoxesAdminView.reverse_url_name),
+    url(r'^boxes/admin/(\d{4}-\d{2}-\d{2})/?$', wsrc.site.competitions.views.BoxesAdminView.as_view()),
+    url(r'^boxes/xl/?$',                        wsrc.site.competitions.views.BoxesExcelView.as_view()),
+    url(r'^boxes/xl/(\d{4}-\d{2}-\d{2})/?$',    wsrc.site.competitions.views.BoxesExcelView.as_view()),
+    url(r'^boxes/data/(?P<group_id>\d+)/?$',    wsrc.site.competitions.views.BoxesDataView.as_view()),
 
-    url(r'^boxes/(\d{4}-\d{2}-\d{2})/?$', wsrc.site.competitions.views.boxes_view), # end-date based
-    url(r'^boxes/?$',                     wsrc.site.competitions.views.boxes_view, name="boxes"), # most recent
+    url(r'^boxes/preview/(?P<group_id>\d+)/?$', wsrc.site.competitions.views.BoxesPreviewView.as_view()), # end-date based
+                       
+    url(r'^boxes/(\d{4}-\d{2}-\d{2})/?$', wsrc.site.competitions.views.BoxesUserView.as_view()), # end-date based
+    url(r'^boxes/?$',                     wsrc.site.competitions.views.BoxesUserView.as_view(), name=wsrc.site.competitions.views.BoxesUserView.reverse_url_name),
 
     url(r'^tournaments/admin/(\d{4})/([\w\s]+)/?',  wsrc.site.competitions.views.bracket_admin_view),
     url(r'^tournaments/admin/?',                    wsrc.site.competitions.views.bracket_admin_view),
-    url(r'^tournaments/qualifiers/(?P<year>\d{4})/(?P<name>[\w\s]+)?', wsrc.site.competitions.views.boxes_view, {'comp_type': 'qualifiers'}),
+#    url(r'^tournaments/qualifiers/(?P<year>\d{4})/(?P<name>[\w\s]+)?', wsrc.site.competitions.views.boxes_view, {'comp_type': 'qualifiers'}),
     url(r'^tournaments/(\d{4})/([\w\s]+)/print/?$', wsrc.site.competitions.views.bracket_view, {'template_name': 'tournaments_printable.html'}),
     url(r'^tournaments/(\d{4})/([\w\s]+)/?$',       wsrc.site.competitions.views.bracket_view),
     url(r'^tournaments/?',                          wsrc.site.competitions.views.bracket_view, {"year":None, "name":"Open"} , name="tournaments"),
 
-    url(r'^settings/?$', wsrc.site.views.settings_view, name="settings"),
+    url(r'^settings/?$', wsrc.site.usermodel.views.settings_view, name="settings"),
 
     url(r'^kiosk/?$', wsrc.site.views.kiosk_view, name="kiosk"),
                        
@@ -108,3 +113,11 @@ urlpatterns = patterns('',
     url(r'^committee/?$', wsrc.site.views.committee_view),
     url(r'^(?P<page>[a-z_]+)$', wsrc.site.views.generic_view),
 )
+
+from django.conf import settings
+from django.conf.urls import include, url
+if settings.DEBUG:
+    import debug_toolbar
+    urlpatterns = [
+        url(r'^__debug__/', include(debug_toolbar.urls)),
+    ] + urlpatterns

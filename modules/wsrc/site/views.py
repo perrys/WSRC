@@ -16,17 +16,16 @@
 
 import sys
 
-from wsrc.site.models import PageContent, SquashLevels, LeagueMasterFixtures, BookingSystemEvent, EventFilter, MaintenanceIssue, Suggestion, EmailContent, ClubEvent, CommitteeMeetingMinutes
+from wsrc.site.models import PageContent, SquashLevels, LeagueMasterFixtures, MaintenanceIssue, Suggestion, EmailContent, ClubEvent, CommitteeMeetingMinutes
 from wsrc.site.competitions.models import CompetitionGroup
+from wsrc.site.courts.models import BookingSystemEvent
 from wsrc.site.usermodel.models import Player
 import wsrc.site.settings.settings as settings
 from wsrc.utils import timezones, email_utils
 
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import PasswordChangeForm
-from django.forms.widgets import Select, CheckboxSelectMultiple, HiddenInput, Textarea
-from django.forms.models import modelformset_factory
-from django.contrib.auth.models import User
+from django.forms.widgets import Textarea
 from django.middleware.csrf import get_token
 from django.core.mail import SafeMIMEMultipart, SafeMIMEText
 from django.core.exceptions import PermissionDenied
@@ -193,7 +192,7 @@ def generate_tokens(date):
 def index_view(request):
 
     ctx = get_pagecontent_ctx('home')
-    levels = SquashLevels.objects.all().order_by('-level')
+    levels = SquashLevels.objects.values('name', 'level', 'player__squashlevels_id').order_by('-level')
     if len(levels) > 0:
         ctx["squashlevels"] = levels
 
@@ -490,125 +489,6 @@ class SendCalendarEmail(APIView):
                     err += " - "
             err += e.message
             return HttpResponse(err, status=503)
-
-class UserForm(ModelForm):
-    def __init__(self, *args, **kwargs):
-        super(UserForm, self).__init__(*args, **kwargs)
-        self.fields["first_name"].label = "First Name"
-        self.fields["last_name"].label = "Last Name"
-        self.fields["email"].label = "Email"
-    class Meta:
-        model = User
-        fields = ["first_name", "last_name", "username",  "email"]
-
-class PlayerForm(ModelForm):
-    class Meta:
-        model = Player
-        fields = ["cell_phone", "other_phone", "short_name", "prefs_receive_email"]
-        exclude = ('user',)
- 
-def create_notifier_filter_formset_factory(max_number):
-    time_choices = [
-        ("", "Please Select"),
-        ("08:00:00", "8am"),
-        ("10:00:00", "10am"),
-        ("12:00:00", "12pm"),
-        ("14:00:00", "2pm"),
-        ("16:00:00", "4pm"),
-        ("17:00:00", "5pm"),
-        ("18:00:00", "6pm"),
-        ("18:30:00", "6:30pm"),
-        ("19:00:00", "7pm"),
-        ("19:30:00", "7:30pm"),
-        ("20:00:00", "8pm"),
-        ("21:00:00", "9pm"),
-        ("22:00:00", "10pm"),
-                ]
-    notice_period_choices = [
-        ("", "Please Select"),
-        (30, "30 minutes"),
-        (60, "1 hour"),
-        (120, "2 hours"),
-        (180, "3 hours"),
-        (240, "4 hours"),
-        (300, "5 hours"),
-        (360, "6 hours"),
-        (720, "12 hours"),
-        (1440, "1 day"),
-        ]
-    return modelformset_factory(
-        EventFilter, 
-        can_delete = True,
-        extra=max_number,
-        max_num=max_number,
-        fields = ["earliest", "latest", "notice_period_minutes", "days", "player"],
-        widgets = {
-            "earliest": Select(choices=time_choices),
-            "latest": Select(choices=time_choices),
-            "notice_period_minutes": Select(choices=notice_period_choices),
-            "days": CheckboxSelectMultiple(),
-            "player": HiddenInput(),
-        }
-    )
-
-class InfoForm(ModelForm):
-    def __init__(self, *args, **kwargs):
-        super(InfoForm, self).__init__(*args, **kwargs)
-        instance = getattr(self, 'instance', None)
-        if instance and instance.pk:
-            for field in ["cardnumber", "squashlevels_id", "wsrc_id", "booking_system_id"]:
-                self.fields[field].widget.attrs['readonly'] = "readonly"
-                self.fields[field].widget.attrs['disabled'] = "disabled"
-            self.fields['membership_type'].widget.attrs['disabled'] = "disabled"
-    
-    class Meta:
-        model = Player
-        fields = ["membership_type",  "wsrc_id", "booking_system_id", "cardnumber",  "squashlevels_id"]
-        exclude = ('user',)
-
-@login_required
-def settings_view(request):
-
-    max_filters = 7
-    success = False
-    player = Player.get_player_for_user(request.user)
-    events = EventFilter.objects.filter(player=player)
-    filter_formset_factory = create_notifier_filter_formset_factory(max_filters)
-    initial = [{'player': player}] * (max_filters)
-    if request.method == 'POST': 
-        pform = PlayerForm(request.POST, instance=player)
-        uform = UserForm(request.POST, instance=request.user)
-        eformset = filter_formset_factory(request.POST, queryset=events, initial=initial)
-        if pform.is_valid() and uform.is_valid() and eformset.is_valid(): 
-            with transaction.atomic():
-                if pform.has_changed():
-                    pform.save()
-                if uform.has_changed():
-                    uform.save()
-                for form in eformset:
-                    if form.has_changed():
-                        if form.cleaned_data['player'] != player:
-                            raise PermissionDenied()
-                if eformset.has_changed():
-                    eformset.save()
-                    events = EventFilter.objects.filter(player=player)
-                    eformset = filter_formset_factory(queryset=events, initial=initial)
-                success = True
-    else:
-        pform = PlayerForm(instance=player)
-        uform = UserForm(instance=request.user)
-        eformset = filter_formset_factory(queryset=events, initial=initial)
-
-    iform = InfoForm(instance=player)
-
-    return render(request, 'settings.html', {
-        'player_form':     pform,
-        'user_form':       uform,
-        'info_form':       iform,
-        'notify_formset':  eformset,
-        'n_notifiers':     len(events),
-        'form_saved':      success,
-    })
 
 class MaintenanceForm(ModelForm):
     class Meta:

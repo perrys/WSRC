@@ -1,0 +1,30 @@
+{% load competitions_extras %}
+<table data-role="table" data-mode="" data-name="{{ box_config.name }}" data-id="{{ box_config.id }}" class="boxes ui-corner-all leaguetable" style="display: none">
+  <thead>
+    <tr>
+      <th data-priority="persist" class=""></th>
+      <td data-priority="2" class="ui-bar-b">P</td>
+      <td data-priority="3" class="ui-bar-b">W</td>
+      <td data-priority="4" class="ui-bar-b">D</td>
+      <td data-priority="5" class="ui-bar-b">L</td>
+      <td data-priority="4" class="ui-bar-b">F</td>
+      <td data-priority="5" class="ui-bar-b">A</td>
+      <td data-priority="5" class="ui-bar-b" style="max-width: 1em;">Pts</td>
+    </tr>
+  </thead>
+  <tbody>
+{% for i in competition.maxplayers|as_range %}
+{% resolve box_config.entrants i as entrant %}
+    <tr data-id="{{ entrant.id }}">
+      <th>{% if user.is_authenticated %}<a href="{% url 'member_list' %}?filter-ids={{ entrant.player1__id }}">{% endif %}{{ entrant.player1__user__first_name }} {{ entrant.player1__user__last_name }}{% if user.is_authenticated %}</a>{% endif %}</th>
+      <td class="points"></td>
+      <td class="points"></td>
+      <td class="points"></td>
+      <td class="points"></td>
+      <td class="points"></td>
+      <td class="points"></td>
+      <td class="points score_total"> </td>
+    </tr>
+{% endfor %}
+  </tbody>
+</table>

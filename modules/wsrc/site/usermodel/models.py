@@ -37,13 +37,17 @@ class Player(models.Model):
   booking_system_id  = models.IntegerField(("Booking Site ID"), db_index=True, blank=True, null=True,
                                            help_text="ID in the booking system")
   cardnumber  = models.IntegerField(("Cardnumber"), db_index=True, blank=True, null=True,
-                                    help_text="The number on your door entry card")
+                                    help_text="Number on your door entry card")
   squashlevels_id  = models.IntegerField(("SquashLevels ID"), db_index=True, blank=True, null=True, 
-                                         help_text="ID on the squashlevels website - it is not normally necessary to change this")
+                                         help_text="ID on the SquashLevels website")
   england_squash_id  = models.IntegerField(("ES Membership #"), blank=True, null=True, 
-                                           help_text="England Squash Membership Number - it is not normally necessary to change this")
+                                           help_text="England Squash Membership Number")
   prefs_receive_email  = models.NullBooleanField(("Receive Email"), default=True, null=True, blank=True,
-                                                 help_text="Uncheck if you do *not* want to receive emails from the club&emdash; match reminders, social events etc.")
+                                                 help_text="Uncheck if you do not want to receive emails from the club &mdash; match reminders, news, social events etc.")
+  prefs_esra_member  = models.NullBooleanField(("England Squash"), default=True, null=True, blank=True,
+                                               help_text="Uncheck if you do not want to automatically be signed up for England Squash membership (note you will not be able to play in Surrey league competitions or National competitions).")
+  prefs_display_contact_details  = models.NullBooleanField(("Visible in List"), default=True, null=True, blank=True,
+                                               help_text="Unset if you do not want your contact details to appear in the membership list (note that this will make it very difficult for anyone to contact you regarding league games etc).")
 
   def get_ordered_name(self):
       """

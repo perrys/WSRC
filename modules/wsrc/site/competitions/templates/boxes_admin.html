@@ -14,24 +14,30 @@
   <title>Boxes Admin - Woking Squash Rackets Club</title>
 
   <script type="text/javascript">
-var players  = { {% for p in players %}{% if forloop.counter0 > 0 %},{% endif %}{{ p.id }}: {id: {{ p.id }}, full_name: "{{ p.user.first_name }} {{ p.user.last_name }}"}{% endfor %} };
-var initial_competition_group = {{ box_data|safe }};
-var competition_groups = {{ competition_groups|safe }};
-jQuery(document).ready(function(){wsrc.admin.boxes.onReady(players, competition_groups, initial_competition_group)});
+var players = {{ player_data|safe }};
+jQuery(document).ready(function(){wsrc.admin.boxes.onReady(players)});
   </script>
 
 </head>
 <body>
   <div class="column-wrapper ui-widget">
   <div class="hrow">
-    <form class="column" id="source_boxes" method="GET" action="#" onsubmit="return false;">{% csrf_token %}
+    <form class="column" id="source_boxes" method="GET" action="#" onsubmit="return false;" data-id="{{ competition.id }}">{% csrf_token %}
     <fieldset class="ui-corner-all">
       <legend>Old League</legend>
       <div class="top-form-field-container">
         <div class="ui-field-contain">
           <label for="old_league_end_date">League:</label>
-          <select name="league" id="old_league_end_date">
+          <select name="league" id="old_league_end_date" onchange="wsrc.admin.boxes.on('handle_league_changed', this)">
             <option value="">Please Select...</option>
+{% regroup selector.links|dictsortreversed:'year' by year as yearly_links_list %}
+{% for yearly_links in yearly_links_list %}
+        <optgroup label="{{ yearly_links.grouper }}">
+{% for link in yearly_links.list|dictsortreversed:'end_date' %}
+          <option data-id="{{ link.id }}" value="{{ link.link }}" {% if link.selected %}selected="selected"{% endif %}>{{ link.name }}</option>
+{% endfor %}
+        </optgroup>
+{% endfor %}
           </select>
         </div>
         <div class="ui-field-contain">
@@ -40,38 +46,13 @@ jQuery(document).ready(function(){wsrc.admin.boxes.onReady(players, competition_
           <input type="radio" name="view_type" id="view_type_tables" value="tables"  checked="checked" />Tables
         </div>
       </div>
-{% for box_config in new_boxes %}
+{% for box_config in boxes %}
 {% if box_config.colspec == "double" and box_config.nthcol == "first" %}
       <div class="hrow">
 {% endif %}
       <div class="{% if box_config.colspec == 'single' %}single-table{% else %}column twin-table{% endif %} table-wrapper">
-        <table class="ui-helper-hidden boxtable" >
-          <caption class="ui-widget-header">{{ box_config.name }}<button class="small auto">Auto-Populate</button></caption>
-          <thead class="ui-widget-content">
-            <tr>
-              <th></th><th></th>
-{% for i in competition.maxplayers|as_range %}<th class="ui-bar-a block">{{ i|add:"1" }}</th>{% endfor %}
-              <th class="ui-bar-a block">Σ</th>
-            </tr>
-          </thead>
-          <tbody class="ui-widget-content"></tbody>
-        </table>
-        <table class="leaguetable" >
-          <caption class="ui-widget-header">{{ box_config.name }}<button class="small auto">Auto-Populate</button></caption>
-          <thead class="ui-widget-content">
-            <tr>
-              <th class="text"></th>
-              <th class="ui-bar-a block">P</th>
-              <th class="ui-bar-a block">W</th>
-              <th class="ui-bar-a block">D</th>
-              <th class="ui-bar-a block">L</th>
-              <th class="ui-bar-a block">F</th>
-              <th class="ui-bar-a block">A</th>
-              <th class="ui-bar-a block" style="max-width: 1.5em;">Pts</th>
-            </tr>
-          </thead>
-          <tbody class="ui-widget-content"></tbody>
-        </table>
+        {{ box_config.box_table|safe }}
+        {{ box_config.league_table|safe }}
       </div>
 {% if box_config.colspec == "double" and box_config.nthcol == "second" %}
       </div>
@@ -79,13 +60,13 @@ jQuery(document).ready(function(){wsrc.admin.boxes.onReady(players, competition_
 {% endfor %}
     </fieldset>
     </form>
-    <form class="column" id="target_boxes" method="GET" action="#" onsubmit="return false;">  
+    <form class="column" id="target_boxes" method="GET" action="#" onsubmit="return false;" {% if new_competition_group %}data-id="{{ new_competition_group.id }}"{% endif %}>  
     <fieldset class="ui-corner-all">
       <legend>New League</legend>
       <div class="top-form-field-container">
         <div class="ui-field-contain">
           <label for="target_league_end_date">End Date:</label>
-          <input name="end_date" id="target_league_end_date">
+          <input name="end_date" id="target_league_end_date" {% if new_competition_group %}value="{{ new_competition_group.end_date.isoformat }}"{% endif %}>
           <button type="button" name="save" value="save">Save</button>
           <button type="button" name="preview" value="preview">Preview</button>
         </div>
@@ -107,14 +88,18 @@ jQuery(document).ready(function(){wsrc.admin.boxes.onReady(players, competition_
       <div class="hrow">
 {% endif %}
       <div class="{% if box_config.colspec == 'single' %}single-table{% else %}column twin-table{% endif %} table-wrapper">
-        <table class="newtable"  data-ordering="{{ forloop.counter }}">
+        <table class="newtable"  data-ordering="{{ forloop.counter }}" {% if box_config.competition %}data-id="{{ box_config.competition.id }}"{% endif %}>
           <caption class="ui-widget-header">{{ box_config.name }}<button class="small clear_all">Clear Box</button></caption>
           <thead class="ui-widget-content">
             <tr><th colspan="3"></th></tr>
           </thead>
           <tbody>
-{% for i in "123456" %}
-            <tr><td><span class="handle ui-icon ui-icon-carat-2-n-s"></span></td><th><input class="player" name="player_{{ i }}" /></th><td><button class="small remove">Remove</button></td></tr>
+{% for entrant in box_config.entrants %}
+          <tr>
+            <td><span class="handle ui-icon ui-icon-carat-2-n-s"></span></td>
+            <th><input class="player" name="player_{{ i }}" {% if entrant.id %}value="{{ entrant.full_name }} [{{ entrant.player1__id }}]"{% endif %}/></th>
+            <td><button class="small remove">Remove</button></td>
+          </tr>
 {% endfor %}
           </tbody>
         </table>

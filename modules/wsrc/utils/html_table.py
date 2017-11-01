@@ -144,12 +144,12 @@ class Table:
       if blockstart >= 0:
         compressBlocks(blockstart, len(row))
             
-  def toHtml(self, table_head=None):
+  def toHtml(self, table_head=None, table_body_attrs={}):
     bld = etree.TreeBuilder();
     root = bld.start("table", self.attribs)
     if table_head is not None:
       root.append(lxml.html.fromstring(table_head))
-    bld.start("tbody", {})
+    bld.start("tbody", table_body_attrs)
 
     i = 0
     while (i < self.nrows):
@@ -166,8 +166,8 @@ class Table:
     bld.end("table")
     return bld.close()
 
-  def toHtmlString(self, table_head=None):
-    return etree.tostring(self.toHtml(table_head), encoding='UTF-8', method='html')
+  def toHtmlString(self, table_head=None, table_body_attrs=None):
+    return etree.tostring(self.toHtml(table_head, table_body_attrs), encoding='UTF-8', method='html')
 
 def formatTable(dataTable, hasHeader = False, col_prefixes=None):
   nrows = len(dataTable)
@@ -189,3 +189,7 @@ def formatTable(dataTable, hasHeader = False, col_prefixes=None):
           break
       table.addCell(cls(data, attrs, isHeader=isHeader), j, i)
   return etree.tostring(table.toHtml(), encoding='UTF-8', method='html')
+
+def merge_classes(attrs, classes_str):
+  classes = attrs.get("class") or ""
+  attrs["class"] = " ".join(classes.split() + classes_str.split())

@@ -39,7 +39,7 @@ from icalendar import Calendar, Event, vCalAddress, vText
 
 import wsrc.site.settings.settings as settings
 from wsrc.utils.form_utils import LabeledSelect
-from wsrc.site.models import BookingSystemEvent
+from wsrc.site.courts.models import BookingSystemEvent
 from wsrc.site.usermodel.models import Player
 from wsrc.utils.html_table import Table, Cell, SpanningCell
 from wsrc.utils import timezones, email_utils

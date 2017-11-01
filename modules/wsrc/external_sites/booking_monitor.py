@@ -141,7 +141,7 @@ def remove_other_dates(data, today):
   data[:] = [item for item in data if item["date"] == today]
 
 def process_audit_table(data, offence_code, player_offence_map, error_list, filter=None):
-  import wsrc.site.models as site_models
+  import wsrc.site.courts.models as court_models
   processing_noshow = offence_code == "ns"
   def get_or_add(p):
     l = player_offence_map.get(p)
@@ -178,7 +178,7 @@ def process_audit_table(data, offence_code, player_offence_map, error_list, filt
     points = get_points(delta_t_hours, prebook_hours)
     if points == 0:
       continue
-    offence = site_models.BookingOffence(
+    offence = court_models.BookingOffence(
       player  = player,
       offence = offence_code,
       entry_id = item["entry_id"],
@@ -270,7 +270,7 @@ def report_offences(date, player, offences, total_offences):
   email_utils.send_email(subject, text_body, html_body, from_address, to_list, cc_list=[cc_address])
   
 def process_date(date):
-  from wsrc.site.models import BookingOffence  
+  from wsrc.site.courts.models import BookingOffence  
   LOGGER.info("processing date %s", as_iso_date(date))
   
   (noshows, audit_table) = get_audit_table_and_noshows(date)
@@ -298,13 +298,13 @@ def process_date(date):
   if len(errors) > 0:
     report_errors(date, errors)
   for player, offences in player_offence_map.items():
-    total_offences = BookingOffence.objects.filter(player=player, start_time__gte=cutoff, start_time__lt=midnight_tomorrow)
+    total_offences = BookingOffence.objects.filter(player=player, start_time__gte=cutoff, start_time__lt=midnight_tomorrow, is_active=True)
     report_offences(date, player, offences, total_offences)
 
 class Tester(unittest.TestCase):
 
   def clean_db(self):
-    from wsrc.site.models import BookingOffence  
+    from wsrc.site.courts.models import BookingOffence  
     # this test will use the DB. Clear all data before 2001, which we will use for our testing
     old_events = BookingOffence.objects.filter(start_time__lt=self.cutoff)
     old_events.delete()
@@ -349,7 +349,7 @@ class Tester(unittest.TestCase):
     }
 
   def get_booking_offences(self, **kwargs):
-    from wsrc.site.models import BookingOffence
+    from wsrc.site.courts.models import BookingOffence
     return BookingOffence.objects.filter(**kwargs)    
 
   def test_GIVEN_cancelled_entry_WHEN_processing_THEN_offence_registered(self):

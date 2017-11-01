@@ -42,7 +42,7 @@ class Notifier:
       if len(id_list) > 0:
         self.notify(event, id_list)
 
-  def notify(self, event, id_list):
+  def notify(self, event, id_list, swallow_exceptions=True):
     from wsrc.site.usermodel.models import Player
     players = [Player.objects.get(pk=id) for id in id_list]
     contact_details = [["Name", "E-Mail", "Mobile Phone", "Other Phone"]]
@@ -64,10 +64,13 @@ class Notifier:
     LOGGER.debug("sending email to {0}".format(to_list))
     try:
       self.send_email(subject, text_body, html_body, from_address, to_list, reply_to_address=reply_to)
-    except:
-      import traceback
-      traceback.print_exc()
-  
+    except Exception, e:
+      if swallow_exceptions:
+        import traceback
+        traceback.print_exc()
+      else:
+        raise e
+
   def get_configs_from_db(self, current_time):
     from wsrc.site.usermodel.models import Player
     from wsrc.site.models import EventFilter
@@ -102,7 +105,8 @@ if __name__ == "__main__":
 
   from wsrc.site.usermodel.models import Player
   from django.contrib.auth.models import User
-  from wsrc.site.models import EventFilter, BookingSystemEvent
+  from wsrc.site.models import EventFilter
+  from wsrc.site.courts.models import BookingSystemEvent
   import wsrc.utils.collection_utils as utils
 
   class TestNotifier(Notifier):
@@ -284,17 +288,19 @@ if __name__ == "__main__":
       self.assertEqual([removed_event], evt_list)
 
     def test_GIVEN_eventlist_WHEN_composing_email_THEN_expected_content_returned(self):
-      removed_event = BookingSystemEvent(start_time=datetime.datetime(2099,2,3,20,00), name="Foo Bar", court=2)
+      start_time = datetime.datetime(2025,2,3,20,00, tzinfo=timezones.UK_TZINFO)
+      end_time = start_time + datetime.timedelta(minutes=45)
+      removed_event = BookingSystemEvent(start_time=start_time, end_time=end_time, name="Foo Bar", court=2)
       notifier = Notifier(datetime.datetime(2099,2,3))
-      def send_email(subject, text_body, html_body, from_address, to_list):
-        expected_link = "http://booking.wokingsquashclub.org/edit_entry_fixed.php?room=2&area=1&hour=20&minute=00&year=2099&month=2&day=3"
-        self.assertTrue(expected_link in text_body)
-        self.assertTrue(expected_link in html_body)
+      def send_email(subject, text_body, html_body, from_address, to_list, reply_to_address=None):
+        expected_link = "http://www.wokingsquashclub.org/courts/booking/?date=2025-02-03&start_time=20%3A00&court=2&duration_mins=45&token=b0648d3a5f4bb845b42a7e495553ae2e"
+        self.assertIn(expected_link, text_body)
+        self.assertIn(expected_link, html_body)
         self.assertEqual("Court Cancellation", subject)
         self.assertEqual("court-cancellations@wokingsquashclub.org", from_address)
         self.assertEqual([self.player1.user.email], to_list)
       notifier.send_email = send_email
-      notifier.notify(removed_event, [self.player1.id])
+      notifier.notify(removed_event, [self.player1.id], swallow_exceptions=False)
 
   unittest.main()
 

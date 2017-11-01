@@ -2,18 +2,17 @@
 
 {% block pagetitle %}{{ competition.name }}{% endblock %}
 {% block pagetype %}boxes{% endblock %}
-{% load competitions_extras %}
 {% block html_header_extra %}
 {{ block.super }}
 <script>
-window.WSRC_players  = { {% for p in players %}{% if forloop.counter0 > 0 %},{% endif %}{{ p.id }}: {id: {{ p.id }}, full_name: "{{ p.user.first_name }} {{ p.user.last_name }}"}{% endfor %} };
-window.WSRC_box_data = {{ box_data|safe }};
+  var wsrc_boxes_data = {"matches": {}};
 </script>
 {% endblock %}
 {% block centered_page_content %}
 
   <form id="page-control-form" method="GET" action="#" onsubmit="return false;" >  
     <div class="left-control-box">
+{% if selector %}
       <select name="league_end_date" id="league_end_date" onchange="wsrc.boxes.on('handle_league_changed', this)">
         <option value="" >{{ selector.default_text }} . . .</option>
 {% regroup selector.links|dictsortreversed:'year' by year as yearly_links_list %}
@@ -25,6 +24,7 @@ window.WSRC_box_data = {{ box_data|safe }};
         </optgroup>
 {% endfor %}
       </select>
+{% endif %}
     </div>
     <div class="right-control-box">
       <fieldset data-role="controlgroup" data-type="horizontal" data-shadow="true" data-theme="c">
@@ -40,7 +40,7 @@ window.WSRC_box_data = {{ box_data|safe }};
     <div class="clear-all"></div>
   </form>
 
-  <div id="source_boxes" oclass="competition-wrapper">
+  <div id="source_boxes" class="competition-wrapper" data-id="{{ competition.id }}">
 {% for box_config in boxes %}
 <!-- {{ box_config.colspec }} {{ box_config.nthcol }} -->
 {% if box_config.colspec != 'double' or box_config.nthcol != 'second' %}
@@ -48,67 +48,17 @@ window.WSRC_box_data = {{ box_data|safe }};
 {% endif %}
     <div class="ui-corner-all custom-corners boxes {% if box_config.colspec == 'double' %}boxes-{{ box_config.nthcol }}column ui-block-{% if box_config.nthcol == 'first' %}a{% else %}b{% endif %}{% endif %}">
       <div class="ui-bar box-header" data-theme="b" data-role="header">
-        <h2>{% if user.is_authenticated %}<a href="{% url 'member_list' %}?filter-ids={% for e in box_config.entrants %}{% if e.player1.id %}{% if forloop.counter0 > 0 %},{% endif %}{{ e.player1.id }}{% endif %}{% endfor %}">{% endif %}{{ box_config.name }}{% if user.is_authenticated %}</a>{% endif %}</h2>
+        <h2>{% if user.is_authenticated %}<a href="{% url 'member_list' %}?filter-ids={% for e in box_config.entrants %}{% if e.player1__id %}{% if forloop.counter0 > 0 %},{% endif %}{{ e.player1__id }}{% endif %}{% endfor %}">{% endif %}{{ box_config.name }}{% if user.is_authenticated %}</a>{% endif %}</h2>
 {% if box_config.can_edit %}
         <a id="link-{{ box_config.id }}" class="ui-btn ui-btn-icon ui-btn-icon-left ui-icon-edit ui-corner-all ui-btn-right ui-btn-a" onclick="wsrc.boxes.on('handle_edit_clicked', {{ box_config.id }}); return true;">Edit
         </a>
 {% endif %}
         <a class="ui-btn ui-btn-icon ui-btn-icon-left ui-icon-bullets ui-corner-all ui-btn-left ui-btn-a" data-rel="popup" onclick="wsrc.boxes.on('handle_results_clicked', {{ box_config.id }}); return true;">Results</a>
       </div>
-      <div class="ui-body ui-body-a">
-        <table data-role="table" data-mode="" data-name="{{ box_config.name }}" data-id="{{ box_config.id }}" class="boxes ui-corner-all ui-table boxtable">
-          <thead>
-            <tr>
-              <th colspan="2"></th>
-{% for i in competition.maxplayers|as_range %}<td class="ui-bar-b">{{ i|add:"1" }}</td>{% endfor %}
-              <td class="ui-bar-b">Σ</td>
-            </tr>
-          </thead>
-          <tbody>
-{% for i in competition.maxplayers|as_range %}
-{% resolve box_config.entrants i as entrant %}
-            <tr data-id="{{ entrant.id }}">
-              <th {% if user.is_authenticated and user.player.id == entrant.player1.id %}class="wsrc-currentuser"{% endif %}>{% if user.is_authenticated %}<a href="{% url 'member_list' %}?filter-ids={{ entrant.player1.id }}">{% endif %}{{ entrant.player1.user.get_full_name }}{% if entrant.handicap != None %} ({{ entrant.handicap }}){% endif %}{% if user.is_authenticated %}</a>{% endif %}</th>
-              <td class="ui-bar-b">{{ i|add:"1" }}</td>
-{% for j in competition.maxplayers|as_range %}
-              <td class="{% if i == j %}ui-bar-b{% else %}points{% endif %}"> </td>
-{% endfor %}
-              <td class="points score_total"> </td>
-            </tr>
-{% endfor %}
-          </tbody>
-        </table>
-        <table data-role="table" data-mode="" data-name="{{ box_config.name }}" data-id="{{ box_config.id }}" class="boxes ui-corner-all leaguetable" style="display: none">
-	<thead>
-	  <tr>
-	    <th data-priority="persist" class=""></th>
-	    <td data-priority="2" class="ui-bar-b">P</td>
-	    <td data-priority="3" class="ui-bar-b">W</td>
-	    <td data-priority="4" class="ui-bar-b">D</td>
-	    <td data-priority="5" class="ui-bar-b">L</td>
-	    <td data-priority="4" class="ui-bar-b">F</td>
-	    <td data-priority="5" class="ui-bar-b">A</td>
-	    <td data-priority="5" class="ui-bar-b" style="max-width: 1em;">Pts</td>
-	  </tr>
-	</thead>
-        <tbody>
-{% for i in competition.maxplayers|as_range %}
-{% resolve box_config.entrants i as entrant %}
-          <tr data-id="{{ entrant.id }}">
-            <th>{% if user.is_authenticated %}<a href="{% url 'member_list' %}?filter-ids={{ entrant.player1.id }}">{% endif %}{{ entrant.player1.user.get_full_name }}{% if user.is_authenticated %}</a>{% endif %}</th>
-	    <td class="points"></td>
-	    <td class="points"></td>
-	    <td class="points"></td>
-	    <td class="points"></td>
-	    <td class="points"></td>
-	    <td class="points"></td>
-            <td class="points score_total"> </td>
-          </tr>
-{% endfor %}
-        </tbody>
-        </table>
-        
-
+      <div class="ui-body ui-body-a" data-id="{{ box_config.id }}">
+        {{ box_config.box_table|safe }}
+        {{ box_config.league_table|safe }}
+        <script>wsrc_boxes_data.matches["{{ box_config.id }}"]={{ box_config.matches_data|safe }};</script>
       </div>
     </div>
 {% if box_config.colspec != 'double' or box_config.nthcol != 'first' %}

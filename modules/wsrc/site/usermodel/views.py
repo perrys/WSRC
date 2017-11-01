@@ -2,6 +2,7 @@
 import tempfile
 import operator
 
+from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.core.exceptions import PermissionDenied
 from django.db import transaction
@@ -19,10 +20,13 @@ from rest_framework.renderers import JSONRenderer
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from wsrc.site.models import EventFilter
 from wsrc.external_sites.booking_manager import BookingSystemSession
 from wsrc.external_sites import scrape_page
 from wsrc.site.usermodel.models import Player
 from wsrc.utils import xls_utils, sync_utils
+
+from forms import SettingsUserForm, SettingsPlayerForm, SettingsInfoForm, create_notifier_filter_formset_factory
 
 JSON_RENDERER = JSONRenderer()
 
@@ -34,7 +38,10 @@ class MemberListView(ListView):
         return super(MemberListView, self).dispatch(request, *args, **kwargs)
 
     def get_queryset(self):
-      return Player.objects.filter(user__is_active=True).order_by('user__first_name', 'user__last_name')
+      return Player.objects.values("id", "user__first_name", "user__last_name", "user__email", "other_phone", "cell_phone", "user__is_active") \
+                           .filter(user__is_active=True) \
+                           .exclude(prefs_display_contact_details=False) \
+                           .order_by('user__first_name', 'user__last_name')
 
     def get_template_names(self):
       return ["memberlist.html"]
@@ -82,7 +89,7 @@ class PlayerSerializer(serializers.ModelSerializer):
 class PlayerView(rest_generics.RetrieveUpdateDestroyAPIView):
     authentication_classes = (SessionAuthentication,)
     permission_classes = (IsAuthenticated,DjangoModelPermissions,)
-    queryset = Player.objects.all()
+    queryset = Player.objects.all().select_related("user")
     serializer_class = PlayerSerializer
 
 class UserView(rest_generics.RetrieveUpdateDestroyAPIView):
@@ -94,7 +101,7 @@ class UserView(rest_generics.RetrieveUpdateDestroyAPIView):
 class PlayerListView(rest_generics.ListCreateAPIView):
     authentication_classes = (SessionAuthentication,)
     permission_classes = (IsAuthenticated,DjangoModelPermissions,)
-    queryset = Player.objects.all()
+    queryset = Player.objects.all().select_related("user")
     serializer_class = PlayerSerializer
     def post(self, request, format="json"):
         player = request.data
@@ -165,7 +172,7 @@ def admin_memberlist_view(request):
     if not request.user.is_authenticated() or (request.user.groups.filter(name="Membership Editor").count() == 0  and not request.user.is_superuser):
         raise PermissionDenied()
 
-    db_rows = Player.objects.order_by('user__last_name', 'user__first_name')
+    db_rows = Player.objects.order_by('user__last_name', 'user__first_name').select_related("user")
     ss_memberlist_rows = []
     upload_form = UploadFileForm()
     ss_vs_db_diffs = {}
@@ -205,3 +212,50 @@ def admin_memberlist_view(request):
         "booking_credentials_form":  BookingSystemCredentialsForm(),
     }
     return render(request, "memberlist_admin.html", kwargs)
+
+
+
+@login_required
+def settings_view(request):
+
+    max_filters = 7
+    success = False
+    player = Player.get_player_for_user(request.user)
+    events = EventFilter.objects.filter(player=player)
+    filter_formset_factory = create_notifier_filter_formset_factory(max_filters)
+    initial = [{'player': player}] * (max_filters)
+    if request.method == 'POST': 
+        pform = SettingsPlayerForm(request.POST, instance=player)
+        uform = SettingsUserForm(request.POST, instance=request.user)
+        eformset = filter_formset_factory(request.POST, queryset=events, initial=initial)
+        if pform.is_valid() and uform.is_valid() and eformset.is_valid(): 
+            with transaction.atomic():
+                if pform.has_changed():
+                    pform.save()
+                if uform.has_changed():
+                    uform.save()
+                for form in eformset:
+                    if form.has_changed():
+                        if form.cleaned_data['player'] != player:
+                            raise PermissionDenied()
+                if eformset.has_changed():
+                    eformset.save()
+                    events = EventFilter.objects.filter(player=player)
+                    eformset = filter_formset_factory(queryset=events, initial=initial)
+                success = True
+    else:
+        pform = SettingsPlayerForm(instance=player)
+        uform = SettingsUserForm(instance=request.user)
+        eformset = filter_formset_factory(queryset=events, initial=initial)
+
+    iform = SettingsInfoForm(instance=player)
+
+    return render(request, 'settings.html', {
+        'player_form':     pform,
+        'user_form':       uform,
+        'info_form':       iform,
+        'notify_formset':  eformset,
+        'n_notifiers':     len(events),
+        'form_saved':      success,
+    })
+

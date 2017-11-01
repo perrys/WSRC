@@ -60,7 +60,7 @@ def process_booking(cell):
   object. The Event contains just the description (i.e. member name)
   and link. The time fields are added later as part of row/page
   processing"""
-  from wsrc.site.models import BookingSystemEvent
+  from wsrc.site.courts.models import BookingSystemEvent
   link = cell.a
   if link is None:
     return get_tag_content(cell)
@@ -127,7 +127,7 @@ def extract_events(time_list, first_date, court_number):
   FIRST_DATE is the date of the first column (which should be a Monday)
   LOCATION is a description of the court"""
 
-  from wsrc.site.models import BookingSystemEvent
+  from wsrc.site.courts.models import BookingSystemEvent
   quarterHour = datetime.timedelta(minutes=15)
 
   result = []

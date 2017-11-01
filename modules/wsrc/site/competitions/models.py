@@ -81,7 +81,7 @@ class Entrant(models.Model):
   seeded = models.BooleanField(default=False) # if true then ordering is interpreted as seeding
 
   def get_players(self):
-    if self.player1 is None:
+    if self.player1_id is None:
       return None
     players = [self.player1]
     if self.player2 is not None:
@@ -175,21 +175,25 @@ class Match(models.Model):
     t2wins = reduce(lambda total, val: (val[1] > val[0]) and total+1 or total, scores, 0)
     return (t1wins, t2wins)
 
-  def get_winner(self):
+  def get_winner(self, scores=None, key_only=False):
+    def get_entrant(i):
+      attr = "team{i}".format(i=i)
+      if key_only: attr += "_id"
+      return getattr(self, attr)
     if self.walkover is not None:
       if self.walkover == 1:
-        return self.team1
+        return get_entrant(1)
       else:
-        return self.team2
+        return get_entrant(2)
 
-    wins = self.get_sets_won()
+    wins = self.get_sets_won(scores)
     if wins is None:
       return None
     winners = None
     if wins[0] > wins[1]:
-      winners = self.team1
+      winners = get_entrant(1)
     elif wins[0] < wins[1]:
-      winners = self.team2
+      winners = get_entrant(2)
     return winners
 
   def is_knockout_comp(self):

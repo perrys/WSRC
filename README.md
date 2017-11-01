@@ -36,6 +36,7 @@ pip install beautifulsoup4
 pip install xlrd
 pip install xlsxwriter
 pip install iCalendar
+pip install django-debug-toolbar==1.4
 
 # old modules, no longer required:
 pip install django-coverage 
@@ -55,5 +56,7 @@ npm install -g less@2.5.0
 npm install -g babel-cli
 npm install -g babel-preset-env
 npm install -g decaffeinate
+npm install -g bootstrap@3
+
 ```
 
