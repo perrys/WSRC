@@ -25,7 +25,7 @@ class Transaction(models.Model):
   date_issued = models.DateField()
   date_cleared = models.DateField(blank=True, null=True)
   amount = models.FloatField()
-  category = models.ForeignKey(Category)
+  category = models.ForeignKey(Category, db_index=True)
   bank_transaction_category = models.CharField(max_length=32, blank=True, null=True)
   bank_number = models.IntegerField(blank=True, null=True)
   bank_memo = models.CharField(max_length=256, blank=True, null=True)
