@@ -4,6 +4,7 @@ from django.db.models.signals import post_save
 from django.core.mail import send_mail
 from django.core import validators
 from django.utils.translation import ugettext_lazy as _
+from django.db.models import Q
 
 import re
 
@@ -49,6 +50,8 @@ class Player(models.Model):
   prefs_display_contact_details  = models.NullBooleanField(("Visible in List"), default=True, null=True, blank=True,
                                                help_text="Unset if you do not want your contact details to appear in the membership list (note that this will make it very difficult for anyone to contact you regarding league games etc).")
 
+  subscription_regex  = models.CharField(('Regexp for subscription transactions'), max_length=256, null=True, blank=True)
+  
   def get_ordered_name(self):
       """
       Returns the last_name plus the first_name, with a comma in between.
@@ -85,33 +88,54 @@ class Player(models.Model):
     ordering=["user__first_name", "user__last_name"]
 
 
-
-class Subscriber(models.Model):  
-  player = models.ForeignKey(Player)
-  transaction_regex  = models.CharField(('Matching (Regular) Expression'), max_length=256)
+class Season(models.Model):
+  start_date        = models.DateField(db_index=True, unique=True)
+  end_date          = models.DateField(db_index=True, unique=True)
+  has_ended         = models.BooleanField("Has Ended", help_text="Indicates no longer relvant for input forms", db_index=True, default=False)
+  unique_together = ("start_date", "end_date")
+  def __unicode__(self):
+    return "{start_date:%Y}-{end_date:%y}".format(**self.__dict__)
 
 class Subscription(models.Model):
-  MEMBERSHIP_TYPES = (
-    ("coach", "Coach"),
-    ("compl", "Complimentary"),
-    ("full", "Full"),
-    ("junior", "Junior"),
-    ("off_peak", "Off-Peak"),
-    ("non_playing", "Non-Playing"),
-    ("y_adult", "Young Adult"),
-    )
   PAYMENT_TYPES = (
     ("annual", "Annual"),
     ("monthly", "Monthly SO"),
   )
-  subscriber        = models.ForeignKey(Subscriber, db_index=True)
-  membership_type   = models.CharField(("Membership Type"), max_length=16, choices=MEMBERSHIP_TYPES)
+  player            = models.ForeignKey(Player, db_index=True, limit_choices_to=Q(user__is_active=True))
+  season            = models.ForeignKey(Season, db_index=True, limit_choices_to=Q(has_ended=False))
   payment_frequency = models.CharField(("Payment Frequency"), max_length=16, choices=PAYMENT_TYPES)
-  start_date        = models.DateField(db_index=True)
-  end_date          = models.DateField(db_index=True)
-  signed_off        = models.BooleanField(default=False, db_index=True)
+  signed_off        = models.BooleanField("Signed Off", default=False)
+  comment           = models.TextField(blank=True, null=True)
+
+  unique_together = ("player", "season")
+
+  def payments_count(self):
+    return self.payments.count()
+  payments_count.short_description = "# Payments"
+  
+  def get_total_payments(self):
+    "Total payments calculated from objects - use when prefetch_related has been called on the queryset"
+    total = 0.0
+    for s in self.payments.all():
+      total += s.transaction.amount
+    return total
+  
+  def sum_payments(self):
+    "Total payments summed on the database - use for single subscriptions when there is no prefetch"
+    result = self.payments.all().aggregate(payments=models.Sum('transaction__amount'))
+    return result["payments"]
+  
+  def __unicode__(self):
+    return "{0} {1}".format(self.player, self.season)
+
+  class Meta:
+    ordering=["season__start_date", "player__user__first_name", "player__user__last_name"]
   
 class SubscriptionPayment(models.Model):
-  subscription = models.ForeignKey(Subscription, db_index=True)
-  transaction = models.ForeignKey(account_models.Transaction, db_index=True)
+  subscription = models.ForeignKey(Subscription, db_index=True, related_name="payments",
+                                   limit_choices_to=Q(season__has_ended=False))
+  transaction = models.ForeignKey(account_models.Transaction, unique=True, related_name="subscription",
+                                  limit_choices_to=Q(category__name='subscriptions', date_issued__gt='2017-01-01'))
+  def __unicode__(self):
+    return u"\xa3{0:.2f} {1}".format(self.transaction.amount, self.subscription)
   
