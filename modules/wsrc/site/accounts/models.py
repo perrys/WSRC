@@ -33,8 +33,8 @@ class Transaction(models.Model):
   last_updated = models.DateTimeField(auto_now=True)
   last_updated_by = models.ForeignKey(User)
   def __unicode__(self):
-    return "{0} {1} {2}".format(self.date_issued, self.amount, self.bank_memo)
+    return u"{0} \u2013 \xa3{1:.2f} \u2013 {2}".format(self.date_issued, self.amount, self.bank_memo)
   
   class Meta:
-    ordering=["date_cleared", "category__ordering", "date_issued", "amount", "bank_memo", "comment"]
+    ordering=["-date_cleared", "category__ordering", "date_issued", "amount", "bank_memo", "comment"]
 
