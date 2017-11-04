@@ -45,3 +45,40 @@ class LabeledSelect(forms.Select):
     return format_html('<option value="{0}"{1}{2}>{3}</option>',
                          option_value, selected_html, label_html, force_text(option_label))
   
+
+class SelectRelatedForeignFieldMixin(object):
+  "Use in a ModelAdmin to ensure that foreign field querysets have select_related()"
+  def formfield_for_foreignkey(self, db_field, request=None, **kwargs):
+    field = super(SelectRelatedForeignFieldMixin, self).formfield_for_foreignkey(db_field, request, **kwargs)
+    field.queryset = field.queryset.select_related()
+    field.cache_choices = True
+    return field
+
+class SelectRelatedQuerysetMixin(object):
+  "Call select_related on queryset used for admin list page"
+  def get_queryset(self, request):
+    qs = super(SelectRelatedQuerysetMixin, self).get_queryset(request)
+    qs = qs.select_related()
+    return qs
+  
+class CachingModelChoiceIterator(forms.models.ModelChoiceIterator):
+  "Avoids requerying the database for the given queryset"
+  def __iter__(self):
+    if self.field.empty_label is not None:
+      yield (u"", self.field.empty_label)
+    for obj in self.queryset: # instead of queryset.all()
+      yield self.choice(obj)
+
+class CachingModelChoiceField(forms.ModelChoiceField):
+  "ModelChoiceField which substitutes an efficient queryset iterator"
+  
+  def _get_choices(self):
+    if hasattr(self, '_choices'):
+      return self._choices
+    return CachingModelChoiceIterator(self)
+  choices = property(_get_choices, forms.ModelChoiceField._set_choices)
+
+def get_related_field_limited_queryset(db_field):
+  "Get the default queryset for choices for a related field, limited as specified on the model"
+  rel_field = db_field.rel
+  return rel_field.to.objects.filter(rel_field.limit_choices_to)
