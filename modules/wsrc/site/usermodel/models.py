@@ -134,7 +134,7 @@ class Subscription(models.Model):
 class SubscriptionPayment(models.Model):
   subscription = models.ForeignKey(Subscription, db_index=True, related_name="payments",
                                    limit_choices_to=Q(season__has_ended=False))
-  transaction = models.ForeignKey(account_models.Transaction, unique=True, related_name="subscription",
+  transaction = models.ForeignKey(account_models.Transaction, unique=True, related_name="subs_payments",
                                   limit_choices_to=Q(category__name='subscriptions', date_issued__gt='2017-01-01'))
   def __unicode__(self):
     return u"\xa3{0:.2f} {1}".format(self.transaction.amount, self.subscription)
