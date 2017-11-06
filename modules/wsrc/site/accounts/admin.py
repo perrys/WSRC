@@ -21,6 +21,7 @@ class TransactionAdmin(PrefetchRelatedQuerysetMixin, admin.ModelAdmin):
     list_per_page = 200
     list_select_related = True
     prefetch_related_fields = ('subs_payments',)
+    search_fields = ('bank_memo', 'comment')
     def subscription(self, obj):
         subs_payments = obj.subs_payments
         for sp in subs_payments.all():
