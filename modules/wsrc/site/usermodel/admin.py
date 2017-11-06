@@ -9,7 +9,7 @@ from django.utils.translation import ugettext_lazy as _
 
 from wsrc.site.accounts.models import Transaction
 from wsrc.site.usermodel.models import Player, Season, Subscription, SubscriptionPayment
-from wsrc.utils.form_utils import SelectRelatedForeignFieldMixin, SelectRelatedQuerysetMixin, CachingModelChoiceField, get_related_field_limited_queryset
+from wsrc.utils.form_utils import SelectRelatedForeignFieldMixin, SelectRelatedQuerysetMixin, CachingModelChoiceField, get_related_field_limited_queryset, PrefetchRelatedQuerysetMixin
 
 class UserProfileInline(admin.StackedInline):
  model = Player
@@ -98,5 +98,63 @@ class SubscriptionAdmin(admin.ModelAdmin):
     qs = qs.prefetch_related('payments__transaction')
     return qs
 
+def update_subscriptions(modeladmin, request, queryset):
+  latest_season = Season.latest()
+  queryset.prefetch_related("subscription_set__season")
+  for player in queryset:
+    found = False
+    subscription = None
+    for subscription in player.subscription_set.all():
+      if subscription.season_id == latest_season.id:
+        found = True
+        break
+    if not found:
+      payment_freq = "annual" if subscription is None else subscription.payment_frequency
+      s = Subscription(player=player, season=latest_season, payment_frequency=payment_freq)
+      s.save()
+update_subscriptions.short_description="Check/update subscriptions"
+
+class PlayerAdmin(SelectRelatedQuerysetMixin, PrefetchRelatedQuerysetMixin, admin.ModelAdmin):
+  list_filter = ('user__is_active', 'membership_type', )
+  list_display = ('name', 'active', 'membership_type', 'current_season', 'signed_off',
+                  'cell_phone', 'other_phone',
+                  'cardnumber', 'england_squash_id',
+                  'prefs_receive_email', 'prefs_esra_member', 'prefs_display_contact_details')
+  search_fields = ('user__first_name', 'user__last_name', 'cardnumber')
+  prefetch_related_fields = ('subscription_set__season',)
+  list_per_page = 400
+  actions = (update_subscriptions,)
+  
+  def name(self, obj):
+    return obj.user.get_full_name()
+  name.admin_order_field = 'user__first_name'
+
+  def active(self, obj):
+    return obj.user.is_active
+  active.admin_order_field = 'user__is_active'
+  active.boolean = True
+
+  def current_subscription(self, obj):
+    subscriptions = obj.subscription_set.all()
+    if subscriptions.count() > 0:
+      return subscriptions[0]
+    return None
+  
+  def current_season(self, obj):
+    sub = self.current_subscription(obj)
+    if sub is not None:
+      return sub.season
+    return None
+  current_subscription.short_description = 'Subscription'
+
+  def signed_off(self, obj):
+    sub = self.current_subscription(obj)
+    if sub is not None:
+      return sub.signed_off
+    return None
+  signed_off.short_description = 'Signed Off'
+  signed_off.boolean = True
+   
 admin.site.register(Season, SeasonAdmin)
 admin.site.register(Subscription, SubscriptionAdmin)
+admin.site.register(Player, PlayerAdmin)
