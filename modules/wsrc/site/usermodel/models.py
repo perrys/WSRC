@@ -95,6 +95,15 @@ class Season(models.Model):
   unique_together = ("start_date", "end_date")
   def __unicode__(self):
     return "{start_date:%Y}-{end_date:%y}".format(**self.__dict__)
+  @staticmethod
+  def latest():
+    qs = Season.objects.filter(has_ended=False).order_by("-start_date")
+    if qs.count() > 0:
+      return qs[0]
+    return None
+  class Meta:
+    ordering=["start_date"]
+    
 
 class Subscription(models.Model):
   PAYMENT_TYPES = (
