@@ -135,7 +135,7 @@ class Subscription(models.Model):
     return result["payments"]
   
   def __unicode__(self):
-    return "{0} {1}".format(self.player, self.season)
+    return u"{0} {1}".format(self.player, self.season)
 
   class Meta:
     ordering=["season__start_date", "player__user__first_name", "player__user__last_name"]
