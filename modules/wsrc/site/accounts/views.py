@@ -43,7 +43,7 @@ class AccountListSerializer(serializers.ModelSerializer):
         fields = ["name"]
 
 class AccountView(rest_generics.RetrieveUpdateDestroyAPIView):
-    queryset = Account.objects.all()
+    queryset = Account.objects.all().prefetch_related("transaction_set")
     serializer_class = AccountSerializer
 
 class AccountListView(rest_generics.ListCreateAPIView):
@@ -60,7 +60,7 @@ class TransactionView(rest_generics.ListAPIView):
             queryset = Transaction.objects.filter(account__id=account_id) 
         else:
             queryset = Transaction.objects.filter(account__name=account_name) 
-        return queryset
+        return queryset.select_related()
     def put(self, request, account_id, format="json"):
         # Bulk Upload
         account_id = int(account_id)
@@ -177,10 +177,10 @@ def accounts_view(request, account_name=None):
     else:
         form = UploadFileForm()
 
-    categories = Category.objects.all().order_by('description');
+    categories = Category.objects.all().order_by('description').select_related();
     categories_serialiser = CategorySerializer(categories, many=True)
     categories_data = JSON_RENDERER.render(categories_serialiser.data)
-    accounts = Account.objects.all().order_by('name')
+    accounts = Account.objects.all().order_by('name').prefetch_related("transaction_set")
     account_data = {}
     for account in accounts:
         account_serializer = AccountSerializer(account)
