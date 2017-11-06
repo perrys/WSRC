@@ -55,10 +55,21 @@ class SelectRelatedForeignFieldMixin(object):
     return field
 
 class SelectRelatedQuerysetMixin(object):
-  "Call select_related on queryset used for admin list page"
+  """Call select_related on result of get_queryset. 
+
+     NOTE - if this is used for list admin optimization, consider
+     setting list_select_related=True on the admin class instead.
+  """
   def get_queryset(self, request):
     qs = super(SelectRelatedQuerysetMixin, self).get_queryset(request)
     qs = qs.select_related()
+    return qs
+
+class PrefetchRelatedQuerysetMixin(object):
+  "Call select_related on queryset used for admin list page"
+  def get_queryset(self, request):
+    qs = super(PrefetchRelatedQuerysetMixin, self).get_queryset(request)
+    qs = qs.prefetch_related(*self.prefetch_related_fields)
     return qs
   
 class CachingModelChoiceIterator(forms.models.ModelChoiceIterator):
