@@ -599,20 +599,6 @@ class WSRC_admin_accounts
     @view.update_category_options(category_list)
     return null
 
-  refresh_categories: () ->
-    jqmask = $("body")
-    opts =
-      csrf_token:  $("input[name='csrfmiddlewaretoken']").val()
-      failureCB: (xhr, status) -> 
-        jqmask.unmask()
-        alert("ERROR #{ xhr.status }: #{ xhr.statusText }\nResponse: #{ xhr.responseText }\n\Update failed.")
-      successCB: (data, status, jq_xhr) =>
-        jqmask.unmask()
-        @model.set_categories(data)
-        @handle_categories_updated()
-    jqmask.mask("Refreshing...")
-    wsrc.ajax.ajax_bare_helper("/data/accounts/category/", null, opts, "GET")
-
   get_transaction_filter: () ->
     start_date = @view.get_transaction_start_date()
     end_date   = @view.get_transaction_end_date()
@@ -954,8 +940,6 @@ class WSRC_admin_accounts
     visible_rows.sort (x,y) -> x-y
     dataview.setColumns(visible_rows)    
     c.chart.draw(dataview, c.options)
-    
-    
             
   @on: (method) ->
     args = $.fn.toArray.call(arguments)
