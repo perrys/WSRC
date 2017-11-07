@@ -137,18 +137,6 @@ class CategoryDetailView(rest_generics.RetrieveUpdateDestroyAPIView):
 @user_passes_test(is_staff_test)
 def accounts_view(request, account_name=None):
     data = None
-    def preprocess_row(row):
-        # Convert old spreadsheet columns to columns to format of bank statements
-        def convert(old_name, new_name, multiplier=None):
-            if old_name in row:
-                val = row[old_name].decode("ascii", "ignore").replace(",", "")
-                if len(val) > 0 :
-                  if multiplier is not None:
-                    val = float(val) * multiplier
-                  row[new_name] = val
-        for cvt in [("Outgoing", "Amount", -1.0), ("Income", "Amount", 1.0), ("Transfers", "Amount", -1.0), ("Item", "Comment"), ("Chq No", "Number")]:
-            convert(*cvt)
-        return row
 
     categories = Category.objects.all().order_by('description').select_related();
     subscriptions = Subscription.objects.filter(season__has_ended=False).select_related()
@@ -212,7 +200,7 @@ def accounts_view(request, account_name=None):
                 return None
                 
             reader = csv.DictReader(upload_generator(request.FILES['file']))
-            data = [preprocess_row(row) for row in reader]
+            data = [row for row in reader]            
             for row in data:
                 cat_id = isduplicate(row)
                 if cat_id is not None:
