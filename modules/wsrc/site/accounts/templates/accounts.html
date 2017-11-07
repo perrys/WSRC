@@ -15,7 +15,7 @@ jQuery(document).ready(function(){
   {{ id }}: {{ transaction_data|safe }},
 {% endfor %}
   };
-  wsrc.admin.accounts.onReady(categories, accounts)
+  wsrc.admin.accounts.onReady(categories, accounts, {{ subs_category.id }})
 });
   </script>
 
