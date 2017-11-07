@@ -276,28 +276,28 @@ jQuery(document).ready(function(){
       <table class="transactions" id="transaction-upload-table">
         <thead>
           <tr class="header">
+            <th>Ignore</th>
             <th>Issued</th>
             <th>Cleared</th>
             <th>Amount</th>
-            <th>Bank&nbsp;Code</th>
             <th>Cheque&nbsp;#</th>
+            <th>Bank&nbsp;Code</th>
             <th>Bank&nbsp;Memo</th>
-            <th>Comment</th>
             <th>Category</th>
-            <th>Ignore</th>
+            <th>Comment</th>
           </tr>
         </thead>
         <tbody>
 {% for row in csv_data %}
 {% if row.Amount or row.Number %}
           <tr class="{% cycle '' 'alt' %} {% if  row.x_duplicate %}ignored{% endif %}">
+            <td class="duplicate"><input type="checkbox" name="duplicate" {% if  row.x_duplicate %}checked="checked"{% endif %}  onchange="wsrc.admin.accounts.on('handle_upload_data_changed')"></td>
             <td class="date_issued">{{ row.Date }}</td>
             <td class="date_cleared">{% if "Cleared" in row %}{% if row.Cleared|lower == "y" %}{{ row.Date }}{% endif %}{% else %}{{ row.Date }}{% endif %}</td>
             <td class="amount {% if row.Amount|parse_float < 0.0 %}debit{% else %}credit{% endif %}" >{{ row.Amount }}</td>
-            <td class="bank_code">{{ row.Subcategory }}</td>
             <td class="bank_number">{{ row.Number }}</td>
+            <td class="bank_code">{{ row.Subcategory }}</td>
             <td class="bank_memo">{{ row.Memo }}</td>
-            <td class="comment"><input name="comment" value="{{ row.Comment }}"></td>
             <td class="category">
                 <!-- {{ row.Category|lower }} -->
               <select name="category" onchange="wsrc.admin.accounts.on('handle_upload_data_changed')">
@@ -307,7 +307,7 @@ jQuery(document).ready(function(){
 {% endfor %}
               </select>
             </td>
-            <td class="duplicate"><input type="checkbox" name="duplicate" {% if  row.x_duplicate %}checked="checked"{% endif %}  onchange="wsrc.admin.accounts.on('handle_upload_data_changed')"></td>
+            <td class="comment"><input name="comment" value="{{ row.Comment }}"></td>
           </tr>
 {% endif %}
 {% endfor %}
