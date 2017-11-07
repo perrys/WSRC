@@ -38,7 +38,7 @@ class AccountSerializer(serializers.ModelSerializer):
     class Meta:
         model = Account
         depth = 2
-        fields = ["name", "transaction_set"]
+        fields = ["name", "sort_code", "acc_number", "transaction_set"]
 
 class AccountListSerializer(serializers.ModelSerializer):
     class Meta:

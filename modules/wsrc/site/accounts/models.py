@@ -1,8 +1,11 @@
 from django.db import models
 from django.contrib.auth.models import User
+from django.core.validators import RegexValidator
 
 class Account(models.Model):
   name = models.CharField(max_length=64)
+  sort_code = models.CharField(max_length=8, validators=[RegexValidator("\d\d-\d\d-\d\d")], blank=True, null=True)
+  acc_number = models.CharField(max_length=8, validators=[RegexValidator("\d{8}")], blank=True, null=True)
   def __unicode__(self):
     return self.name
 
