@@ -5,7 +5,7 @@
   
 class WSRC_admin_accounts_model
 
-  constructor: (category_list, @account_map) ->
+  constructor: (category_list, @account_map, @subscription_category_id) ->
     @set_categories(category_list)
     for id, account of @account_map
       WSRC_admin_accounts_model.set_balances(account.transaction_set)
@@ -535,6 +535,14 @@ class WSRC_admin_accounts_view
     total_row.find("td.loss").text(subtotals.loss.toFixed(2))
     return null
 
+  update_subscription_selectors: (subscription_category_id) ->
+    rows = @jq_upload_transactions_tbody.find(@data_row_selector)
+    rows.each (idx, elt) ->
+      row = $(elt)
+      is_subs_cat = `row.find(":input[name='category']").val() == subscription_category_id`
+      row.find(":input[name='subscription']").prop('disabled', if is_subs_cat then false else "disabled")
+    
+
 ################################################################################
 # Controller - initialize and respond to events
 ################################################################################
@@ -708,6 +716,7 @@ class WSRC_admin_accounts
     else
       $("#upload_uncategorized_count_input").parents("div.ui-field-contain").hide()
       $("#upload_go_button").attr('disabled', false)
+    @view.update_subscription_selectors(@model.subscription_category_id)
 
   init_and_draw_charts: () ->      
     @draw_balances_chart()
@@ -916,8 +925,8 @@ class WSRC_admin_accounts
     args = $.fn.toArray.call(arguments)
     @instance[method].apply(@instance, args[1..])
 
-  @onReady: (initial_categories, initial_accounts) ->
-    model = new WSRC_admin_accounts_model(initial_categories, initial_accounts)
+  @onReady: (initial_categories, initial_accounts, subscription_category_id) ->
+    model = new WSRC_admin_accounts_model(initial_categories, initial_accounts, subscription_category_id)
     @instance = new WSRC_admin_accounts(model)
     wsrc.utils.configure_sortables()
 
