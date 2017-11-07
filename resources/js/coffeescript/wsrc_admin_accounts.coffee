@@ -581,7 +581,6 @@ class WSRC_admin_accounts
       $("#upload_start_date_input").datepicker("setDate", summary.min_date)
       $("#upload_end_date_input").datepicker("setDate", summary.max_date)
       @handle_upload_data_changed(summary)
-      @apply_category_regexes()
 
     @handle_categories_updated()    
 
@@ -611,30 +610,8 @@ class WSRC_admin_accounts
         jqmask.unmask()
         @model.set_categories(data)
         @handle_categories_updated()
-        @apply_category_regexes()
     jqmask.mask("Refreshing...")
     wsrc.ajax.ajax_bare_helper("/data/accounts/category/", null, opts, "GET")
-
-  apply_category_regexes: () ->
-    test_list = @model.get_catetory_regex_test_pairs()
-    jq_upload_transactions_tbody = $('#upload_tab table.transactions tbody')
-    rows = jq_upload_transactions_tbody.children()
-    set_category = (row, id) ->
-      row.find('select').val(id)
-    for row in rows
-      row = $(row)
-      for [id, regex] in test_list
-        found = false
-        for field in ['bank_memo', 'comment']
-          td_field = row.find("td.#{ field }")
-          input = td_field.find("input")
-          text = if input.length > 0 then input.val() else td_field.text()
-          if regex.test(text) 
-            set_category(row, id)
-            found = true
-            break
-        if found
-          break
 
   get_transaction_filter: () ->
     start_date = @view.get_transaction_start_date()
