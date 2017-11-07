@@ -150,7 +150,11 @@ def accounts_view(request, account_name=None):
     if request.method == 'POST':
         form = UploadFileForm(request.POST, request.FILES)
         if form.is_valid():
-            account = Account.objects.get(pk=request.POST['account'])
+            accounts = Account.objects.filter(pk=request.POST['account']).prefetch_related('transaction_set')
+            if accounts.count() != 1:
+                raise SuspiciousOperation()
+            account = accounts[0]
+            transaction_set = [t for t in account.transaction_set.all()]
             def isduplicate(row):
                 if account is None:
                     return False
@@ -160,12 +164,12 @@ def accounts_view(request, account_name=None):
                 bank_memo = row.get("Memo")
                 datestr = row["Date"]
                 datestr = datestr[6:10] + "-" + datestr[3:5] + "-" + datestr[0:2]
-                matches = account.transaction_set.filter(date_issued = datestr)
-                matches = matches.filter(amount = float(row["Amount"]))
+                matches = [t for t in transaction_set if t.date_issued.isoformat() == datestr]
+                matches = [t for t in matches if t.amount == float(row["Amount"])]
                 if comment is not None and len(comment) > 0:
-                    matches = matches.filter(comment = comment)
+                    matches = [t for t in matches if t.comment == comment]
                 if bank_memo is not None and len(bank_memo) > 0:
-                    matches = matches.filter(bank_memo = bank_memo)
+                    matches = [t for t in matches if t.bank_memo == bank_memo]
                 return len(matches) == 1
         
             reader = csv.DictReader(upload_generator(request.FILES['file']))
