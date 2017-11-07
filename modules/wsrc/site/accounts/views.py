@@ -152,6 +152,7 @@ def accounts_view(request, account_name=None):
 
     categories = Category.objects.all().order_by('description').select_related();
     subscriptions = Subscription.objects.filter(season__has_ended=False).select_related()
+    subs_category = [c for c in categories if c.name == SUBS_CATEGORY_NAME][0]
     
     if request.method == 'POST':
         form = UploadFileForm(request.POST, request.FILES)
@@ -162,7 +163,6 @@ def accounts_view(request, account_name=None):
             account = accounts[0]
             transaction_set = [t for t in account.transaction_set.all()]
             regexes = [(c.id, re.compile(c.regex, re.IGNORECASE)) for c in categories if c.regex != "__missing__"]
-            subs_category = [c for c in categories if c.name == SUBS_CATEGORY_NAME][0]
             
             def isduplicate(row):
                 if account is None:
@@ -243,6 +243,7 @@ def accounts_view(request, account_name=None):
         'accounts': accounts,
         'account_data': account_data,
         'subscriptions': subscriptions,
+        'subs_category': subs_category
     })        
 
 from django.views.decorators.http import require_http_methods
