@@ -170,12 +170,17 @@ def accounts_view(request, account_name=None):
                     matches = [t for t in matches if t.comment == comment]
                 if bank_memo is not None and len(bank_memo) > 0:
                     matches = [t for t in matches if t.bank_memo == bank_memo]
-                return len(matches) == 1
+                if len(matches) == 1:
+                    return matches[0].category_id
+                return None
         
             reader = csv.DictReader(upload_generator(request.FILES['file']))
             data = [preprocess_row(row) for row in reader]
             for row in data:
-                row["x_duplicate"] = isduplicate(row)
+                cat_id = isduplicate(row)
+                if cat_id is not None:
+                    row["x_duplicate"] = True
+                    row["category_id"] = cat_id
 
 
     else:
