@@ -258,28 +258,6 @@ class WSRC_admin_accounts_view
     @swing_dialog.dialog("close")
     return null
 
-  # Set options in the combos in the upload transactions screen
-  update_category_options: (category_list) ->
-    cat_exists = (id) ->
-      for [cat_id, cat] in category_list
-        if id == cat_id
-          return true
-      return false
-    # add new categories and remove obsolete ones, but leave existing
-    # as they may have been manually selected
-    jq_selects = @jq_upload_transactions_tbody.find(@data_row_selector).find("select[name='category']")
-    jq_selects.each (idx, elt) =>
-      jq_select = $(elt)
-      options = jq_select.children()      
-      options.each (idx, elt) =>
-        if idx > 0 # skip blank option
-          unless cat_exists(parseInt(elt.value))
-            elt.parentElement.removeChild(elt)
-      for [cat_id, category] in category_list
-        unless jq_select.find("option[value='#{ category.id }']").length > 0
-          jq_select.append("<option value='#{ category.id }'>#{ category.description }</option>")
-    return null
-
   set_transaction_summary: (summary) ->
     set_row = (jq_row, cat_summary) ->
       jq_row.find("td.count").text(cat_summary.count)
@@ -582,8 +560,6 @@ class WSRC_admin_accounts
       $("#upload_end_date_input").datepicker("setDate", summary.max_date)
       @handle_upload_data_changed(summary)
 
-    @handle_categories_updated()    
-
     $(document).keydown( (e) =>
       if e.ctrlKey and e.which == 66 # 'b' key 
         e.preventDefault()
@@ -593,11 +569,6 @@ class WSRC_admin_accounts
         @reload_account()
     )
     @update_transaction_and_summary_tables()
-
-  handle_categories_updated: () ->
-    category_list = @model.get_id_category_pairs()
-    @view.update_category_options(category_list)
-    return null
 
   get_transaction_filter: () ->
     start_date = @view.get_transaction_start_date()
