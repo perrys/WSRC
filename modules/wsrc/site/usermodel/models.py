@@ -133,6 +133,37 @@ class Subscription(models.Model):
     "Total payments summed on the database - use for single subscriptions when there is no prefetch"
     result = self.payments.all().aggregate(payments=models.Sum('transaction__amount'))
     return result["payments"]
+
+  def match_transaction(self, transaction, subs_category, persist=True):
+    def matches(regex):
+      return regex is not None and (regex.search(transaction.bank_memo) or regex.search(transaction.comment))
+    def create_payment():
+      payment = SubscriptionPayment(subscription=self, transaction=transaction)
+      payment.save()
+    regex = getattr(self, "subs_regex", None) # cache regex on this object 
+    if regex is None:
+      regex_expr = self.player.subscription_regex
+      if regex_expr is not None:
+        self.subs_regex = regex = re.compile(regex_expr, re.IGNORECASE)
+    if matches(regex):
+      if transaction.category is None:
+        if persist:
+          transaction.category = subs_category
+          transaction.save()
+          create_payment()
+        return True
+    # couldn't match using player's regexp. Try their name, but
+    # only for transactions already categorized as subscriptions:
+    if transaction.category.id == subs_category.id:
+      regex = getattr(self, "player_regex", None)
+      if regex is None:
+        self.player_regex = regex = re.compile(self.player.user.get_full_name(), re.IGNORECASE)
+      if matches(regex):
+        if persist:
+          create_payment()
+        return True
+    return False
+    
   
   def __unicode__(self):
     return u"{0} {1}".format(self.player, self.season)

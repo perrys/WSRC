@@ -25,34 +25,10 @@ def assign_subs_payment(modeladmin, request, transactions_queryset):
     subs_category = Category.objects.get(name=SUBS_CATEGORY_NAME)
     compare_set = set()
     for trans in transactions_queryset.filter(Q(category__isnull=True) | Q(category__name=SUBS_CATEGORY_NAME)):
-        print trans
         if trans.id in existing_payment_ids:
             continue # transaction is already a subs payment
         for sub in subscriptions:
-            print sub
-            def matches(regex):
-                return regex is not None and (regex.search(trans.bank_memo) or regex.search(trans.comment))
-            def create_payment():
-                payment = SubscriptionPayment(subscription=sub, transaction=trans)
-                payment.save()
-            regex = getattr(sub, "regex", None)
-            if regex is None:
-                regex_expr = sub.player.subscription_regex
-                if regex_expr is not None:
-                    sub.regex = regex = re.compile(regex_expr, re.IGNORECASE)
-            if matches(regex):
-                if trans.category is None:
-                    trans.category = subs_category
-                    trans.save()
-                create_payment()
-                continue
-            # couldn't match using any player's regexp. Try their names, but
-            # only for transactions already categorized as subscriptions:
-            if trans.category.name == SUBS_CATEGORY_NAME:
-                regex = re.compile(sub.player.user.get_full_name(), re.IGNORECASE)
-                if regex.search(trans.bank_memo) or regex.search(trans.comment):
-                    create_payment()
-                    continue
+            sub.match_transaction(trans, subs_category)
 assign_subs_payment.short_description="Assign Subs Payment"
     
 class TransactionAdmin(PrefetchRelatedQuerysetMixin, admin.ModelAdmin):
