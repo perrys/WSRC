@@ -1,6 +1,7 @@
 
 from .models import Category, Transaction, Account
 from .admin import SUBS_CATEGORY_NAME
+from wsrc.site.usermodel.models import Subscription
 from wsrc.utils.rest_framework_utils import LastUpdaterModelSerializer
 from wsrc.utils.upload_utils import UploadFileForm, upload_generator
 
@@ -150,6 +151,8 @@ def accounts_view(request, account_name=None):
         return row
 
     categories = Category.objects.all().order_by('description').select_related();
+    subscriptions = Subscription.objects.filter(season__has_ended=False).select_related()
+    
     if request.method == 'POST':
         form = UploadFileForm(request.POST, request.FILES)
         if form.is_valid():
@@ -195,7 +198,19 @@ def accounts_view(request, account_name=None):
                 if float(row["Amount"]) > 0 and memo.endswith("STO") and (day_of_month <=3 or day_of_month >= 27):
                     return subs_category.id
                 return None
-            
+
+            def get_subscription(row, cat_id):
+                class Transaction:
+                    def __init__(self):
+                        self.bank_memo = row.get("Memo")
+                        self.comment = ''
+                        self.category_id = cat_id
+                transaction = Transaction()
+                for sub in subscriptions:
+                    if sub.match_transaction(transaction, subs_category, persist=False):
+                        return sub.id
+                return None
+                
             reader = csv.DictReader(upload_generator(request.FILES['file']))
             data = [preprocess_row(row) for row in reader]
             for row in data:
@@ -206,6 +221,7 @@ def accounts_view(request, account_name=None):
                 else:
                     cat_id = get_category(row)
                     row["category_id"] = cat_id or ''
+                row["subscription_id"] = get_subscription(row, cat_id)
 
 
     else:
@@ -226,6 +242,7 @@ def accounts_view(request, account_name=None):
         'categories_data': categories_data,
         'accounts': accounts,
         'account_data': account_data,
+        'subscriptions': subscriptions,
     })        
 
 from django.views.decorators.http import require_http_methods

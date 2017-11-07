@@ -284,6 +284,7 @@ jQuery(document).ready(function(){
             <th>Bank&nbsp;Code</th>
             <th>Bank&nbsp;Memo</th>
             <th>Category</th>
+            <th>Subscription</th>
             <th>Comment</th>
           </tr>
         </thead>
@@ -304,6 +305,15 @@ jQuery(document).ready(function(){
                 <option value="">-</option>
 {% for category in categories %}
                 <option value="{{ category.id }}" {% if category.id == row.category_id %}selected="selected"{% endif %}>{{ category.description }}</option>
+{% endfor %}
+              </select>
+            </td>
+            <td class="subscription">
+                <!-- {{ row.Category|lower }} -->
+              <select name="subscription">
+                <option value="">-</option>
+{% for sub in subscriptions %}
+                <option value="{{ sub.id }}" {% if sub.id == row.subscription_id %}selected="selected"{% endif %}>{{ sub }}</option>
 {% endfor %}
               </select>
             </td>
