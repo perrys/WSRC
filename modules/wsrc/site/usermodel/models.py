@@ -146,12 +146,12 @@ class Subscription(models.Model):
       if regex_expr is not None:
         self.subs_regex = regex = re.compile(regex_expr, re.IGNORECASE)
     if matches(regex):
-      if transaction.category is None:
-        if persist:
+      if persist:
+        if transaction.category is None:
           transaction.category = subs_category
           transaction.save()
-          create_payment()
-        return True
+        create_payment()
+      return True
     # couldn't match using player's regexp. Try their name, but
     # only for transactions already categorized as subscriptions:
     if transaction.category.id == subs_category.id:
