@@ -1,5 +1,6 @@
 
 from .models import Category, Transaction, Account
+from .admin import SUBS_CATEGORY_NAME
 from wsrc.utils.rest_framework_utils import LastUpdaterModelSerializer
 from wsrc.utils.upload_utils import UploadFileForm, upload_generator
 
@@ -18,6 +19,7 @@ from rest_framework.renderers import JSONRenderer
 from rest_framework.response import Response
 
 import csv
+import re
 
 JSON_RENDERER = JSONRenderer()
 
@@ -147,6 +149,7 @@ def accounts_view(request, account_name=None):
             convert(*cvt)
         return row
 
+    categories = Category.objects.all().order_by('description').select_related();
     if request.method == 'POST':
         form = UploadFileForm(request.POST, request.FILES)
         if form.is_valid():
@@ -155,6 +158,9 @@ def accounts_view(request, account_name=None):
                 raise SuspiciousOperation()
             account = accounts[0]
             transaction_set = [t for t in account.transaction_set.all()]
+            regexes = [(c.id, re.compile(c.regex, re.IGNORECASE)) for c in categories if c.regex != "__missing__"]
+            subs_category = [c for c in categories if c.name == SUBS_CATEGORY_NAME][0]
+            
             def isduplicate(row):
                 if account is None:
                     return False
@@ -173,7 +179,23 @@ def accounts_view(request, account_name=None):
                 if len(matches) == 1:
                     return matches[0].category_id
                 return None
-        
+
+            def get_category(row):
+                memo = row["Memo"]
+                if not memo:
+                    return None
+                for cat_id, regex in regexes:
+                    result = regex.search(memo)
+                    if result:
+                        return cat_id
+                # We're going to assume that any payment which is a
+                # standing order paid near the start of the month is
+                # also a subscription payment:
+                day_of_month = int(row["Date"][0:2])
+                if float(row["Amount"]) > 0 and memo.endswith("STO") and (day_of_month <=3 or day_of_month >= 27):
+                    return subs_category.id
+                return None
+            
             reader = csv.DictReader(upload_generator(request.FILES['file']))
             data = [preprocess_row(row) for row in reader]
             for row in data:
@@ -181,12 +203,14 @@ def accounts_view(request, account_name=None):
                 if cat_id is not None:
                     row["x_duplicate"] = True
                     row["category_id"] = cat_id
+                else:
+                    cat_id = get_category(row)
+                    row["category_id"] = cat_id or ''
 
 
     else:
         form = UploadFileForm()
 
-    categories = Category.objects.all().order_by('description').select_related();
     categories_serialiser = CategorySerializer(categories, many=True)
     categories_data = JSON_RENDERER.render(categories_serialiser.data)
     accounts = Account.objects.all().order_by('name').prefetch_related("transaction_set")
