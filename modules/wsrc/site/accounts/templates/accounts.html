@@ -303,7 +303,7 @@ jQuery(document).ready(function(){
               <select name="category" onchange="wsrc.admin.accounts.on('handle_upload_data_changed')">
                 <option value="">-</option>
 {% for category in categories %}
-                <option value="{{ category.id }}" {% if category.name|lower == row.Category|lower %}selected="selected"{% endif %}>{{ category.description }}</option>
+                <option value="{{ category.id }}" {% if category.id == row.category_id %}selected="selected"{% endif %}>{{ category.description }}</option>
 {% endfor %}
               </select>
             </td>
