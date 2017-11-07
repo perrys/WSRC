@@ -8,6 +8,7 @@ class WSRC_admin_accounts_model
   constructor: (category_list, @account_map, @subscription_category_id) ->
     @set_categories(category_list)
     for id, account of @account_map
+      wsrc.utils.lexical_sort(account.transaction_set, "date_cleared")
       WSRC_admin_accounts_model.set_balances(account.transaction_set)
 
   get_transaction_list: (account_id) ->  
