@@ -154,7 +154,7 @@ class Subscription(models.Model):
       return True
     # couldn't match using player's regexp. Try their name, but
     # only for transactions already categorized as subscriptions:
-    if transaction.category.id == subs_category.id:
+    if transaction.category_id == subs_category.id:
       regex = getattr(self, "player_regex", None)
       if regex is None:
         self.player_regex = regex = re.compile(self.player.user.get_full_name(), re.IGNORECASE)
