@@ -88,6 +88,7 @@ class SubscriptionAdmin(admin.ModelAdmin):
     models.TextField: {'widget': forms.Textarea(attrs={'cols': 30, 'rows': 1})},
   }
   form = SubscriptionForm
+  list_per_page = 400
 
   def subscription(self, obj):
     return unicode(obj)
