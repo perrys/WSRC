@@ -138,23 +138,30 @@ class CategoryDetailView(rest_generics.RetrieveUpdateDestroyAPIView):
 def accounts_view(request, account_name=None):
     data = None
 
+    accounts = Account.objects.all().order_by('name').prefetch_related("transaction_set")
     categories = Category.objects.all().order_by('description').select_related();
     subscriptions = Subscription.objects.filter(season__has_ended=False).select_related()
     subs_category = [c for c in categories if c.name == SUBS_CATEGORY_NAME][0]
+    uploaded_account = None
     
     if request.method == 'POST':
         form = UploadFileForm(request.POST, request.FILES)
         if form.is_valid():
-            accounts = Account.objects.filter(pk=request.POST['account']).prefetch_related('transaction_set')
-            if accounts.count() != 1:
-                raise SuspiciousOperation()
-            account = accounts[0]
-            transaction_set = [t for t in account.transaction_set.all()]
+            reader = csv.DictReader(upload_generator(request.FILES['file']))
+            data = [row for row in reader]
+            if len(data) == 0:
+                raise SuspiciousOperation("empty dataset uploaded")                
+            for row in data:
+                if uploaded_account is None:
+                    uploaded_account = row["Account"]
+                elif uploaded_account != row["Account"]:
+                    raise SuspiciousOperation("mixed account data uploaded")
+            sort_code, acc_number = uploaded_account.split()            
+            uploaded_account = accounts.get(sort_code=sort_code, acc_number=acc_number)
+            transaction_set = [t for t in uploaded_account.transaction_set.all()]
             regexes = [(c.id, re.compile(c.regex, re.IGNORECASE)) for c in categories if c.regex != "__missing__"]
             
             def isduplicate(row):
-                if account is None:
-                    return False
                 if "Amount" not in row:
                     return False
                 comment = row.get("Comment")
@@ -199,8 +206,6 @@ def accounts_view(request, account_name=None):
                         return sub.id
                 return None
                 
-            reader = csv.DictReader(upload_generator(request.FILES['file']))
-            data = [row for row in reader]            
             for row in data:
                 cat_id = isduplicate(row)
                 if cat_id is not None:
@@ -217,7 +222,6 @@ def accounts_view(request, account_name=None):
 
     categories_serialiser = CategorySerializer(categories, many=True)
     categories_data = JSON_RENDERER.render(categories_serialiser.data)
-    accounts = Account.objects.all().order_by('name').prefetch_related("transaction_set")
     account_data = {}
     for account in accounts:
         account_serializer = AccountSerializer(account)
@@ -230,6 +234,7 @@ def accounts_view(request, account_name=None):
         'categories_data': categories_data,
         'accounts': accounts,
         'account_data': account_data,
+        'uploaded_acc': uploaded_account,
         'subscriptions': subscriptions,
         'subs_category': subs_category
     })        

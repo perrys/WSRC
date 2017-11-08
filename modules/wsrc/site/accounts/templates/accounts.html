@@ -247,9 +247,10 @@ jQuery(document).ready(function(){
           {% usekwacro createfield_adhoc "End Date"   "end_date"   "upload_end_date_input"   "datepicker" "wsrc.admin.accounts.on('handle_upload_data_changed')" %}
           <div class="ui-field-contain">
             <label for="upload_account_selector">Account:</label>
-            <select name="account" id="upload_account_selector" >
+            <select name="account" id="upload_account_selector" disabled="disabled">
+              <option value="">-</option>
 {% for acc in accounts %}
-              <option value="{{ acc.id }}">{{ acc.name }}</option>
+              <option value="{{ acc.id }}" {% if acc.id == uploaded_acc.id %}selected="selected"{% endif %}>{{ acc.name }}</option>
 {% endfor %}
             </select>
             <button id='upload_go_button' onclick="wsrc.admin.accounts.on('upload_transactions')" disabled='true'>Go</button>
@@ -261,14 +262,6 @@ jQuery(document).ready(function(){
         <fieldset name="file_upload" class="ui-corner-all">
           <legend>File Upload</legend>
 {% usekwacro createfield form.file True %}
-          <div class="ui-field-contain">
-            <label for="upload_account_selector">Account:</label>
-            <select name="account" id="upload_account_selector" >
-{% for acc in accounts %}
-              <option value="{{ acc.id }}">{{ acc.name }}</option>
-{% endfor %}
-            </select>
-          </div>
         </fieldset>
       </form>
 {% endif %}
