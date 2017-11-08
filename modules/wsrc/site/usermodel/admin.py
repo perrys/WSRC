@@ -68,11 +68,21 @@ class SubscriptionPaymentInline(SelectRelatedQuerysetMixin, admin.StackedInline)
   model = SubscriptionPayment
   can_delete = True
   form = SubscriptionPaymentForm
-    
+
+class SeasonListFilter(admin.SimpleListFilter):
+  title = "Season"
+  parameter_name = "season"
+  def lookups(self, request, model_admin):
+   return [(s.id, unicode(s)) for s in Season.objects.all()]
+  def queryset(self, request, queryset):
+   if self.value():
+     queryset = queryset.filter(season_id=self.value())
+   return queryset
+  
 class SubscriptionAdmin(admin.ModelAdmin):
   inlines = (SubscriptionPaymentInline,)
   list_display = ('player', 'season', 'membership_type', 'payment_frequency', 'payments_count', 'total_payments', 'signed_off', "comment")
-  list_filter = ('signed_off', 'payment_frequency', 'player__membership_type', )
+  list_filter = (SeasonListFilter, 'signed_off', 'payment_frequency', 'player__membership_type', )
   list_editable = ('signed_off', 'comment')
   formfield_overrides = {
     models.TextField: {'widget': forms.Textarea(attrs={'cols': 30, 'rows': 1})},
