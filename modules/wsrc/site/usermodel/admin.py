@@ -18,7 +18,7 @@ class UserProfileInline(admin.StackedInline):
 
 class UserAdmin(AuthUserAdmin):
  inlines = AuthUserAdmin.inlines + [UserProfileInline,]
- list_display = ('username', 'is_active', 'membership_type', 'date_joined_date', 'email', 'first_name', 'last_name', 'cardnumber', 'booking_system_id', 'is_staff')
+ list_display = ('username', 'is_active', 'membership_type', 'email', 'first_name', 'last_name', 'cardnumber', 'booking_system_id', 'is_staff')
 
  list_filter = ('is_active', 'player__membership_type', 'groups', 'player__prefs_esra_member', 'is_staff', 'is_superuser')
  ordering = ('username', 'first_name', 'last_name')
@@ -44,11 +44,6 @@ class UserAdmin(AuthUserAdmin):
  cardnumber.short_description = "DoorCard #"
  cardnumber.admin_order_field = 'player__cardnumber'
 
- def date_joined_date(self, obj):
-  return obj.date_joined.date()
- date_joined_date.short_description = "Joined"
- date_joined_date.admin_order_field = 'date_joined'
- 
 # unregister old user admin
 admin.site.unregister(User)
 # register new user admin
@@ -127,7 +122,7 @@ update_subscriptions.short_description="Check/update subscriptions"
 
 class PlayerAdmin(SelectRelatedQuerysetMixin, PrefetchRelatedQuerysetMixin, admin.ModelAdmin):
   list_filter = ('user__is_active', 'membership_type', )
-  list_display = ('name', 'active', 'membership_type', 'current_season', 'signed_off',
+  list_display = ('name', 'active', 'date_joined_date', 'membership_type', 'current_season', 'signed_off',
                   'cell_phone', 'other_phone',
                   'cardnumber', 'england_squash_id',
                   'prefs_receive_email', 'prefs_esra_member', 'prefs_display_contact_details')
@@ -165,7 +160,13 @@ class PlayerAdmin(SelectRelatedQuerysetMixin, PrefetchRelatedQuerysetMixin, admi
     return None
   signed_off.short_description = 'Signed Off'
   signed_off.boolean = True
-   
+
+  def date_joined_date(self, obj):
+    return obj.user.date_joined.date()
+  date_joined_date.short_description = "Joined"
+  date_joined_date.admin_order_field = 'date_joined'
+ 
+  
 admin.site.register(Season, SeasonAdmin)
 admin.site.register(Subscription, SubscriptionAdmin)
 admin.site.register(Player, PlayerAdmin)
