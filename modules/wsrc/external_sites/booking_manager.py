@@ -89,7 +89,7 @@ class BookingSystemSession:
                     end_time = start_time + datetime.timedelta(minutes=entry["duration_mins"])
                     event = BookingSystemEvent(start_time=start_time,
                                                end_time=end_time,
-                                               court=court,
+                                               court=int(court),
                                                name=entry["name"],
                                                event_id=entry["id"],
                                                description=entry["description"])
@@ -162,7 +162,7 @@ if __name__ == "__main__":
 
     class MockHttpClient:
         def get(self, selector, params):
-            filename = "wsrc/external_sites/test_data/wsrc_{year}-{month}-{day}_court_{room}.html".format(**params)
+            filename = "wsrc/external_sites/test_data/wsrc_{start_date}.json".format(**params)
             class Response():
                 def getcode(self):
                     return httplib.OK
@@ -188,7 +188,7 @@ if __name__ == "__main__":
         def test_GIVEN_mock_http_client_WHEN_getting_week_view_THEN_something_returned(self):
             session = BookingSystemSession()
             session.client = MockHttpClient()
-            html = session.get_week_view(2015, 11, 9, 1)
+            html = session.get_week_view(datetime.date(2015, 11, 9))
             self.assertTrue(len(html) > 0)
 
         def test_GIVEN_mock_http_client_WHEN_scraping_booked_courts_THEN_events_returned_within_date_range(self):
@@ -196,15 +196,15 @@ if __name__ == "__main__":
             session.client = MockHttpClient()
             start_date = datetime.date(2015, 11, 9)
             events, start_date_used = session.get_booked_courts(start_date)
-            self.assertTrue(len(events) > 0)
+            self.assertGreater(len(events), 0)
             self.assertEqual(start_date, start_date_used)
             for event in events:
-                self.assertTrue(event.start_time.date() >= start_date)
-                self.assertTrue(event.start_time.date() <= (start_date + datetime.timedelta(days=14)))
-                self.assertTrue(event.end_time >= event.start_time)
-                self.assertTrue(event.end_time <= (event.start_time + datetime.timedelta(minutes=180)))
-                self.assertTrue(event.court >= 1)
-                self.assertTrue(event.court <= 3)
+                self.assertGreaterEqual(event.start_time.date(), start_date)
+                self.assertLessEqual(event.start_time.date(), (start_date + datetime.timedelta(days=14)))
+                self.assertGreaterEqual(event.end_time, event.start_time)
+                self.assertLessEqual(event.end_time, (event.start_time + datetime.timedelta(minutes=180)))
+                self.assertGreaterEqual(event.court, 1)
+                self.assertLessEqual(event.court, 3)
 
         def test_GIVEN_events_in_db_WHEN_syncing_new_events_THEN_matching_added_modified_removed_returned(self):
             from wsrc.site.courts.models import BookingSystemEvent
