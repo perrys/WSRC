@@ -38,13 +38,13 @@ class MemberListView(ListView):
         return super(MemberListView, self).dispatch(request, *args, **kwargs)
 
     def get_queryset(self):
-      return Player.objects.values("id", "user__first_name", "user__last_name", "user__email", "other_phone", "cell_phone", "user__is_active") \
-                           .filter(user__is_active=True) \
-                           .exclude(prefs_display_contact_details=False) \
-                           .order_by('user__first_name', 'user__last_name')
+        return Player.objects.values("id", "user__first_name", "user__last_name", "user__email", "other_phone", "cell_phone", "user__is_active") \
+                             .filter(user__is_active=True) \
+                             .exclude(prefs_display_contact_details=False) \
+                             .order_by('user__first_name', 'user__last_name')
 
     def get_template_names(self):
-      return ["memberlist.html"]
+        return ["memberlist.html"]
 
 class MyNullBooleanSelect(forms.widgets.Select):
     """
@@ -79,12 +79,12 @@ class UserSerializer(serializers.ModelSerializer):
 
 
 class PlayerSerializer(serializers.ModelSerializer):
-  user = UserSerializer()  
-  ordered_name = serializers.CharField(source="get_ordered_name")
-  class Meta:
-    model = Player
-    fields = ('id', 'ordered_name', 'user', 'cell_phone', 'other_phone', 'membership_type', 'wsrc_id', 'booking_system_id', 'cardnumber', 'squashlevels_id', 'prefs_receive_email')
-    depth = 1
+    user = UserSerializer()
+    ordered_name = serializers.CharField(source="get_ordered_name")
+    class Meta:
+        model = Player
+        fields = ('id', 'ordered_name', 'user', 'cell_phone', 'other_phone', 'membership_type', 'wsrc_id', 'booking_system_id', 'cardnumber', 'squashlevels_id', 'prefs_receive_email')
+        depth = 1
 
 class PlayerView(rest_generics.RetrieveUpdateDestroyAPIView):
     authentication_classes = (SessionAuthentication,)
@@ -161,7 +161,7 @@ class BookingSystemMembersView(APIView):
                 v = row[k] = str(v)
                 if k == 'Name':
                     (first, last) = sync_utils.split_first_and_last_names(v)
-                    row["first_name"] = first 
+                    row["first_name"] = first
                     row["last_name"] = last
         bs_contacts = [c for c in bs_contacts if c["Name"] != '' and c["Rights"] == "User"]
         bs_contacts.sort(key=operator.itemgetter("last_name", "first_name"))
@@ -193,9 +193,9 @@ def admin_memberlist_view(request):
                 ss_memberlist_rows = [row for row in reader]
             else:
                 return HttpResponseBadRequest("<h1>Unknown file type</h1>")
-            upload_form = None 
+            upload_form = None
             ss_vs_db_diffs = sync_utils.get_differences_ss_vs_db(ss_memberlist_rows, db_rows)
-        
+
 
     db_rows_serialiser = PlayerSerializer(db_rows, many=True)
     db_rows_data = JSON_RENDERER.render(db_rows_serialiser.data)
@@ -224,11 +224,11 @@ def settings_view(request):
     events = EventFilter.objects.filter(player=player)
     filter_formset_factory = create_notifier_filter_formset_factory(max_filters)
     initial = [{'player': player}] * (max_filters)
-    if request.method == 'POST': 
+    if request.method == 'POST':
         pform = SettingsPlayerForm(request.POST, instance=player)
         uform = SettingsUserForm(request.POST, instance=request.user)
         eformset = filter_formset_factory(request.POST, queryset=events, initial=initial)
-        if pform.is_valid() and uform.is_valid() and eformset.is_valid(): 
+        if pform.is_valid() and uform.is_valid() and eformset.is_valid():
             with transaction.atomic():
                 if pform.has_changed():
                     pform.save()
@@ -258,4 +258,3 @@ def settings_view(request):
         'n_notifiers':     len(events),
         'form_saved':      success,
     })
-
