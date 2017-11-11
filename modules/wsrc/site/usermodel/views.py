@@ -1,3 +1,19 @@
+# This file is part of WSRC.
+#
+# WSRC is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# WSRC is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with WSRC.  If not, see <http://www.gnu.org/licenses/>.
+
+"Views for users app, including a basic admin view"
 
 import tempfile
 import operator
@@ -6,7 +22,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.core.exceptions import PermissionDenied
 from django.db import transaction
-from django.http import HttpResponse, HttpResponseBadRequest
+from django.http import HttpResponseBadRequest
 from django import forms
 from django.shortcuts import render
 from django.views.generic.list import ListView
@@ -26,19 +42,21 @@ from wsrc.external_sites import scrape_page
 from wsrc.site.usermodel.models import Player
 from wsrc.utils import xls_utils, sync_utils
 
-from forms import SettingsUserForm, SettingsPlayerForm, SettingsInfoForm, create_notifier_filter_formset_factory
+from .forms import SettingsUserForm, SettingsPlayerForm, SettingsInfoForm, \
+    create_notifier_filter_formset_factory
 
 JSON_RENDERER = JSONRenderer()
 
 class MemberListView(ListView):
-
+    "Straightforward list view for active members"
     def dispatch(self, request, *args, **kwargs):
         if not request.user.is_authenticated():
             raise PermissionDenied()
         return super(MemberListView, self).dispatch(request, *args, **kwargs)
 
     def get_queryset(self):
-        return Player.objects.values("id", "user__first_name", "user__last_name", "user__email", "other_phone", "cell_phone", "user__is_active") \
+        return Player.objects.values("id", "user__first_name", "user__last_name", "user__email",\
+                                     "other_phone", "cell_phone", "user__is_active") \
                              .filter(user__is_active=True) \
                              .exclude(prefs_display_contact_details=False) \
                              .order_by('user__first_name', 'user__last_name')
@@ -73,34 +91,40 @@ class MyNullBooleanSelect(forms.widgets.Select):
                 False: False}.get(value, None)
 
 class UserSerializer(serializers.ModelSerializer):
+    "Simple REST serializer"
     class Meta:
         model = User
         fields = ('id', 'username', 'first_name', 'last_name', 'email', 'is_active')
 
 
 class PlayerSerializer(serializers.ModelSerializer):
+    "Simple REST serializer, includes foreignkey User"
     user = UserSerializer()
     ordered_name = serializers.CharField(source="get_ordered_name")
     class Meta:
+        "Class meta information"
         model = Player
         fields = ('id', 'ordered_name', 'user', 'cell_phone', 'other_phone', 'membership_type', 'wsrc_id', 'booking_system_id', 'cardnumber', 'squashlevels_id', 'prefs_receive_email')
         depth = 1
 
 class PlayerView(rest_generics.RetrieveUpdateDestroyAPIView):
+    "REST view"
     authentication_classes = (SessionAuthentication,)
-    permission_classes = (IsAuthenticated,DjangoModelPermissions,)
+    permission_classes = (IsAuthenticated, DjangoModelPermissions,)
     queryset = Player.objects.all().select_related("user")
     serializer_class = PlayerSerializer
 
 class UserView(rest_generics.RetrieveUpdateDestroyAPIView):
+    "REST view"
     authentication_classes = (SessionAuthentication,)
-    permission_classes = (IsAuthenticated,DjangoModelPermissions,)
+    permission_classes = (IsAuthenticated, DjangoModelPermissions,)
     queryset = User.objects.all()
     serializer_class = UserSerializer
 
 class PlayerListView(rest_generics.ListCreateAPIView):
+    "REST view of all players"
     authentication_classes = (SessionAuthentication,)
-    permission_classes = (IsAuthenticated,DjangoModelPermissions,)
+    permission_classes = (IsAuthenticated, DjangoModelPermissions,)
     queryset = Player.objects.all().select_related("user")
     serializer_class = PlayerSerializer
     def post(self, request, format="json"):
@@ -122,32 +146,38 @@ class PlayerListView(rest_generics.ListCreateAPIView):
         return Response(status=status.HTTP_201_CREATED)
 
 class UploadFileForm(forms.Form):
+    "Form accepting spreadsheet uploads"
     file = forms.FileField(widget=forms.widgets.ClearableFileInput(attrs={'accept':'.csv,.xls'}))
     sheetname = forms.CharField(initial="masterfile")
 
 class BookingSystemCredentialsForm(forms.Form):
-    file = forms.FileField(widget=forms.widgets.ClearableFileInput(attrs={'accept':'.csv,.xls'}))
+    "Form for obtaining creditials to access the booking system"
     username = forms.CharField()
     password = forms.CharField(widget=forms.widgets.PasswordInput)
 
 class UserForm(forms.ModelForm):
+    "Form for details stored on the User object"
     is_active = forms.fields.BooleanField(widget=MyNullBooleanSelect)
     class Meta:
         model = User
         fields = ('id', 'username', 'password', 'first_name', 'last_name', 'email', 'is_active')
 
 class PlayerForm(forms.ModelForm):
+    "Form for player details - contact details and other preferences"
     prefs_receive_email = forms.fields.NullBooleanField(widget=MyNullBooleanSelect)
     class Meta:
         model = Player
-        fields = ('id', 'user', 'cell_phone', 'other_phone', 'membership_type', 'wsrc_id', 'booking_system_id', 'cardnumber', 'squashlevels_id', 'prefs_receive_email')
+        fields = ('id', 'user', 'cell_phone', 'other_phone', 'membership_type', 'wsrc_id',\
+                  'booking_system_id', 'cardnumber', 'squashlevels_id', 'prefs_receive_email')
 
 class BookingSystemMembersView(APIView):
+    "REST view of data obtained from the booking system"
     authentication_classes = (SessionAuthentication,)
     permission_classes = (IsAuthenticated,)
     parser_classes = (JSONParser,)
     def post(self, request, format="json"):
-        if (request.user.groups.filter(name="Membership Editor").count() == 0 and not request.user.is_superuser):
+        if request.user.groups.filter(name="Membership Editor").count() == 0 \
+           and not request.user.is_superuser:
             raise PermissionDenied()
         credentials = request.data
         username = credentials["username"]
@@ -157,10 +187,10 @@ class BookingSystemMembersView(APIView):
 #        bs_contacts = open("../docs/booking_system_memberlist.html").read()
         bs_contacts = scrape_page.scrape_userlist(bs_contacts)
         for row in bs_contacts:
-            for k,v in row.items():
-                v = row[k] = str(v)
-                if k == 'Name':
-                    (first, last) = sync_utils.split_first_and_last_names(v)
+            for field, value in row.items():
+                value = row[field] = str(value)
+                if field == 'Name':
+                    (first, last) = sync_utils.split_first_and_last_names(value)
                     row["first_name"] = first
                     row["last_name"] = last
         bs_contacts = [c for c in bs_contacts if c["Name"] != '' and c["Rights"] == "User"]
@@ -169,7 +199,9 @@ class BookingSystemMembersView(APIView):
         return Response({"contacts": bs_contacts, "diffs": bs_vs_db_diffs})
 
 def admin_memberlist_view(request):
-    if not request.user.is_authenticated() or (request.user.groups.filter(name="Membership Editor").count() == 0  and not request.user.is_superuser):
+    if not request.user.is_authenticated() \
+       or (request.user.groups.filter(name="Membership Editor").count() == 0
+           and not request.user.is_superuser):
         raise PermissionDenied()
 
     db_rows = Player.objects.order_by('user__last_name', 'user__first_name').select_related("user")
@@ -183,14 +215,14 @@ def admin_memberlist_view(request):
             upload = request.FILES['file']
             sheetname = request.POST['sheetname']
             if upload.name.endswith(".xls"):
-                with tempfile.NamedTemporaryFile(suffix="xls") as fh:
+                with tempfile.NamedTemporaryFile(suffix="xls") as temp_fh:
                     for chunk in upload.chunks():
-                        fh.write(chunk)
-                    fh.flush()
-                    ss_memberlist_rows= xls_utils.sheet_to_dict(fh.name, sheetname)
-            elif upload.name.endswith(".csv"):
-                reader = csv.DictReader(upload_generator(upload))
-                ss_memberlist_rows = [row for row in reader]
+                        temp_fh.write(chunk)
+                    temp_fh.flush()
+                    ss_memberlist_rows = xls_utils.sheet_to_dict(temp_fh.name, sheetname)
+#            elif upload.name.endswith(".csv"):
+#                reader = csv.DictReader(upload_generator(upload))
+#                ss_memberlist_rows = [row for row in reader]
             else:
                 return HttpResponseBadRequest("<h1>Unknown file type</h1>")
             upload_form = None
@@ -217,7 +249,7 @@ def admin_memberlist_view(request):
 
 @login_required
 def settings_view(request):
-
+    "Settings editor"
     max_filters = 7
     success = False
     player = Player.get_player_for_user(request.user)
