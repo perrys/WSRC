@@ -13,6 +13,8 @@
 # You should have received a copy of the GNU General Public License
 # along with WSRC.  If not, see <http://www.gnu.org/licenses/>.
 
+"Manages PHP sessions and common queries from the legacy booking system"
+
 import datetime
 import logging
 import httplib
@@ -22,22 +24,20 @@ from django.db import transaction
 
 import wsrc.utils.timezones as time_utils
 import wsrc.utils.url_utils as url_utils
-import scrape_page
 import wsrc.site.settings.settings as settings
 
 LOGGER = logging.getLogger(__name__)
 LOGGER.setLevel(logging.INFO)
-import wsrc.utils.url_utils as url_utils
 
 UK_TZINFO = time_utils.GBEireTimeZone()
 
 class BookingSystemSession:
+    "Manages login and common queries from the booking system"
 
-    LOGIN_PAGE          = "/admin.php"
-    BOOKING_PAGE        = "/edit_entry_handler_fixed.php"
-    DELETE_BOOKING_PAGE = "/del_entry.php"
-    USER_LIST_PAGE      = '/edit_users.php'
-    ENTRIES_API         = '/api/entries.php'
+    LOGIN_PAGE   = "/admin.php"
+    BOOKING_PAGE = "/edit_entry_handler_fixed.php"
+    USERS_API    = "/api/users.php"
+    ENTRIES_API  = '/api/entries.php'
 
     def __init__(self, username=None, password=None):
         self.base_url = url = settings.BOOKING_SYSTEM_ORIGIN
@@ -48,11 +48,11 @@ class BookingSystemSession:
 
         self.username = username
         params = {
-          "NewUserName" : username,
-          "NewUserPassword" : password,
-          "TargetURL" : "admin.php?",
-          "Action" : "SetName"
-          }
+            "NewUserName" : username,
+            "NewUserPassword" : password,
+            "TargetURL" : "admin.php?",
+            "Action" : "SetName"
+        }
         response = self.client.request(BookingSystemSession.LOGIN_PAGE, params)
         body = response.read()
 
@@ -60,18 +60,18 @@ class BookingSystemSession:
             status = response.getcode()
             raise Exception("Login failed - username not reported, url: %(url)s, status: %(status)d, body: %(body)s" % locals())
 
-        LOGGER.info("logged in sucessfully." % locals())
+        LOGGER.info("logged in sucessfully.")
 
-    def delete_booking(self, id):
-        id = int(id)
+    def delete_booking(self, booking_id):
+        booking_id = int(booking_id)
         params = {
-          "id": id
-          }
+            "id": booking_id
+        }
         response = self.client.get(BookingSystemSession.DELETE_BOOKING_PAGE, params)
 
         redirections = self.client.redirect_recorder.redirections
         if len(redirections) > 0 and redirections[0][0] == httplib.FOUND:
-            LOGGER.info("deleted booking id %(id)d" % locals())
+            LOGGER.info("deleted booking id %(booking_id)d" % locals())
             return
 
         status = response.getcode()
@@ -185,8 +185,8 @@ def sync_db_booking_events(events, start_date, end_date):
 
     midnight = datetime.time(0, 0, 0, tzinfo=UK_TZINFO)
     existing_events_qs = BookingSystemEvent.objects.all()
-    existing_events_qs = existing_events_qs.filter(start_time__gte = datetime.datetime.combine(start_date, midnight))
-    existing_events_qs = existing_events_qs.filter(start_time__lt  = datetime.datetime.combine(end_date, midnight))
+    existing_events_qs = existing_events_qs.filter(start_time__gte=datetime.datetime.combine(start_date, midnight))
+    existing_events_qs = existing_events_qs.filter(start_time__lt=datetime.datetime.combine(end_date, midnight))
     existing_events = set(existing_events_qs)
 
     new_events = []
