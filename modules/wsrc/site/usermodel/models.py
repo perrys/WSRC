@@ -85,7 +85,7 @@ class Player(models.Model):
     return self.user.get_full_name()
 
   class Meta:
-    ordering=["user__first_name", "user__last_name"]
+    ordering=["user__last_name", "user__first_name"]
 
 
 class Season(models.Model):
@@ -169,7 +169,7 @@ class Subscription(models.Model):
     return u"{0} {1}".format(self.player, self.season)
 
   class Meta:
-    ordering=["season__start_date", "player__user__first_name", "player__user__last_name"]
+    ordering=["-season__start_date", "player__user__last_name", "player__user__first_name"]
   
 class SubscriptionPayment(models.Model):
   subscription = models.ForeignKey(Subscription, db_index=True, related_name="payments",
