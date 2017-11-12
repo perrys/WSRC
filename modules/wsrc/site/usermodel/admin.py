@@ -95,7 +95,7 @@ class SubscriptionAdmin(admin.ModelAdmin):
     total_payments.short_description = "Total"
 
     def membership_type(self, obj):
-        return obj.player.membership_type
+        return obj.player.get_membership_type_display()
     membership_type.short_description = "Membership Type"
     membership_type.admin_order_field = "player__membership_type"
 
