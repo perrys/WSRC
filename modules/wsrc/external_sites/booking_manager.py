@@ -98,13 +98,23 @@ class BookingSystemSession:
         return bookingSystemEvents, start_date
 
     def get_memberlist(self):
-        response = self.client.get(BookingSystemSession.USER_LIST_PAGE)
+        response = self.client.get(BookingSystemSession.USERS_API)
         status = response.getcode()
         body = response.read()
         if status != httplib.OK:
-            raise Exception("failed to user list, status: %(status)d, body: %(body)s" % locals())
-        return body
+            raise Exception("failed to read user list, status: %(status)d, body: %(body)s" % locals())
+        return json.loads(body)
 
+    def delete_user_from_booking_system(self, booking_system_id):
+        "Permanently delete the given id from the booking system database"
+        url = "{url}?id={booking_system_id}".format(url=BookingSystemSession.USERS_API,
+                                                   booking_system_id=booking_system_id)
+        params = {"method": "DELETE"}
+        response = self.client.request(url, params)
+        status = response.getcode()
+        body = response.read()
+        if status != httplib.OK:
+            raise Exception("failed to delete user, status: %(status)d, body: %(body)s" % locals())
 
 @transaction.atomic
 def sync_db_booking_events(events, start_date, end_date):
@@ -161,8 +171,10 @@ if __name__ == "__main__":
     import unittest
 
     class MockHttpClient:
+        def __init__(self, selector="wsrc_{start_date}.json"):
+            self.selector = selector
         def get(self, selector, params):
-            filename = "wsrc/external_sites/test_data/wsrc_{start_date}.json".format(**params)
+            filename = ("wsrc/external_sites/test_data/" + self.selector).format(**params)
             class Response():
                 def getcode(self):
                     return httplib.OK
@@ -265,6 +277,12 @@ if __name__ == "__main__":
             for prop in "name", "description", "court", "start_time":
                 self.assertEqual(getattr(del_evt, prop), getattr(removed[0], prop))
 
+        def test_GIVEN_mock_http_client_WHEN_getting_user_list_THEN_something_returned(self):
+            session = BookingSystemSession()
+            session.client = MockHttpClient("users.json")
+            user_list = session.get_memberlist()
+            self.assertTrue(len(user_list) > 0)
+            
     unittest.main()
 
 # Local Variables:
