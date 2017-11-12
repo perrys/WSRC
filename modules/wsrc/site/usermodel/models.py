@@ -82,7 +82,7 @@ class Player(models.Model):
         return player
 
     def __unicode__(self):
-        return self.user.get_full_name()
+        return self.get_ordered_name()
 
     class Meta:
         ordering=["user__last_name", "user__first_name"]
@@ -169,7 +169,7 @@ class Subscription(models.Model):
 
 
     def __unicode__(self):
-        return u"{0} {1}".format(self.player, self.season)
+        return u"{0} {1}".format(self.player.get_ordered_name(), self.season)
 
     class Meta:
         ordering=["-season__start_date", "player__user__last_name", "player__user__first_name"]
