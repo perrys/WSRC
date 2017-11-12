@@ -4,7 +4,7 @@
 JS_SRCS  = resources/js/main.js
 
 
-.PHONY: build build_js build_css install dist
+.PHONY: build build_js build_css install dist clean etags
 
 build: build_css build_js
 
@@ -23,6 +23,9 @@ bdist: build
 bdist_windows: build
 	python ./setup.py bdist_wininst
 
+clean:
+	/bin/rm -rf build dist
+	find . -name '*.pyc' -exec /bin/rm {} \;
 
 etags: 
 	etags `find modules -name '*.py'` \
