@@ -38,7 +38,6 @@ from rest_framework.views import APIView
 
 from wsrc.site.models import EventFilter
 from wsrc.external_sites.booking_manager import BookingSystemSession
-from wsrc.external_sites import scrape_page
 from wsrc.site.usermodel.models import Player
 from wsrc.utils import xls_utils, sync_utils
 
@@ -184,16 +183,14 @@ class BookingSystemMembersView(APIView):
         password = credentials["password"]
         booking_session = BookingSystemSession(username, password)
         bs_contacts = booking_session.get_memberlist()
-#        bs_contacts = open("../docs/booking_system_memberlist.html").read()
-        bs_contacts = scrape_page.scrape_userlist(bs_contacts)
         for row in bs_contacts:
             for field, value in row.items():
                 value = row[field] = str(value)
-                if field == 'Name':
+                if field == 'name':
                     (first, last) = sync_utils.split_first_and_last_names(value)
                     row["first_name"] = first
                     row["last_name"] = last
-        bs_contacts = [c for c in bs_contacts if c["Name"] != '' and c["Rights"] == "User"]
+        bs_contacts = [c for c in bs_contacts if c.get("name")]
         bs_contacts.sort(key=operator.itemgetter("last_name", "first_name"))
         bs_vs_db_diffs = sync_utils.get_differences_bs_vs_db(bs_contacts, Player.objects.all())
         return Response({"contacts": bs_contacts, "diffs": bs_vs_db_diffs})
