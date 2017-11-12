@@ -76,7 +76,7 @@ class SeasonListFilter(admin.SimpleListFilter):
 
 class SubscriptionAdmin(admin.ModelAdmin):
     inlines = (SubscriptionPaymentInline,)
-    list_display = ('player', 'season', 'membership_type', 'payment_frequency', 'payments_count', 'total_payments', 'signed_off', "comment")
+    list_display = ('ordered_name', 'season', 'membership_type', 'payment_frequency', 'payments_count', 'total_payments', 'signed_off', "comment")
     list_filter = (SeasonListFilter, 'signed_off', 'payment_frequency', 'player__membership_type', )
     list_editable = ('signed_off', 'comment')
     formfield_overrides = {
@@ -85,9 +85,9 @@ class SubscriptionAdmin(admin.ModelAdmin):
     form = SubscriptionForm
     list_per_page = 400
 
-    def subscription(self, obj):
-        return unicode(obj)
-    subscription.admin_order_field = "player__user__first_name"
+    def ordered_name(self, obj):
+        return obj.player.get_ordered_name()
+    ordered_name.admin_order_field = "player__user__last_name"
 
     def total_payments(self, obj):
         return obj.get_total_payments()
