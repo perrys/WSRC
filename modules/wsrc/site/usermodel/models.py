@@ -136,7 +136,10 @@ class Subscription(models.Model):
 
     def match_transaction(self, transaction, subs_category, persist=True):
         def matches(regex):
-            return regex is not None and (regex.search(transaction.bank_memo) or regex.search(transaction.comment))
+            def safestring(astr):
+                return astr is not None and astr or ""
+            return regex is not None and (regex.search(safestring(transaction.bank_memo)) \
+                                          or regex.search(safestring(transaction.comment)))
         def create_payment():
             payment = SubscriptionPayment(subscription=self, transaction=transaction)
             payment.save()
