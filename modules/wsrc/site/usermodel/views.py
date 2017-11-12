@@ -192,7 +192,7 @@ class BookingSystemMembersView(APIView):
                     row["last_name"] = last
         bs_contacts = [c for c in bs_contacts if c.get("name")]
         bs_contacts.sort(key=operator.itemgetter("last_name", "first_name"))
-        bs_vs_db_diffs = sync_utils.get_differences_bs_vs_db(bs_contacts, Player.objects.all())
+        bs_vs_db_diffs = sync_utils.get_differences_bs_vs_db(bs_contacts, Player.objects.filter(user__is_active=True).select_related())
         return Response({"contacts": bs_contacts, "diffs": bs_vs_db_diffs})
 
 def admin_memberlist_view(request):
