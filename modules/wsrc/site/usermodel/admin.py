@@ -88,6 +88,7 @@ class SubscriptionAdmin(admin.ModelAdmin):
     def ordered_name(self, obj):
         return obj.player.get_ordered_name()
     ordered_name.admin_order_field = "player__user__last_name"
+    ordered_name.short_description = "Name"
 
     def total_payments(self, obj):
         return obj.get_total_payments()
@@ -122,7 +123,7 @@ update_subscriptions.short_description="Check/update subscriptions"
 
 class PlayerAdmin(SelectRelatedQuerysetMixin, PrefetchRelatedQuerysetMixin, admin.ModelAdmin):
     list_filter = ('user__is_active', 'membership_type', )
-    list_display = ('name', 'active', 'date_joined_date', 'membership_type', 'current_season', 'signed_off',
+    list_display = ('ordered_name', 'active', 'date_joined_date', 'membership_type', 'current_season', 'signed_off',
                     'cell_phone', 'other_phone',
                     'cardnumber', 'england_squash_id',
                     'prefs_receive_email', 'prefs_esra_member', 'prefs_display_contact_details')
@@ -131,9 +132,10 @@ class PlayerAdmin(SelectRelatedQuerysetMixin, PrefetchRelatedQuerysetMixin, admi
     list_per_page = 400
     actions = (update_subscriptions,)
 
-    def name(self, obj):
-        return obj.user.get_full_name()
-    name.admin_order_field = 'user__first_name'
+    def ordered_name(self, obj):
+        return obj.get_ordered_name()
+    ordered_name.admin_order_field = 'user__last_name'
+    ordered_name.short_description = "Name"
 
     def active(self, obj):
         return obj.user.is_active
