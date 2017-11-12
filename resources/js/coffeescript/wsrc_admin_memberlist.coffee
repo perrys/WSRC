@@ -22,7 +22,7 @@ class WSRC_admin_memberlist_model
 
   set_bs_memberlist: (list, diffs) ->
     bs_valid_filter = (row) ->
-      return true if row.Name and row.Rights == "User"
+      return true if row.name
     @bs_memberlist = (row for row in list when bs_valid_filter(row))
     @bs_vs_db_diffs = diffs
     
@@ -136,12 +136,10 @@ class WSRC_admin_memberlist_view
     ]
 
     bs_membership_api_colspec = [
-      {className: alignment.number, title: 'Id',          data: 'row_id'},
+      {className: alignment.number, title: 'Id',          data: 'id'},
       {className: alignment.text,   title: 'Last Name',   data: 'last_name'},
       {className: alignment.text,   title: 'First Name',  data: 'first_name'},
-      {className: alignment.text,   title: 'EMail',       data: 'Email address'},
-      {className: alignment.number, title: 'Mobile',      data: 'Mobile'},
-      {className: alignment.number, title: 'Telephone',   data: 'Telephone'},
+      {className: alignment.text,   title: 'EMail',       data: 'email'},
     ]
 
     diff_renderer = (data, type, row) ->
