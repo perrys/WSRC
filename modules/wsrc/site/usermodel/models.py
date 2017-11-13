@@ -111,6 +111,7 @@ class SubscriptionCost(models.Model):
                                        choices=Player.MEMBERSHIP_TYPES)
     amount = models.FloatField(u"Cost (\xa3)")
     class Meta:
+        verbose_name = "Subscription Cost"
         ordering = ["-season", "-amount"]
 
 class Subscription(models.Model):
