@@ -1,3 +1,20 @@
+# This file is part of WSRC.
+#
+# WSRC is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# WSRC is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with WSRC.  If not, see <http://www.gnu.org/licenses/>.
+
+"Admin for the membership models"
+
 from django import forms
 from django.db import models
 
@@ -5,29 +22,31 @@ from django.contrib import admin
 
 from django.contrib.auth.admin import UserAdmin as AuthUserAdmin
 from django.contrib.auth.models import User
-from django.utils.translation import ugettext_lazy as _
 
-from wsrc.site.accounts.models import Transaction
 from wsrc.site.usermodel.models import Player, Season, Subscription, SubscriptionPayment
-from wsrc.utils.form_utils import SelectRelatedForeignFieldMixin, SelectRelatedQuerysetMixin, CachingModelChoiceField, get_related_field_limited_queryset, PrefetchRelatedQuerysetMixin
+from wsrc.utils.form_utils import SelectRelatedQuerysetMixin, CachingModelChoiceField, \
+    get_related_field_limited_queryset, PrefetchRelatedQuerysetMixin
 
 class UserProfileInline(admin.StackedInline):
+    "Simple inline for player in User admin"
     model = Player
     max_num = 1
     can_delete = False
 
 class UserAdmin(AuthUserAdmin):
+    "Redefinition of user admin"
     inlines = AuthUserAdmin.inlines + [UserProfileInline,]
-    list_display = ('username', 'is_active', 'membership_type', 'email', 'first_name', 'last_name', 'cardnumber', 'booking_system_id', 'is_staff')
-
-    list_filter = ('is_active', 'player__membership_type', 'groups', 'player__prefs_esra_member', 'is_staff', 'is_superuser')
+    list_display = ('username', 'is_active', 'membership_type', 'email', \
+                    'first_name', 'last_name', 'cardnumber', 'booking_system_id', 'is_staff')
+    list_filter = ('is_active', 'player__membership_type', 'groups', \
+                   'player__prefs_esra_member', 'is_staff', 'is_superuser')
     ordering = ('username', 'first_name', 'last_name')
     list_per_page = 400
 
     def get_queryset(self, request):
-        qs = super(UserAdmin, self).get_queryset(request)
-        qs = qs.select_related('player')
-        return qs
+        queryset = super(UserAdmin, self).get_queryset(request)
+        queryset = queryset.select_related('player')
+        return queryset
 
     def booking_system_id(self, obj):
         return obj.player.booking_system_id
@@ -50,21 +69,28 @@ admin.site.unregister(User)
 admin.site.register(User, UserAdmin)
 
 class SeasonAdmin(admin.ModelAdmin):
+    "Simple admin for Seasons"
     list_display = ('__unicode__', "has_ended")
     list_editable = ("has_ended",)
 
 class SubscriptionForm(forms.ModelForm):
-    player = forms.ModelChoiceField(queryset=get_related_field_limited_queryset(Subscription.player.field).select_related("user"))
+    "Override subscription form for more efficient DB interaction"
+    queryset = get_related_field_limited_queryset(Subscription.player.field)
+    player = forms.ModelChoiceField(queryset=queryset.select_related("user"))
 
 class SubscriptionPaymentForm(forms.ModelForm):
-    transaction = CachingModelChoiceField(queryset=get_related_field_limited_queryset(SubscriptionPayment.transaction.field))
+    "Override subscription payment form for more efficient DB interaction"
+    queryset = get_related_field_limited_queryset(SubscriptionPayment.transaction.field)
+    transaction = CachingModelChoiceField(queryset=queryset)
 
 class SubscriptionPaymentInline(SelectRelatedQuerysetMixin, admin.StackedInline):
+    "Simple inline for subs payments"
     model = SubscriptionPayment
     can_delete = True
     form = SubscriptionPaymentForm
 
 class SeasonListFilter(admin.SimpleListFilter):
+    "Simple filtering on Season"
     title = "Season"
     parameter_name = "season"
     def lookups(self, request, model_admin):
@@ -75,12 +101,15 @@ class SeasonListFilter(admin.SimpleListFilter):
         return queryset
 
 class SubscriptionAdmin(admin.ModelAdmin):
+    "Subscription admin - heavilly used for subs management"
     inlines = (SubscriptionPaymentInline,)
-    list_display = ('ordered_name', 'season', 'membership_type', 'payment_frequency', 'payments_count', 'total_payments', 'signed_off', "comment")
+    list_display = ('ordered_name', 'season', 'membership_type', \
+                    'payment_frequency', 'payments_count', 'total_payments', 'signed_off', \
+                    "comment")
     list_filter = (SeasonListFilter, 'signed_off', 'payment_frequency', 'player__membership_type', )
     list_editable = ('signed_off', 'comment')
     formfield_overrides = {
-      models.TextField: {'widget': forms.Textarea(attrs={'cols': 30, 'rows': 1})},
+        models.TextField: {'widget': forms.Textarea(attrs={'cols': 30, 'rows': 1})},
     }
     form = SubscriptionForm
     list_per_page = 400
@@ -100,10 +129,10 @@ class SubscriptionAdmin(admin.ModelAdmin):
     membership_type.admin_order_field = "player__membership_type"
 
     def get_queryset(self, request):
-        qs = super(SubscriptionAdmin, self).get_queryset(request)
-        qs = qs.select_related('player__user', 'season')
-        qs = qs.prefetch_related('payments__transaction')
-        return qs
+        queryset = super(SubscriptionAdmin, self).get_queryset(request)
+        queryset = queryset.select_related('player__user', 'season')
+        queryset = queryset.prefetch_related('payments__transaction')
+        return queryset
 
 def update_subscriptions(modeladmin, request, queryset):
     latest_season = Season.latest()
@@ -117,13 +146,15 @@ def update_subscriptions(modeladmin, request, queryset):
                 break
         if not found:
             payment_freq = "annual" if subscription is None else subscription.payment_frequency
-            s = Subscription(player=player, season=latest_season, payment_frequency=payment_freq)
-            s.save()
-update_subscriptions.short_description="Check/update subscriptions"
+            sub = Subscription(player=player, season=latest_season, payment_frequency=payment_freq)
+            sub.save()
+update_subscriptions.short_description = "Check/update subscriptions"
 
 class PlayerAdmin(SelectRelatedQuerysetMixin, PrefetchRelatedQuerysetMixin, admin.ModelAdmin):
+    "Admin for Player (i.e. club member) model"
     list_filter = ('user__is_active', 'membership_type', )
-    list_display = ('ordered_name', 'active', 'date_joined_date', 'membership_type', 'current_season', 'signed_off',
+    list_display = ('ordered_name', 'active', 'date_joined_date', \
+                    'membership_type', 'current_season', 'signed_off',
                     'cell_phone', 'other_phone',
                     'cardnumber', 'england_squash_id',
                     'prefs_receive_email', 'prefs_esra_member', 'prefs_display_contact_details')
