@@ -107,8 +107,8 @@ class Season(models.Model):
 
 class Subscription(models.Model):
     PAYMENT_TYPES = (
-        ("annual", "Annual"),
-        ("monthly", "Monthly SO"),
+        ("annual", "Annually"),
+        ("monthly", "Monthly"),
     )
     is_active = Q(user__is_active=True)
     not_ended = Q(has_ended=False)
