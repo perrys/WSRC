@@ -110,9 +110,12 @@ class Subscription(models.Model):
         ("annual", "Annual"),
         ("monthly", "Monthly SO"),
     )
-    player            = models.ForeignKey(Player, db_index=True, limit_choices_to=Q(user__is_active=True))
-    season            = models.ForeignKey(Season, db_index=True, limit_choices_to=Q(has_ended=False))
-    payment_frequency = models.CharField(("Payment Frequency"), max_length=16, choices=PAYMENT_TYPES)
+    is_active = Q(user__is_active=True)
+    not_ended = Q(has_ended=False)
+    # pylint: disable=bad-whitespace
+    player            = models.ForeignKey(Player, db_index=True, limit_choices_to=is_active)
+    season            = models.ForeignKey(Season, db_index=True, limit_choices_to=not_ended)
+    payment_frequency = models.CharField("Payment Frequency", max_length=16, choices=PAYMENT_TYPES)
     signed_off        = models.BooleanField("Signed Off", default=False)
     comment           = models.TextField(blank=True, null=True)
 
