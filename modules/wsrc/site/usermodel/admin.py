@@ -129,8 +129,9 @@ class SubscriptionAdmin(admin.ModelAdmin):
     linked_membership_type.admin_order_field = "membership_type"
 
     def total_payments(self, obj):
-        return obj.get_total_payments()
-    total_payments.short_description = "Total"
+        return "<span style='width:100%; display:inline-block; text-align:right;'>{0:.2f}</span>".format(obj.get_total_payments())
+    total_payments.allow_tags = True
+    total_payments.short_description = u"Total (\xa3)"
 
     def membership_type(self, obj):
         return obj.player.get_membership_type_display()
