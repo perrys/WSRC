@@ -104,6 +104,14 @@ class Season(models.Model):
     class Meta:
         ordering=["start_date"]
 
+class SubscriptionCost(models.Model):
+    not_ended = Q(has_ended=False)
+    season = models.ForeignKey(Season, limit_choices_to=not_ended)
+    membership_type = models.CharField(("Membership Type"), max_length=16,
+                                       choices=Player.MEMBERSHIP_TYPES)
+    amount = models.FloatField(u"Cost (\xa3)")
+    class Meta:
+        ordering = ["-season", "-amount"]
 
 class Subscription(models.Model):
     PAYMENT_TYPES = (
