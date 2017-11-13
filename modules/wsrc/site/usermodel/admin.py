@@ -105,9 +105,9 @@ class SeasonListFilter(admin.SimpleListFilter):
 class SubscriptionAdmin(admin.ModelAdmin):
     "Subscription admin - heavilly used for subs management"
     inlines = (SubscriptionPaymentInline,)
-    list_display = ('ordered_name', 'season', 'linked_membership_type', \
-                    'payment_frequency', 'payments_count', 'total_payments', 'signed_off', \
-                    "comment")
+    list_display = ('ordered_name', 'season', 'linked_membership_type', 'pro_rata_date',\
+                    'payment_frequency', 'pro_rata_cost', 'payments_count', 'total_payments',\
+                    'due_amount', 'signed_off', "comment")
     list_filter = (SeasonListFilter, 'signed_off', 'payment_frequency', 'player__membership_type', )
     list_editable = ('signed_off', 'comment')
     formfield_overrides = {
@@ -132,8 +132,22 @@ class SubscriptionAdmin(admin.ModelAdmin):
         return "<span style='width:100%; display:inline-block; text-align:right;'>{0:.2f}</span>"\
             .format(obj.get_total_payments())
     total_payments.allow_tags = True
-    total_payments.short_description = u"Total (\xa3)"
+    total_payments.short_description = u"Paid (\xa3)"
 
+    def pro_rata_cost(self, obj):
+        return "<span style='width:100%; display:inline-block; text-align:right;'>{0:.2f}</span>"\
+            .format(obj.get_pro_rata_cost())
+    pro_rata_cost.allow_tags = True
+    pro_rata_cost.short_description = u"Cost (\xa3)"
+    
+    def due_amount(self, obj):
+        amount = obj.get_due_amount()
+        style = '' if amount <= 0 else 'color: red'
+        return "<span style='width:100%; display:inline-block; text-align:right; {1}'>{0:.2f}</span>"\
+            .format(max(0, amount), style)
+    due_amount.allow_tags = True
+    due_amount.short_description = u"Due (\xa3)"
+    
     def membership_type(self, obj):
         return obj.player.get_membership_type_display()
     membership_type.short_description = "Membership Type"
@@ -142,7 +156,7 @@ class SubscriptionAdmin(admin.ModelAdmin):
     def get_queryset(self, request):
         queryset = super(SubscriptionAdmin, self).get_queryset(request)
         queryset = queryset.select_related('player__user', 'season')
-        queryset = queryset.prefetch_related('payments__transaction')
+        queryset = queryset.prefetch_related('payments__transaction', 'season__costs')
         return queryset
 
 def update_subscriptions(modeladmin, request, queryset):
