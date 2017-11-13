@@ -115,6 +115,7 @@ class Subscription(models.Model):
     # pylint: disable=bad-whitespace
     player            = models.ForeignKey(Player, db_index=True, limit_choices_to=is_active)
     season            = models.ForeignKey(Season, db_index=True, limit_choices_to=not_ended)
+    pro_rata_date     = models.DateField(db_index=True, unique=True)
     payment_frequency = models.CharField("Payment Frequency", max_length=16, choices=PAYMENT_TYPES)
     signed_off        = models.BooleanField("Signed Off", default=False)
     comment           = models.TextField(blank=True, null=True)
