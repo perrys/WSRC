@@ -25,7 +25,7 @@ from django.contrib.auth.models import User
 
 from django.core import urlresolvers
 
-from wsrc.site.usermodel.models import Player, Season, Subscription, SubscriptionPayment
+from .models import Player, Season, Subscription, SubscriptionPayment, SubscriptionCost
 from wsrc.utils.form_utils import SelectRelatedQuerysetMixin, CachingModelChoiceField, \
     get_related_field_limited_queryset, PrefetchRelatedQuerysetMixin
 
@@ -210,7 +210,10 @@ class PlayerAdmin(SelectRelatedQuerysetMixin, PrefetchRelatedQuerysetMixin, admi
     date_joined_date.short_description = "Joined"
     date_joined_date.admin_order_field = 'date_joined'
 
+class SubscriptionCostAdmin(SelectRelatedQuerysetMixin, admin.ModelAdmin):
+    list_display = ('membership_type', 'season', 'amount')
 
 admin.site.register(Season, SeasonAdmin)
 admin.site.register(Subscription, SubscriptionAdmin)
 admin.site.register(Player, PlayerAdmin)
+admin.site.register(SubscriptionCost, SubscriptionCostAdmin)
