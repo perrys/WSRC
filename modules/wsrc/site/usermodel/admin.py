@@ -23,6 +23,8 @@ from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as AuthUserAdmin
 from django.contrib.auth.models import User
 
+from django.core import urlresolvers
+
 from wsrc.site.usermodel.models import Player, Season, Subscription, SubscriptionPayment
 from wsrc.utils.form_utils import SelectRelatedQuerysetMixin, CachingModelChoiceField, \
     get_related_field_limited_queryset, PrefetchRelatedQuerysetMixin
@@ -103,7 +105,7 @@ class SeasonListFilter(admin.SimpleListFilter):
 class SubscriptionAdmin(admin.ModelAdmin):
     "Subscription admin - heavilly used for subs management"
     inlines = (SubscriptionPaymentInline,)
-    list_display = ('ordered_name', 'season', 'membership_type', \
+    list_display = ('ordered_name', 'season', 'linked_membership_type', \
                     'payment_frequency', 'payments_count', 'total_payments', 'signed_off', \
                     "comment")
     list_filter = (SeasonListFilter, 'signed_off', 'payment_frequency', 'player__membership_type', )
@@ -118,6 +120,13 @@ class SubscriptionAdmin(admin.ModelAdmin):
         return obj.player.get_ordered_name()
     ordered_name.admin_order_field = "player__user__last_name"
     ordered_name.short_description = "Name"
+
+    def linked_membership_type(self, obj):
+        link = urlresolvers.reverse("admin:usermodel_player_change", args=[obj.player.id])
+        return u'<a href="%s">%s</a>' % (link, obj.player.get_membership_type_display())
+    linked_membership_type.allow_tags = True
+    linked_membership_type.short_description = "Membership Type"
+    linked_membership_type.admin_order_field = "membership_type"
 
     def total_payments(self, obj):
         return obj.get_total_payments()
