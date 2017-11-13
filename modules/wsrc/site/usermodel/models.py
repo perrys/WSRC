@@ -116,15 +116,15 @@ class Subscription(models.Model):
     player            = models.ForeignKey(Player, db_index=True, limit_choices_to=is_active)
     season            = models.ForeignKey(Season, db_index=True, limit_choices_to=not_ended)
     pro_rata_date     = models.DateField(db_index=True, unique=True)
-    payment_frequency = models.CharField("Payment Frequency", max_length=16, choices=PAYMENT_TYPES)
-    signed_off        = models.BooleanField("Signed Off", default=False)
+    payment_frequency = models.CharField("Payment Freq", max_length=16, choices=PAYMENT_TYPES)
+    signed_off        = models.BooleanField("Signoff", default=False)
     comment           = models.TextField(blank=True, null=True)
 
     unique_together = ("player", "season")
 
     def payments_count(self):
         return self.payments.count()
-    payments_count.short_description = "# Payments"
+    payments_count.short_description = "# Paymnts"
 
     def get_total_payments(self):
         "Total payments calculated from objects - use when prefetch_related has been called on the queryset"
