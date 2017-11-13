@@ -1,3 +1,4 @@
+
 from django.db import models
 from django.contrib.auth.models import User
 from django.db.models.signals import post_save
@@ -6,6 +7,7 @@ from django.core import validators
 from django.utils.translation import ugettext_lazy as _
 from django.db.models import Q
 
+import datetime
 import re
 
 import wsrc.site.accounts.models as account_models
@@ -106,7 +108,7 @@ class Season(models.Model):
 
 class SubscriptionCost(models.Model):
     not_ended = Q(has_ended=False)
-    season = models.ForeignKey(Season, limit_choices_to=not_ended)
+    season = models.ForeignKey(Season, limit_choices_to=not_ended, related_name="costs")
     membership_type = models.CharField(("Membership Type"), max_length=16,
                                        choices=Player.MEMBERSHIP_TYPES)
     amount = models.FloatField(u"Cost (\xa3)")
@@ -116,16 +118,17 @@ class SubscriptionCost(models.Model):
 
 class Subscription(models.Model):
     PAYMENT_TYPES = (
-        ("annual", "Annually"),
-        ("monthly", "Monthly"),
+        ("annual", "Annually", 1),
+        ("monthly", "Monthly", 12),
     )
+    PAY_TYPE_CHOICES = [(ptype[0], ptype[1]) for ptype in PAYMENT_TYPES]
     is_active = Q(user__is_active=True)
     not_ended = Q(has_ended=False)
     # pylint: disable=bad-whitespace
     player            = models.ForeignKey(Player, db_index=True, limit_choices_to=is_active)
     season            = models.ForeignKey(Season, db_index=True, limit_choices_to=not_ended)
-    pro_rata_date     = models.DateField(db_index=True, unique=True)
-    payment_frequency = models.CharField("Payment Freq", max_length=16, choices=PAYMENT_TYPES)
+    pro_rata_date     = models.DateField("Pro Rata Date", db_index=True, unique=True)
+    payment_frequency = models.CharField("Payment Freq", max_length=16, choices=PAY_TYPE_CHOICES)
     signed_off        = models.BooleanField("Signoff", default=False)
     comment           = models.TextField(blank=True, null=True)
 
@@ -141,6 +144,44 @@ class Subscription(models.Model):
         for s in self.payments.all():
             total += s.transaction.amount
         return total
+
+    def get_subscription_cost(self):
+        "Payment due - try to ensure prefetch_related has been called on the queryset"
+        sub_costs = self.season.costs.all()
+        amount = None
+        for cost in sub_costs:
+            if cost.membership_type == self.player.membership_type:
+                amount = cost.amount
+                break
+        if amount is None:
+            return 0
+        return amount
+    get_subscription_cost.short_description = "Subscription Cost"
+
+    def get_pro_rata_cost(self):
+        "Amortized cost of subscription"
+        amount = self.get_subscription_cost()
+        if self.pro_rata_date is not None:
+            fraction = max(0, (self.season.end_date - self.pro_rata_date).days) / 365.0
+            amount *= fraction
+        return amount
+    get_pro_rata_cost.short_description = "Pro Rata Cost"
+
+    def get_due_amount(self):
+        npayments = 1
+        for frt in Subscription.PAYMENT_TYPES:
+            if frt[0] == self.payment_frequency:
+                npayments = frt[2]
+                break
+        segment_days = 365.0/npayments
+        today = datetime.date.today()
+        elapsed_days = max(0, today.toordinal() - self.season.start_date.toordinal())
+        segment = int(elapsed_days / segment_days) + 1
+        cost = self.get_subscription_cost()
+        segment_cost = cost / npayments
+        due = segment_cost * segment - self.get_total_payments()
+        due -= (cost - self.get_pro_rata_cost())
+        return due
 
     def sum_payments(self):
         "Total payments summed on the database - use for single subscriptions when there is no prefetch"
