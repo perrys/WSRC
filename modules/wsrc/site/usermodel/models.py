@@ -119,6 +119,8 @@ class SubscriptionCost(models.Model):
 class Subscription(models.Model):
     PAYMENT_TYPES = (
         ("annual", "Annually", 1),
+        ("triannual", "Tri-annually", 3),
+        ("querterly", "Quarterly", 4),
         ("monthly", "Monthly", 12),
     )
     PAY_TYPE_CHOICES = [(ptype[0], ptype[1]) for ptype in PAYMENT_TYPES]
@@ -127,7 +129,7 @@ class Subscription(models.Model):
     # pylint: disable=bad-whitespace
     player            = models.ForeignKey(Player, db_index=True, limit_choices_to=is_active)
     season            = models.ForeignKey(Season, db_index=True, limit_choices_to=not_ended)
-    pro_rata_date     = models.DateField("Pro Rata Date", db_index=True, unique=True)
+    pro_rata_date     = models.DateField("Pro Rata Date", blank=True, null=True)
     payment_frequency = models.CharField("Payment Freq", max_length=16, choices=PAY_TYPE_CHOICES)
     signed_off        = models.BooleanField("Signoff", default=False)
     comment           = models.TextField(blank=True, null=True)
