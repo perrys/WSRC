@@ -204,6 +204,8 @@ class PlayerAdmin(SelectRelatedQuerysetMixin, PrefetchRelatedQuerysetMixin, admi
     list_per_page = 400
     actions = (update_subscriptions,)
     inlines = (SubscriptionInline,)
+    readonly_fields = ("user_link", "date_joined_date")
+    exclude = ("user",)
 
     def ordered_name(self, obj):
         return obj.get_ordered_name()
@@ -235,6 +237,13 @@ class PlayerAdmin(SelectRelatedQuerysetMixin, PrefetchRelatedQuerysetMixin, admi
         return None
     signed_off.short_description = 'Signed Off'
     signed_off.boolean = True
+
+    def user_link(self, obj):
+        link = urlresolvers.reverse("admin:auth_user_change", args=[obj.user.id])
+        link = u'<a href="{0}" style="font-weight: bold">{1}</a>'.format(link, obj.get_ordered_name())
+        return link
+    user_link.short_description = "User"
+    user_link.allow_tags = True
 
     def date_joined_date(self, obj):
         return obj.user.date_joined.date()
