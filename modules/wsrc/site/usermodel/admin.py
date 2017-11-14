@@ -174,10 +174,13 @@ def update_subscriptions(modeladmin, request, queryset):
             if subscription.season_id == latest_season.id:
                 found = True
                 break
-        if not found:
+        if not found and player.user.is_active:
             payment_freq = "annual" if subscription is None else subscription.payment_frequency
-            sub = Subscription(player=player, season=latest_season, payment_frequency=payment_freq)
-            sub.save()
+            subscription = Subscription(player=player, season=latest_season, payment_frequency=payment_freq)
+            subscription.save()
+        elif found and not player.user.is_active:
+            subscription.delete()
+            
 update_subscriptions.short_description = "Check/update subscriptions"
 
 class PlayerAdmin(SelectRelatedQuerysetMixin, PrefetchRelatedQuerysetMixin, admin.ModelAdmin):
