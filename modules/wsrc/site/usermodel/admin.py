@@ -139,15 +139,20 @@ class SubscriptionAdmin(admin.ModelAdmin):
             .format(obj.get_pro_rata_cost())
     pro_rata_cost.allow_tags = True
     pro_rata_cost.short_description = u"Cost (\xa3)"
-    
+
     def due_amount(self, obj):
         amount = obj.get_due_amount()
-        style = '' if amount <= 0 else 'color: red'
+        style = ''
+        if not obj.signed_off:
+            if amount > 0:
+                style = 'color: red'
+            elif amount == 0:
+                style = 'color: green'
         return "<span style='width:100%; display:inline-block; text-align:right; {1}'>{0:.2f}</span>"\
             .format(max(0, amount), style)
     due_amount.allow_tags = True
     due_amount.short_description = u"Due (\xa3)"
-    
+
     def membership_type(self, obj):
         return obj.player.get_membership_type_display()
     membership_type.short_description = "Membership Type"
