@@ -183,6 +183,14 @@ def update_subscriptions(modeladmin, request, queryset):
             
 update_subscriptions.short_description = "Check/update subscriptions"
 
+class SubscriptionInline(admin.StackedInline):
+    "Simple inline for player in User admin"
+    model = Subscription
+    max_num = 1
+    formfield_overrides = {
+        models.TextField: {'widget': forms.TextInput(attrs={'size': 40})},
+    }
+
 class PlayerAdmin(SelectRelatedQuerysetMixin, PrefetchRelatedQuerysetMixin, admin.ModelAdmin):
     "Admin for Player (i.e. club member) model"
     list_filter = ('user__is_active', 'membership_type', )
@@ -195,6 +203,7 @@ class PlayerAdmin(SelectRelatedQuerysetMixin, PrefetchRelatedQuerysetMixin, admi
     prefetch_related_fields = ('subscription_set__season',)
     list_per_page = 400
     actions = (update_subscriptions,)
+    inlines = (SubscriptionInline,)
 
     def ordered_name(self, obj):
         return obj.get_ordered_name()
