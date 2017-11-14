@@ -111,7 +111,7 @@ class SubscriptionAdmin(admin.ModelAdmin):
     list_filter = (SeasonListFilter, 'signed_off', 'payment_frequency', 'player__membership_type', )
     list_editable = ('signed_off', 'comment')
     formfield_overrides = {
-        models.TextField: {'widget': forms.Textarea(attrs={'cols': 30, 'rows': 1})},
+        models.TextField: {'widget': forms.TextInput(attrs={'size': 30})},
     }
     form = SubscriptionForm
     list_per_page = 400
