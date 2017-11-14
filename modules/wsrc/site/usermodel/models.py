@@ -15,7 +15,6 @@ import wsrc.site.accounts.models as account_models
 class Player(models.Model):
 
     MEMBERSHIP_TYPES = (
-        ("coach", "Coach"),
         ("compl", "Complimentary"),
         ("full", "Full"),
         ("junior", "Junior"),
