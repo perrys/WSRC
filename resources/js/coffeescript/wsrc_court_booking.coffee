@@ -20,6 +20,7 @@ class WSRC_court_booking
   constructor: (@base_path) ->
     datepicker_options =
       dateFormat: "D, d M yy"
+      firstDay: 1
       showOtherMonths: true
       selectOtherMonths: true
       onSelect: (text, obj) =>
