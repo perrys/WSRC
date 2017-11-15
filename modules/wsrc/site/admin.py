@@ -20,7 +20,7 @@ from django.db import models
 
 from django.contrib import admin
 from wsrc.site.models import PageContent, EmailContent, EventFilter, MaintenanceIssue,\
-    Suggestion, ClubEvent, CommitteeMeetingMinutes
+    Suggestion, ClubEvent, CommitteeMeetingMinutes, GenericPDFDocument
 from wsrc.utils.form_utils import PrefetchRelatedQuerysetMixin
 
 def txt_widget(nrows):
@@ -42,11 +42,17 @@ class ClubEventAdmin(admin.ModelAdmin):
         models.TextField: {'widget': txt_widget(20)},
     }
 
-class CommitteeMeetingMinutesAdmin(admin.ModelAdmin):
-    list_display = ("date",)
+class PDFFileAdmin(admin.ModelAdmin):
+    list_display = ("date", "get_link")
     formfield_overrides = {
         models.FileField: {'widget': forms.widgets.ClearableFileInput(attrs={'accept':'.pdf'})},
     }
+    def get_link(self, obj, link_text=None):
+        if link_text is None:
+            link_text = obj.get_url()
+        return "<a href='{url}' style='font-weight: bold'>{text}</a>".format(url=obj.get_url(), text=link_text)
+    get_link.short_description = "Link"
+    get_link.allow_tags = True
 
 class NotifierEventAdmin(PrefetchRelatedQuerysetMixin, admin.ModelAdmin):
     list_select_related = ('player__user',)
@@ -74,4 +80,5 @@ admin.site.register(EventFilter, NotifierEventAdmin)
 admin.site.register(MaintenanceIssue, MaintenanceIssueAdmin)
 admin.site.register(Suggestion, SuggestionAdmin)
 admin.site.register(ClubEvent, ClubEventAdmin)
-admin.site.register(CommitteeMeetingMinutes, CommitteeMeetingMinutesAdmin)
+admin.site.register(CommitteeMeetingMinutes, PDFFileAdmin)
+admin.site.register(GenericPDFDocument, PDFFileAdmin)

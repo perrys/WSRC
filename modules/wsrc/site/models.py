@@ -54,14 +54,30 @@ class ClubEvent(models.Model):
                    "{display_date:%Y-%m-%d}".format(**self.__dict__) or ""
         return "{title} {date}".format(title=self.title, date=date_str)
 
-class CommitteeMeetingMinutes(models.Model):
+class AbstractPDFDocumentModel(models.Model):
     date = models.DateField()
-    pdf_file = models.FileField(("PDF File"), upload_to="actions")
+
+    def get_url(self):
+        return self.pdf_file.url
+
     class Meta:
-        verbose_name = "Committee Actions"
-        verbose_name_plural = "Committee Actions"
+        abstract = True
         ordering = ["-date"]
 
+class CommitteeMeetingMinutes(AbstractPDFDocumentModel):
+    pdf_file = models.FileField(("PDF File"), upload_to="actions")
+    class Meta:
+        ordering = ["-date"]
+        verbose_name = "Committee Actions"
+        verbose_name_plural = "Committee Actions"
+
+class GenericPDFDocument(AbstractPDFDocumentModel):    
+    pdf_file = models.FileField(("PDF File"), upload_to="pdf_docs")
+    class Meta:
+        ordering = ["-date"]
+        verbose_name = "Document"
+
+        
 class SquashLevels(models.Model):
     player = models.ForeignKey(user_models.Player, blank=True, null=True)
     name = models.CharField(max_length=64)
