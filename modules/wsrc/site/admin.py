@@ -1,22 +1,45 @@
+# This file is part of WSRC.
+#
+# WSRC is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# WSRC is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with WSRC.  If not, see <http://www.gnu.org/licenses/>.
+
+"Admin for the general site models"
+
 from django import forms
 from django.db import models
 
 from django.contrib import admin
-from wsrc.site.models import PageContent, EmailContent, EventFilter, MaintenanceIssue, Suggestion, ClubEvent, CommitteeMeetingMinutes
+from wsrc.site.models import PageContent, EmailContent, EventFilter, MaintenanceIssue,\
+    Suggestion, ClubEvent, CommitteeMeetingMinutes
+from wsrc.utils.form_utils import PrefetchRelatedQuerysetMixin
+
+def txt_widget(nrows):
+    "Create a standard textarea widget"
+    return forms.Textarea(attrs={'cols': 100, 'rows': nrows})
 
 class PageContentAdmin(admin.ModelAdmin):
     formfield_overrides = {
-        models.TextField: {'widget': forms.Textarea(attrs={'cols': 100, 'rows': 30})},
+        models.TextField: {'widget': txt_widget(30)},
     }
 
 class EmailContentAdmin(admin.ModelAdmin):
     formfield_overrides = {
-        models.TextField: {'widget': forms.Textarea(attrs={'cols': 100, 'rows': 30})},
+        models.TextField: {'widget': txt_widget(30)},
     }
 
 class ClubEventAdmin(admin.ModelAdmin):
     formfield_overrides = {
-        models.TextField: {'widget': forms.Textarea(attrs={'cols': 100, 'rows': 20})},
+        models.TextField: {'widget': txt_widget(20)},
     }
 
 class CommitteeMeetingMinutesAdmin(admin.ModelAdmin):
@@ -25,12 +48,9 @@ class CommitteeMeetingMinutesAdmin(admin.ModelAdmin):
         models.FileField: {'widget': forms.widgets.ClearableFileInput(attrs={'accept':'.pdf'})},
     }
 
-class NotifierEventAdmin(admin.ModelAdmin):
-    def get_queryset(self, request):
-        qs = super(NotifierEventAdmin, self).get_queryset(request)
-        qs = qs.select_related('player__user')
-        qs = qs.prefetch_related('days')
-        return qs
+class NotifierEventAdmin(PrefetchRelatedQuerysetMixin, admin.ModelAdmin):
+    list_select_related = ('player__user',)
+    prefetch_related_fields = ('days',)
 
 class MaintenanceIssueAdmin(admin.ModelAdmin):
     list_display = ("description", "reporter", "reported_date", "status",)
@@ -38,20 +58,14 @@ class MaintenanceIssueAdmin(admin.ModelAdmin):
     formfield_overrides = {
         models.TextField: {'widget': forms.Textarea(attrs={'cols': 100, 'rows': 5})},
     }
-    def get_queryset(self, request):
-        qs = super(MaintenanceIssueAdmin, self).get_queryset(request)
-        qs = qs.select_related('reporter__user')
-        return qs
+    list_select_related = ('reporter__user',)
 
 class SuggestionAdmin(admin.ModelAdmin):
     list_display = ("description", "suggester", "submitted_date")
     formfield_overrides = {
         models.TextField: {'widget': forms.Textarea(attrs={'cols': 100, 'rows': 5})},
     }
-    def get_queryset(self, request):
-        qs = super(SuggestionAdmin, self).get_queryset(request)
-        qs = qs.select_related('suggester__user')
-        return qs
+    list_select_related = ('suggester__user',)
 
 
 admin.site.register(PageContent, PageContentAdmin)
