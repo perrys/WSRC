@@ -55,7 +55,7 @@ class ClubEvent(models.Model):
         return "{title} {date}".format(title=self.title, date=date_str)
 
 class AbstractPDFDocumentModel(models.Model):
-    date = models.DateField()
+    date = models.DateField(auto_now_add=True)
 
     def get_url(self):
         return self.pdf_file.url
