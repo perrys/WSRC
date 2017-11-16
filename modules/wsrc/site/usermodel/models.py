@@ -1,10 +1,24 @@
+# This file is part of WSRC.
+#
+# WSRC is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# WSRC is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with WSRC.  If not, see <http://www.gnu.org/licenses/>.
+
+"Models for membership and subscriptions"
 
 from django.db import models
 from django.contrib.auth.models import User
-from django.db.models.signals import post_save
 from django.core.mail import send_mail
 from django.core import validators
-from django.utils.translation import ugettext_lazy as _
 from django.db.models import Q
 
 import datetime
@@ -90,9 +104,10 @@ class Player(models.Model):
 
 
 class Season(models.Model):
-    start_date        = models.DateField(db_index=True, unique=True)
-    end_date          = models.DateField(db_index=True, unique=True)
-    has_ended         = models.BooleanField("Has Ended", help_text="Indicates no longer relvant for input forms", db_index=True, default=False)
+    start_date = models.DateField(db_index=True, unique=True)
+    end_date = models.DateField(db_index=True, unique=True)
+    has_ended = models.BooleanField("Has Ended", db_index=True, default=False,
+                                    help_text="Indicates no longer relvant for input forms")
     unique_together = ("start_date", "end_date")
     def __unicode__(self):
         return "{start_date:%Y}-{end_date:%y}".format(**self.__dict__)
@@ -103,7 +118,7 @@ class Season(models.Model):
             return qs[0]
         return None
     class Meta:
-        ordering=["start_date"]
+        ordering = ["start_date"]
 
 class SubscriptionCost(models.Model):
     not_ended = Q(has_ended=False)
@@ -230,9 +245,11 @@ class Subscription(models.Model):
         ordering=["-season__start_date", "player__user__last_name", "player__user__first_name"]
 
 class SubscriptionPayment(models.Model):
+    subs_transactions_clause = Q(category__name='subscriptions', date_issued__gt='2017-01-01')
     subscription = models.ForeignKey(Subscription, db_index=True, related_name="payments",
                                      limit_choices_to=Q(season__has_ended=False))
-    transaction = models.ForeignKey(account_models.Transaction, unique=True, related_name="subs_payments",
-                                    limit_choices_to=Q(category__name='subscriptions', date_issued__gt='2017-01-01'))
+    transaction = models.ForeignKey(account_models.Transaction, unique=True,
+                                    related_name="subs_payments",
+                                    limit_choices_to=subs_transactions_clause)
     def __unicode__(self):
         return u"\xa3{0:.2f} {1}".format(self.transaction.amount, self.subscription)
