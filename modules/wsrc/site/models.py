@@ -130,7 +130,7 @@ class MaintenanceIssue(models.Model):
     )
     reporter = models.ForeignKey(user_models.Player, blank=True, null=True)
     description = models.TextField()
-    reported_date = models.DateField(auto_now=True)
+    reported_date = models.DateField(auto_now_add=True)
     status = models.CharField(max_length=2, choices=STATUS_VALUES, default="ar")
     target_date = models.DateField(blank=True, null=True)
     comment = models.TextField(blank=True, null=True)
@@ -141,6 +141,6 @@ class MaintenanceIssue(models.Model):
 class Suggestion(models.Model):
     suggester = models.ForeignKey(user_models.Player, blank=True, null=True)
     description = models.TextField()
-    submitted_date = models.DateField(auto_now=True)
+    submitted_date = models.DateField(auto_now_add=True)
     reviewed_date = models.DateField(blank=True, null=True)
     comment = models.TextField(blank=True, null=True)
