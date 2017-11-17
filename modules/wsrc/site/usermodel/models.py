@@ -52,8 +52,6 @@ class Player(models.Model):
                                    help_text="Index in the membership spreadsheet")
     booking_system_id  = models.IntegerField(("Booking Site ID"), db_index=True, blank=True, null=True,
                                              help_text="ID in the booking system")
-    cardnumber  = models.IntegerField(("Cardnumber"), db_index=True, blank=True, null=True,
-                                      help_text="Number on your door entry card")
     squashlevels_id  = models.IntegerField(("SquashLevels ID"), db_index=True, blank=True, null=True,
                                            help_text="ID on the SquashLevels website")
     england_squash_id  = models.IntegerField(("ES Membership #"), blank=True, null=True,
@@ -253,3 +251,16 @@ class SubscriptionPayment(models.Model):
                                     limit_choices_to=subs_transactions_clause)
     def __unicode__(self):
         return u"\xa3{0:.2f} {1}".format(self.transaction.amount, self.subscription)
+
+class DoorEntryCard(models.Model):
+    "Many-to-one model for a player's door cards"
+    is_active = Q(user__is_active=True)
+    card_validator = validators.RegexValidator(r'^\d{8}$',
+                                               'Enter an eight-digit card number.', 'invalid_id')
+    player = models.ForeignKey(Player, db_index=True, related_name="doorcards")
+    cardnumber = models.IntegerField(("Card #"), db_index=True, blank=True, null=True,
+                                     validators=[card_validator])
+    date_issued = models.DateField(auto_now_add=True, blank=True, null=True)
+    class Meta:
+        verbose_name = "Door Entry Card"
+
