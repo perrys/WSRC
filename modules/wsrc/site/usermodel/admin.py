@@ -111,6 +111,7 @@ class SubscriptionAdmin(admin.ModelAdmin):
     }
     form = SubscriptionForm
     list_per_page = 400
+    search_fields = ('player__user__first_name', 'player__user__last_name')
 
     def ordered_name(self, obj):
         return obj.player.get_ordered_name()
