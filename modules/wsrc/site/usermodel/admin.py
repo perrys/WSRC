@@ -246,7 +246,7 @@ class PlayerAdmin(SelectRelatedQuerysetMixin, PrefetchRelatedQuerysetMixin, admi
     date_joined_date.admin_order_field = 'date_joined'
 
 class SubscriptionCostAdmin(SelectRelatedQuerysetMixin, admin.ModelAdmin):
-    list_display = ('membership_type', 'season', 'amount')
+    list_display = ('membership_type', 'season', 'joining_fee', 'amount')
 
 class DoorEntryCardForm(forms.ModelForm):
     "Override form for more efficient DB interaction"
