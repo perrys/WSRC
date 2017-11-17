@@ -8,7 +8,6 @@ class WSRC_admin_accounts_model
   constructor: (category_list, @account_map, @subscription_category_id) ->
     @set_categories(category_list)
     for id, account of @account_map
-      wsrc.utils.lexical_sort(account.transaction_set, "date_cleared")
       WSRC_admin_accounts_model.set_balances(account.transaction_set)
 
   get_transaction_list: (account_id) ->  
@@ -97,6 +96,7 @@ class WSRC_admin_accounts_model
     return (x for x in list when x.date >= start_date and x.date <= end_date)
         
   @set_balances = (transactions) ->
+    wsrc.utils.lexical_sort(transactions, "date_cleared")
     balance = 0
     for transaction in transactions
       unless transaction.date_cleared
