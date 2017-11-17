@@ -25,7 +25,8 @@ from django.contrib.auth.models import User
 
 from django.core import urlresolvers
 
-from .models import Player, Season, Subscription, SubscriptionPayment, SubscriptionCost
+from .models import Player, Season, Subscription, SubscriptionPayment,\
+    SubscriptionCost, DoorEntryCard
 from wsrc.utils.form_utils import SelectRelatedQuerysetMixin, CachingModelChoiceField, \
     get_related_field_limited_queryset, PrefetchRelatedQuerysetMixin
 
@@ -39,7 +40,7 @@ class UserAdmin(AuthUserAdmin):
     "Redefinition of user admin"
     inlines = AuthUserAdmin.inlines + [UserProfileInline,]
     list_display = ('username', 'is_active', 'membership_type', 'email', \
-                    'first_name', 'last_name', 'cardnumber', 'booking_system_id', 'is_staff')
+                    'first_name', 'last_name', 'booking_system_id', 'is_staff')
     list_filter = ('is_active', 'player__membership_type', 'groups', \
                    'player__prefs_esra_member', 'is_staff', 'is_superuser')
     ordering = ('username', 'first_name', 'last_name')
@@ -59,11 +60,6 @@ class UserAdmin(AuthUserAdmin):
         return obj.player.membership_type
     membership_type.short_description = "Type"
     membership_type.admin_order_field = 'player__membership_type'
-
-    def cardnumber(self, obj):
-        return obj.player.cardnumber
-    cardnumber.short_description = "DoorCard #"
-    cardnumber.admin_order_field = 'player__cardnumber'
 
 # unregister old user admin
 admin.site.unregister(User)
@@ -196,10 +192,9 @@ class PlayerAdmin(SelectRelatedQuerysetMixin, PrefetchRelatedQuerysetMixin, admi
     list_filter = ('user__is_active', 'membership_type', )
     list_display = ('ordered_name', 'active', 'date_joined_date', \
                     'membership_type', 'current_season', 'signed_off',
-                    'cell_phone', 'other_phone',
-                    'cardnumber', 'england_squash_id',
+                    'cell_phone', 'other_phone', 'england_squash_id',
                     'prefs_receive_email', 'prefs_esra_member', 'prefs_display_contact_details')
-    search_fields = ('user__first_name', 'user__last_name', 'cardnumber')
+    search_fields = ('user__first_name', 'user__last_name')
     prefetch_related_fields = ('subscription_set__season',)
     list_per_page = 400
     actions = (update_subscriptions,)
@@ -253,7 +248,25 @@ class PlayerAdmin(SelectRelatedQuerysetMixin, PrefetchRelatedQuerysetMixin, admi
 class SubscriptionCostAdmin(SelectRelatedQuerysetMixin, admin.ModelAdmin):
     list_display = ('membership_type', 'season', 'amount')
 
+class DoorEntryCardForm(forms.ModelForm):
+    "Override form for more efficient DB interaction"
+    queryset = get_related_field_limited_queryset(DoorEntryCard.player.field)
+    player = forms.ModelChoiceField(queryset=queryset.select_related("user"))
+
+
+class DoorEntryCardAdmin(admin.ModelAdmin):
+    search_fields = ('player__user__first_name', 'player__user__last_name', 'cardnumber')
+    list_select_related = True
+    list_display = ('cardnumber', 'player', 'date_issued')
+    list_per_page = 500
+    form = DoorEntryCardForm
+    def get_queryset(self, request):
+        queryset = super(DoorEntryCardAdmin, self).get_queryset(request)
+        queryset = queryset.select_related('player__user', 'season')
+        return queryset
+
 admin.site.register(Season, SeasonAdmin)
 admin.site.register(Subscription, SubscriptionAdmin)
 admin.site.register(Player, PlayerAdmin)
 admin.site.register(SubscriptionCost, SubscriptionCostAdmin)
+admin.site.register(DoorEntryCard, DoorEntryCardAdmin)
