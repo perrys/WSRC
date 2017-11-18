@@ -39,27 +39,12 @@ class UserProfileInline(admin.StackedInline):
 class UserAdmin(AuthUserAdmin):
     "Redefinition of user admin"
     inlines = AuthUserAdmin.inlines + [UserProfileInline,]
-    list_display = ('username', 'is_active', 'membership_type', 'email', \
-                    'first_name', 'last_name', 'booking_system_id', 'is_staff')
-    list_filter = ('is_active', 'player__membership_type', 'groups', \
-                   'player__prefs_esra_member', 'is_staff', 'is_superuser')
-    ordering = ('username', 'first_name', 'last_name')
+    list_display = ('last_name', 'first_name', 'username', 'email',\
+                    'is_active', 'is_staff', 'last_login', 'date_joined')
+    list_filter = ('is_active', 'groups', 'is_staff', 'is_superuser')
+    ordering = ('last_name', 'first_name', 'username')
     list_per_page = 400
-
-    def get_queryset(self, request):
-        queryset = super(UserAdmin, self).get_queryset(request)
-        queryset = queryset.select_related('player')
-        return queryset
-
-    def booking_system_id(self, obj):
-        return obj.player.booking_system_id
-    booking_system_id.short_description = "Booking Site ID"
-    booking_system_id.admin_order_field = "player__booking_system_id"
-
-    def membership_type(self, obj):
-        return obj.player.membership_type
-    membership_type.short_description = "Type"
-    membership_type.admin_order_field = 'player__membership_type'
+    list_select_related = ('player',)
 
 # unregister old user admin
 admin.site.unregister(User)
