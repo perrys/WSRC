@@ -98,6 +98,16 @@ class SeasonListFilter(admin.SimpleListFilter):
             queryset = queryset.filter(season_id=self.value())
         return queryset
 
+def remove_and_inactivate(modeladmin, request, queryset):
+    for subscription in queryset:
+        if subscription.signed_off or subscription.payments_count() > 0:
+            continue
+        user = subscription.player.user
+        user.is_active = False
+        user.save()
+        subscription.delete()
+remove_and_inactivate.short_description = "Remove Subscripiton & Set Inactive"
+    
 class SubscriptionAdmin(admin.ModelAdmin):
     "Subscription admin - heavilly used for subs management"
     inlines = (SubscriptionPaymentInline,)
@@ -112,6 +122,7 @@ class SubscriptionAdmin(admin.ModelAdmin):
     form = SubscriptionForm
     list_per_page = 400
     search_fields = ('player__user__first_name', 'player__user__last_name')
+    actions = (remove_and_inactivate,)
 
     def ordered_name(self, obj):
         return obj.player.get_ordered_name()
