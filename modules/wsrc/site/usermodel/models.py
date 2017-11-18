@@ -261,7 +261,7 @@ class DoorEntryCard(models.Model):
     player = models.ForeignKey(Player, db_index=True, related_name="doorcards")
     cardnumber = models.IntegerField(("Card #"), db_index=True, blank=True, null=True,
                                      validators=[card_validator])
-    date_issued = models.DateField(auto_now_add=True, blank=True, null=True)
+    date_issued = models.DateField(default=datetime.date.today, blank=True, null=True)
     class Meta:
         verbose_name = "Door Entry Card"
 
