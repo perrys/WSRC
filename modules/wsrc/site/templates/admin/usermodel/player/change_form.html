@@ -1,0 +1,190 @@
+{% extends "admin/base_site.html" %}
+{% load i18n admin_urls admin_static admin_modify %}
+
+{% block extrahead %}{{ block.super }}
+<script type="text/javascript" src="{% url 'admin:jsi18n' %}"></script>
+{{ media }}
+{% endblock %}
+
+{% block extrastyle %}{{ block.super }}<link rel="stylesheet" type="text/css" href="{% static "admin/css/forms.css" %}" />{% endblock %}
+
+{% block coltype %}colM{% endblock %}
+
+{% block bodyclass %}{{ block.super }} app-{{ opts.app_label }} model-{{ opts.model_name }} change-form{% endblock %}
+
+{% if not is_popup %}
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+<a href="{% url 'admin:index' %}">{% trans 'Home' %}</a>
+&rsaquo; <a href="{% url 'admin:app_list' app_label=opts.app_label %}">{{ opts.app_config.verbose_name }}</a>
+&rsaquo; {% if has_change_permission %}<a href="{% url opts|admin_urlname:'changelist' %}">{{ opts.verbose_name_plural|capfirst }}</a>{% else %}{{ opts.verbose_name_plural|capfirst }}{% endif %}
+&rsaquo; {% if add %}{% trans 'Add' %} {{ opts.verbose_name }}{% else %}{{ original|truncatewords:"18" }}{% endif %}
+</div>
+{% endblock %}
+{% endif %}
+
+{% block content %}<div id="content-main">
+{% block object-tools %}
+{% if change %}{% if not is_popup %}
+  <ul class="object-tools">
+    {% block object-tools-items %}
+    <li>
+        {% url opts|admin_urlname:'history' original.pk|admin_urlquote as history_url %}
+        <a href="{% add_preserved_filters history_url %}" class="historylink">{% trans "History" %}</a>
+    </li>
+    {% if has_absolute_url %}<li><a href="{{ absolute_url }}" class="viewsitelink">{% trans "View on site" %}</a></li>{% endif%}
+    {% endblock %}
+  </ul>
+{% endif %}{% endif %}
+{% endblock %}
+<form {% if has_file_field %}enctype="multipart/form-data" {% endif %}action="{{ form_url }}" method="post" id="{{ opts.model_name }}_form" novalidate>{% csrf_token %}{% block form_top %}{% endblock %}
+<div>
+{% if is_popup %}<input type="hidden" name="{{ is_popup_var }}" value="1" />{% endif %}
+{% if to_field %}<input type="hidden" name="{{ to_field_var }}" value="{{ to_field }}" />{% endif %}
+{% if save_on_top %}{% block submit_buttons_top %}{% submit_row %}{% endblock %}{% endif %}
+{% if errors %}
+    <p class="errornote">
+    {% if errors|length == 1 %}{% trans "Please correct the error below." %}{% else %}{% trans "Please correct the errors below." %}{% endif %}
+    </p>
+    {{ adminform.form.non_field_errors }}
+{% endif %}
+
+{% block field_sets %}
+    {% for fieldset in adminform %}
+  {% include "admin/includes/fieldset.html" %}
+{% endfor %}
+{% endblock %}
+
+{% block after_field_sets %}
+    <script>
+(function() {
+  const $ = django.jQuery
+  const new_spinner = function(adiv) {
+    const my_div = adiv
+    my_div.text("|")
+    function next() {
+      const val = my_div.text()
+      var newval = "|"
+      if (val == "|" ) newval = "/"
+      else if (val == "/" ) newval = "-"
+      else if (val == "-" ) newval = "\\"
+      else if (val == "\\" ) newval = "|"
+      else return
+      my_div.text(newval)
+      window.setTimeout(next, 100)
+    }
+    return {
+      start: function(){next()},
+      stop: function(){my_div.text("")},
+    }
+  }
+  
+  const input = $("input[name='booking_system_id']")
+  const is_set = input.val() && input.val().length > 0
+
+  const button_text = is_set ? "Delete" : "Create"
+  const button = $(`<button style='margin-left: 0.5em; border-top: 1px;'>${button_text}</button>`)
+  input.after(button)
+
+  function do_ajax(message, data) {
+    const csrf_token = $("input[name='csrfmiddlewaretoken']").val()
+    const button_text = button.text()
+    const message_div = $(`<div style='margin-left: 0.5em; display: inline-block'>${message} <span class="spinner"></span></div>`)
+    button.after(message_div)
+    const spinner = new_spinner(message_div.find(".spinner"))
+    settings = {
+      headers: {"X-CSRFToken": csrf_token},
+      type: is_set ? 'DELETE' : 'POST',
+      contentType: "application/json",
+      data: data ? JSON.stringify(data) : null,
+      processData: false,
+      complete: function() {
+        spinner.stop()
+        message_div.remove()        
+      },
+      error: function(xhr, txt) {
+        alert(`Error returned from server [${txt}], status: ${xhr.statusCode()}, body:\n${xhr.responseText}`)
+      },
+      success: function(data, xhr) {
+        msg = "Success "
+        if (! is_set) {
+          msg += `created new user ID: ${data.id}\n\n`
+          input.val(data.id)
+        } else {
+          msg += `deleted user ID: ${input.val()}\n\n`
+          input.val("")
+        }
+        msg += "Please save IMMEDIATELY to capture this change."
+        alert(msg)
+        button.remove()
+      },
+    }
+    if (! is_set)
+      settings.dataType= "json"
+
+    var url = "{% url 'booking_system_user' %}"
+    if (is_set) url += `${input.val()}`
+    spinner.start()
+    $.ajax(url, settings)
+  }      
+    
+  function handler(evt) {
+    evt.stopPropagation()
+    evt.preventDefault()
+    if (is_set) {
+      const booking_id = input.val()
+      if (confirm(`Are you sure you would like to delete ID ${booking_id} from the booking system`)) {
+        do_ajax("Deleting... ")
+      }
+    } else {
+      const name = $("a#user_link").data("name")
+      const doorcards = $("span#door_cards").text()
+      const password = "squash" + (doorcards ? doorcards.slice(-3) : "123")
+      const email = $("a#user_link").data("email")
+      data = {
+        "name": name,
+        "password": password,
+        "email": email,
+      }
+      message = "Would you like to create the following user on the booking system:\n\n"
+      message += `username: ${name}\n`
+      message += `password: ${password}\n`
+      message += `email: ${email}\n`
+      if (confirm(message)) {
+        do_ajax("Creating... ", data)
+      }
+    }
+    return null
+  }
+  button.on('click', handler)
+  
+})()
+    </script>
+{% endblock %}
+
+{% block inline_field_sets %}
+{% for inline_admin_formset in inline_admin_formsets %}
+    {% include inline_admin_formset.opts.template %}
+{% endfor %}
+{% endblock %}
+
+{% block after_related_objects %}{% endblock %}
+
+{% block submit_buttons_bottom %}{% submit_row %}{% endblock %}
+
+{% if adminform and add %}
+    <script type="text/javascript">
+        (function($) {
+            $(document).ready(function() {
+                $('form#{{ opts.model_name }}_form :input:visible:enabled:first').focus()
+            });
+        })(django.jQuery);
+    </script>
+{% endif %}
+
+{# JavaScript for prepopulated fields #}
+{% prepopulated_fields_js %}
+
+</div>
+</form></div>
+{% endblock %}
