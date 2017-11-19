@@ -189,14 +189,14 @@ class PlayerAdmin(SelectRelatedQuerysetMixin, PrefetchRelatedQuerysetMixin, admi
     list_filter = ('user__is_active', 'membership_type', )
     list_display = ('ordered_name', 'active', 'date_joined_date', \
                     'membership_type', 'current_season', 'signed_off',
-                    'cell_phone', 'other_phone', 'england_squash_id',
+                    'cell_phone', 'other_phone', 'booking_system_id', 'england_squash_id',
                     'prefs_receive_email', 'prefs_esra_member', 'prefs_display_contact_details')
     search_fields = ('user__first_name', 'user__last_name')
     prefetch_related_fields = ('subscription_set__season',)
     list_per_page = 400
     actions = (update_subscriptions,)
     inlines = (SubscriptionInline,)
-    readonly_fields = ("user_link", "date_joined_date")
+    readonly_fields = ("user_link", "date_joined_date", "doorcard_numbers")
     exclude = ("user",)
 
     def ordered_name(self, obj):
@@ -232,7 +232,8 @@ class PlayerAdmin(SelectRelatedQuerysetMixin, PrefetchRelatedQuerysetMixin, admi
 
     def user_link(self, obj):
         link = urlresolvers.reverse("admin:auth_user_change", args=[obj.user.id])
-        link = u'<a href="{0}" style="font-weight: bold">{1}</a>'.format(link, obj.get_ordered_name())
+        link = u'<a id="user_link" href="{0}" style="font-weight: bold" data-name="{1}" data-email="{2}">{3}</a>'\
+               .format(link, obj.user.get_full_name(), obj.user.email, obj.get_ordered_name())
         return link
     user_link.short_description = "User"
     user_link.allow_tags = True
@@ -241,6 +242,12 @@ class PlayerAdmin(SelectRelatedQuerysetMixin, PrefetchRelatedQuerysetMixin, admi
         return obj.user.date_joined.date()
     date_joined_date.short_description = "Joined"
     date_joined_date.admin_order_field = 'date_joined'
+
+    def doorcard_numbers(self, obj):
+        numbers = [str(o.cardnumber) for o in obj.doorcards.all()]
+        return '<span id="door_cards">{0}</span>'.format(", ".join(numbers))
+    doorcard_numbers.short_description = "Door Cards"
+    doorcard_numbers.allow_tags = True
 
 class SubscriptionCostAdmin(SelectRelatedQuerysetMixin, admin.ModelAdmin):
     list_display = ('membership_type', 'season', 'joining_fee', 'amount')
