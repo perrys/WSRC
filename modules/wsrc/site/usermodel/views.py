@@ -103,7 +103,7 @@ class PlayerSerializer(serializers.ModelSerializer):
     class Meta:
         "Class meta information"
         model = Player
-        fields = ('id', 'ordered_name', 'user', 'cell_phone', 'other_phone', 'membership_type', 'wsrc_id', 'booking_system_id', 'cardnumber', 'squashlevels_id', 'prefs_receive_email')
+        fields = ('id', 'ordered_name', 'user', 'cell_phone', 'other_phone', 'membership_type', 'wsrc_id', 'booking_system_id', 'squashlevels_id', 'prefs_receive_email')
         depth = 1
 
 class PlayerView(rest_generics.RetrieveUpdateDestroyAPIView):
