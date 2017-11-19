@@ -116,6 +116,17 @@ class BookingSystemSession:
         if status != httplib.OK:
             raise Exception("failed to delete user, status: %(status)d, body: %(body)s" % locals())
 
+    def add_user_to_booking_system(self, name, password, email=""):
+        "Add the given user details to booking system database"
+        url = BookingSystemSession.USERS_API
+        params = {"name": name, "password": password, "email": email}
+        response = self.client.request(url, params)
+        status = response.getcode()
+        body = response.read()
+        if status != httplib.OK:
+            raise Exception("failed to create user, status: {0}, body: {1}".format(status, body))
+        return json.loads(body)
+
 @transaction.atomic
 def sync_db_booking_events(events, start_date, end_date):
     """Sync the db's view of booking events with the given list (usually
