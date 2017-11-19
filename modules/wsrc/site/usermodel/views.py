@@ -37,6 +37,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from wsrc.site.models import EventFilter
+from wsrc.site.settings import settings
 from wsrc.external_sites.booking_manager import BookingSystemSession
 from wsrc.site.usermodel.models import Player
 from wsrc.utils import xls_utils, sync_utils
@@ -167,7 +168,36 @@ class PlayerForm(forms.ModelForm):
     class Meta:
         model = Player
         fields = ('id', 'user', 'cell_phone', 'other_phone', 'membership_type', 'wsrc_id',\
-                  'booking_system_id', 'cardnumber', 'squashlevels_id', 'prefs_receive_email')
+                  'booking_system_id', 'squashlevels_id', 'prefs_receive_email')
+
+class BookingSystemMemberView(APIView):
+    "REST methods for an individual user of the booking system"
+    def delete(self, request, bs_id): #pylint: disable=no-self-use
+        "Permanently delete an id from the booking system"
+        if request.user.groups.filter(name="Membership Editor").count() == 0 \
+           and not request.user.is_superuser:
+            raise PermissionDenied()
+        credentials = settings.BOOKING_SYSTEM_CREDENTIALS
+        username = credentials["username"]
+        password = credentials["password"]
+        booking_session = BookingSystemSession(username, password)
+        booking_session.delete_user_from_booking_system(bs_id)
+        return Response()
+    def post(self, request): #pylint: disable=no-self-use
+        "Create a new user on the booking system"
+        if request.user.groups.filter(name="Membership Editor").count() == 0 \
+           and not request.user.is_superuser:
+            raise PermissionDenied()
+        credentials = settings.BOOKING_SYSTEM_CREDENTIALS
+        username = credentials["username"]
+        password = credentials["password"]
+        booking_session = BookingSystemSession(username, password)
+        name = request.data["name"]
+        pwd = request.data["password"]
+        email = request.data.get("email")
+        response = booking_session.add_user_to_booking_system(name, pwd, email)
+        return Response(response)
+
 
 class BookingSystemMembersView(APIView):
     "REST view of data obtained from the booking system"
