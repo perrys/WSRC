@@ -23,6 +23,8 @@ urlpatterns = patterns('',
     url(r'^player/(?P<pk>[0-9]*)$', views.PlayerView.as_view()),
     url(r'^user/(?P<pk>[0-9]*)$', views.UserView.as_view()),
     url(r'^bookingsystem/$', views.BookingSystemMembersView.as_view()),
+    url(r'^bookingsystem/user/$', views.BookingSystemMemberView.as_view(), name='booking_system_user'),
+    url(r'^bookingsystem/user/(?P<bs_id>[0-9]+)$', views.BookingSystemMemberView.as_view()),
 )
 
 urlpatterns = format_suffix_patterns(urlpatterns)
