@@ -67,6 +67,12 @@ class Player(models.Model):
         full_name = '%s, %s' % (self.user.last_name, self.user.first_name)
         return full_name.strip()
 
+    def get_cardnumbers(self):
+        """
+        Returns a comma-separated list of doorcard numbers.
+        """
+        return ", ".join([str(d.cardnumber) for d in self.doorcards.all()])
+
     def get_short_name(self):
         "Returns the short name for the user."
         if self.short_name is None or len(self.short_name) == 0:
