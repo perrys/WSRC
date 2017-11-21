@@ -107,7 +107,7 @@ class PlayerSerializer(serializers.ModelSerializer):
         "Class meta information"
         model = Player
         fields = ('id', 'ordered_name', 'user', 'cell_phone', 'other_phone', 'wsrc_id', 'booking_system_id',\
-                  'cardnumber', 'squashlevels_id', 'prefs_receive_email')
+                  'cardnumber', 'squashlevels_id', 'prefs_receive_email', 'date_of_birth')
         depth = 1
 
 class PlayerView(rest_generics.RetrieveUpdateDestroyAPIView):
@@ -170,7 +170,7 @@ class PlayerForm(forms.ModelForm):
     prefs_receive_email = forms.fields.NullBooleanField(widget=MyNullBooleanSelect)
     class Meta:
         model = Player
-        fields = ('id', 'user', 'cell_phone', 'other_phone', 'wsrc_id',\
+        fields = ('id', 'user', 'cell_phone', 'other_phone', 'wsrc_id', 'date_of_birth',\
                   'booking_system_id', 'squashlevels_id', 'prefs_receive_email')
 
 class BookingSystemMemberView(APIView):
