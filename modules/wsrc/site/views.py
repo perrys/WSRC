@@ -81,7 +81,7 @@ HOME_TEAM_SHORT_NAMES = {
     u"Woking 3": "3rds",
     u"Woking 4": "4ths",
     }
-        
+
 AWAY_TEAM_SHORT_NAMES = {
     "Racquets": "R.",
     "Nuffield": "Nuf'ld",
@@ -90,7 +90,7 @@ AWAY_TEAM_SHORT_NAMES = {
     "Virgin Active": "V. Active",
     "Tennis & Squash": "T. & S.",
     "Surrey Sports Park": "Surrey S. P.",
-    }        
+    }
 
 JSON_RENDERER = JSONRenderer()
 LW_REQUEST = collections.namedtuple('LW_REQUEST', ['query_params'])
@@ -132,14 +132,14 @@ def booking_view(request, date=None):
     else:
         date = timezones.parse_iso_date_to_naive(date)
     def get_bookings(date):
-      today_str    = timezones.as_iso_date(date)
-      tomorrow_str = timezones.as_iso_date(date + datetime.timedelta(days=1))
-      url = settings.BOOKING_SYSTEM_ORIGIN + settings.BOOKING_SYSTEM_PATH + "?start_date={today_str}&end_date={tomorrow_str}&with_tokens=1".format(**locals())
-      h = httplib2.Http()
-      (resp_headers, content) = h.request(url, "GET")
-      if resp_headers.status != httplib.OK:
-          raise Exception("unable to fetch bookings data, status = " + str(resp_headers.status) + ", response: " +  content)
-      return content
+        today_str    = timezones.as_iso_date(date)
+        tomorrow_str = timezones.as_iso_date(date + datetime.timedelta(days=1))
+        url = settings.BOOKING_SYSTEM_ORIGIN + settings.BOOKING_SYSTEM_PATH + "?start_date={today_str}&end_date={tomorrow_str}&with_tokens=1".format(**locals())
+        h = httplib2.Http()
+        (resp_headers, content) = h.request(url, "GET")
+        if resp_headers.status != httplib.OK:
+            raise Exception("unable to fetch bookings data, status = " + str(resp_headers.status) + ", response: " +  content)
+        return content
     bookings = get_bookings(date)
     context = {
         "date": date,
@@ -151,13 +151,13 @@ def booking_view(request, date=None):
         "durations": [30, 45, 60, 75, 90, 120, 180, 240]
     }
     if request.user.is_authenticated():
-      player = Player.get_player_for_user(request.user)
-      if player is not None:
-          booking_user_id = player.booking_system_id
-          context["booking_user_id"] = booking_user_id
-          context["booking_user_auth_token"] = BookingSystemEvent.generate_hmac_token_raw("id:{booking_user_id}".format(**locals()))
-          context["booking_user_name"] = player.user.get_full_name()
-          context["usernames"] = Player.objects.filter(user__is_active=True)
+        player = Player.get_player_for_user(request.user)
+        if player is not None:
+            booking_user_id = player.booking_system_id
+            context["booking_user_id"] = booking_user_id
+            context["booking_user_auth_token"] = BookingSystemEvent.generate_hmac_token_raw("id:{booking_user_id}".format(**locals()))
+            context["booking_user_name"] = player.user.get_full_name()
+            context["usernames"] = Player.objects.filter(user__is_active=True)
 
     return render(request, 'court_booking.html', context)
 
@@ -170,7 +170,7 @@ def booking_proxy_view(request):
     h = httplib2.Http()
     (resp, content) = h.request(url, headers=headers, method=method, body=json.dumps(req_vars))
     return HttpResponse(content, resp.get("content-type"), status=resp.status)
-        
+
 
 def generate_tokens(date):
     start_times = {
@@ -185,8 +185,8 @@ def generate_tokens(date):
             m[start.time().strftime("%H:%M")] = BookingSystemEvent.generate_hmac_token(start, court)
             start += court_length
         return m
-    return dict([(court, times(court, start)) for court, start in start_times.items()]) 
-    
+    return dict([(court, times(court, start)) for court, start in start_times.items()])
+
 
 @require_safe
 def index_view(request):
@@ -232,7 +232,7 @@ def index_view(request):
         ctx["leaguemaster_last_result_idx"] = last
         ctx["leaguemaster_recent_min_idx"] = last-9
         ctx["leaguemaster_recent_max_idx"] = last
-        
+
 
     now = timezone.now()
     today_str = timezones.as_iso_date(now)
@@ -243,12 +243,12 @@ def index_view(request):
 
     fake_context = {"request": LW_REQUEST({"date": today_str})}
     bookings_data = BookingSerializer(bookings, many=True, context=fake_context).data
-    
+
     ctx["bookings"] = JSON_RENDERER.render(bookings_data)
     ctx["today"] = today_str
     return TemplateResponse(request, 'index.html', ctx)
-        
-    
+
+
 @require_safe
 def facebook_view(request):
     "Proxy view for the FB graph data from the WSRC page feed"
@@ -260,35 +260,35 @@ def facebook_view(request):
             self.errortype = errortype
 
     def fb_get(url):
-      h = httplib2.Http()
-      (resp_headers, content) = h.request(url, "GET")
-      if resp_headers.status != httplib.OK:
-          LOGGER.error("unable to fetch FB data, status = " + str(resp_headers.status) + ", response: " +  content)
-          if len(content) > 0:
-              exception = None
-              try:
-                  response = json.loads(content)
-                  error = response.get("error")
-                  if error is not None:
-                      exception = FBException(error.get("message"), error.get("type"), error.get("code"))
-              except:
-                  pass
-          if exception is None:
-              exception = FBException(content or "(no content)", resp_headers.reason, resp_headers.status)
-          raise exception
-      return content
-    
+        h = httplib2.Http()
+        (resp_headers, content) = h.request(url, "GET")
+        if resp_headers.status != httplib.OK:
+            LOGGER.error("unable to fetch FB data, status = " + str(resp_headers.status) + ", response: " +  content)
+            if len(content) > 0:
+                exception = None
+                try:
+                    response = json.loads(content)
+                    error = response.get("error")
+                    if error is not None:
+                        exception = FBException(error.get("message"), error.get("type"), error.get("code"))
+                except:
+                    pass
+            if exception is None:
+                exception = FBException(content or "(no content)", resp_headers.reason, resp_headers.status)
+            raise exception
+        return content
+
     def obtain_auth_token():
-      LOGGER.info("Refreshing Facebook access token...")
-      params = {
-          "grant_type":    "client_credentials",
-          "client_id" :    settings.FB_APP_ID,
-          "client_secret": settings.FB_APP_SECRET,
-          }
-      url = FACEBOOK_GRAPH_ACCESS_TOKEN_URL +  "?" + urllib.urlencode(params)
-      data = json.loads(fb_get(url))
-      token = data.get("access_token")
-      return token
+        LOGGER.info("Refreshing Facebook access token...")
+        params = {
+            "grant_type":    "client_credentials",
+            "client_id" :    settings.FB_APP_ID,
+            "client_secret": settings.FB_APP_SECRET,
+            }
+        url = FACEBOOK_GRAPH_ACCESS_TOKEN_URL +  "?" + urllib.urlencode(params)
+        data = json.loads(fb_get(url))
+        token = data.get("access_token")
+        return token
 
     # First get an access token (using a pre-configured app ID) then use that to get the page feed
     token = obtain_auth_token()
@@ -299,9 +299,9 @@ def facebook_view(request):
     except FBException, e:
         msg = "ERROR: Unable to fetch Facebook page: {msg} [{code}] - {type}".format(msg=str(e), code=e.statuscode, type=e.errortype)
         return HttpResponse(content=msg,
-                            content_type="text/plain", 
+                            content_type="text/plain",
                             status=httplib.SERVICE_UNAVAILABLE)
-    
+
 @require_safe
 def kiosk_view(request):
     return TemplateResponse(request, 'kiosk.html', {})
@@ -326,25 +326,25 @@ def change_password_view(request):
 @login_required
 def logout_dialog_view(request):
     return TemplateResponse(request, 'logout.html')
-    
+
 
 @login_required
 def admin_mailshot_view(request):
     if not request.user.is_staff:
         raise PermissionDenied()
-    from_email_addresses = ["chairman", 
-                            "clubnight", 
-                            "coach", 
-                            "committee", 
+    from_email_addresses = ["chairman",
+                            "clubnight",
+                            "coach",
+                            "committee",
                             "development",
-                            "juniors", 
-                            "leagues", 
-                            "maintenance", 
-                            "membership", 
-                            "secretary", 
-                            "social", 
-                            "tournaments", 
-                            "treasurer", 
+                            "juniors",
+                            "leagues",
+                            "maintenance",
+                            "membership",
+                            "secretary",
+                            "social",
+                            "tournaments",
+                            "treasurer",
                             "webmaster"]
     def get_comp_entrants(*group_types):
         clause = None
@@ -357,11 +357,11 @@ def admin_mailshot_view(request):
         groups = CompetitionGroup.objects.filter(clause).filter(active=True).all()
         player_ids = set()
         for group in groups:
-          for comp in group.competition_set.all():
-            for entrants in comp.entrant_set.all():
-                player_ids.add(entrants.player1.id)
-                if entrants.player2 is not None:
-                    player_ids.add(entrants.player2.id)
+            for comp in group.competition_set.all():
+                for entrants in comp.entrant_set.all():
+                    player_ids.add(entrants.player1.id)
+                    if entrants.player2 is not None:
+                        player_ids.add(entrants.player2.id)
         return player_ids
     ctx = {
         "players": Player.objects.filter(user__is_active=True),
@@ -391,14 +391,14 @@ class SendEmail(APIView):
             email_data['html_body'] = body
         debug = False
         if debug:
-          import pprint, time
-          print pprint.pprint(email_data)
-          time.sleep(1)
-          if 'stewart.c.perry@gmail.com' in email_data['bcc_list']:
-              return HttpResponse("Invalid email address", content_type="text/plain", status=403)
+            import pprint, time
+            print pprint.pprint(email_data)
+            time.sleep(1)
+            if 'stewart.c.perry@gmail.com' in email_data['bcc_list']:
+                return HttpResponse("Invalid email address", content_type="text/plain", status=403)
         else:
-          import wsrc.utils.email_utils as email_utils
-          email_utils.send_email(**email_data)
+            import wsrc.utils.email_utils as email_utils
+            email_utils.send_email(**email_data)
         return HttpResponse(status=204)
 
 class SendCalendarEmail(APIView):
@@ -433,16 +433,16 @@ class SendCalendarEmail(APIView):
         organizer.params["cn"] = vText("Woking Squash Club")
         evt.add("organizer", organizer)
         def add_attendee(user):
-          attendee = vCalAddress("MAILTO:{email}".format(email=user.email))
-          attendee.params["cn"] = vText(user.get_full_name())
-          attendee.params["ROLE"] = vText("REQ-PARTICIPANT")
-          evt.add('attendee', attendee, encode=0)
+            attendee = vCalAddress("MAILTO:{email}".format(email=user.email))
+            attendee.params["cn"] = vText(user.get_full_name())
+            attendee.params["ROLE"] = vText("REQ-PARTICIPANT")
+            evt.add('attendee', attendee, encode=0)
         add_attendee(request.user)
         opponent = cal_data.get("opponent_username")
         if opponent is not None:
             opponent = Player.objects.get(user__username = opponent)
             add_attendee(opponent.user)
-        evt.add("dtstamp", timestamp)    
+        evt.add("dtstamp", timestamp)
         evt.add("dtstart", start_datetime)
         evt.add("duration", duration)
         evt.add("summary", "WSRC Court Booking: " + cal_data["name"])
@@ -512,7 +512,7 @@ def notify(template_name, kwargs, subject, to_list, cc_list, from_address, attac
 
 @login_required
 def maintenance_view(request):
-    if request.method == 'POST': 
+    if request.method == 'POST':
         form = MaintenanceForm(request.POST)
         if form.is_valid(): # if the form is invalid (i.e. empty) just do nothing
             with transaction.atomic():
@@ -522,7 +522,7 @@ def maintenance_view(request):
                 context = {"issue": instance}
                 to_list = [request.user.email, MAINT_OFFICER_EMAIL_ADRESS]
                 cc_list = [COMMITTEE_EMAIL_ADDRESS]
-                notify("MaintenanceIssueReceipt", context, 
+                notify("MaintenanceIssueReceipt", context,
                        subject="WSRC Maintenance", to_list=to_list,
                        cc_list=cc_list, from_address=MAINT_OFFICER_EMAIL_ADRESS)
     form = MaintenanceForm()
@@ -541,7 +541,7 @@ def maintenance_view(request):
 
 @login_required
 def suggestions_view(request):
-    if request.method == 'POST': 
+    if request.method == 'POST':
         form = SuggestionForm(request.POST)
         if form.is_valid(): # if the form is invalid (i.e. empty) just do nothing
             with transaction.atomic():
@@ -551,7 +551,7 @@ def suggestions_view(request):
                 email_target = COMMITTEE_EMAIL_ADDRESS
                 context = {"suggestion": instance}
                 to_list = [request.user.email, email_target]
-                notify("SuggestionReceipt", context, 
+                notify("SuggestionReceipt", context,
                        subject="WSRC New Suggestion", to_list=to_list,
                        cc_list=None, from_address=COMMITTEE_EMAIL_ADDRESS)
 
@@ -590,15 +590,15 @@ class CustomBookingListSerializer(serializers.ListSerializer):
                     self.date += datetime.timedelta(days=int(delta))
 
     def to_representation(self, data):
-      obj = super(CustomBookingListSerializer, self).to_representation(data)
-      result = dict()
-      result["bookings"] =  obj
-      if self.date is not None:
-          result["date"] = self.date.isoformat()
-          dt = self.date - datetime.date.today()
-          if dt.days >=0 and dt.days < 8:
-              result["tokens"] = generate_tokens(self.date)
-      return result
+        obj = super(CustomBookingListSerializer, self).to_representation(data)
+        result = dict()
+        result["bookings"] =  obj
+        if self.date is not None:
+            result["date"] = self.date.isoformat()
+            dt = self.date - datetime.date.today()
+            if dt.days >=0 and dt.days < 8:
+                result["tokens"] = generate_tokens(self.date)
+        return result
 
     # need to override as ListSerializer tries to return the contents
     # in a ReturnList
@@ -611,7 +611,7 @@ class BookingSerializer(serializers.ModelSerializer):
     start_time = DateTimeTzAwareField()
     end_time   = DateTimeTzAwareField()
     class Meta:
-      model = BookingSystemEvent
+        model = BookingSystemEvent
     @classmethod
     def many_init(cls, *args, **kwargs):
         kwargs['child'] = cls()
@@ -627,20 +627,20 @@ class BookingList(rest_generics.ListAPIView):
             date = datetime.datetime.combine(date, datetime.time(0, tzinfo=timezone.get_default_timezone()))
             delta = self.request.query_params.get('day_offset', None)
             if delta is not None:
-              date = date + datetime.timedelta(days=int(delta))
+                date = date + datetime.timedelta(days=int(delta))
             tplus1 = date + datetime.timedelta(days=1)
             queryset = queryset.filter(start_time__gte=date, start_time__lt=tplus1)
         return queryset
 
 def auth_view(request):
-    if request.method == 'GET': 
-      data = {
-          "username": request.user and request.user.username or None,
+    if request.method == 'GET':
+        data = {
+            "username": request.user and request.user.username or None,
 
-    "csrf_token": get_token(request)
-      }
-      return HttpResponse(json.dumps(data), content_type="application/json")
-    elif request.method == 'POST': 
+      "csrf_token": get_token(request)
+        }
+        return HttpResponse(json.dumps(data), content_type="application/json")
+    elif request.method == 'POST':
         from django.contrib.auth import authenticate, login
         username = request.POST['username']
         password = request.POST['password']
@@ -658,10 +658,10 @@ def auth_view(request):
                 return HttpResponse("inactive login", content_type="text/plain", status=httplib.FORBIDDEN)
         else:
             return HttpResponse("invalid login", content_type="text/plain", status=httplib.FORBIDDEN)
-    elif request.method == 'DELETE': 
+    elif request.method == 'DELETE':
         logout(request)
         return HttpResponse(None, content_type="application/json", status=httplib.OK)
-        
+
 
 class MarkdownField(serializers.Field):
     def to_representation(self, value):
