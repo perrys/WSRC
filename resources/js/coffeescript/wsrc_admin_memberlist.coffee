@@ -82,6 +82,9 @@ class WSRC_admin_memberlist_view
     lookup = { true: 'yes', false: 'no', null: '' }
     lookup[data]
 
+  @date_renderer: (data, type, row) ->
+    return data.slice(0,10) if data?
+
   constructor: (@callbacks) ->
     $("#tabs")
       .tabs()
@@ -91,6 +94,7 @@ class WSRC_admin_memberlist_view
       text: 'dt-body-left'
       number: 'dt-body-right'
     yesno   = WSRC_admin_memberlist_view.yes_or_no_renderer
+    dater   = WSRC_admin_memberlist_view.date_renderer
 
     db_membership_api_colspec = [
       {className: alignment.text,   title: 'Last Name',       data: 'user.last_name'},
@@ -99,6 +103,7 @@ class WSRC_admin_memberlist_view
       {className: alignment.text,   title: 'E-Mail',          data: 'user.email'},
       {className: alignment.text,   title: 'Receive?',        data: 'prefs_receive_email', render: yesno, searchable: false},
       {className: alignment.text,   title: 'Date Joined',     data: 'user.date_joined', searchable: false},
+      {className: alignment.text,   title: 'DoB',             data: 'date_of_birth', searchable: false},
       {className: alignment.number, title: 'WSRC ID',         data: 'wsrc_id'},
       {className: alignment.number, title: 'Booking ID',      data: 'booking_system_id'},
       {className: alignment.number, title: 'Door Card #',     data: 'cardnumber'},
@@ -115,7 +120,8 @@ class WSRC_admin_memberlist_view
       {className: alignment.text,   title: 'Category',   data: 'category', searchable: false},
       {className: alignment.text,   title: 'E-Mail',     data: 'email'},
       {className: alignment.text,   title: 'Receive?',   data: 'Data Prot email', searchable: false},
-      {className: alignment.text,   title: 'Date Joined',data: 'joiningdate', searchable: false},
+      {className: alignment.text,   title: 'Date Joined',data: 'joiningdate', render: dater, searchable: false},
+      {className: alignment.text,   title: 'DoB',        data: 'birthdate', render: dater, searchable: false},
       {className: alignment.number, title: 'WSRC ID',    data: 'index'},
       {className: alignment.number, title: 'Cardnumber', data: 'cardnumber'},
       {className: alignment.number, title: 'Mobile',     data: 'mobile_phone'},
