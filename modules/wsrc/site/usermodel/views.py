@@ -92,9 +92,10 @@ class MyNullBooleanSelect(forms.widgets.Select):
 
 class UserSerializer(serializers.ModelSerializer):
     "Simple REST serializer"
+    date_joined = serializers.DateTimeField(format="%Y-%m-%d", input_formats=["%Y-%m-%d"])
     class Meta:
         model = User
-        fields = ('id', 'username', 'first_name', 'last_name', 'email', 'is_active')
+        fields = ('id', 'username', 'first_name', 'last_name', 'email', 'is_active', 'date_joined')
 
 
 class PlayerSerializer(serializers.ModelSerializer):
@@ -127,7 +128,7 @@ class PlayerListView(rest_generics.ListCreateAPIView):
     "REST view of all players"
     authentication_classes = (SessionAuthentication,)
     permission_classes = (IsAuthenticated, DjangoModelPermissions,)
-    queryset = Player.objects.all().select_related("user")
+    queryset = Player.objects.all().select_related("user").prefetch_related("doorcards")
     serializer_class = PlayerSerializer
     def post(self, request, format="json"):
         player = request.data
@@ -162,7 +163,7 @@ class UserForm(forms.ModelForm):
     is_active = forms.fields.BooleanField(widget=MyNullBooleanSelect)
     class Meta:
         model = User
-        fields = ('id', 'username', 'password', 'first_name', 'last_name', 'email', 'is_active')
+        fields = ('id', 'username', 'password', 'first_name', 'last_name', 'email', 'is_active', 'date_joined')
 
 class PlayerForm(forms.ModelForm):
     "Form for player details - contact details and other preferences"
@@ -233,7 +234,7 @@ def admin_memberlist_view(request):
            and not request.user.is_superuser):
         raise PermissionDenied()
 
-    db_rows = Player.objects.order_by('user__last_name', 'user__first_name').select_related("user")
+    db_rows = Player.objects.order_by('user__last_name', 'user__first_name').select_related("user").prefetch_related("doorcards")
     ss_memberlist_rows = []
     upload_form = UploadFileForm()
     ss_vs_db_diffs = {}
