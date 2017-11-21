@@ -19,7 +19,7 @@ import sys
 from wsrc.site.models import PageContent, SquashLevels, LeagueMasterFixtures, MaintenanceIssue, Suggestion, EmailContent, ClubEvent, CommitteeMeetingMinutes
 from wsrc.site.competitions.models import CompetitionGroup
 from wsrc.site.courts.models import BookingSystemEvent
-from wsrc.site.usermodel.models import Player
+from wsrc.site.usermodel.models import Player, SubscriptionType
 import wsrc.site.settings.settings as settings
 from wsrc.utils import timezones, email_utils
 
@@ -368,7 +368,7 @@ def admin_mailshot_view(request):
         "players": Player.objects.filter(user__is_active=True).select_related("user")\
                    .prefetch_related("subscription_set__subscription_type"),
         "from_email_addresses": [x + "@wokingsquashclub.org" for x in from_email_addresses],
-        "membership_types": Player.MEMBERSHIP_TYPES,
+        "subscription_types": SubscriptionType.objects.all(),
         "tournament_player_ids": get_comp_entrants("wsrc_tournaments", "wsrc_qualifiers"),
         "box_player_ids": get_comp_entrants("wsrc_boxes"),
         }
