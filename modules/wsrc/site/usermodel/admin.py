@@ -26,7 +26,7 @@ from django.contrib.auth.models import User
 from django.core import urlresolvers
 
 from .models import Player, Season, Subscription, SubscriptionPayment,\
-    SubscriptionCost, DoorEntryCard
+    SubscriptionCost, SubscriptionType, DoorEntryCard
 from wsrc.utils.form_utils import SelectRelatedQuerysetMixin, CachingModelChoiceField, \
     get_related_field_limited_queryset, PrefetchRelatedQuerysetMixin
 
@@ -99,7 +99,7 @@ class SubscriptionAdmin(admin.ModelAdmin):
     list_display = ('ordered_name', 'season', 'linked_membership_type', 'pro_rata_date',\
                     'payment_frequency', 'pro_rata_cost', 'payments_count', 'total_payments',\
                     'due_amount', 'signed_off', "comment")
-    list_filter = (SeasonListFilter, 'signed_off', 'payment_frequency', 'player__membership_type', )
+    list_filter = (SeasonListFilter, 'signed_off', 'payment_frequency', 'subscription_type', )
     list_editable = ('signed_off', 'comment')
     formfield_overrides = {
         models.TextField: {'widget': forms.TextInput(attrs={'size': 30})},
@@ -116,10 +116,10 @@ class SubscriptionAdmin(admin.ModelAdmin):
 
     def linked_membership_type(self, obj):
         link = urlresolvers.reverse("admin:usermodel_player_change", args=[obj.player.id])
-        return u'<a href="%s">%s</a>' % (link, obj.player.get_membership_type_display())
+        return u'<a href="%s">%s</a>' % (link, obj.subscription_type.name)
     linked_membership_type.allow_tags = True
-    linked_membership_type.short_description = "Membership Type"
-    linked_membership_type.admin_order_field = "membership_type"
+    linked_membership_type.short_description = "Type"
+    linked_membership_type.admin_order_field = "subscription_type"
 
     def total_payments(self, obj):
         return "<span style='width:100%; display:inline-block; text-align:right;'>{0:.2f}</span>"\
@@ -146,14 +146,9 @@ class SubscriptionAdmin(admin.ModelAdmin):
     due_amount.allow_tags = True
     due_amount.short_description = u"Due (\xa3)"
 
-    def membership_type(self, obj):
-        return obj.player.get_membership_type_display()
-    membership_type.short_description = "Membership Type"
-    membership_type.admin_order_field = "player__membership_type"
-
     def get_queryset(self, request):
         queryset = super(SubscriptionAdmin, self).get_queryset(request)
-        queryset = queryset.select_related('player__user', 'season')
+        queryset = queryset.select_related('player__user', 'season', 'subscription_type')
         queryset = queryset.prefetch_related('payments__transaction', 'season__costs')
         return queryset
 
@@ -186,13 +181,13 @@ class SubscriptionInline(admin.StackedInline):
 
 class PlayerAdmin(SelectRelatedQuerysetMixin, PrefetchRelatedQuerysetMixin, admin.ModelAdmin):
     "Admin for Player (i.e. club member) model"
-    list_filter = ('user__is_active', 'membership_type', )
+    list_filter = ('user__is_active', 'subscription__subscription_type', )
     list_display = ('ordered_name', 'active', 'date_joined_date', \
-                    'membership_type', 'current_season', 'signed_off',
+                    'subscription_type', 'current_season', 'signed_off',
                     'cell_phone', 'other_phone', 'booking_system_id', 'england_squash_id',
                     'prefs_receive_email', 'prefs_esra_member', 'prefs_display_contact_details')
     search_fields = ('user__first_name', 'user__last_name')
-    prefetch_related_fields = ('subscription_set__season',)
+    prefetch_related_fields = ('subscription_set__season','subscription_set__subscription_type')
     list_per_page = 400
     actions = (update_subscriptions,)
     inlines = (SubscriptionInline,)
@@ -209,21 +204,24 @@ class PlayerAdmin(SelectRelatedQuerysetMixin, PrefetchRelatedQuerysetMixin, admi
     active.admin_order_field = 'user__is_active'
     active.boolean = True
 
-    def current_subscription(self, obj):
-        subscriptions = obj.subscription_set.all()
-        if subscriptions.count() > 0:
-            return subscriptions[0]
-        return None
-
     def current_season(self, obj):
-        sub = self.current_subscription(obj)
+        sub = obj.get_current_subscription()
         if sub is not None:
             return sub.season
         return None
-    current_subscription.short_description = 'Subscription'
+    current_season.short_description = "Season"
+    current_season.admin_order_field = "subscription__season"
 
+    def subscription_type(self, obj):
+        sub = obj.get_current_subscription()
+        if sub is not None:
+            return sub.subscription_type.name
+        return None
+    subscription_type.short_description = "Subs Type"
+    subscription_type.admin_order_field = "subscription__subscription_type__name"
+    
     def signed_off(self, obj):
-        sub = self.current_subscription(obj)
+        sub = obj.get_current_subscription()
         if sub is not None:
             return sub.signed_off
         return None
@@ -250,7 +248,10 @@ class PlayerAdmin(SelectRelatedQuerysetMixin, PrefetchRelatedQuerysetMixin, admi
     doorcard_numbers.allow_tags = True
 
 class SubscriptionCostAdmin(SelectRelatedQuerysetMixin, admin.ModelAdmin):
-    list_display = ('membership_type', 'season', 'joining_fee', 'amount')
+    list_display = ('subscription_type', 'season', 'joining_fee', 'amount')
+
+class SubscriptionTypeAdmin(admin.ModelAdmin):
+    list_display = ('name',)
 
 class DoorEntryCardForm(forms.ModelForm):
     "Override form for more efficient DB interaction"
@@ -273,4 +274,5 @@ admin.site.register(Season, SeasonAdmin)
 admin.site.register(Subscription, SubscriptionAdmin)
 admin.site.register(Player, PlayerAdmin)
 admin.site.register(SubscriptionCost, SubscriptionCostAdmin)
+admin.site.register(SubscriptionType, SubscriptionTypeAdmin)
 admin.site.register(DoorEntryCard, DoorEntryCardAdmin)

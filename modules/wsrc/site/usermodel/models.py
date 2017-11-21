@@ -28,17 +28,6 @@ import wsrc.site.accounts.models as account_models
 
 class Player(models.Model):
 
-    MEMBERSHIP_TYPES = (
-        ("compl", "Complimentary"),
-        ("full", "Full"),
-        ("junior", "Junior"),
-        ("off_peak", "Off-Peak"),
-        ("non_playing", "Non-Playing"),
-        ("y_adult", "Young Adult"),
-    )
-
-    MEMBERSHIP_TYPES_MAP = dict([x for x in MEMBERSHIP_TYPES])
-
     user = models.OneToOneField(User)
 
     phone_validator = validators.RegexValidator(re.compile('^\+?[\d ]+$'), ('Enter a valid phone number.'), 'invalid')
@@ -47,7 +36,6 @@ class Player(models.Model):
     other_phone = models.CharField(('Other Phone'), max_length=30, validators = [phone_validator], blank=True)
     short_name  = models.CharField(("Short Name"), max_length=32, blank=True)
 
-    membership_type = models.CharField(("Membership Type"), max_length=16, choices=MEMBERSHIP_TYPES)
     wsrc_id  = models.IntegerField(("WSRC ID"), db_index=True, blank=True, null=True,
                                    help_text="Index in the membership spreadsheet")
     booking_system_id  = models.IntegerField(("Booking Site ID"), db_index=True, blank=True, null=True,
@@ -64,6 +52,13 @@ class Player(models.Model):
                                                  help_text="Unset if you do not want your contact details to appear in the membership list (note that this will make it very difficult for anyone to contact you regarding league games etc).")
 
     subscription_regex  = models.CharField(('Regexp for subscription transactions'), max_length=256, null=True, blank=True)
+
+    def get_current_subscription(self):
+        subscriptions = self.subscription_set.all()
+        if subscriptions.count() > 0:
+            return subscriptions[0]
+        return None
+    get_current_subscription.short_description = 'Subscription'
 
     def get_ordered_name(self):
         """
@@ -118,11 +113,19 @@ class Season(models.Model):
     class Meta:
         ordering = ["start_date"]
 
+class SubscriptionType(models.Model):
+    short_code = models.CharField(max_length=16)
+    name = models.CharField(max_length=32)
+    def __unicode__(self):
+        return self.name
+    class Meta:
+        verbose_name = "Subscription Type"
+        ordering = ["name"]
+
 class SubscriptionCost(models.Model):
     not_ended = Q(has_ended=False)
     season = models.ForeignKey(Season, limit_choices_to=not_ended, related_name="costs")
-    membership_type = models.CharField(("Membership Type"), max_length=16,
-                                       choices=Player.MEMBERSHIP_TYPES)
+    subscription_type = models.ForeignKey(SubscriptionType)
     amount = models.FloatField(u"Cost (\xa3)")
     joining_fee = models.FloatField(u"Joining Fee (\xa3)", default=0)
     class Meta:
@@ -141,6 +144,7 @@ class Subscription(models.Model):
     not_ended = Q(has_ended=False)
     # pylint: disable=bad-whitespace
     player            = models.ForeignKey(Player, db_index=True, limit_choices_to=is_active)
+    subscription_type = models.ForeignKey(SubscriptionType)
     season            = models.ForeignKey(Season, db_index=True, limit_choices_to=not_ended)
     pro_rata_date     = models.DateField("Pro Rata Date", blank=True, null=True)
     payment_frequency = models.CharField("Payment Freq", max_length=16, choices=PAY_TYPE_CHOICES)
@@ -165,7 +169,7 @@ class Subscription(models.Model):
         sub_costs = self.season.costs.all()
         amount = None
         for cost in sub_costs:
-            if cost.membership_type == self.player.membership_type:
+            if cost.subscription_type_id == self.subscription_type_id:
                 amount = cost.amount
                 break
         if amount is None:
@@ -238,7 +242,7 @@ class Subscription(models.Model):
 
 
     def __unicode__(self):
-        return u"{0} {1}".format(self.player.get_ordered_name(), self.season)
+        return u"{0} {1}".format(self.season, self.subscription_type.name)
 
     class Meta:
         ordering=["-season__start_date", "player__user__last_name", "player__user__first_name"]
