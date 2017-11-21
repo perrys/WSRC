@@ -101,6 +101,26 @@ class IntegerFieldWrapper:
     def wrap_records(cls, records, *fields):
         return [cls(r, *fields) for r in records]
 
+class DateFieldWrapper:
+    def __init__(self, target, *fields):
+        self.target = target
+        self.fields = fields
+
+    def __getitem__(self, name):
+        val = self.target[name]
+        if name in self.fields and val is not None:
+            if isinstance(val, str) or isinstance(val, unicode):
+                return val[:10]
+            return val.date()
+        return val
+
+    def __setitem__(self, name, val):
+        self.target[name] = val
+
+    @classmethod
+    def wrap_records(cls, records, *fields):
+        return [cls(r, *fields) for r in records]
+
 class LowerCaseFieldWrapper:
     """Return lower-cased values"""
     def __init__(self, target, *fields):
@@ -165,7 +185,7 @@ def match_spreadsheet_with_db_record(ss_row, db_record):
         return lhs is not None and lhs == rhs
     if nontrivial_equals(ss_row["index"], db_record["wsrc_id"]):
         return True
-    if nontrivial_equals(ss_row["cardnumber"], db_record["cardnumber"]) and db_record["cardnumber"] != 0:
+    if nontrivial_equals(ss_row["cardnumber"], db_record["get_cardnumbers"]) and db_record["get_cardnumbers"] != "":
         return True
     if nontrivial_equals(ss_row["surname"], db_record["user.last_name"]) and nontrivial_equals(ss_row["firstname"], db_record["user.first_name"]):
         return True
@@ -225,11 +245,11 @@ def compare_spreadsheet_with_db_record(ss_row, db_record):
         ComparisonSpec('active', 'user.is_active'),
         ComparisonSpec('surname', 'user.last_name'),
         ComparisonSpec('firstname', 'user.first_name'),
-        ComparisonSpec('category', 'membership_type'),
         ComparisonSpec('email', 'user.email'),
+        ComparisonSpec('joiningdate', 'user.date_joined'),
         ComparisonSpec('Data Prot email', 'prefs_receive_email'),
         ComparisonSpec('index', 'wsrc_id'),
-        ComparisonSpec('cardnumber', 'cardnumber'),
+        ComparisonSpec('cardnumber', 'get_cardnumbers'),
         ComparisonSpec('mobile_phone', 'cell_phone'),
         ComparisonSpec('home_phone', 'other_phone'),
     ]
@@ -246,10 +266,11 @@ def get_differences_ss_vs_db(ss_records, db_records):
     ss_records = BooleanFieldWrapper.wrap_records(ss_records, "Data Prot email")
     ss_records = IntegerFieldWrapper.wrap_records(ss_records, "cardnumber", "index")
     ss_records = LowerCaseFieldWrapper.wrap_records(ss_records, "category")
+    ss_records = DateFieldWrapper.wrap_records(ss_records, "joiningdate")
     ss_records = NullifingWrapper.wrap_records(ss_records, "surname", "firstname", "email", "mobile_phone", "home_phone")
 
-    db_records = DisplayValueWrapper.wrap_records(db_records, "membership_type")
-    db_records = LowerCaseFieldWrapper.wrap_records(db_records, "membership_type")
+    db_records = ModelRecordWrapper.wrap_records(db_records)
+    db_records = DateFieldWrapper.wrap_records(db_records, "user.date_joined")
     db_records = NullifingWrapper.wrap_records(db_records, "user.last_name", "user.first_name", "user.email", "cell_phone", "other_phone")
 
     return get_differences(ss_records, db_records, match_spreadsheet_with_db_record, compare_spreadsheet_with_db_record)
@@ -277,8 +298,8 @@ class Tester(unittest.TestCase):
             pass
         user_instance = User.objects.create_user("xxx_test", "xxx@xxx.xxx", "xxx_pw", first_name="Foo", last_name="Bar")
         user_instance.save()
-        self.player_instance = Player.objects.create(cell_phone="07890 123456", other_phone="01234 567890", membership_type="full",
-                                                     wsrc_id=123456, cardnumber=2345678, prefs_receive_email=True, user=user_instance)
+        self.player_instance = Player.objects.create(cell_phone="07890 123456", other_phone="01234 567890",
+                                                     wsrc_id=123456, prefs_receive_email=True, user=user_instance)
         self.player_instance.save()
         self.ss_record = {
             "active": "Y",
@@ -288,7 +309,6 @@ class Tester(unittest.TestCase):
             "email": "foo@bar.com",
             "Data Prot email": "Yes",
             "index": 123456,
-            "cardnumber": 123456,
             "mobile_phone": "07890 123456",
             "home_phone": "01234 567890",
         }
@@ -344,16 +364,6 @@ class Tester(unittest.TestCase):
         record = ModelRecordWrapper(self.player_instance)
         self.common_db_test("user.username", record, "xxx_test")
         self.common_db_test("user.first_name", record, "Foo")
-        self.common_db_test("cell_phone", record, "07890 123456")
-
-    def test_GIVEN_model_instance_WHEN_display_wraped_THEN_display_value_returned(self):
-        record = DisplayValueWrapper(self.player_instance, "membership_type")
-        self.player_instance.membership_type = "full"
-        self.common_db_test("membership_type", record, "Full")
-        self.player_instance.membership_type = "y_adult"
-        self.common_db_test("membership_type", record, "Young Adult")
-
-        self.common_db_test("user.username", record, "xxx_test")
         self.common_db_test("cell_phone", record, "07890 123456")
 
 
