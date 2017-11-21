@@ -9,7 +9,7 @@ class WSRC_admin_memberlist_model
   constructor: (@db_memberlist, @ss_memberlist, @ss_vs_db_diffs) ->
     
     ss_valid_filter = (row) ->
-      return true if row.index? or row.category
+      return (row.category and row.category.trim().length > 0 and row.category.trim() != "temp")
     @ss_memberlist = (row for row in @ss_memberlist when ss_valid_filter(row))
 
     @ss_memberlist.sort (lhs, rhs) ->
@@ -98,6 +98,7 @@ class WSRC_admin_memberlist_view
       {className: alignment.text,   title: 'Active',          data: 'user.is_active',  render: yesno,   searchable: false},
       {className: alignment.text,   title: 'E-Mail',          data: 'user.email'},
       {className: alignment.text,   title: 'Receive?',        data: 'prefs_receive_email', render: yesno, searchable: false},
+      {className: alignment.text,   title: 'Date Joined',     data: 'user.date_joined', searchable: false},
       {className: alignment.number, title: 'WSRC ID',         data: 'wsrc_id'},
       {className: alignment.number, title: 'Booking ID',      data: 'booking_system_id'},
       {className: alignment.number, title: 'Door Card #',     data: 'cardnumber'},
@@ -114,6 +115,7 @@ class WSRC_admin_memberlist_view
       {className: alignment.text,   title: 'Category',   data: 'category', searchable: false},
       {className: alignment.text,   title: 'E-Mail',     data: 'email'},
       {className: alignment.text,   title: 'Receive?',   data: 'Data Prot email', searchable: false},
+      {className: alignment.text,   title: 'Date Joined',data: 'joiningdate', searchable: false},
       {className: alignment.number, title: 'WSRC ID',    data: 'index'},
       {className: alignment.number, title: 'Cardnumber', data: 'cardnumber'},
       {className: alignment.number, title: 'Mobile',     data: 'mobile_phone'},
