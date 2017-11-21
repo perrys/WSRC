@@ -354,7 +354,8 @@ def admin_mailshot_view(request):
                 clause = q
             else:
                 clause |= q
-        groups = CompetitionGroup.objects.filter(clause).filter(active=True).all()
+        groups = CompetitionGroup.objects.filter(clause).filter(active=True)\
+                 .prefetch_related("competition_set__entrant_set__player1", "competition_set__entrant_set__player2")
         player_ids = set()
         for group in groups:
             for comp in group.competition_set.all():
@@ -364,7 +365,8 @@ def admin_mailshot_view(request):
                         player_ids.add(entrants.player2.id)
         return player_ids
     ctx = {
-        "players": Player.objects.filter(user__is_active=True),
+        "players": Player.objects.filter(user__is_active=True).select_related("user")\
+                   .prefetch_related("subscription_set__subscription_type"),
         "from_email_addresses": [x + "@wokingsquashclub.org" for x in from_email_addresses],
         "membership_types": Player.MEMBERSHIP_TYPES,
         "tournament_player_ids": get_comp_entrants("wsrc_tournaments", "wsrc_qualifiers"),
