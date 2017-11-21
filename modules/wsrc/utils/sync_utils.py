@@ -247,6 +247,7 @@ def compare_spreadsheet_with_db_record(ss_row, db_record):
         ComparisonSpec('firstname', 'user.first_name'),
         ComparisonSpec('email', 'user.email'),
         ComparisonSpec('joiningdate', 'user.date_joined'),
+        ComparisonSpec('birthdate', 'date_of_birth'),
         ComparisonSpec('Data Prot email', 'prefs_receive_email'),
         ComparisonSpec('index', 'wsrc_id'),
         ComparisonSpec('cardnumber', 'get_cardnumbers'),
@@ -267,10 +268,12 @@ def get_differences_ss_vs_db(ss_records, db_records):
     ss_records = IntegerFieldWrapper.wrap_records(ss_records, "cardnumber", "index")
     ss_records = LowerCaseFieldWrapper.wrap_records(ss_records, "category")
     ss_records = DateFieldWrapper.wrap_records(ss_records, "joiningdate")
+    ss_records = DateFieldWrapper.wrap_records(ss_records, "birthdate")
     ss_records = NullifingWrapper.wrap_records(ss_records, "surname", "firstname", "email", "mobile_phone", "home_phone")
 
     db_records = ModelRecordWrapper.wrap_records(db_records)
     db_records = DateFieldWrapper.wrap_records(db_records, "user.date_joined")
+    db_records = DateFieldWrapper.wrap_records(db_records, "date_of_birth")
     db_records = NullifingWrapper.wrap_records(db_records, "user.last_name", "user.first_name", "user.email", "cell_phone", "other_phone")
 
     return get_differences(ss_records, db_records, match_spreadsheet_with_db_record, compare_spreadsheet_with_db_record)
