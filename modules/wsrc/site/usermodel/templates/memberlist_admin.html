@@ -13,7 +13,6 @@
   <title>Membership List Admin Form - Woking Squash Rackets Club</title>
   <script type="text/javascript">
     jQuery(document).ready(function(){
-      window['wsrc_admin_memberlist_membership_types'] = {{ membership_types|safe }};
       var db_memberlist  = {{ db_members_data|safe }};
       var ss_memberlist  = {{ ss_members_data|safe }};
       var ss_vs_db_diffs = {{ ss_vs_db_diffs|safe }};
