@@ -101,10 +101,12 @@ class PlayerSerializer(serializers.ModelSerializer):
     "Simple REST serializer, includes foreignkey User"
     user = UserSerializer()
     ordered_name = serializers.CharField(source="get_ordered_name")
+    cardnumber = serializers.CharField(source="get_cardnumbers")
     class Meta:
         "Class meta information"
         model = Player
-        fields = ('id', 'ordered_name', 'user', 'cell_phone', 'other_phone', 'membership_type', 'wsrc_id', 'booking_system_id', 'squashlevels_id', 'prefs_receive_email')
+        fields = ('id', 'ordered_name', 'user', 'cell_phone', 'other_phone', 'wsrc_id', 'booking_system_id',\
+                  'cardnumber', 'squashlevels_id', 'prefs_receive_email')
         depth = 1
 
 class PlayerView(rest_generics.RetrieveUpdateDestroyAPIView):
@@ -167,7 +169,7 @@ class PlayerForm(forms.ModelForm):
     prefs_receive_email = forms.fields.NullBooleanField(widget=MyNullBooleanSelect)
     class Meta:
         model = Player
-        fields = ('id', 'user', 'cell_phone', 'other_phone', 'membership_type', 'wsrc_id',\
+        fields = ('id', 'user', 'cell_phone', 'other_phone', 'wsrc_id',\
                   'booking_system_id', 'squashlevels_id', 'prefs_receive_email')
 
 class BookingSystemMemberView(APIView):
@@ -262,7 +264,6 @@ def admin_memberlist_view(request):
         "upload_form":         upload_form,
         "db_members_data":     db_rows_data,
         "ss_members_data":     JSON_RENDERER.render(ss_memberlist_rows),
-        "membership_types":    JSON_RENDERER.render(Player.MEMBERSHIP_TYPES),
         "ss_vs_db_diffs":      JSON_RENDERER.render(ss_vs_db_diffs),
         "new_user_form":       UserForm(auto_id='id_newuser_'),
         "new_member_form":     PlayerForm(auto_id='id_newmember_'),
