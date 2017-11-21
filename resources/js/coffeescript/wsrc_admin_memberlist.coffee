@@ -9,7 +9,7 @@ class WSRC_admin_memberlist_model
   constructor: (@db_memberlist, @ss_memberlist, @ss_vs_db_diffs) ->
     
     ss_valid_filter = (row) ->
-      return true if row.index? or WSRC_admin_memberlist_model.convert_category_to_membership_type(row.category)
+      return true if row.index? or row.category
     @ss_memberlist = (row for row in @ss_memberlist when ss_valid_filter(row))
 
     @ss_memberlist.sort (lhs, rhs) ->
@@ -26,19 +26,6 @@ class WSRC_admin_memberlist_model
     @bs_memberlist = (row for row in list when bs_valid_filter(row))
     @bs_vs_db_diffs = diffs
     
-  @get_membership_type_display_name: (mem_type) ->
-    # get a display name for the spreadsheet category
-    tuple = wsrc.utils.list_lookup(window.wsrc_admin_memberlist_membership_types, mem_type, 0)
-    return if tuple then tuple[1] else null
-
-  @convert_category_to_membership_type: (cat) ->
-    # get a (db_val, display_str) membership_type tuple for the spreadsheet category
-    cvt = (x) -> if x then x.toLowerCase().replace("_", "-").replace(" ", "-") else null
-    mem_type = cvt(cat)
-    tuple = wsrc.utils.list_lookup(window.wsrc_admin_memberlist_membership_types, mem_type, 1, cvt)
-#    console.log("#{ cat }, #{ mem_type }, #{ tuple }")
-    return if tuple then tuple[0] else null
-
   @get_null_boolean_value: (val) ->
     unless val and val != ''
       return null
@@ -104,13 +91,11 @@ class WSRC_admin_memberlist_view
       text: 'dt-body-left'
       number: 'dt-body-right'
     yesno   = WSRC_admin_memberlist_view.yes_or_no_renderer
-    memtype = WSRC_admin_memberlist_model.get_membership_type_display_name
 
     db_membership_api_colspec = [
       {className: alignment.text,   title: 'Last Name',       data: 'user.last_name'},
       {className: alignment.text,   title: 'First Name',      data: 'user.first_name'},
       {className: alignment.text,   title: 'Active',          data: 'user.is_active',  render: yesno,   searchable: false},
-      {className: alignment.text,   title: 'Mem. Type',       data: 'membership_type', render: memtype, searchable: false},
       {className: alignment.text,   title: 'E-Mail',          data: 'user.email'},
       {className: alignment.text,   title: 'Receive?',        data: 'prefs_receive_email', render: yesno, searchable: false},
       {className: alignment.number, title: 'WSRC ID',         data: 'wsrc_id'},
@@ -320,7 +305,6 @@ class WSRC_admin_memberlist_view
       first_name:   null
       email:        null
     player_obj = 
-      membership_type:     null
       prefs_receive_email: null
       wsrc_id:             null
       cardnumber:          null
@@ -396,7 +380,6 @@ class WSRC_admin_memberlist
       first_name:   data_vals["firstname"]
       email:        data_vals["email"]
     player_obj = 
-      membership_type:     WSRC_admin_memberlist_model.convert_category_to_membership_type(data_vals["category"])
       prefs_receive_email: WSRC_admin_memberlist_model.get_null_boolean_value(data_vals["Data Prot email"])
       wsrc_id:             wsrc.utils.to_int(data_vals["index"])
       cardnumber:          data_vals["cardnumber"]
