@@ -110,10 +110,9 @@ class SettingsInfoForm(ModelForm):
             for field in ["squashlevels_id", "booking_system_id"]:
                 self.fields[field].widget.attrs['readonly'] = "readonly"
                 self.fields[field].widget.attrs['disabled'] = "disabled"
-            self.fields['membership_type'].widget.attrs['disabled'] = "disabled"
     
     class Meta:
         model = Player
-        fields = ["membership_type",  "booking_system_id", "squashlevels_id"]
+        fields = ["booking_system_id", "squashlevels_id"]
         exclude = ('user',)
 
