@@ -77,7 +77,14 @@ class GenericPDFDocument(AbstractPDFDocumentModel):
         ordering = ["-date"]
         verbose_name = "Document"
 
-        
+class Image(models.Model):    
+    image_file = models.FileField(("Image File"), upload_to="images")
+    date = models.DateField(auto_now_add=True)
+    width = models.IntegerField()
+    height = models.IntegerField()
+    class Meta:
+        ordering = ["-date"]
+
 class SquashLevels(models.Model):
     player = models.ForeignKey(user_models.Player, blank=True, null=True)
     name = models.CharField(max_length=64)

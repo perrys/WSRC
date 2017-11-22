@@ -20,7 +20,7 @@ from django.db import models
 
 from django.contrib import admin
 from wsrc.site.models import PageContent, EmailContent, EventFilter, MaintenanceIssue,\
-    Suggestion, ClubEvent, CommitteeMeetingMinutes, GenericPDFDocument
+    Suggestion, ClubEvent, CommitteeMeetingMinutes, GenericPDFDocument, Image
 from wsrc.utils.form_utils import PrefetchRelatedQuerysetMixin
 
 def txt_widget(nrows):
@@ -46,6 +46,18 @@ class PDFFileAdmin(admin.ModelAdmin):
     list_display = ("date", "get_link")
     formfield_overrides = {
         models.FileField: {'widget': forms.widgets.ClearableFileInput(attrs={'accept':'.pdf'})},
+    }
+    def get_link(self, obj, link_text=None):
+        if link_text is None:
+            link_text = obj.get_url()
+        return "<a href='{url}' style='font-weight: bold'>{text}</a>".format(url=obj.get_url(), text=link_text)
+    get_link.short_description = "Link"
+    get_link.allow_tags = True
+
+class ImageAdmin(admin.ModelAdmin):
+    list_display = ("date", "get_link", "width", "height")
+    formfield_overrides = {
+        models.FileField: {'widget': forms.widgets.ClearableFileInput(attrs={'accept':'.jpg,.jpeg,.JPG,.gif,.GIF,.png'})},
     }
     def get_link(self, obj, link_text=None):
         if link_text is None:
@@ -82,3 +94,4 @@ admin.site.register(Suggestion, SuggestionAdmin)
 admin.site.register(ClubEvent, ClubEventAdmin)
 admin.site.register(CommitteeMeetingMinutes, PDFFileAdmin)
 admin.site.register(GenericPDFDocument, PDFFileAdmin)
+admin.site.register(Image, ImageAdmin)
