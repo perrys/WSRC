@@ -33,7 +33,7 @@ class WSRC_admin_mailshot
     wsrc.utils.lexical_sort(players, "full_name")
     for p in players
       optout =  if wsrc.admin.mailshot.opted_out(p) then "True" else ""
-      jqtbody.append("<tr><td>#{ p.full_name }</td><td>#{ p.email }</td><td>#{ p.membership_type }</td><td>#{ optout }</td></tr>")
+      jqtbody.append("<tr><td>#{ p.full_name }</td><td>#{ p.email }</td><td>#{ p.subscription_type.name }</td><td>#{ optout }</td></tr>")
     jqdialog.dialog("open")
 
   send_email: () ->
@@ -110,7 +110,7 @@ class WSRC_admin_mailshot
           member_types[elt.value] = true
         # filter down to selected member types using $.grep:
         filtered_players = $.grep all_players, (player, idx) ->
-          if member_types[player.membership_type] then true else false
+          if member_types[player.subscription_type.id] then true else false
         return filtered_players
     
   member_selected: (cmp, event, ui) ->
