@@ -20,7 +20,7 @@ var players  = {
   full_name: "{{ p.user.first_name }} {{ p.user.last_name }}",
   email: "{{ p.user.email }}",
   prefs_receive_email: "{{ p.prefs_receive_email }}",
-  membership_type: "{{ p.membership_type }}"
+  subscription_type: {name: "{{ p.get_current_subscription.subscription_type.name }}", id: {{ p.get_current_subscription.subscription_type.id }} }
  }
 {% endfor %} 
 };
@@ -81,8 +81,8 @@ jQuery(document).ready(function(){wsrc.admin.mailshot.onReady(players, box_playe
       </div>
       <div id="member_type" class="ui-field-contain ui-helper-hidden selection-type">
         <label for="member_type">Category: </label>
-        {% for t in membership_types %}
-        <input type="checkbox" name="member_type" value="{{ t|first }}">{{ t|last }}</input>
+        {% for sub_type in subscription_types %}
+        <input type="checkbox" name="member_type" value="{{ sub_type.id }}">{{ sub_type.name }}</input>
         {% endfor %}
       </div>
       <div id="competition_entrants" class="ui-field-contain ui-helper-hidden selection-type">
