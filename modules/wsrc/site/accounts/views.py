@@ -196,13 +196,13 @@ def accounts_view(request, account_name=None):
 
             def get_subscription(row, cat_id):
                 class Transaction:
-                    def __init__(self):
+                    def __init__(self, row, cat_id):
                         self.bank_memo = row.get("Memo")
                         self.comment = ''
                         self.category_id = cat_id
-                transaction = Transaction()
+                tran = Transaction(row, cat_id)
                 for sub in subscriptions:
-                    if sub.match_transaction(transaction, subs_category, persist=False):
+                    if sub.match_transaction(tran, subs_category, persist=False):
                         return sub.id
                 return None
                 
