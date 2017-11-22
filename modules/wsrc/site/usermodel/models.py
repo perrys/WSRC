@@ -226,7 +226,7 @@ class Subscription(models.Model):
         regex = getattr(self, "subs_regex", None) # cache regex on this object
         if regex is None:
             regex_expr = self.player.subscription_regex
-            if regex_expr is not None:
+            if regex_expr is not None and len(regex_expr.strip()) > 0:
                 self.subs_regex = regex = re.compile(regex_expr, re.IGNORECASE)
         if matches(regex):
             if persist:
