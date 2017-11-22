@@ -306,7 +306,7 @@ jQuery(document).ready(function(){
               <select name="subscription">
                 <option value="">-</option>
 {% for sub in subscriptions %}
-                <option value="{{ sub.id }}" {% if sub.id == row.subscription_id %}selected="selected"{% endif %}>{{ sub }}</option>
+                <option value="{{ sub.id }}" {% if sub.id == row.subscription_id %}selected="selected"{% endif %}>{{ sub.player.user.get_full_name }}&nbsp;{{ sub.season }}</option>
 {% endfor %}
               </select>
             </td>
