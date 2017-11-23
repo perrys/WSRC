@@ -101,6 +101,7 @@ class Player(models.Model):
 
     class Meta:
         ordering=["user__last_name", "user__first_name"]
+        verbose_name = "Member"
 
 
 class Season(models.Model):
