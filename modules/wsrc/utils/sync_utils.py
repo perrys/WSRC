@@ -111,7 +111,8 @@ class DateFieldWrapper:
         if name in self.fields and val is not None:
             if isinstance(val, str) or isinstance(val, unicode):
                 return val[:10]
-            return val.date()
+            if hasattr(val, "date"):
+                val = val.date()
         return val
 
     def __setitem__(self, name, val):
