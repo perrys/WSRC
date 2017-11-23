@@ -61,8 +61,8 @@ class ImageAdmin(admin.ModelAdmin):
     }
     def get_link(self, obj, link_text=None):
         if link_text is None:
-            link_text = obj.get_url()
-        return "<a href='{url}' style='font-weight: bold'>{text}</a>".format(url=obj.get_url(), text=link_text)
+            link_text = obj.image_file.url
+        return "<a href='{url}' style='font-weight: bold'>{text}</a>".format(url=obj.image_file.url, text=link_text)
     get_link.short_description = "Link"
     get_link.allow_tags = True
 
