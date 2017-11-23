@@ -52,7 +52,7 @@ class Player(models.Model):
                                                  help_text="Unset if you do not want your contact details to appear in the membership list (note that this will make it very difficult for anyone to contact you regarding league games etc).")
 
     subscription_regex  = models.CharField(('Regexp for subscription transactions'), max_length=256, null=True, blank=True)
-    date_of_birth = models.DateField("DoB")
+    date_of_birth = models.DateField("DoB", null=True, blank=True)
 
     def get_current_subscription(self):
         subscriptions = self.subscription_set.all()
