@@ -239,7 +239,7 @@ class PlayerAdmin(SelectRelatedQuerysetMixin, PrefetchRelatedQuerysetMixin, admi
     def date_joined_date(self, obj):
         return obj.user.date_joined.date()
     date_joined_date.short_description = "Joined"
-    date_joined_date.admin_order_field = 'date_joined'
+    date_joined_date.admin_order_field = 'user__date_joined'
 
     def doorcard_numbers(self, obj):
         numbers = [str(o.cardnumber) for o in obj.doorcards.all()]
