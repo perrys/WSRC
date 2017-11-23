@@ -28,6 +28,8 @@ class PageContent(models.Model):
 
     def __unicode__(self):
         return self.page
+    class Meta:
+        verbose_name_plural = "Page Templates"
 
 class EmailContent(models.Model):
     TEMPLATE_TYPES = (
@@ -41,6 +43,8 @@ class EmailContent(models.Model):
 
     def __unicode__(self):
         return self.name
+    class Meta:
+        verbose_name_plural = "Email Templates"
 
 class ClubEvent(models.Model):
     title = models.CharField(max_length=64)
@@ -53,6 +57,8 @@ class ClubEvent(models.Model):
         date_str = self.display_date is not None and\
                    "{display_date:%Y-%m-%d}".format(**self.__dict__) or ""
         return "{title} {date}".format(title=self.title, date=date_str)
+    class Meta:
+        verbose_name_plural = "Lobby Screen Events"
 
 class AbstractPDFDocumentModel(models.Model):
     date = models.DateField(auto_now_add=True)
@@ -127,6 +133,8 @@ class EventFilter(models.Model):
         return "EventFilter <%s %s-%s [%s] notice: %s" %\
             (self.player.user.username, self.earliest, self.latest,\
              ",".join([str(d) for d in self.days.all()]), self.notice_period_minutes)
+    class Meta:
+        verbose_name = "Court Cancellation Notifier"
 
 class MaintenanceIssue(models.Model):
     STATUS_VALUES = (
@@ -143,6 +151,8 @@ class MaintenanceIssue(models.Model):
     comment = models.TextField(blank=True, null=True)
     def __unicode__(self):
         return text_utils.shorten(self.description, 10)
+    class Meta:
+        verbose_name = "Feedback - Maintenance Issue"
 
 
 class Suggestion(models.Model):
@@ -151,3 +161,5 @@ class Suggestion(models.Model):
     submitted_date = models.DateField(auto_now_add=True)
     reviewed_date = models.DateField(blank=True, null=True)
     comment = models.TextField(blank=True, null=True)
+    class Meta:
+        verbose_name = "Feedback - Suggestion"
