@@ -437,7 +437,7 @@ class WSRC_admin_memberlist
     if field.startsWith("user.")
       player = @model.db_member_map[id]
       obj_id = player.user.id
-      path = "/data/memberlist/user/#{ id }"
+      path = "/data/memberlist/user/#{ obj_id }"
       field = field.replace("user.", "") 
     else
       path = "/data/memberlist/player/#{ id }"
