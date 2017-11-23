@@ -249,7 +249,7 @@ class Subscription(models.Model):
 
 
     def __unicode__(self):
-        return u"{0} {1}".format(self.season, self.subscription_type.name)
+        return u"{0} ({1}) \u2013 {2}".format(self.player.get_ordered_name(), self.season, self.subscription_type.name)
 
     class Meta:
         ordering=["-season__start_date", "player__user__last_name", "player__user__first_name"]
