@@ -94,3 +94,26 @@ class BookingOffence(models.Model):
         verbose_name = "Booking Offence"
         verbose_name_plural = "Booking Offences"
         ordering = ["-start_time"]
+
+class DayOfWeek(models.Model):
+    name = models.CharField(max_length=3)
+    ordinal = models.IntegerField(unique=True)
+    def __unicode__(self):
+        return self.name
+    class Meta:
+        verbose_name_plural = "DaysOfTheWeek"
+        ordering = ["ordinal"]
+
+class EventFilter(models.Model):
+    player = models.ForeignKey(user_models.Player)
+    earliest = models.TimeField()
+    latest = models.TimeField()
+    days = models.ManyToManyField(DayOfWeek, blank=True)
+    notice_period_minutes = models.IntegerField("Minimum Notice")
+    def __unicode__(self):
+        return "EventFilter <%s %s-%s [%s] notice: %s" %\
+            (self.player.user.username, self.earliest, self.latest,\
+             ",".join([str(d) for d in self.days.all()]), self.notice_period_minutes)
+    class Meta:
+        verbose_name = "Cancellation Notifier"
+
