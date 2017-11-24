@@ -58,9 +58,12 @@ class BookingOffenceAdmin(admin.ModelAdmin):
         return queryset
 
 class NotifierEventAdmin(PrefetchRelatedQuerysetMixin, admin.ModelAdmin):
+    list_display = ("player", "earliest", "latest", "get_day_list", "notice_period_minutes")
     list_select_related = ('player__user',)
     prefetch_related_fields = ('days',)
-
+    def get_day_list(self, obj):
+        return ",".join([str(d) for d in obj.days.all()])
+    get_day_list.short_description = "Days"
 
 admin.site.register(BookingOffence, BookingOffenceAdmin)
 admin.site.register(EventFilter, NotifierEventAdmin)
