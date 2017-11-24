@@ -73,7 +73,7 @@ class Notifier:
 
   def get_configs_from_db(self, current_time):
     from wsrc.site.usermodel.models import Player
-    from wsrc.site.models import EventFilter
+    from wsrc.site.courts.models import EventFilter
     userfilters = dict()
     cuttoff_filter = evt_filters.Not(evt_filters.IsFutureEvent(delay=FUTURE_CUTTOFF, now=current_time))
     def get_or_create(id):
@@ -105,7 +105,7 @@ if __name__ == "__main__":
 
   from wsrc.site.usermodel.models import Player
   from django.contrib.auth.models import User
-  from wsrc.site.models import EventFilter
+  from wsrc.site.courts.models import EventFilter
   from wsrc.site.courts.models import BookingSystemEvent
   import wsrc.utils.collection_utils as utils
 

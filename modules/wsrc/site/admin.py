@@ -19,9 +19,8 @@ from django import forms
 from django.db import models
 
 from django.contrib import admin
-from wsrc.site.models import PageContent, EmailContent, EventFilter, MaintenanceIssue,\
+from wsrc.site.models import PageContent, EmailContent, MaintenanceIssue,\
     Suggestion, ClubEvent, CommitteeMeetingMinutes, GenericPDFDocument, Image
-from wsrc.utils.form_utils import PrefetchRelatedQuerysetMixin
 
 def txt_widget(nrows):
     "Create a standard textarea widget"
@@ -66,10 +65,6 @@ class ImageAdmin(admin.ModelAdmin):
     get_link.short_description = "Link"
     get_link.allow_tags = True
 
-class NotifierEventAdmin(PrefetchRelatedQuerysetMixin, admin.ModelAdmin):
-    list_select_related = ('player__user',)
-    prefetch_related_fields = ('days',)
-
 class MaintenanceIssueAdmin(admin.ModelAdmin):
     list_display = ("description", "reporter", "reported_date", "status",)
     list_filter = ('status',)
@@ -88,7 +83,6 @@ class SuggestionAdmin(admin.ModelAdmin):
 
 admin.site.register(PageContent, PageContentAdmin)
 admin.site.register(EmailContent, EmailContentAdmin)
-admin.site.register(EventFilter, NotifierEventAdmin)
 admin.site.register(MaintenanceIssue, MaintenanceIssueAdmin)
 admin.site.register(Suggestion, SuggestionAdmin)
 admin.site.register(ClubEvent, ClubEventAdmin)
