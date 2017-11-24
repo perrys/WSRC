@@ -36,7 +36,7 @@ from rest_framework.renderers import JSONRenderer
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from wsrc.site.models import EventFilter
+from wsrc.site.courts.models import EventFilter
 from wsrc.site.settings import settings
 from wsrc.external_sites.booking_manager import BookingSystemSession
 from wsrc.site.usermodel.models import Player

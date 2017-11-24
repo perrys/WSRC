@@ -21,7 +21,7 @@ from django.forms import ModelForm
 from django.forms.models import modelformset_factory, ModelMultipleChoiceField
 from django.forms.widgets import Select, CheckboxSelectMultiple, HiddenInput, Textarea
 
-from wsrc.site.models import EventFilter, DayOfWeek
+from wsrc.site.courts.models import DayOfWeek, EventFilter
 from wsrc.site.usermodel.models import Player
 
 class SpaceTranslatingCharField(CharField):
