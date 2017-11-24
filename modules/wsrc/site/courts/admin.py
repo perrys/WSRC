@@ -28,33 +28,34 @@ class OffendersListFilter(admin.SimpleListFilter):
         for offence in BookingOffence.objects.all().select_related("player__user"):
             players[offence.player.id] = offence.player
         players = players.values()
-        players.sort(cmp = lambda x,y: cmp(x.user.get_full_name(), y.user.get_full_name()))
+        players.sort(cmp = lambda x, y: cmp(x.user.get_full_name(), y.user.get_full_name()))
         return [(item.user.username, item.user.get_full_name()) for item in players]
     def queryset(self, request, queryset):
         val = self.value()
         if val is not None:
             queryset = queryset.filter(player__user__username=val)
-        return queryset        
+        return queryset
 
 def set_inactive(modeladmin, request, queryset):
-  queryset.update(is_active=False)
+    queryset.update(is_active=False)
 def set_active(modeladmin, request, queryset):
-  queryset.update(is_active=True)
+    queryset.update(is_active=True)
 
 class BookingOffenceAdmin(admin.ModelAdmin):
-    list_display = ("player", "entry_id", "offence", "start_time", "creation_time", "cancellation_time", "rebooked", "penalty_points", "is_active", "comment")
+    list_display = ("player", "entry_id", "offence", "start_time", "creation_time",\
+                    "cancellation_time", "rebooked", "penalty_points", "is_active", "comment")
     list_editable = ("penalty_points", "is_active", "comment")
     list_filter = (OffendersListFilter,)
     date_hierarchy = "start_time"
-    actions=(set_inactive, set_active)
+    actions = (set_inactive, set_active)
     formfield_overrides = {
         models.TextField: {'widget': forms.Textarea(attrs={'cols': 30, 'rows': 1})},
         models.IntegerField: {'widget': forms.NumberInput(attrs={'style': 'width: 3em;'})},
     }
     def get_queryset(self, request):
-        qs = super(BookingOffenceAdmin, self).get_queryset(request)
-        qs = qs.select_related('player__user')
-        return qs
+        queryset = super(BookingOffenceAdmin, self).get_queryset(request)
+        queryset = queryset.select_related('player__user')
+        return queryset
 
 class NotifierEventAdmin(PrefetchRelatedQuerysetMixin, admin.ModelAdmin):
     list_select_related = ('player__user',)
