@@ -17,7 +17,8 @@ from django import forms
 from django.db import models
 
 from django.contrib import admin
-from wsrc.site.courts.models import BookingOffence
+from wsrc.site.courts.models import BookingOffence, EventFilter
+from wsrc.utils.form_utils import PrefetchRelatedQuerysetMixin
 
 class OffendersListFilter(admin.SimpleListFilter):
     title = "offender"
@@ -55,5 +56,10 @@ class BookingOffenceAdmin(admin.ModelAdmin):
         qs = qs.select_related('player__user')
         return qs
 
+class NotifierEventAdmin(PrefetchRelatedQuerysetMixin, admin.ModelAdmin):
+    list_select_related = ('player__user',)
+    prefetch_related_fields = ('days',)
+
 
 admin.site.register(BookingOffence, BookingOffenceAdmin)
+admin.site.register(EventFilter, NotifierEventAdmin)
