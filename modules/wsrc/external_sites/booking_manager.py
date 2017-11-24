@@ -81,20 +81,21 @@ class BookingSystemSession:
         from wsrc.site.courts.models import BookingSystemEvent
         bookingSystemEvents = []
         data = self.get_week_view(start_date)
-        for date_str, court_data in data.iteritems():
-            for court, entries_data in court_data.iteritems():
-                for time_str, entry in entries_data.iteritems():
-                    start_time = datetime.datetime.strptime("{0}T{1}".format(date_str, time_str), "%Y-%m-%dT%H:%M")
-                    start_time = start_time.replace(tzinfo=time_utils.UK_TZINFO)
-                    end_time = start_time + datetime.timedelta(minutes=entry["duration_mins"])
-                    event = BookingSystemEvent(start_time=start_time,
-                                               end_time=end_time,
-                                               court=int(court),
-                                               name=entry["name"],
-                                               event_id=entry["id"],
-                                               description=entry["description"])
-                    bookingSystemEvents.append(event)
-
+        if len(data) > 0:
+            for date_str, court_data in data.iteritems():
+                for court, entries_data in court_data.iteritems():
+                    for time_str, entry in entries_data.iteritems():
+                        start_time = datetime.datetime.strptime("{0}T{1}".format(date_str, time_str), "%Y-%m-%dT%H:%M")
+                        start_time = start_time.replace(tzinfo=time_utils.UK_TZINFO)
+                        end_time = start_time + datetime.timedelta(minutes=entry["duration_mins"])
+                        event = BookingSystemEvent(start_time=start_time,
+                                                   end_time=end_time,
+                                                   court=int(court),
+                                                   name=entry["name"],
+                                                   event_id=entry["id"],
+                                                   description=entry["description"])
+                        bookingSystemEvents.append(event)
+    
         return bookingSystemEvents, start_date
 
     def get_memberlist(self):
