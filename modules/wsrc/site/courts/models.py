@@ -51,6 +51,8 @@ class BookingSystemEvent(models.Model):
             return "Invalid event"
         return "{event_id} Court {court} {start_time:%Y-%m-%d %H:%M}-{end_time:%H:%M} {name} \"{description}\"".format(**self.__dict__)
 
+    class Meta:
+        verbose_name = "Booking"
 
 
 class BookingOffence(models.Model):
