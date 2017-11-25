@@ -79,6 +79,8 @@ class BookingSystemSession:
         if start_date is None:
             start_date = datetime.date.today()
         from wsrc.site.courts.models import BookingSystemEvent
+        from wsrc.site.usermodel.models import Player
+        player_map = dict([(p.booking_system_id, p) for p in Player.objects.all()])
         bookingSystemEvents = []
         data = self.get_week_view(start_date)
         if len(data) > 0:
@@ -94,8 +96,13 @@ class BookingSystemSession:
                                                    name=entry["name"],
                                                    event_id=entry["id"],
                                                    description=entry["description"])
+                        created_by_id = entry.get("created_by_id")
+                        if created_by_id is not None:
+                            player = player_map.get(int(created_by_id))
+                            if player is not None:
+                                event.created_by = player
                         bookingSystemEvents.append(event)
-    
+
         return bookingSystemEvents, start_date
 
     def get_memberlist(self):
