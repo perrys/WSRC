@@ -67,9 +67,10 @@ class NotifierEventAdmin(PrefetchRelatedQuerysetMixin, admin.ModelAdmin):
 
 class BookingAdmin(admin.ModelAdmin):
     search_fields = ('name', 'description')
-    list_display = ("name", "start_time", "end_time", "court", "description")
+    list_display = ("name", "created_by", "start_time", "end_time", "court", "description")
     date_hierarchy = "start_time"
     list_filter = ("court",)
+    list_select_related = ("created_by__user",)
 
 admin.site.register(BookingSystemEvent, BookingAdmin)
 admin.site.register(BookingOffence, BookingOffenceAdmin)
