@@ -28,6 +28,7 @@ class BookingSystemEvent(models.Model):
     name = models.CharField(max_length=64)
     event_id = models.IntegerField(blank=True, null=True)
     description = models.CharField(max_length=128, blank=True, null=True)
+    created_by = models.ForeignKey(user_models.Player, blank=True, null=True, limit_choices_to={"user__is_active": True})
 
     @staticmethod
     def generate_hmac_token(start_time, court):
