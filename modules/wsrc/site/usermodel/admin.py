@@ -39,7 +39,7 @@ class UserProfileInline(admin.StackedInline):
 class UserAdmin(AuthUserAdmin):
     "Redefinition of user admin"
     inlines = AuthUserAdmin.inlines + [UserProfileInline,]
-    list_display = ('last_name', 'first_name', 'username', 'email',\
+    list_display = ('username', 'last_name', 'first_name', 'email',\
                     'is_active', 'is_staff', 'last_login', 'date_joined')
     list_filter = ('is_active', 'groups', 'is_staff', 'is_superuser')
     ordering = ('last_name', 'first_name', 'username')
