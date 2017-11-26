@@ -193,7 +193,7 @@ class PlayerAdmin(SelectRelatedQuerysetMixin, PrefetchRelatedQuerysetMixin, admi
     "Admin for Player (i.e. club member) model"
     list_filter = ('user__is_active', 'subscription__subscription_type', )
     list_display = ('ordered_name', 'active', 'date_joined_date', \
-                    'subscription_type', 'current_season', 'signed_off',
+                    'get_age', 'subscription_type', 'current_season', 'signed_off',
                     'cell_phone', 'other_phone', 'booking_system_id', 'england_squash_id',
                     'prefs_receive_email', 'prefs_esra_member', 'prefs_display_contact_details')
     search_fields = ('user__first_name', 'user__last_name')
