@@ -80,6 +80,14 @@ class Player(models.Model):
             return '%s. %s' % (self.user.first_name[0].upper(), self.user.last_name)
         return self.short_name
 
+    def get_age(self):
+        today = datetime.date.today()
+        years = today.year - self.date_of_birth.year
+        if today.month < self.date_of_birth.month or\
+           (today.month == self.date_of_birth.month and today.day < self.date_of_birth.day):
+            years -= 1
+        return years
+    
     def email_user(self, subject, message, from_email=None):
         """
         Sends an email to this User.
