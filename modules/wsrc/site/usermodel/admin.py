@@ -164,7 +164,17 @@ def update_subscriptions(modeladmin, request, queryset):
                 break
         if not found and player.user.is_active:
             payment_freq = "annual" if subscription is None else subscription.payment_frequency
-            subscription = Subscription(player=player, season=latest_season, payment_frequency=payment_freq)
+            if subscription is not None:
+                subs_type = subscription.subscription_type
+            else:
+                subs_type = SubscriptionType.objects.get(name="Full")
+                if player.date_of_birth is not None:
+                    if player.get_age() < 19:
+                        subs_type = SubscriptionType.objects.get(name="Junior")
+                    elif player.get_age() < 24:
+                        subs_type = SubscriptionType.objects.get(name="Young Adult")
+            subscription = Subscription(player=player, season=latest_season,
+                                        payment_frequency=payment_freq, subscription_type=subs_type)
             subscription.save()
         elif found and not player.user.is_active:
             subscription.delete()
