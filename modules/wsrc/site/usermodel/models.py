@@ -81,12 +81,17 @@ class Player(models.Model):
         return self.short_name
 
     def get_age(self):
+        if self.date_of_birth is None:
+            return None
         today = datetime.date.today()
         years = today.year - self.date_of_birth.year
         if today.month < self.date_of_birth.month or\
            (today.month == self.date_of_birth.month and today.day < self.date_of_birth.day):
             years -= 1
         return years
+    get_age.short_description = "Age"
+    get_age.admin_order_field = 'date_of_birth'
+    
     
     def email_user(self, subject, message, from_email=None):
         """
