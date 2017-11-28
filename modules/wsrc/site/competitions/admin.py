@@ -19,6 +19,7 @@ from django.contrib import admin
 # Register your models here.
 
 import wsrc.site.competitions.models as comp_models
+from wsrc.utils.form_utils import CachingModelChoiceField, get_related_field_limited_queryset
 
 class CompetitionInline(admin.TabularInline):
     model = comp_models.Competition
@@ -29,8 +30,19 @@ class CompetitionGroupAdmin(admin.ModelAdmin):
     inlines = (CompetitionInline,)
 admin.site.register(comp_models.CompetitionGroup, CompetitionGroupAdmin)
 
+class EntrantForm(forms.ModelForm):
+    "Override subscription form for more efficient DB interaction"
+    player_queryset = get_related_field_limited_queryset(comp_models.Entrant.player1.field)\
+                      .select_related("user")
+    player1 = CachingModelChoiceField(queryset=player_queryset)
+    player2 = CachingModelChoiceField(queryset=player_queryset)
+    comp_queryset = get_related_field_limited_queryset(comp_models.Entrant.competition.field)\
+                      .select_related("group")
+    competition = CachingModelChoiceField(queryset=comp_queryset)
+
 class EntrantInline(admin.TabularInline):
     model = comp_models.Entrant
+    form = EntrantForm
 
 class MatchInLine(admin.TabularInline):
     model = comp_models.Match
@@ -88,6 +100,7 @@ class EntrantAdmin(admin.ModelAdmin):
     list_display = ("competition", "player1", "player2", "ordering", "handicap", "seeded")
     list_filter = ('competition__group', 'competition__name')
     list_editable = ('handicap', 'seeded')
+    form = EntrantForm
     def get_queryset(self, request):
         qs = super(EntrantAdmin, self).get_queryset(request)
         qs = qs.select_related('competition__group', 'player1__user', 'player2__user')
