@@ -38,8 +38,8 @@ class EntrantForm(forms.ModelForm):
     "Override subscription form for more efficient DB interaction"
     player_queryset = get_related_field_limited_queryset(comp_models.Entrant.player1.field)\
                       .select_related("user")
-    player1 = CachingModelChoiceField(queryset=player_queryset)
-    player2 = CachingModelChoiceField(queryset=player_queryset)
+    player1 = CachingModelChoiceField(label="Player 1", queryset=player_queryset)
+    player2 = CachingModelChoiceField(label="Player 2", queryset=player_queryset, required=False)
     comp_queryset = get_related_field_limited_queryset(comp_models.Entrant.competition.field)\
                       .select_related("group")
     competition = CachingModelChoiceField(queryset=comp_queryset)
