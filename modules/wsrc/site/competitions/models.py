@@ -72,9 +72,11 @@ class Competition(models.Model):
 class Entrant(models.Model):
     """Makes up the set of distinct competitors or teams in a competition
        - allows for two players per team (for doubles competitions)"""
+    is_active = models.Q(user__is_active=True)
     competition = models.ForeignKey(Competition)
-    player1 = models.ForeignKey(user_models.Player)
-    player2 = models.ForeignKey(user_models.Player, null=True, blank=True, related_name="entrant2+")
+    player1 = models.ForeignKey(user_models.Player, limit_choices_to=is_active)
+    player2 = models.ForeignKey(user_models.Player, limit_choices_to=is_active,\
+                                null=True, blank=True, related_name="entrant2+")
     ordering = models.IntegerField("Ordering within a competition - exact meaning depends on the competition type")
     handicap = models.IntegerField(null=True, blank=True)
     hcap_suffix = models.CharField(max_length=4, blank=True)
