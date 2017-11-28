@@ -54,6 +54,10 @@ class CompetitionRoundForm(forms.ModelForm):
 class EntrantInline(admin.TabularInline):
     model = comp_models.Entrant
     form = EntrantForm
+    def get_queryset(self, request):
+        qs = super(EntrantInline, self).get_queryset(request)
+        qs = qs.select_related("player1__user", "player2__user")
+        return qs
 
 class MatchInLine(admin.TabularInline):
     model = comp_models.Match
