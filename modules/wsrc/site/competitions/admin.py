@@ -23,6 +23,10 @@ from wsrc.utils.form_utils import CachingModelChoiceField, get_related_field_lim
 
 class CompetitionInline(admin.TabularInline):
     model = comp_models.Competition
+    def get_queryset(self, request):
+        qs = super(CompetitionInline, self).get_queryset(request)
+        qs = qs.select_related("group")
+        return qs
 
 class CompetitionGroupAdmin(admin.ModelAdmin):
     list_display = ("name", "comp_type", "end_date", "active",)
@@ -40,6 +44,13 @@ class EntrantForm(forms.ModelForm):
                       .select_related("group")
     competition = CachingModelChoiceField(queryset=comp_queryset)
 
+class CompetitionRoundForm(forms.ModelForm):
+    "Override subscription form for more efficient DB interaction"
+    comp_queryset = get_related_field_limited_queryset(comp_models.Entrant.competition.field)\
+                      .select_related("group")
+    competition = CachingModelChoiceField(queryset=comp_queryset)
+
+    
 class EntrantInline(admin.TabularInline):
     model = comp_models.Entrant
     form = EntrantForm
@@ -74,6 +85,7 @@ admin.site.register(comp_models.Competition, CompetitionAdmin)
 
 class CompetitionRoundAdmin(admin.ModelAdmin):
     list_display = ("competition", "round", "end_date")
+    form = CompetitionRoundForm
     def get_queryset(self, request):
         qs = super(CompetitionRoundAdmin, self).get_queryset(request)
         qs = qs.select_related('competition', 'competition__group')
@@ -81,9 +93,13 @@ class CompetitionRoundAdmin(admin.ModelAdmin):
 admin.site.register(comp_models.CompetitionRound, CompetitionRoundAdmin)
 
 class MatchAdminForm(forms.ModelForm):
+    comp_queryset = get_related_field_limited_queryset(comp_models.Entrant.competition.field)\
+                      .select_related("group")
+    competition = CachingModelChoiceField(queryset=comp_queryset)
     def __init__(self, *args, **kwargs):
         super(MatchAdminForm, self).__init__(*args, **kwargs)
-        self.fields['team1'].queryset = self.fields['team2'].queryset = comp_models.Entrant.objects.filter(competition=self.instance.competition)
+        self.fields['team1'].queryset = self.fields['team2'].queryset =\
+                                        comp_models.Entrant.objects.filter(competition=self.instance.competition).select_related()
 
 class MatchAdmin(admin.ModelAdmin):
     form = MatchAdminForm
