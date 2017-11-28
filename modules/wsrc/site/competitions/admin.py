@@ -96,15 +96,20 @@ def set_not_started(modeladmin, request, queryset):
 set_not_started.short_description="Un-start"
 
 class CompetitionAdmin(admin.ModelAdmin):
-    list_display = ("name", "group", "state", "end_date", "ordering", "url")
-    list_editable = ("state", "end_date", "ordering", "url")
+    list_display = ("name", "group", "number_of_entrants", "state", "end_date", "ordering", "url")
     list_filter = ('group__comp_type', 'group', 'state')
     inlines = (EntrantInline,MatchInLine,)
     actions=(set_not_started, set_in_progress, set_concluded)
     def get_queryset(self, request):
         qs = super(CompetitionAdmin, self).get_queryset(request)
         qs = qs.select_related('group')
+        qs = qs.prefetch_related("entrant_set")
         return qs
+    def number_of_entrants(self, obj):
+        return len(obj.entrant_set.all())
+    number_of_entrants.short_description = "# Entrants"
+    
+    
     
 admin.site.register(comp_models.Competition, CompetitionAdmin)
 
