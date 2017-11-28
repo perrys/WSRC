@@ -44,6 +44,16 @@ class EntrantForm(forms.ModelForm):
                       .select_related("group")
     competition = CachingModelChoiceField(queryset=comp_queryset)
 
+class MatchForm(forms.ModelForm):
+    "Override form for more efficient DB interaction."
+    entrant_queryset = get_related_field_limited_queryset(comp_models.Match.team1.field)\
+                      .select_related("player1__user", "player2__user")
+    team1 = CachingModelChoiceField(queryset=entrant_queryset)
+    team2 = CachingModelChoiceField(queryset=entrant_queryset)
+    comp_queryset = get_related_field_limited_queryset(comp_models.Entrant.competition.field)\
+                      .select_related("group")
+    competition = CachingModelChoiceField(queryset=comp_queryset)
+             
 class CompetitionRoundForm(forms.ModelForm):
     "Override subscription form for more efficient DB interaction"
     comp_queryset = get_related_field_limited_queryset(comp_models.Entrant.competition.field)\
@@ -61,6 +71,19 @@ class EntrantInline(admin.TabularInline):
 
 class MatchInLine(admin.TabularInline):
     model = comp_models.Match
+    form = MatchForm
+    def get_queryset(self, request):
+        "Override the form's queryset to select related player/user, when displaying original values"
+        qs = super(MatchInLine, self).get_queryset(request)
+        qs = qs.select_related("team1__player1__user", "team2__player1__user", "team1__player2__user", "team2__player2__user", )
+        return qs
+    def get_formset(self, request, obj=None, **kwargs):
+        "Override the inline Match formset to restrict entrants to this competition's"
+        result = super(MatchInLine, self).get_formset(request, obj, **kwargs)
+        queryset = obj.entrant_set.select_related("player1__user", "player2__user")
+        result.form.base_fields['team1'].queryset = queryset
+        result.form.base_fields['team2'].queryset = queryset
+        return result
 
 def set_in_progress(modeladmin, request, queryset):
   queryset.update(state="active")
@@ -76,8 +99,7 @@ class CompetitionAdmin(admin.ModelAdmin):
     list_display = ("name", "group", "state", "end_date", "ordering", "url")
     list_editable = ("state", "end_date", "ordering", "url")
     list_filter = ('group__comp_type', 'group', 'state')
-#    inlines = (EntrantInline,MatchInLine,) # TODO: figure out why inlines seem to really kill the CPU
-    inlines = (EntrantInline,)
+    inlines = (EntrantInline,MatchInLine,)
     actions=(set_not_started, set_in_progress, set_concluded)
     def get_queryset(self, request):
         qs = super(CompetitionAdmin, self).get_queryset(request)
@@ -96,14 +118,12 @@ class CompetitionRoundAdmin(admin.ModelAdmin):
         return qs
 admin.site.register(comp_models.CompetitionRound, CompetitionRoundAdmin)
 
-class MatchAdminForm(forms.ModelForm):
-    comp_queryset = get_related_field_limited_queryset(comp_models.Entrant.competition.field)\
-                      .select_related("group")
-    competition = CachingModelChoiceField(queryset=comp_queryset)
+class MatchAdminForm(MatchForm):
     def __init__(self, *args, **kwargs):
+        # restrict entrant choices to just the set defined for the match's competition
         super(MatchAdminForm, self).__init__(*args, **kwargs)
         self.fields['team1'].queryset = self.fields['team2'].queryset =\
-                                        comp_models.Entrant.objects.filter(competition=self.instance.competition).select_related()
+                                        self.instance.competition.entrant_set.select_related()
 
 class MatchAdmin(admin.ModelAdmin):
     form = MatchAdminForm
