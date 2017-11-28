@@ -77,7 +77,7 @@ class Entrant(models.Model):
     competition = models.ForeignKey(Competition)
     player1 = models.ForeignKey(user_models.Player, limit_choices_to=is_active)
     player2 = models.ForeignKey(user_models.Player, limit_choices_to=is_active,\
-                                null=True, blank=True, related_name="entrant2+")
+                                null=True, blank=True, related_name="player2")
     ordering = models.IntegerField(help_text="Exact meaning depends on the competition type")
     handicap = models.IntegerField(null=True, blank=True)
     hcap_suffix = models.CharField(max_length=4, blank=True)
