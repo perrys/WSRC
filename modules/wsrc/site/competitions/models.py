@@ -40,6 +40,7 @@ class CompetitionGroup(models.Model):
         return u"%s" % (self.name)
     class Meta:
         ordering = ["comp_type", "-end_date"]
+        verbose_name = "Competition Group"
 
 class Competition(models.Model):
     """An individual competition, with an end date. For example this could be a knockout tournament or a league."""
@@ -247,3 +248,5 @@ class CompetitionRound(models.Model):
     end_date = models.DateField()
     def __unicode__(self):
         return u"%d [%s]" % (self.round, self.end_date)
+    class Meta:
+        verbose_name = "Competition Round"
