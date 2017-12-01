@@ -404,6 +404,7 @@ class WSRC_admin_accounts_view
       ['bank_memo',    text_value]
       ['comment',      input_value]
       ['category',     select_value]
+      ['subscription', select_value]
     ]
     transaction = {}
     for m in mapping
