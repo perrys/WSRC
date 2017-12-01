@@ -1,7 +1,7 @@
 
 from .models import Category, Transaction, Account
 from .admin import SUBS_CATEGORY_NAME
-from wsrc.site.usermodel.models import Subscription
+from wsrc.site.usermodel.models import Subscription, SubscriptionPayment
 from wsrc.utils.rest_framework_utils import LastUpdaterModelSerializer
 from wsrc.utils.upload_utils import UploadFileForm, upload_generator
 
@@ -71,6 +71,7 @@ class TransactionView(rest_generics.ListAPIView):
         account = Account.objects.get(pk=int(account_id))
         transaction_data = request.data['transactions']
         categories = dict([(cat.id, cat) for cat in Category.objects.all()])
+        subscriptions = dict([(sub.id, sub) for sub in Subscription.objects.exclude(season__has_ended=True)])
         models = []
         for tran in transaction_data:
             tran['account'] = account
@@ -78,10 +79,21 @@ class TransactionView(rest_generics.ListAPIView):
             tran['last_updated_by'] = request.user
             if 'date_cleared' in tran and len(tran['date_cleared']) < 10:
                 tran['date_cleared'] = None
-            models.append(Transaction(**tran))
+            sub_id = tran.pop('subscription')
+            trans_model = Transaction(**tran)
+            models.append(lambda: trans_model.save())
+            if sub_id is not None:
+                sub_model = subscriptions.get(int(sub_id))
+                if sub_model is not None:
+                    def create_and_save():
+                        # need to defer creating this until after the
+                        # transaction is saved and hence has an ID
+                        payment = SubscriptionPayment(subscription=sub_model, transaction=trans_model)
+                        payment.save()
+                    models.append(create_and_save)
         with transaction.atomic():
             for model in models:
-                model.save()
+                model()
         return Response(status=status.HTTP_201_CREATED)
 
 class CategorySerializer(LastUpdaterModelSerializer):
