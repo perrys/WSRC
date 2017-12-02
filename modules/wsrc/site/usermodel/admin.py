@@ -272,17 +272,44 @@ class DoorEntryCardForm(forms.ModelForm):
     player = forms.ModelChoiceField(queryset=queryset.select_related("user"), required=False)
 
 
+class HasPlayerListFilter(admin.SimpleListFilter):
+    "Simple filtering on Player not null"
+    title = "Assigned"
+    parameter_name = "assigned"
+    def lookups(self, request, model_admin):
+        return [('y', 'Yes'), ('n', 'No')]
+    def queryset(self, request, queryset):
+        if self.value():
+            flag = self.value() == 'y'
+            queryset = queryset.filter(player__isnull=flag)
+        return queryset
+
 class DoorEntryCardAdmin(admin.ModelAdmin):
     search_fields = ('player__user__first_name', 'player__user__last_name', 'cardnumber')
     list_select_related = True
-    list_display = ('cardnumber', 'is_registered', 'player', 'date_issued')
-    list_filter = ("is_registered",)
+    list_display = ('cardnumber', 'is_registered', 'linked_player', 'active', 'date_issued')
+    list_filter = ("is_registered", HasPlayerListFilter, "player__user__is_active")
     list_per_page = 500
     form = DoorEntryCardForm
     def get_queryset(self, request):
         queryset = super(DoorEntryCardAdmin, self).get_queryset(request)
         queryset = queryset.select_related('player__user', 'season')
         return queryset
+    def linked_player(self, obj):
+        if obj.player is None:
+            return "(None)"
+        link = urlresolvers.reverse("admin:usermodel_player_change", args=[obj.player.id])
+        return u'<a href="%s">%s</a>' % (link, obj.player.get_ordered_name())
+    linked_player.allow_tags = True
+    linked_player.short_description = "Assigned To"
+    linked_player.admin_order_field = "user__last_name"
+    def active(self, obj):
+        player = obj.player
+        if player is None:
+            return None
+        return player.user.is_active
+    active.admin_order_field = "player__user__is_active"
+    active.boolean = True
 
 admin.site.register(Season, SeasonAdmin)
 admin.site.register(Subscription, SubscriptionAdmin)
