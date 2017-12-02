@@ -188,6 +188,9 @@ class SubscriptionInline(admin.StackedInline):
     formfield_overrides = {
         models.TextField: {'widget': forms.TextInput(attrs={'size': 40})},
     }
+class DoorCardInline(admin.TabularInline):
+    model = DoorEntryCard
+    extra = 1
 
 class PlayerAdmin(SelectRelatedQuerysetMixin, PrefetchRelatedQuerysetMixin, admin.ModelAdmin):
     "Admin for Player (i.e. club member) model"
@@ -200,7 +203,7 @@ class PlayerAdmin(SelectRelatedQuerysetMixin, PrefetchRelatedQuerysetMixin, admi
     prefetch_related_fields = ('subscription_set__season','subscription_set__subscription_type')
     list_per_page = 400
     actions = (update_subscriptions,)
-    inlines = (SubscriptionInline,)
+    inlines = (SubscriptionInline, DoorCardInline)
     readonly_fields = ("user_link", "date_joined_date", "doorcard_numbers")
     exclude = ("user",)
 
