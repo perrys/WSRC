@@ -269,13 +269,14 @@ class SubscriptionTypeAdmin(admin.ModelAdmin):
 class DoorEntryCardForm(forms.ModelForm):
     "Override form for more efficient DB interaction"
     queryset = get_related_field_limited_queryset(DoorEntryCard.player.field)
-    player = forms.ModelChoiceField(queryset=queryset.select_related("user"))
+    player = forms.ModelChoiceField(queryset=queryset.select_related("user"), required=False)
 
 
 class DoorEntryCardAdmin(admin.ModelAdmin):
     search_fields = ('player__user__first_name', 'player__user__last_name', 'cardnumber')
     list_select_related = True
-    list_display = ('cardnumber', 'player', 'date_issued')
+    list_display = ('cardnumber', 'is_registered', 'player', 'date_issued')
+    list_filter = ("is_registered",)
     list_per_page = 500
     form = DoorEntryCardForm
     def get_queryset(self, request):
