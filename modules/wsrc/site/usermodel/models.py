@@ -283,10 +283,9 @@ class DoorEntryCard(models.Model):
     is_active = Q(user__is_active=True)
     card_validator = validators.RegexValidator(r'^\d{8}$',
                                                'Enter an eight-digit card number.', 'invalid_id')
-    player = models.ForeignKey(Player, db_index=True, related_name="doorcards")
-    cardnumber = models.IntegerField(("Card #"), db_index=True, blank=True, null=True,
-                                     validators=[card_validator])
-    date_issued = models.DateField(default=datetime.date.today, blank=True, null=True)
+    player = models.ForeignKey(Player, db_index=True, blank=True, null=True, related_name="doorcards")
+    cardnumber = models.CharField("Card #", max_length=8, unique=True, validators=[card_validator])
+    date_issued = models.DateField("Issue Date", default=datetime.date.today, blank=True, null=True)
     class Meta:
         verbose_name = "Door Entry Card"
 
