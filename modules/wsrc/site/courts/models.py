@@ -22,13 +22,20 @@ import wsrc.site.settings
 import wsrc.site.usermodel.models as user_models
 
 class BookingSystemEvent(models.Model):
+    EVENT_TYPES = (
+        ("I", "Member"),
+        ("E", "Club"),
+    )
     start_time = models.DateTimeField(db_index=True)
     end_time = models.DateTimeField()
     court = models.SmallIntegerField()
     name = models.CharField(max_length=64)
+    event_type = models.CharField(max_length=1, choices=EVENT_TYPES)
     event_id = models.IntegerField(blank=True, null=True)
     description = models.CharField(max_length=128, blank=True, null=True)
     created_by = models.ForeignKey(user_models.Player, blank=True, null=True, limit_choices_to={"user__is_active": True})
+    created_time = models.DateTimeField()
+    no_show = models.BooleanField(default=False)
 
     @staticmethod
     def generate_hmac_token(start_time, court):
