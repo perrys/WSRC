@@ -95,7 +95,11 @@ class BookingSystemSession:
                                                    court=int(court),
                                                    name=entry["name"],
                                                    event_id=entry["id"],
-                                                   description=entry["description"])
+                                                   description=entry["description"],
+                                                   event_type=entry["type"],
+                                                   created_time=entry["created_ts"],
+                                                   no_show=entry["no_show"],
+                        )
                         created_by_id = entry.get("created_by_id")
                         if created_by_id is not None:
                             player = player_map.get(int(created_by_id))
@@ -192,7 +196,7 @@ if __name__ == "__main__":
     class MockHttpClient:
         def __init__(self, selector="wsrc_{start_date}.json"):
             self.selector = selector
-        def get(self, selector, params):
+        def get(self, selector, params={}):
             filename = ("wsrc/external_sites/test_data/" + self.selector).format(**params)
             class Response():
                 def getcode(self):
