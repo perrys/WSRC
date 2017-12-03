@@ -83,12 +83,14 @@ class BookingSystemSession:
         player_map = dict([(p.booking_system_id, p) for p in Player.objects.all()])
         bookingSystemEvents = []
         data = self.get_week_view(start_date)
+        def make_aware_datetime(datetime_str, fmt="%Y-%m-%d %H:%M:%S"):
+            the_ts = datetime.datetime.strptime(datetime_str, fmt)
+            return the_ts.replace(tzinfo=time_utils.UK_TZINFO)
         if len(data) > 0:
             for date_str, court_data in data.iteritems():
                 for court, entries_data in court_data.iteritems():
                     for time_str, entry in entries_data.iteritems():
-                        start_time = datetime.datetime.strptime("{0}T{1}".format(date_str, time_str), "%Y-%m-%dT%H:%M")
-                        start_time = start_time.replace(tzinfo=time_utils.UK_TZINFO)
+                        start_time = make_aware_datetime("{0} {1}".format(date_str, time_str), "%Y-%m-%d %H:%M")
                         end_time = start_time + datetime.timedelta(minutes=entry["duration_mins"])
                         event = BookingSystemEvent(start_time=start_time,
                                                    end_time=end_time,
@@ -97,7 +99,7 @@ class BookingSystemSession:
                                                    event_id=entry["id"],
                                                    description=entry["description"],
                                                    event_type=entry["type"],
-                                                   created_time=entry["created_ts"],
+                                                   created_time=make_aware_datetime(entry["created_ts"]),
                                                    no_show=entry["no_show"],
                         )
                         created_by_id = entry.get("created_by_id")
@@ -170,7 +172,7 @@ def sync_db_booking_events(events, start_date, end_date):
         elif n_existing == 1:
             existing_event = matching_qs.first()
             dirty = False
-            for prop in ("end_time", "name", "description"):
+            for prop in ("end_time", "name", "description", "event_type"):
                 if getattr(evt, prop) != getattr(existing_event, prop):
                     setattr(existing_event, prop, getattr(evt, prop))
                     dirty = True
@@ -210,9 +212,10 @@ if __name__ == "__main__":
         def clean_db(self):
             from wsrc.site.courts.models import BookingSystemEvent
             # this test will use the DB. Clear all data before 2000, which we will use for our testing
-            old_events = BookingSystemEvent.objects.filter(start_time__lt=datetime.datetime(2000,1,1,0,0))
+            cutoff = datetime.datetime(2000,1,1,0,0, tzinfo=time_utils.UK_TZINFO)
+            old_events = BookingSystemEvent.objects.filter(start_time__lt=cutoff)
             old_events.delete()
-            self.assertEqual(0, BookingSystemEvent.objects.filter(start_time__lt=datetime.datetime(2000,1,1,0,0)).count())
+            self.assertEqual(0, BookingSystemEvent.objects.filter(start_time__lt=cutoff).count())
 
         def setUp(self):
             self.clean_db()
