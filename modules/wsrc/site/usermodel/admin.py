@@ -26,7 +26,7 @@ from django.contrib.auth.models import User
 from django.core import urlresolvers
 
 from .models import Player, Season, Subscription, SubscriptionPayment,\
-    SubscriptionCost, SubscriptionType, DoorEntryCard
+    SubscriptionCost, SubscriptionType, DoorEntryCard, DoorCardEvent
 from wsrc.utils.form_utils import SelectRelatedQuerysetMixin, CachingModelChoiceField, \
     get_related_field_limited_queryset, PrefetchRelatedQuerysetMixin
 
@@ -311,9 +311,31 @@ class DoorEntryCardAdmin(admin.ModelAdmin):
     active.admin_order_field = "player__user__is_active"
     active.boolean = True
 
+class DoorCardEventAdmin(admin.ModelAdmin):
+    search_fields = ('card__player__user__first_name', 'card__player__user__last_name', 'cardnumber')
+    list_select_related = ('card__player__user',)
+    list_display = ('event', 'cardnumber', 'linked_player', 'timestamp', 'received_time')
+    list_filter = ("event", "card__player__user__is_active")
+
+    def cardnumber(self, obj):
+        if obj.card is None:
+            return "(None)"
+        return obj.card.cardnumber
+    cardnumber.admin_order_field = "card__cardnumber"
+
+    def linked_player(self, obj):
+        if obj.card is None or obj.card.player is None:
+            return "(None)"
+        link = urlresolvers.reverse("admin:usermodel_player_change", args=[obj.card.player.id])
+        return u'<a href="%s">%s</a>' % (link, obj.card.player.get_ordered_name())
+    linked_player.allow_tags = True
+    linked_player.short_description = "Assigned To"
+    linked_player.admin_order_field = "card__player__user__last_name"
+    
 admin.site.register(Season, SeasonAdmin)
 admin.site.register(Subscription, SubscriptionAdmin)
 admin.site.register(Player, PlayerAdmin)
 admin.site.register(SubscriptionCost, SubscriptionCostAdmin)
 admin.site.register(SubscriptionType, SubscriptionTypeAdmin)
 admin.site.register(DoorEntryCard, DoorEntryCardAdmin)
+admin.site.register(DoorCardEvent, DoorCardEventAdmin)
