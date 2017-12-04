@@ -13,10 +13,13 @@
 # You should have received a copy of the GNU General Public License
 # along with WSRC.  If not, see <http://www.gnu.org/licenses/>.
 
+import datetime
+
 from django import forms
 from django.db import models
 
 from django.contrib import admin
+from django.utils import timezone
 from wsrc.site.courts.models import BookingOffence, EventFilter, BookingSystemEvent
 from wsrc.utils.form_utils import PrefetchRelatedQuerysetMixin
 
@@ -67,10 +70,16 @@ class NotifierEventAdmin(PrefetchRelatedQuerysetMixin, admin.ModelAdmin):
 
 class BookingAdmin(admin.ModelAdmin):
     search_fields = ('name', 'description')
-    list_display = ("name", "created_by", "start_time", "end_time", "court", "description")
+    list_display = ("name", "start_time", "end_time", "court", "event_type", "description", "created_by", "created_time", "used")
     date_hierarchy = "start_time"
-    list_filter = ("court",)
+    list_filter = ("court", "event_type", "no_show")
     list_select_related = ("created_by__user",)
+    def used(self, obj):
+        if obj.start_time > timezone.now() + datetime.timedelta(minutes=15):
+            return None        
+        return not obj.no_show
+    used.short_description = "Showed up"
+    used.boolean = True
 
 admin.site.register(BookingSystemEvent, BookingAdmin)
 admin.site.register(BookingOffence, BookingOffenceAdmin)
