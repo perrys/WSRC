@@ -39,7 +39,7 @@ from rest_framework.views import APIView
 from wsrc.site.courts.models import EventFilter
 from wsrc.site.settings import settings
 from wsrc.external_sites.booking_manager import BookingSystemSession
-from wsrc.site.usermodel.models import Player
+from wsrc.site.usermodel.models import Player, DoorCardEvent
 from wsrc.utils import xls_utils, sync_utils
 
 from .forms import SettingsUserForm, SettingsPlayerForm, SettingsInfoForm, \
@@ -110,6 +110,12 @@ class PlayerSerializer(serializers.ModelSerializer):
                   'cardnumber', 'squashlevels_id', 'prefs_receive_email', 'date_of_birth')
         depth = 1
 
+class DoorCardEventSerializer(serializers.ModelSerializer):
+    "Simple REST serializer"
+    class Meta:
+        model = DoorCardEvent
+        fields = ('id', 'card', 'event', 'timestamp')
+
 class PlayerView(rest_generics.RetrieveUpdateDestroyAPIView):
     "REST view"
     authentication_classes = (SessionAuthentication,)
@@ -123,6 +129,13 @@ class UserView(rest_generics.RetrieveUpdateDestroyAPIView):
     permission_classes = (IsAuthenticated, DjangoModelPermissions,)
     queryset = User.objects.all()
     serializer_class = UserSerializer
+
+class DoorCardEventCreateView(rest_generics.CreateAPIView):
+    "REST view for entereing door card events"
+    authentication_classes = (SessionAuthentication,)
+    permission_classes = (IsAuthenticated, DjangoModelPermissions,)
+    serializer_class = DoorCardEventSerializer
+    model = DoorCardEvent
 
 class PlayerListView(rest_generics.ListCreateAPIView):
     "REST view of all players"
