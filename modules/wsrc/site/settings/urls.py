@@ -87,6 +87,7 @@ urlpatterns = patterns('',
     url(r'^data/auth/', wsrc.site.views.auth_view),
     url(r'^data/club_events/', wsrc.site.views.ClubEventList.as_view()),
     url(r'^data/',    include(wsrc.site.competitions.data_urls)),
+    url(r'^data/doorcardevent/$', wsrc.site.usermodel.views.DoorCardEventCreateView.as_view()),
 
     url(r'^accounts/download/(\w+)', wsrc.site.accounts.views.transaction_csv_view),
     url(r'^accounts/?$', wsrc.site.accounts.views.accounts_view),
