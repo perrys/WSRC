@@ -290,4 +290,19 @@ class DoorEntryCard(models.Model):
     date_issued = models.DateField("Issue Date", default=datetime.date.today, blank=True, null=True)
     class Meta:
         verbose_name = "Door Entry Card"
+    def __unicode__(self):
+        result = self.cardnumber
+        if self.player is not None:
+            result += u" [{0}]".format(self.player.get_ordered_name())
+        return result
+
+class DoorCardEvent(models.Model):
+    "Events recorded on the cardreader"
+    card = models.ForeignKey(DoorEntryCard, blank=True, null=True)
+    event = models.CharField(max_length=128, blank=True, db_index=True)
+    timestamp = models.DateTimeField(help_text="Timestamp from the cardreader", db_index=True)
+    received_time = models.DateTimeField(help_text="Server timestamp", auto_now_add=True)
+    class Meta:
+        verbose_name = "Door Card Event"
+
 
