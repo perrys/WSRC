@@ -284,7 +284,9 @@ class DoorEntryCard(models.Model):
                                                'Enter an eight-digit card number.', 'invalid_id')
     player = models.ForeignKey(Player, db_index=True, blank=True, null=True, related_name="doorcards")
     cardnumber = models.CharField("Card #", max_length=8, unique=True, validators=[card_validator])
-    is_registered = models.BooleanField("Valid", help_text="Whether card has been registred with the card reader")
+    is_registered = models.BooleanField("Valid",
+                                        help_text="Whether card is registred with the card reader",
+                                        default=True)
     date_issued = models.DateField("Issue Date", default=datetime.date.today, blank=True, null=True)
     class Meta:
         verbose_name = "Door Entry Card"
