@@ -364,9 +364,18 @@ def admin_mailshot_view(request):
                     if entrants.player2 is not None:
                         player_ids.add(entrants.player2.id)
         return player_ids
+    def player_data(p):
+        sub = p.get_current_subscription()
+        
+        return (p.id, {"id": p.id, "full_name": p.user.get_full_name(), "email": p.user.email,
+                       "prefs_receive_email": p.prefs_receive_email,
+                       "subscription_type": {"name": sub.subscription_type.name if sub else None,
+                                             "id": sub.subscription_type.id if sub else None}})
+    players = Player.objects.filter(user__is_active=True).select_related("user")\
+                   .prefetch_related("subscription_set__subscription_type")
+    players = dict([player_data(player) for player in players])
     ctx = {
-        "players": Player.objects.filter(user__is_active=True).select_related("user")\
-                   .prefetch_related("subscription_set__subscription_type"),
+        "players": JSON_RENDERER.render(players),
         "from_email_addresses": [x + "@wokingsquashclub.org" for x in from_email_addresses],
         "subscription_types": SubscriptionType.objects.all(),
         "tournament_player_ids": get_comp_entrants("wsrc_tournaments", "wsrc_qualifiers"),

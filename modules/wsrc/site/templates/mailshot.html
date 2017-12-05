@@ -12,18 +12,7 @@
   <title>Mailshot Admin Form - Woking Squash Rackets Club</title>
 
   <script type="text/javascript">
-var players  = { 
-{% for p in players %}
- {% if forloop.counter0 > 0 %},{% endif %}
- {{ p.id }}: {
-  id: {{ p.id }}, 
-  full_name: "{{ p.user.first_name }} {{ p.user.last_name }}",
-  email: "{{ p.user.email }}",
-  prefs_receive_email: "{{ p.prefs_receive_email }}",
-  subscription_type: {name: "{{ p.get_current_subscription.subscription_type.name }}", id: {{ p.get_current_subscription.subscription_type.id }} }
- }
-{% endfor %} 
-};
+var players  = {{ players|safe }};
 var box_player_ids  = [{{ box_player_ids|join:',' }}];
 var tournament_player_ids  = [{{ tournament_player_ids|join:',' }}];
 
