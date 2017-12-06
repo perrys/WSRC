@@ -402,11 +402,8 @@ class SendEmail(APIView):
             email_data['html_body'] = body
         debug = False
         if debug:
-            import pprint, time
+            import pprint
             print pprint.pprint(email_data)
-            time.sleep(1)
-            if 'stewart.c.perry@gmail.com' in email_data['bcc_list']:
-                return HttpResponse("Invalid email address", content_type="text/plain", status=403)
         else:
             import wsrc.utils.email_utils as email_utils
             email_utils.send_email(**email_data)
