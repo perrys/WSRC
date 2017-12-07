@@ -190,7 +190,7 @@ class SubscriptionInline(admin.StackedInline):
     }
 class DoorCardInline(admin.TabularInline):
     model = DoorEntryCard
-    extra = 1
+    extra = 0
 
 class PlayerAdmin(SelectRelatedQuerysetMixin, PrefetchRelatedQuerysetMixin, admin.ModelAdmin):
     "Admin for Player (i.e. club member) model"
