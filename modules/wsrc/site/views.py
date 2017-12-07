@@ -385,12 +385,19 @@ def admin_mailshot_view(request):
 
 class SendEmail(APIView):
     parser_classes = (JSONParser,)
+    def post(self, request):
+        return self.put(request)
+
     def put(self, request, format="json"):
-        if not request.user.is_authenticated() or not request.user.is_staff:
+        if not (request.user.is_authenticated() and\
+                (request.user.is_staff or\
+                 request.user.groups.filter(name="Club Login").count() == 1)):
             raise PermissionDenied()
-        email_data = request.data
+        email_data = dict(request.data.items()) # ensure we have a native dictionary
         fmt  = email_data.pop('format')
         body = email_data.pop('body')
+        if 'to' in email_data:
+            email_data["to_list"] = [email_data.pop('to')]
         if fmt == 'mixed':
             email_data['text_body'] = body
             email_data['html_body'] = markdown.markdown(body, extensions=['markdown.extensions.extra'])
