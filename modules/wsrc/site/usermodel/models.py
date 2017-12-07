@@ -283,7 +283,7 @@ class DoorEntryCard(models.Model):
     card_validator = validators.RegexValidator(r'^\d{8}$',
                                                'Enter an eight-digit card number.', 'invalid_id')
     player = models.ForeignKey(Player, db_index=True, blank=True, null=True, related_name="doorcards")
-    cardnumber = models.CharField("Card #", max_length=8, unique=True, validators=[card_validator])
+    cardnumber = models.CharField("Card #", max_length=8, primary_key=True, validators=[card_validator])
     is_registered = models.BooleanField("Valid",
                                         help_text="Whether card is registred with the card reader",
                                         default=True)
