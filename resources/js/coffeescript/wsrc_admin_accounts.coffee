@@ -411,6 +411,7 @@ class WSRC_admin_accounts_view
       field = m[0]
       map_func = m[1]
       transaction[field] = map_func(jq_row.find("td.#{ field }"))
+    transaction['subscription'] = null unless transaction['subscription']
     return transaction
 
   get_upload_transaction_data: (start_date, end_date) ->
