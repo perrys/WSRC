@@ -27,27 +27,19 @@
 {% endif %}
 
 <input type="hidden" name="next" value="{% url 'settings' %}" />
-<fieldset name="login_details">
-<legend>Login</legend>
-{% usekwacro createfield user_form.username %}
-<div class="ui-field-contain">
- <label>Password:</label>
- <label class="ui-btn-c"><input id="id_password" type="checkbox" checked="checked" onclick="document.location='{% url 'password_change' %}'; this.checked=true; return false;"> Set (click to change)</label>
-</div>
-</fieldset>
 
 <fieldset name="personal_details">
 <legend>Personal Details</legend>
 {% usekwacro createfield user_form.first_name %}
 {% usekwacro createfield user_form.last_name %}
-{% usekwacro createfield player_form.short_name %}
-</fieldset>
-
-<fieldset name="contact_details">
-<legend>Contact Details</legend>
+{% usekwacro createfield player_form.date_of_birth %}
 {% usekwacro createfield user_form.email %}
 {% usekwacro createfield player_form.cell_phone %}
 {% usekwacro createfield player_form.other_phone %}
+</fieldset>
+
+<fieldset name="contact_details">
+<legend>Preferences</legend>
 {% usekwacro createfield player_form.prefs_receive_email %}
 {% usekwacro createfield player_form.prefs_esra_member %}
 {% usekwacro createfield player_form.prefs_display_contact_details %}
@@ -88,12 +80,15 @@
 </fieldset>
 
 <fieldset name="information">
-<legend>Information</legend>
-{% usekwacro createfield info_form.membership_type %}
-{% usekwacro createfield info_form.wsrc_id %}
+<legend>Other</legend>
+{% usekwacro createfield user_form.username %}
+<div class="ui-field-contain">
+ <label>Password:</label>
+ <label class="ui-btn-c"><input id="id_password" type="checkbox" checked="checked" onclick="document.location='{% url 'password_change' %}'; this.checked=true; return false;"> Set (click to change)</label>
+</div>
 {% usekwacro createfield info_form.booking_system_id %}
-{% usekwacro createfield info_form.cardnumber %}
 {% usekwacro createfield info_form.squashlevels_id %}
+{% usekwacro createfield info_form.doorcards %}
 </fieldset>
 
 <input id="submit_button" type="submit" value="Update" data-theme="b" />
