@@ -57,12 +57,9 @@ class SettingsPlayerForm(ModelForm):
         if instance and instance.pk:
             aged_types = SubscriptionType.objects.filter(Q(short_code="junior") | Q(short_code="y_adult"))
             aged_type_ids = [subtype.id for subtype in aged_types]
-            print aged_type_ids
             sub = instance.get_current_subscription()
-            print sub.subscription_type_id
             if sub is not None and sub.subscription_type_id in aged_type_ids:
                 return
-        print "setting readonly"
         self.fields["date_of_birth"].widget.attrs = {'class': 'readonly', 'readonly': 'readonly'}
 
     class Meta:
