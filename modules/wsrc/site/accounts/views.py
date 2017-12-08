@@ -1,4 +1,6 @@
 
+from functools import partial
+
 from .models import Category, Transaction, Account
 from .admin import SUBS_CATEGORY_NAME
 from wsrc.site.usermodel.models import Subscription, SubscriptionPayment
@@ -81,18 +83,19 @@ class TransactionView(rest_generics.ListAPIView):
                 tran['date_cleared'] = None
             sub_id = tran.pop('subscription')
             trans_model = Transaction(**tran)
-            models.append(lambda: trans_model.save())
+            models.append(partial(Transaction.save, trans_model))
             if sub_id is not None:
                 sub_model = subscriptions.get(int(sub_id))
                 if sub_model is not None:
-                    def create_and_save():
+                    def create_and_save(fsubs, ftrans):
                         # need to defer creating this until after the
                         # transaction is saved and hence has an ID
-                        payment = SubscriptionPayment(subscription=sub_model, transaction=trans_model)
+                        payment = SubscriptionPayment(subscription=fsubs, transaction=ftrans)
                         payment.save()
-                    models.append(create_and_save)
+                    models.append(partial(create_and_save, sub_model, trans_model))
         with transaction.atomic():
             for model in models:
+                print model
                 model()
         return Response(status=status.HTTP_201_CREATED)
 
