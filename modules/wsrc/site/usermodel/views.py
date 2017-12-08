@@ -322,7 +322,7 @@ def settings_view(request):
         uform = SettingsUserForm(instance=request.user)
         eformset = filter_formset_factory(queryset=events, initial=initial)
 
-    iform = SettingsInfoForm(instance=player)
+    iform = SettingsInfoForm.create(player)
 
     return render(request, 'settings.html', {
         'player_form':     pform,
