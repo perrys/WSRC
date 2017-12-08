@@ -16,13 +16,15 @@
 
 from django.contrib.auth.models import User
 from django.contrib.auth.forms import AuthenticationForm
-from django.forms.fields import CharField
-from django.forms import ModelForm
+from django.db.models import Q
+from django.forms.fields import CharField, DateField
+from django.forms import Form, ModelForm
 from django.forms.models import modelformset_factory, ModelMultipleChoiceField
 from django.forms.widgets import Select, CheckboxSelectMultiple, HiddenInput, Textarea
 
 from wsrc.site.courts.models import DayOfWeek, EventFilter
-from wsrc.site.usermodel.models import Player
+from wsrc.site.usermodel.models import Player, SubscriptionType
+from wsrc.utils.form_utils import make_readonly_widget
 
 class SpaceTranslatingCharField(CharField):
     def to_python(self, value):
@@ -47,9 +49,25 @@ class SettingsUserForm(ModelForm):
         fields = ["first_name", "last_name", "username",  "email"]
 
 class SettingsPlayerForm(ModelForm):
+    date_of_birth = DateField(input_formats=["%d/%m/%Y"], label="Date Of Birth", help_text="For Junior and Youth Subscrpitions Only")
+    
+    def __init__(self, *args, **kwargs):
+        super(SettingsPlayerForm, self).__init__(*args, **kwargs)
+        instance = getattr(self, 'instance', None)
+        if instance and instance.pk:
+            aged_types = SubscriptionType.objects.filter(Q(short_code="junior") | Q(short_code="y_adult"))
+            aged_type_ids = [subtype.id for subtype in aged_types]
+            print aged_type_ids
+            sub = instance.get_current_subscription()
+            print sub.subscription_type_id
+            if sub is not None and sub.subscription_type_id in aged_type_ids:
+                return
+        print "setting readonly"
+        self.fields["date_of_birth"].widget.attrs = {'class': 'readonly', 'readonly': 'readonly'}
+
     class Meta:
         model = Player
-        fields = ["cell_phone", "other_phone", "prefs_receive_email", "prefs_esra_member", "prefs_display_contact_details"]
+        fields = ["date_of_birth", "cell_phone", "other_phone", "prefs_receive_email", "prefs_esra_member", "prefs_display_contact_details"]
         exclude = ('user',)
 
 class NotifierForm(ModelForm):
@@ -102,17 +120,14 @@ def create_notifier_filter_formset_factory(max_number):
         }
     )
 
-class SettingsInfoForm(ModelForm):
-    def __init__(self, *args, **kwargs):
-        super(SettingsInfoForm, self).__init__(*args, **kwargs)
-        instance = getattr(self, 'instance', None)
-        if instance and instance.pk:
-            for field in ["squashlevels_id", "booking_system_id"]:
-                self.fields[field].widget.attrs['readonly'] = "readonly"
-                self.fields[field].widget.attrs['disabled'] = "disabled"
+class SettingsInfoForm(Form):
+    squashlevels_id = CharField(label="SquashLevels ID", widget=make_readonly_widget())
+    booking_system_id = CharField(label="Booking System ID", widget=make_readonly_widget())
+    doorcards = CharField(label="Door Cards", widget=make_readonly_widget())
     
-    class Meta:
-        model = Player
-        fields = ["booking_system_id", "squashlevels_id"]
-        exclude = ('user',)
-
+    @classmethod
+    def create(cls, player):
+        data = {"squashlevels_id": player.squashlevels_id,
+                "booking_system_id": player.booking_system_id,
+                "doorcards": player.get_cardnumbers()}
+        return cls(data)
