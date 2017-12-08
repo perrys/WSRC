@@ -369,7 +369,11 @@ if __name__ == "__main__":
       process_date(date)
       date = date + datetime.timedelta(days=1)
       ndays -= 1
-            
+
+  else:
+    sys.stderr.write("ERROR: unrecognized command \"{0}\"\n".format(command))
+    sys.exit(1)
+  
 
 # Local Variables:
 # mode: python
