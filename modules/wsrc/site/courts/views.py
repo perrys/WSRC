@@ -38,7 +38,7 @@ from django.views.decorators.http import require_safe, require_http_methods
 from icalendar import Calendar, Event, vCalAddress, vText
 
 import wsrc.site.settings.settings as settings
-from wsrc.utils.form_utils import LabeledSelect
+from wsrc.utils.form_utils import LabeledSelect, make_readonly_widget
 from wsrc.site.courts.models import BookingSystemEvent
 from wsrc.site.usermodel.models import Player
 from wsrc.utils.html_table import Table, Cell, SpanningCell
@@ -292,9 +292,6 @@ def validate_quarter_hour_duration(value):
   if (value % 60) != 0:
     raise ValidationError("{value} has less than minute resolution".format(**locals()))
   validate_15_minute_multiple(value/60)
-
-def make_readonly_widget():
-  return forms.TextInput(attrs={'class': 'readonly', 'readonly': 'readonly', 'style': 'text-align: left'})
 
 def make_date_formats():
   return ['%a %d %b %Y', '%Y-%m-%d']
