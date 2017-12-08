@@ -124,10 +124,13 @@ class SettingsInfoForm(Form):
     squashlevels_id = CharField(label="SquashLevels ID", widget=make_readonly_widget())
     booking_system_id = CharField(label="Booking System ID", widget=make_readonly_widget())
     doorcards = CharField(label="Door Cards", widget=make_readonly_widget())
+    subscription = CharField(label="Subscription", widget=make_readonly_widget())
     
     @classmethod
     def create(cls, player):
         data = {"squashlevels_id": player.squashlevels_id,
                 "booking_system_id": player.booking_system_id,
-                "doorcards": player.get_cardnumbers()}
+                "doorcards": player.get_cardnumbers(),
+                "subscription": "{sub.subscription_type.name} [{sub.season}]".format(sub=player.get_current_subscription())
+                }
         return cls(data)

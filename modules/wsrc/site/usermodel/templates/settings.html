@@ -86,6 +86,7 @@
  <label>Password:</label>
  <label class="ui-btn-c"><input id="id_password" type="checkbox" checked="checked" onclick="document.location='{% url 'password_change' %}'; this.checked=true; return false;"> Set (click to change)</label>
 </div>
+{% usekwacro createfield info_form.subscription %}
 {% usekwacro createfield info_form.booking_system_id %}
 {% usekwacro createfield info_form.squashlevels_id %}
 {% usekwacro createfield info_form.doorcards %}
