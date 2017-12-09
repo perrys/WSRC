@@ -137,6 +137,9 @@ class Season(models.Model):
 class SubscriptionType(models.Model):
     short_code = models.CharField(max_length=16)
     name = models.CharField(max_length=32)
+    is_default = models.BooleanField(default=False, help_text="Please ensure only one " +
+                                     "subscription type is set as default")
+    max_age_years = models.IntegerField(blank=True, null=True)
     def __unicode__(self):
         return self.name
     class Meta:
