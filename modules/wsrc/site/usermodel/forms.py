@@ -16,7 +16,6 @@
 
 from django.contrib.auth.models import User
 from django.contrib.auth.forms import AuthenticationForm
-from django.db.models import Q
 from django.forms.fields import CharField, DateField
 from django.forms import Form, ModelForm
 from django.forms.models import modelformset_factory, ModelMultipleChoiceField
@@ -49,13 +48,13 @@ class SettingsUserForm(ModelForm):
         fields = ["first_name", "last_name", "username",  "email"]
 
 class SettingsPlayerForm(ModelForm):
-    date_of_birth = DateField(input_formats=["%d/%m/%Y"], label="Date Of Birth", help_text="For Junior and Youth Subscrpitions Only")
+    date_of_birth = DateField(input_formats=["%d/%m/%Y"], label="Date Of Birth", help_text="For Age-Restricted Subscrpitions Only")
     
     def __init__(self, *args, **kwargs):
         super(SettingsPlayerForm, self).__init__(*args, **kwargs)
         instance = getattr(self, 'instance', None)
         if instance and instance.pk:
-            aged_types = SubscriptionType.objects.filter(Q(short_code="junior") | Q(short_code="y_adult"))
+            aged_types = SubscriptionType.objects.filter(max_age_years__isnull=False)
             aged_type_ids = [subtype.id for subtype in aged_types]
             sub = instance.get_current_subscription()
             if sub is not None and sub.subscription_type_id in aged_type_ids:
