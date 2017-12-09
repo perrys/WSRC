@@ -167,12 +167,16 @@ def update_subscriptions(modeladmin, request, queryset):
             if subscription is not None:
                 subs_type = subscription.subscription_type
             else:
-                subs_type = SubscriptionType.objects.get(name="Full")
+                subs_type = SubscriptionType.objects.get(is_default=True)
                 if player.date_of_birth is not None:
-                    if player.get_age() < 19:
-                        subs_type = SubscriptionType.objects.get(name="Junior")
-                    elif player.get_age() < 24:
-                        subs_type = SubscriptionType.objects.get(name="Young Adult")
+                    age_restricted_types = SubscriptionType.\
+                                           objects.filter(max_age_years__isnull=False)\
+                                                  .order_by("max_age_years")
+                    age_years = player.get_age()
+                    for i_substype in age_restricted_types:
+                        if age_years <= i_substype.max_age_years:
+                            subs_type = i_substype
+                            break
             subscription = Subscription(player=player, season=latest_season,
                                         payment_frequency=payment_freq, subscription_type=subs_type)
             subscription.save()
