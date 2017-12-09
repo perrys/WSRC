@@ -370,6 +370,10 @@ if __name__ == "__main__":
             date = date + datetime.timedelta(days=1)
             ndays -= 1
 
+    elif command in ("purge-personal-data"):
+        from wsrc.site.usermodel.data_purge import policy_purge_data
+        policy_purge_data()
+        
     else:
         sys.stderr.write("ERROR: unrecognized command \"{0}\"\n".format(command))
         sys.exit(1)
