@@ -38,6 +38,7 @@ from rest_framework.views import APIView
 
 from wsrc.site.courts.models import EventFilter
 from wsrc.site.settings import settings
+from wsrc.site.views import add_navigation_links
 from wsrc.external_sites.booking_manager import BookingSystemSession
 from wsrc.site.usermodel.models import Player, DoorCardEvent
 from wsrc.utils import xls_utils, sync_utils
@@ -63,6 +64,12 @@ class MemberListView(ListView):
 
     def get_template_names(self):
         return ["memberlist.html"]
+
+    def get_context_data(self, **kwargs):
+        ctx = super(MemberListView, self).get_context_data(**kwargs)
+        add_navigation_links(self.request, ctx)
+        return ctx
+
 
 class MyNullBooleanSelect(forms.widgets.Select):
     """
@@ -323,12 +330,13 @@ def settings_view(request):
         eformset = filter_formset_factory(queryset=events, initial=initial)
 
     iform = SettingsInfoForm.create(player)
-
-    return render(request, 'settings.html', {
+    ctx = {
         'player_form':     pform,
         'user_form':       uform,
         'info_form':       iform,
         'notify_formset':  eformset,
         'n_notifiers':     len(events),
         'form_saved':      success,
-    })
+    }
+    add_navigation_links(request, ctx)
+    return render(request, 'settings.html', ctx)

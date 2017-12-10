@@ -30,10 +30,10 @@ $( document ).on( "pagecreate", ".wsrc-site", function( event ) {
   <!-- left nav menu: -->
   <div data-role="panel" class="jqm-navmenu-panel" data-position="left" data-display="overlay" data-theme="a" {% if options.no_navigation %}style="display: none;"{% endif %}>
     <ul class="jqm-list ui-alt-icon ui-nodisc-icon">
-
-      <li data-icon="home"><a href="{% url 'homepage' %}" data-ajax="false" onclick="$.mobile.loading('show')">Home</a></li>
-
-      <li data-icon="info"><a href="/about">About</a></li>
+{% for link in navlinks %}
+      <li {% if link.icon %}data-icon="{{ link.icon }}"{% endif %}><a href="{% if link.is_reverse_url %}{% url link.url %}{% else %}{{ link.url }}{% endif %}" data-ajax="false">{{ link.name }}</a></li>
+{% endfor %}
+{% comment %}
       <li><a href="/membership">Membership</a></li>
       <li><a href="/coaching">Coaching</a></li>
       <li><a href="/juniors">Juniors</a></li>
@@ -57,6 +57,7 @@ $( document ).on( "pagecreate", ".wsrc-site", function( event ) {
 
       <li data-icon="star"><a href="/links">Links and Credits</a></li>
       <li data-icon="mail"><a href="/contact">Contact Us</a></li>
+{% endcomment %}
     </ul>
   </div>
 

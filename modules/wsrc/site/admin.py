@@ -20,7 +20,8 @@ from django.db import models
 
 from django.contrib import admin
 from wsrc.site.models import PageContent, EmailContent, MaintenanceIssue,\
-    Suggestion, ClubEvent, CommitteeMeetingMinutes, GenericPDFDocument, Image
+    Suggestion, ClubEvent, CommitteeMeetingMinutes, GenericPDFDocument, Image,\
+    NavigationLink
 
 def txt_widget(nrows):
     "Create a standard textarea widget"
@@ -30,6 +31,10 @@ class PageContentAdmin(admin.ModelAdmin):
     formfield_overrides = {
         models.TextField: {'widget': txt_widget(30)},
     }
+
+class NavigationLinkAdmin(admin.ModelAdmin):
+    list_display = ("name", "url", "is_reverse_url", "is_restricted", "icon", "parent", "ordering")
+    list_editable = ("parent", "ordering")
 
 class EmailContentAdmin(admin.ModelAdmin):
     formfield_overrides = {
@@ -80,8 +85,8 @@ class SuggestionAdmin(admin.ModelAdmin):
     }
     list_select_related = ('suggester__user',)
 
-
 admin.site.register(PageContent, PageContentAdmin)
+admin.site.register(NavigationLink, NavigationLinkAdmin)
 admin.site.register(EmailContent, EmailContentAdmin)
 admin.site.register(MaintenanceIssue, MaintenanceIssueAdmin)
 admin.site.register(Suggestion, SuggestionAdmin)

@@ -17,6 +17,7 @@ from wsrc.site.models import EmailContent
 from wsrc.site.usermodel.models import Player
 from wsrc.site.competitions.models import Competition, CompetitionGroup, Match, Entrant
 from wsrc.site.competitions.serializers import CompetitionSerializer, CompetitionGroupSerializer, MatchSerializer, get_box_league_points
+from wsrc.site.views import add_navigation_links
 from wsrc.utils.html_table import Table, Cell, SpanningCell, merge_classes
 from wsrc.utils.timezones import parse_iso_date_to_naive
 from wsrc.utils import email_utils
@@ -457,6 +458,7 @@ class BoxesTemplateViewBase(BoxesViewBase, TemplateView):
             box["league_table"] = self.create_league_table(box["competition"], box["entrants"], auth_user_id)
             
         self.add_selector(context, possible_groups, group)
+        add_navigation_links(self.request, context)
         return context
 
 class BoxesUserView(BoxesTemplateViewBase):
@@ -572,6 +574,7 @@ def bracket_view(request, year, name, template_name="tournaments.html"):
     }
     options = set_view_options(request, ctx)
     ctx["selector"] = get_tournament_links(options, competition)
+    add_navigation_links(request, ctx)
 
     return TemplateResponse(request, template_name, ctx)
 
