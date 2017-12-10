@@ -76,6 +76,13 @@ class EntryReader(object):
         self.receiver_thread.daemon = True
         self.receiver_thread.start()
 
+    def in_waiting(self):
+        if hasattr(self.serial, "in_waiting"):
+            return serial.Serial.in_waiting
+        elif hasattr(self, serial, "inWaiting"):
+            return serial.Serial.inWaiting()
+        raise Exception("unable to get bytes in waiting")
+        
     def _stop_reader(self):
         """Stop reader thread only, wait for clean exit of thread"""
         self._reader_alive = False
@@ -89,7 +96,7 @@ class EntryReader(object):
             buf = StringIO.StringIO()
             while self._reader_alive:
                 # read all that is there or wait for one byte
-                data = self.serial.read(self.serial.in_waiting or 1)
+                data = self.serial.read(self.in_waiting() or 1)
                 if len(data) > 0:
                     buf.write(data)
                     data = buf.getvalue()
@@ -254,6 +261,8 @@ class REPL(object):
                     self.uploader.post_data(result.destination, result.data)
             except Queue.Empty:
                 pass
+            except urllib2.HTTPError:
+                pass # Error has already been logged
 
 
 class Tester(unittest.TestCase):
