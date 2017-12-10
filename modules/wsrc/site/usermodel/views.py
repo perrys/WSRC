@@ -136,6 +136,7 @@ class DoorCardEventCreateView(rest_generics.CreateAPIView):
     permission_classes = (IsAuthenticated, DjangoModelPermissions,)
     serializer_class = DoorCardEventSerializer
     model = DoorCardEvent
+    queryset = DoorCardEvent.objects.all()
 
 class PlayerListView(rest_generics.ListCreateAPIView):
     "REST view of all players"
