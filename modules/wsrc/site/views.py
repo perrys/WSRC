@@ -46,7 +46,7 @@ from django.db.models import Q
 import rest_framework.generics as rest_generics
 from rest_framework.renderers import JSONRenderer
 from rest_framework import serializers
-from rest_framework.parsers import JSONParser
+from rest_framework.parsers import JSONParser, FormParser
 from rest_framework.views import APIView
 from rest_framework.utils.serializer_helpers import ReturnDict
 
@@ -384,7 +384,7 @@ def admin_mailshot_view(request):
     return TemplateResponse(request, 'mailshot.html', ctx)
 
 class SendEmail(APIView):
-    parser_classes = (JSONParser,)
+    parser_classes = (JSONParser,FormParser)
     def post(self, request):
         return self.put(request)
 
