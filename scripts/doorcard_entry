@@ -79,7 +79,7 @@ class EntryReader(object):
     def in_waiting(self):
         if hasattr(self.serial, "in_waiting"):
             return self.serial.in_waiting
-        elif hasattr(self, serial, "inWaiting"):
+        elif hasattr(self.serial, "inWaiting"):
             return self.serial.inWaiting()
         raise Exception("unable to get bytes in waiting")
         
@@ -351,6 +351,7 @@ Id number  Zone Door
 def setup_logger(stream=None):
     import tempfile
     tmpdir = tempfile.gettempdir()
+    tmpdir = "/var/tmp"
     filename = os.path.join(tmpdir, "doorcard_{0:%Y-%m-%d}.log".format(datetime.date.today()))
     file_handler = logging.FileHandler(filename)
     def addHandler(handler):
