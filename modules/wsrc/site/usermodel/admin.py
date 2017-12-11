@@ -284,7 +284,7 @@ class HasPlayerListFilter(admin.SimpleListFilter):
         return [('y', 'Yes'), ('n', 'No')]
     def queryset(self, request, queryset):
         if self.value():
-            flag = self.value() == 'y'
+            flag = self.value() == 'n'
             queryset = queryset.filter(player__isnull=flag)
         return queryset
 
