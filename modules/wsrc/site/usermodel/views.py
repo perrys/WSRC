@@ -22,7 +22,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.core.exceptions import PermissionDenied
 from django.db import transaction
-from django.http import HttpResponseBadRequest
+from django.http import HttpResponse, HttpResponseBadRequest
 from django import forms
 from django.shortcuts import render
 from django.views.generic.list import ListView
@@ -41,7 +41,9 @@ from wsrc.site.settings import settings
 from wsrc.external_sites.booking_manager import BookingSystemSession
 from wsrc.site.usermodel.models import Player
 from wsrc.utils import xls_utils, sync_utils
+from wsrc.utils.timezones import parse_iso_date_to_naive
 
+from .activity_report import ActivityReport
 from .forms import SettingsUserForm, SettingsPlayerForm, SettingsInfoForm, \
     create_notifier_filter_formset_factory
 
@@ -274,6 +276,26 @@ def admin_memberlist_view(request):
     }
     return render(request, "memberlist_admin.html", kwargs)
 
+@login_required
+def member_activity_view(request):
+    if not request.user.is_staff:
+        raise PermissionDenied()
+    start_date = request.GET.get("start_date")
+    end_date = request.GET.get("end_date")
+    if start_date is None or end_date is None:
+        return HttpResponseBadRequest("missing start_date or end_date")
+    try:
+        start_date = parse_iso_date_to_naive(start_date)
+        end_date = parse_iso_date_to_naive(end_date)
+    except Exception, e:
+        raise e
+#        return HttpResponseBadRequest("bad date format, should be YYYY-MM-DD")
+    reporter = ActivityReport(start_date, end_date)
+    content_type = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    response = HttpResponse(reporter.create_report(), content_type=content_type)
+    response['Content-Disposition'] = 'attachment; filename="activity_{start_date:%Y-%m-%d}-{end_date:%Y-%m-%d}.xslx"'\
+                                      .format(**locals())
+    return response
 
 
 @login_required
