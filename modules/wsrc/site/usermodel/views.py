@@ -301,14 +301,20 @@ def member_activity_view(request):
     try:
         start_date = parse_iso_date_to_naive(start_date)
         end_date = parse_iso_date_to_naive(end_date)
-    except Exception, e:
-        raise e
-#        return HttpResponseBadRequest("bad date format, should be YYYY-MM-DD")
+    except ValueError:
+        return HttpResponseBadRequest("bad date format, should be YYYY-MM-DD")
     reporter = ActivityReport(start_date, end_date)
-    content_type = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-    response = HttpResponse(reporter.create_report(), content_type=content_type)
-    response['Content-Disposition'] = 'attachment; filename="activity_{start_date:%Y-%m-%d}-{end_date:%Y-%m-%d}.xslx"'\
-                                      .format(**locals())
+    if "djtb" in request.GET:
+        # used for tracing SQL calls in the debug toolbar
+        payload = "<html><body></body></html>"
+        content_type = 'text/html'
+    else:
+        payload = reporter.create_report()
+        content_type = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    response = HttpResponse(payload, content_type=content_type)
+    if "djtb" not in request.GET:
+        response['Content-Disposition'] = 'attachment; filename="activity_{start_date:%Y-%m-%d}_{end_date:%Y-%m-%d}.xlsx"'\
+                                          .format(**locals())
     return response
 
 
