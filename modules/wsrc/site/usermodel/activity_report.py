@@ -248,7 +248,8 @@ class ActivityReport(object):
 
         def add_chart(col_range, insert_cell):
             chart = workbook.add_chart({'type': 'column'})
-            chart.set_y_axis({"max": 1})
+            chart.set_size({'width': 720})
+            chart.set_y_axis({"max": 1, 'num_format': '0%'})
             for dow in col_range:
                 chart.add_series({
                     'values': [cuws.name, 1, dow, len(cudata), dow],
