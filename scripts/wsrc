@@ -9,7 +9,7 @@ import os.path
 import sys
 
 import markdown
-import wsrc.site.settings.settings as settings  
+import wsrc.site.settings.settings as settings
 from wsrc.utils import sync_utils
 import wsrc.utils.timezones as timezone_utils
 LOGGER = logging.getLogger(__name__)
@@ -24,352 +24,360 @@ TOURNAMENTS_EMAIL_ADDRESS = "tournaments@wokingsquashclub.org"
 
 def manage_tournament_bookings(username, password):
 
-  ADVANCE_BOOKING_DAYS = 10
-  RELEASE_BOOKING_DAYS = 5
-  TARGET_TIME          = datetime.time(19, 0)
-  TARGET_DAYS          = [0,1,2,3] # monday - thursday
-  TARGET_COURT         = 1
-  TARGET_DESCRIPTION   = "Unreserved - will be released 5 days in advance"
-  TARGET_NAME          = "Tournament Matches"
+    ADVANCE_BOOKING_DAYS = 10
+    RELEASE_BOOKING_DAYS = 5
+    TARGET_TIME          = datetime.time(19, 0)
+    TARGET_DAYS          = [0,1,2,3] # monday - thursday
+    TARGET_COURT         = 1
+    TARGET_DESCRIPTION   = "Unreserved - will be released 5 days in advance"
+    TARGET_NAME          = "Tournament Matches"
 
-  today = datetime.today()
-  target_date = today + datatime.timedelta(days=ADVANCE_BOOKING_DAYS)
-  from wsrc.external_sites.booking_manager import BookingSystemSession
-  session = BookingSystemSession(username, password)
-  if target_date.weekday() in TARGET_DAYS:
-    time = datetime.datetime.combine(target_date, TARGET_TIME)
-    LOGGER.info("Booking tournament court @ {1}".format(time.isoformat))  
-    session.make_booking(time, TARGET_COURT, TARGET_DESCRIPTION, TARGET_NAME)
+    today = datetime.today()
+    target_date = today + datatime.timedelta(days=ADVANCE_BOOKING_DAYS)
+    from wsrc.external_sites.booking_manager import BookingSystemSession
+    session = BookingSystemSession(username, password)
+    if target_date.weekday() in TARGET_DAYS:
+        time = datetime.datetime.combine(target_date, TARGET_TIME)
+        LOGGER.info("Booking tournament court @ {1}".format(time.isoformat))
+        session.make_booking(time, TARGET_COURT, TARGET_DESCRIPTION, TARGET_NAME)
 
-  booking_events = get_booked_courts(session)
-  for evt in booking_events:
-    ndays = evt.time.date() - target_date
-    if ndays < RELEASE_BOOKING_DAYS:
-      if evt.name.lower().find("tournament") >= 0:
-        if evt.description.lower().find("unreserved") >= 0:
-          LOGGER.info("deleting booking id {0}, time: {1}, name: \"{2}\", description: \"{3}\"".format(evt.get_booking_id(), 
-                                                                                                       evt.time.isoformat(" "), 
-                                                                                                       evt.name, 
-                                                                                                       evt.description))
-          session.delete_booking(evt.get_booking_id())
+    booking_events = get_booked_courts(session)
+    for evt in booking_events:
+        ndays = evt.time.date() - target_date
+        if ndays < RELEASE_BOOKING_DAYS:
+            if evt.name.lower().find("tournament") >= 0:
+                if evt.description.lower().find("unreserved") >= 0:
+                    LOGGER.info("deleting booking id {0}, time: {1}, name: \"{2}\", description: \"{3}\"".format(evt.get_booking_id(),
+                                                                                                                 evt.time.isoformat(" "),
+                                                                                                                 evt.name,
+                                                                                                                 evt.description))
+                    session.delete_booking(evt.get_booking_id())
 
 def email_report_overdue_tournament_matches():
-  import wsrc.site.competitions.tournament as tournament_utils
-  import wsrc.site.models as site_models;
-  import wsrc.site.competitions.models as comp_models;
+    import wsrc.site.competitions.tournament as tournament_utils
+    import wsrc.site.models as site_models;
+    import wsrc.site.competitions.models as comp_models;
 
-  today = datetime.date.today()
-  def is_overdue(match):
-    return match.get_deadline() < today
+    today = datetime.date.today()
+    def is_overdue(match):
+        return match.get_deadline() < today
 
-  current_tournaments = tournament_utils.get_current_competitions()
-  overdue_match_map = dict()
-  for tournament in current_tournaments:  
-    matches = tournament_utils.get_unplayed_matches(tournament)
-    overdue_matches = [m for m in matches if is_overdue(m)]
-    overdue_matches.sort(key=lambda(x): x.get_deadline(), reverse=False)
-    if len(overdue_matches) > 0:
-      overdue_match_map[tournament] = overdue_matches
+    current_tournaments = tournament_utils.get_current_competitions()
+    overdue_match_map = dict()
+    for tournament in current_tournaments:
+        matches = tournament_utils.get_unplayed_matches(tournament)
+        overdue_matches = [m for m in matches if is_overdue(m)]
+        overdue_matches.sort(key=lambda(x): x.get_deadline(), reverse=False)
+        if len(overdue_matches) > 0:
+            overdue_match_map[tournament] = overdue_matches
 
-  def get_opponent_desc(match, team_number_1_or_2):
-    opponents = match.get_team(team_number_1_or_2)
-    if opponents is not None:
-      return opponents.get_players_as_string()
-    def match_descr(match, team_number):
-      try:
-        previous_match = tournament_utils.get_previous_match(match, team_number)
-        t1 = previous_match.team1 is not None and previous_match.team1.get_players_as_string() or match_descr(previous_match, 1)
-        t2 = previous_match.team2 is not None and previous_match.team2.get_players_as_string() or match_descr(previous_match, 2)
-        return "(WINNER of %(t1)s vs %(t2)s)" % locals()
-      except comp_models.Match.DoesNotExist: # if opponents are two rounds behind
-        return "(PREVIOUS MATCH UNRESOLVED)"
-    return match_descr(match, team_number_1_or_2)
+    def get_opponent_desc(match, team_number_1_or_2):
+        opponents = match.get_team(team_number_1_or_2)
+        if opponents is not None:
+            return opponents.get_players_as_string()
+        def match_descr(match, team_number):
+            try:
+                previous_match = tournament_utils.get_previous_match(match, team_number)
+                t1 = previous_match.team1 is not None and previous_match.team1.get_players_as_string() or match_descr(previous_match, 1)
+                t2 = previous_match.team2 is not None and previous_match.team2.get_players_as_string() or match_descr(previous_match, 2)
+                return "(WINNER of %(t1)s vs %(t2)s)" % locals()
+            except comp_models.Match.DoesNotExist: # if opponents are two rounds behind
+                return "(PREVIOUS MATCH UNRESOLVED)"
+        return match_descr(match, team_number_1_or_2)
 
-  for tournament, overdue_matches in overdue_match_map.iteritems():
-    match_table = [["Comp", "Match", "Deadline"]]
-    for match in overdue_matches:
-      t1 = get_opponent_desc(match, 1)
-      t2 = get_opponent_desc(match, 2)
-      match_table.append([tournament.name, "%(t1)s vs %(t2)s" % locals(), match.get_deadline().strftime("%a %d %b")])
-    overdue_match_map[tournament] = {
-        "raw_data": match_table,
-        "text/plain": format_text_table(match_table, hasHeader=True, nspaces=2),
-        "text/html":  format_html_table(match_table, hasHeader=True),
-        }
+    for tournament, overdue_matches in overdue_match_map.iteritems():
+        match_table = [["Comp", "Match", "Deadline"]]
+        for match in overdue_matches:
+            t1 = get_opponent_desc(match, 1)
+            t2 = get_opponent_desc(match, 2)
+            match_table.append([tournament.name, "%(t1)s vs %(t2)s" % locals(), match.get_deadline().strftime("%a %d %b")])
+        overdue_match_map[tournament] = {
+            "raw_data": match_table,
+            "text/plain": format_text_table(match_table, hasHeader=True, nspaces=2),
+            "text/html":  format_html_table(match_table, hasHeader=True),
+            }
 
-  context = Context({"tournaments": overdue_match_map, "today": today})
-  text_body, html_body = email_utils.get_email_bodies("Overdue Tournament Matches", context)
-  subject = "Overdue Match Report".format(**locals())
-  from_address = TOURNAMENTS_EMAIL_ADDRESS
-  to_list = [TOURNAMENTS_EMAIL_ADDRESS]
-  email_utils.send_email(subject, text_body, html_body, from_address, to_list)
+    context = Context({"tournaments": overdue_match_map, "today": today})
+    text_body, html_body = email_utils.get_email_bodies("Overdue Tournament Matches", context)
+    subject = "Overdue Match Report".format(**locals())
+    from_address = TOURNAMENTS_EMAIL_ADDRESS
+    to_list = [TOURNAMENTS_EMAIL_ADDRESS]
+    email_utils.send_email(subject, text_body, html_body, from_address, to_list)
 
 def email_outstanding_box_matches():
-  import wsrc.site.competitions.tournament as tournament_utils
-  import wsrc.site.competitions.models as comp_models;
-  import wsrc.site.models as site_models;
+    import wsrc.site.competitions.tournament as tournament_utils
+    import wsrc.site.competitions.models as comp_models;
+    import wsrc.site.models as site_models;
 
-  boxes_group = comp_models.CompetitionGroup.objects.filter(comp_type="wsrc_boxes").get(active=True)
-  boxes = [c for c in boxes_group.competition_set.all()]
-  email_template = site_models.EmailContent.objects.get(name="EndOfLeagueReminder")
-  email_template = Template(email_template.markup)
+    boxes_group = comp_models.CompetitionGroup.objects.filter(comp_type="wsrc_boxes").get(active=True)
+    boxes = [c for c in boxes_group.competition_set.all()]
+    email_template = site_models.EmailContent.objects.get(name="EndOfLeagueReminder")
+    email_template = Template(email_template.markup)
 
-  for box in boxes:
-    matches = tournament_utils.get_unplayed_matches(box)
-    opponent_set = set()
-    for match in matches:
-      opponent_set.add(match.get_team(1))
-      opponent_set.add(match.get_team(2))
-    
-    to_list = [entrant.player1.user.email for entrant in opponent_set]
-    
-    context = Context({
-      "competition": box,
-      "opponents": opponent_set,
-      "matches": matches
-    })
-    context["content_type"] = "text/html"
-    html_body = markdown.markdown(email_template.render(context))
-    context["content_type"] = "text/plain"
-    text_body = email_template.render(context)
-    subject = "WSRC {box_name} Box Ending {date:%a %d %b}".format(box_name=box.name, date=box.end_date)
-    from_address = "leagues@wokingsquashclub.org"
+    for box in boxes:
+        matches = tournament_utils.get_unplayed_matches(box)
+        opponent_set = set()
+        for match in matches:
+            opponent_set.add(match.get_team(1))
+            opponent_set.add(match.get_team(2))
 
-    email_utils.send_email(subject, text_body, html_body, from_address, to_list)
+        to_list = [entrant.player1.user.email for entrant in opponent_set]
+
+        context = Context({
+          "competition": box,
+          "opponents": opponent_set,
+          "matches": matches
+        })
+        context["content_type"] = "text/html"
+        html_body = markdown.markdown(email_template.render(context))
+        context["content_type"] = "text/plain"
+        text_body = email_template.render(context)
+        subject = "WSRC {box_name} Box Ending {date:%a %d %b}".format(box_name=box.name, date=box.end_date)
+        from_address = "leagues@wokingsquashclub.org"
+
+        email_utils.send_email(subject, text_body, html_body, from_address, to_list)
 
 
 
 def email_tournament_match_reminders(usernames):
-  import wsrc.site.competitions.models as comp_models;
-  import wsrc.site.competitions.tournament as tournament_utils
-  import wsrc.site.models as site_models;
-  import wsrc.site.usermodel.models as user_models;
-  import wsrc.utils.collection_utils as collection_utils
+    import wsrc.site.competitions.models as comp_models;
+    import wsrc.site.competitions.tournament as tournament_utils
+    import wsrc.site.models as site_models;
+    import wsrc.site.usermodel.models as user_models;
+    import wsrc.utils.collection_utils as collection_utils
 
-  current_tournaments = tournament_utils.get_current_competitions()
-  year = datetime.date.today().year
+    current_tournaments = tournament_utils.get_current_competitions()
+    year = datetime.date.today().year
 
-  # Populate map of player_id -> unplayed matches
-  player_to_matches_map = {}
-  for tournament in current_tournaments:
-    for m in tournament_utils.get_unplayed_matches(tournament):
-      for i in [1,2]:
-        entrant = getattr(m, "team%(i)d" % locals())
-        if not entrant: 
-          continue
-        for player in entrant.get_players():
-          match_list = collection_utils.get_or_add(player_to_matches_map, player.id)
-          match_list.append(m)
+    # Populate map of player_id -> unplayed matches
+    player_to_matches_map = {}
+    for tournament in current_tournaments:
+        for m in tournament_utils.get_unplayed_matches(tournament):
+            for i in [1,2]:
+                entrant = getattr(m, "team%(i)d" % locals())
+                if not entrant:
+                    continue
+                for player in entrant.get_players():
+                    match_list = collection_utils.get_or_add(player_to_matches_map, player.id)
+                    match_list.append(m)
 
-  # for each player/match_list combination, create rectangular tables
-  # of match descriptions and opponent details
-  player_to_opponent_table_map = dict()
-  player_to_match_table_map = dict()
-  for player_id, match_list in player_to_matches_map.iteritems():
-    player = user_models.Player.objects.get(pk=player_id)
-    match_rows = [["Comp [Round]", "Opponent(s)", "Deadline", "Link"]]
-    opponent_set = set()
-    for match in match_list:
-      my_team_number = tournament_utils.get_team_number(match, player_id)
-      other_team_number = tournament_utils.other_team_number(my_team_number)
-      opponents = match.get_team(other_team_number)
-      if opponents is not None:
-        opponent_set.update(opponents.get_players())
-        opponent_desc = opponents.get_players_as_string()
-      else:
-        def match_descr(match, team_number):
-          try:
-            previous_match = tournament_utils.get_previous_match(match, team_number)
-            t1 = previous_match.team1 is not None and previous_match.team1.get_players_as_string() or match_descr(previous_match, 1)
-            t2 = previous_match.team2 is not None and previous_match.team2.get_players_as_string() or match_descr(previous_match, 2)
-            return "(WINNER of %(t1)s vs %(t2)s)" % locals()
-          except comp_models.Match.DoesNotExist: # if opponents are two rounds behind
-            return "(PREVIOUS MATCH UNRESOLVED)"
-        opponent_desc = match_descr(match, other_team_number)
+    # for each player/match_list combination, create rectangular tables
+    # of match descriptions and opponent details
+    player_to_opponent_table_map = dict()
+    player_to_match_table_map = dict()
+    for player_id, match_list in player_to_matches_map.iteritems():
+        player = user_models.Player.objects.get(pk=player_id)
+        match_rows = [["Comp [Round]", "Opponent(s)", "Deadline", "Link"]]
+        opponent_set = set()
+        for match in match_list:
+            my_team_number = tournament_utils.get_team_number(match, player_id)
+            other_team_number = tournament_utils.other_team_number(my_team_number)
+            opponents = match.get_team(other_team_number)
+            if opponents is not None:
+                opponent_set.update(opponents.get_players())
+                opponent_desc = opponents.get_players_as_string()
+            else:
+                def match_descr(match, team_number):
+                    try:
+                        previous_match = tournament_utils.get_previous_match(match, team_number)
+                        t1 = previous_match.team1 is not None and previous_match.team1.get_players_as_string() or match_descr(previous_match, 1)
+                        t2 = previous_match.team2 is not None and previous_match.team2.get_players_as_string() or match_descr(previous_match, 2)
+                        return "(WINNER of %(t1)s vs %(t2)s)" % locals()
+                    except comp_models.Match.DoesNotExist: # if opponents are two rounds behind
+                        return "(PREVIOUS MATCH UNRESOLVED)"
+                opponent_desc = match_descr(match, other_team_number)
 
-      if match.is_knockout_comp():
-        comp_name  = match.competition.name
-        comp_round = match.get_round()
-        nrounds    = len(match.competition.rounds.all())
-        n = 1+nrounds-comp_round.round
-        comp_round = str(comp_round.round)
-        if n == 1:
-          comp_round = "F"
-        elif n == 2:
-          comp_round = "SF"
-        elif n == 3:
-          comp_round = "QF"
-      else:
-        end_date   = match.competition.end_date
-        comp_round = match.competition.name
-        comp_name  = match.competition.group.name.replace("Qualifiers - ", "")
-        comp_name  = comp_name.replace(str(end_date.year), "").strip()
-      match_rows.append([comp_name + " [" + comp_round + "]", opponent_desc, match.get_deadline().strftime("%a %d %b"), match.competition.url])
-    opponent_rows = [["Name", "Email", "Telephone", "Mobile"]]
-    for opponent in opponent_set:
-      opponent_rows.append([opponent.user.get_full_name(), opponent.user.email, opponent.other_phone, opponent.cell_phone]) 
-    player_to_match_table_map[player_id] = match_rows
-    player_to_opponent_table_map[player_id] = opponent_rows
+            if match.is_knockout_comp():
+                comp_name  = match.competition.name
+                comp_round = match.get_round()
+                nrounds    = len(match.competition.rounds.all())
+                n = 1+nrounds-comp_round.round
+                comp_round = str(comp_round.round)
+                if n == 1:
+                    comp_round = "F"
+                elif n == 2:
+                    comp_round = "SF"
+                elif n == 3:
+                    comp_round = "QF"
+            else:
+                end_date   = match.competition.end_date
+                comp_round = match.competition.name
+                comp_name  = match.competition.group.name.replace("Qualifiers - ", "")
+                comp_name  = comp_name.replace(str(end_date.year), "").strip()
+            match_rows.append([comp_name + " [" + comp_round + "]", opponent_desc, match.get_deadline().strftime("%a %d %b"), match.competition.url])
+        opponent_rows = [["Name", "Email", "Telephone", "Mobile"]]
+        for opponent in opponent_set:
+            opponent_rows.append([opponent.user.get_full_name(), opponent.user.email, opponent.other_phone, opponent.cell_phone])
+        player_to_match_table_map[player_id] = match_rows
+        player_to_opponent_table_map[player_id] = opponent_rows
 
-  # now iterate over the players and construct emails using these tables
-  email_template = site_models.EmailContent.objects.get(name="Tournament Reminder")
-  email_template = Template(email_template.markup)
-  failed_players = []
-  for player_id in player_to_match_table_map.iterkeys():
-    p = user_models.Player.objects.get(pk=player_id)
-    match_table = player_to_match_table_map[player_id]
-    opponent_table = player_to_opponent_table_map[player_id]
-    context = Context({
-      "player": p,
-      "year": year,
-      "match_table": {
-        "raw_data": match_table,
-        "text/plain": format_text_table(match_table, hasHeader=True, nspaces=2),
-        "text/html":  format_html_table(match_table, hasHeader=True),
-        },
-      "opponent_table": {
-        "raw_data":   opponent_table,
-        "text/plain": format_text_table(opponent_table, hasHeader=True, nspaces=2),
-        "text/html":  format_html_table(opponent_table, hasHeader=True, col_prefixes=["", "mailto:", "tel:", "sms:"]),
-        },
-      "content_type": "text/html"
-      })
-    if usernames == [] or p.user.username in usernames:
-      if p.user.email.find('@') > 0:
-        subject = "{year} Tournaments".format(**locals())
-        from_address = TOURNAMENTS_EMAIL_ADDRESS
-        html_body = markdown.markdown(email_template.render(context))
-        context["content_type"] = "text/plain"
-        text_body = email_template.render(context)
-        to_list = [p.user.email]
-        try:
-          email_utils.send_email(subject, text_body, html_body, from_address, to_list)
-        except:
-          failed_players.append(p)
-          import traceback
-          traceback.print_exc()
-        email_utils.pause_between_emails()
-      else:
-        sys.stderr.write("WARNING: no email address for " + p.get_full_name())
-    if len(failed_players) > 0:
-      sys.stderr.write("ERROR: failed to send email to the following:\n" + "\n".join([p.get_full_name() + " " + p.user.email for p in failed_players]) + "\n")
+    # now iterate over the players and construct emails using these tables
+    email_template = site_models.EmailContent.objects.get(name="Tournament Reminder")
+    email_template = Template(email_template.markup)
+    failed_players = []
+    for player_id in player_to_match_table_map.iterkeys():
+        p = user_models.Player.objects.get(pk=player_id)
+        match_table = player_to_match_table_map[player_id]
+        opponent_table = player_to_opponent_table_map[player_id]
+        context = Context({
+          "player": p,
+          "year": year,
+          "match_table": {
+            "raw_data": match_table,
+            "text/plain": format_text_table(match_table, hasHeader=True, nspaces=2),
+            "text/html":  format_html_table(match_table, hasHeader=True),
+            },
+          "opponent_table": {
+            "raw_data":   opponent_table,
+            "text/plain": format_text_table(opponent_table, hasHeader=True, nspaces=2),
+            "text/html":  format_html_table(opponent_table, hasHeader=True, col_prefixes=["", "mailto:", "tel:", "sms:"]),
+            },
+          "content_type": "text/html"
+          })
+        if usernames == [] or p.user.username in usernames:
+            if p.user.email.find('@') > 0:
+                subject = "{year} Tournaments".format(**locals())
+                from_address = TOURNAMENTS_EMAIL_ADDRESS
+                html_body = markdown.markdown(email_template.render(context))
+                context["content_type"] = "text/plain"
+                text_body = email_template.render(context)
+                to_list = [p.user.email]
+                try:
+                    email_utils.send_email(subject, text_body, html_body, from_address, to_list)
+                except:
+                    failed_players.append(p)
+                    import traceback
+                    traceback.print_exc()
+                email_utils.pause_between_emails()
+            else:
+                sys.stderr.write("WARNING: no email address for " + p.get_full_name())
+        if len(failed_players) > 0:
+            sys.stderr.write("ERROR: failed to send email to the following:\n" + "\n".join([p.get_full_name() + " " + p.user.email for p in failed_players]) + "\n")
 
 
 if __name__ == "__main__":
-  prog = os.path.basename(sys.argv[0])
+    prog = os.path.basename(sys.argv[0])
 
-  if len(sys.argv) < 2:
-    sys.stderr.write("USAGE: %(prog)s <command> [arguments]\n" % locals())
-    sys.exit(1)
+    if len(sys.argv) < 2:
+        sys.stderr.write("USAGE: %(prog)s <command> [arguments]\n" % locals())
+        sys.exit(1)
 
-  os.environ.setdefault("DJANGO_SETTINGS_MODULE", "wsrc.site.settings.settings")
-  logging.basicConfig(format='%(asctime)-10s [%(levelname)s] %(message)s',datefmt="%Y-%m-%d %H:%M:%S")
+    os.environ.setdefault("DJANGO_SETTINGS_MODULE", "wsrc.site.settings.settings")
+    logging.basicConfig(format='%(asctime)-10s [%(levelname)s] %(message)s',datefmt="%Y-%m-%d %H:%M:%S")
 
-  import django
-  if hasattr(django, "setup"):
-    django.setup()
+    import django
+    if hasattr(django, "setup"):
+        django.setup()
 
-  import wsrc.external_sites.main
+    import wsrc.external_sites.main
 
-  command = sys.argv[1]
-  args = sys.argv[2:]
-  if command in ("sync", "sync-bookings"):
-    wsrc.external_sites.main.cmdline_sync_bookings()
+    command = sys.argv[1]
+    args = sys.argv[2:]
+    if command in ("sync", "sync-bookings"):
+        wsrc.external_sites.main.cmdline_sync_bookings()
 
-  elif command in ("sync-squashlevels"):
-    wsrc.external_sites.main.cmdline_sync_squashlevels(*args)
+    elif command in ("sync-squashlevels"):
+        wsrc.external_sites.main.cmdline_sync_squashlevels(*args)
 
-  elif command in ("sync-leaguemaster"):
-    wsrc.external_sites.main.cmdline_sync_leaguemaster(*args)
+    elif command in ("sync-leaguemaster"):
+        wsrc.external_sites.main.cmdline_sync_leaguemaster(*args)
 
-  elif command in ("manage-tournament-bookings"):
+    elif command in ("manage-tournament-bookings"):
 
-    def usage():
-      prog = os.path.basename(argv[0])
-      sys.stderr.write("USAGE: %s %s --username=<user> --password=<pw>\n" % (prog, argv[1]))
-    try:
-      optlist, args = getopt.getopt(argv[2:], "u:p:h", ["username=", "password="])
-    except getopt.GetoptError as err:
-      sys.stderr.write(str(err) + "\n")
-      usage()
-      sys.exit(2)
-      
-    username = password = None
-    for opt,val in optlist:
-      if opt in ["-u", "--username"]:
-        useranme = val
-      elif opt in ["-p", "--password"]:
-        password = val
-      elif opt in ["-h"]:
-        usage()
-        sys.exit(0)
-      else:
-        assert False, "unhandled option"
-      
-    if username is None or password is None:
-      usage()
-      sys.exit(1)
+        def usage():
+            prog = os.path.basename(argv[0])
+            sys.stderr.write("USAGE: %s %s --username=<user> --password=<pw>\n" % (prog, argv[1]))
+        try:
+            optlist, args = getopt.getopt(argv[2:], "u:p:h", ["username=", "password="])
+        except getopt.GetoptError as err:
+            sys.stderr.write(str(err) + "\n")
+            usage()
+            sys.exit(2)
 
-    manage-tournament-bookings(username, password)
+        username = password = None
+        for opt,val in optlist:
+            if opt in ["-u", "--username"]:
+                useranme = val
+            elif opt in ["-p", "--password"]:
+                password = val
+            elif opt in ["-h"]:
+                usage()
+                sys.exit(0)
+            else:
+                assert False, "unhandled option"
 
-  elif command in ("send-tournament-reminders"):
-    def usage():
-      sys.stderr.write("USAGE: %s %s --username <username>|--all\n" % (prog, command))
-    try:
-      optlist, args = getopt.getopt(sys.argv[2:], "au:", ["all", "username="])
-    except getopt.GetoptError as err:
-      sys.stderr.write(str(err) + "\n")
-      usage()
-      sys.exit(2)
+        if username is None or password is None:
+            usage()
+            sys.exit(1)
 
-    user_list = None
-    for opt,val in optlist:
-      if opt in ["-a", "--all"]:
-        user_list = []
-      elif opt in ["-u", "--username"]:
-        user_list = [val]
+        manage-tournament-bookings(username, password)
 
-    if user_list is None:
-      usage()
-      sys.exit(2)
+    elif command in ("send-tournament-reminders"):
+        def usage():
+            sys.stderr.write("USAGE: %s %s --username <username>|--all\n" % (prog, command))
+        try:
+            optlist, args = getopt.getopt(sys.argv[2:], "au:", ["all", "username="])
+        except getopt.GetoptError as err:
+            sys.stderr.write(str(err) + "\n")
+            usage()
+            sys.exit(2)
 
-    email_tournament_match_reminders(user_list)
+        user_list = None
+        for opt,val in optlist:
+            if opt in ["-a", "--all"]:
+                user_list = []
+            elif opt in ["-u", "--username"]:
+                user_list = [val]
 
-  elif command in ("send-overdue-match-report"):
-    email_report_overdue_tournament_matches()
+        if user_list is None:
+            usage()
+            sys.exit(2)
 
-  elif command in ("send-outstanding-league-match-reminders"):
-    email_outstanding_box_matches()
-    
-  elif command in ("add-old-league"):
-    wsrc.external_sites.main.cmdline_add_old_league(args)
+        email_tournament_match_reminders(user_list)
 
-  elif command in ("monitor_bookings"):
-    def usage():
-      sys.stderr.write("USAGE: %s %s [--date=<YYYY-MM-DD>] [--ndays=<n>]\n" % (prog, command))
-    try:
-      optlist, args = getopt.getopt(sys.argv[2:], "d:n:", ["date=", "ndays="])
-    except getopt.GetoptError as err:
-      sys.stderr.write(str(err) + "\n")
-      usage()
-      sys.exit(2)
+    elif command in ("send-overdue-match-report"):
+        email_report_overdue_tournament_matches()
 
-    date = (datetime.datetime.now() - datetime.timedelta(days=1)).date()
-    ndays = 1
+    elif command in ("send-outstanding-league-match-reminders"):
+        email_outstanding_box_matches()
 
-    user_list = None
-    for opt,val in optlist:
-      if opt in ["-d", "--date"]:
-        date = timezone_utils.parse_iso_date_to_naive(val)
-      elif opt in ["-n", "--ndays"]:
-        ndays = int(val)
+    elif command in ("add-old-league"):
+        wsrc.external_sites.main.cmdline_add_old_league(args)
 
-    from wsrc.external_sites.booking_monitor import process_date
-    while ndays > 0:
-      process_date(date)
-      date = date + datetime.timedelta(days=1)
-      ndays -= 1
-            
+    elif command in ("monitor_bookings"):
+        def usage():
+            sys.stderr.write("USAGE: %s %s [--date=<YYYY-MM-DD>] [--ndays=<n>]\n" % (prog, command))
+        try:
+            optlist, args = getopt.getopt(sys.argv[2:], "d:n:", ["date=", "ndays="])
+        except getopt.GetoptError as err:
+            sys.stderr.write(str(err) + "\n")
+            usage()
+            sys.exit(2)
+
+        date = (datetime.datetime.now() - datetime.timedelta(days=1)).date()
+        ndays = 1
+
+        user_list = None
+        for opt,val in optlist:
+            if opt in ["-d", "--date"]:
+                date = timezone_utils.parse_iso_date_to_naive(val)
+            elif opt in ["-n", "--ndays"]:
+                ndays = int(val)
+
+        from wsrc.external_sites.booking_monitor import process_date
+        while ndays > 0:
+            process_date(date)
+            date = date + datetime.timedelta(days=1)
+            ndays -= 1
+
+    elif command in ("purge-personal-data"):
+        from wsrc.site.usermodel.data_purge import policy_purge_data
+        policy_purge_data()
+        
+    else:
+        sys.stderr.write("ERROR: unrecognized command \"{0}\"\n".format(command))
+        sys.exit(1)
+
 
 # Local Variables:
 # mode: python

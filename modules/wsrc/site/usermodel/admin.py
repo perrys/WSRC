@@ -26,7 +26,7 @@ from django.contrib.auth.models import User
 from django.core import urlresolvers
 
 from .models import Player, Season, Subscription, SubscriptionPayment,\
-    SubscriptionCost, SubscriptionType, DoorEntryCard
+    SubscriptionCost, SubscriptionType, DoorEntryCard, DoorCardEvent
 from wsrc.utils.form_utils import SelectRelatedQuerysetMixin, CachingModelChoiceField, \
     get_related_field_limited_queryset, PrefetchRelatedQuerysetMixin
 
@@ -167,12 +167,16 @@ def update_subscriptions(modeladmin, request, queryset):
             if subscription is not None:
                 subs_type = subscription.subscription_type
             else:
-                subs_type = SubscriptionType.objects.get(name="Full")
+                subs_type = SubscriptionType.objects.get(is_default=True)
                 if player.date_of_birth is not None:
-                    if player.get_age() < 19:
-                        subs_type = SubscriptionType.objects.get(name="Junior")
-                    elif player.get_age() < 24:
-                        subs_type = SubscriptionType.objects.get(name="Young Adult")
+                    age_restricted_types = SubscriptionType.\
+                                           objects.filter(max_age_years__isnull=False)\
+                                                  .order_by("max_age_years")
+                    age_years = player.get_age()
+                    for i_substype in age_restricted_types:
+                        if age_years <= i_substype.max_age_years:
+                            subs_type = i_substype
+                            break
             subscription = Subscription(player=player, season=latest_season,
                                         payment_frequency=payment_freq, subscription_type=subs_type)
             subscription.save()
@@ -190,7 +194,7 @@ class SubscriptionInline(admin.StackedInline):
     }
 class DoorCardInline(admin.TabularInline):
     model = DoorEntryCard
-    extra = 1
+    extra = 0
 
 class PlayerAdmin(SelectRelatedQuerysetMixin, PrefetchRelatedQuerysetMixin, admin.ModelAdmin):
     "Admin for Player (i.e. club member) model"
@@ -280,7 +284,7 @@ class HasPlayerListFilter(admin.SimpleListFilter):
         return [('y', 'Yes'), ('n', 'No')]
     def queryset(self, request, queryset):
         if self.value():
-            flag = self.value() == 'y'
+            flag = self.value() == 'n'
             queryset = queryset.filter(player__isnull=flag)
         return queryset
 
@@ -311,9 +315,31 @@ class DoorEntryCardAdmin(admin.ModelAdmin):
     active.admin_order_field = "player__user__is_active"
     active.boolean = True
 
+class DoorCardEventAdmin(admin.ModelAdmin):
+    search_fields = ('card__player__user__first_name', 'card__player__user__last_name', 'cardnumber')
+    list_select_related = ('card__player__user',)
+    list_display = ('event', 'cardnumber', 'linked_player', 'timestamp', 'received_time')
+    list_filter = ("event", "card__player__user__is_active")
+
+    def cardnumber(self, obj):
+        if obj.card is None:
+            return "(None)"
+        return obj.card.cardnumber
+    cardnumber.admin_order_field = "card__cardnumber"
+
+    def linked_player(self, obj):
+        if obj.card is None or obj.card.player is None:
+            return "(None)"
+        link = urlresolvers.reverse("admin:usermodel_player_change", args=[obj.card.player.id])
+        return u'<a href="%s">%s</a>' % (link, obj.card.player.get_ordered_name())
+    linked_player.allow_tags = True
+    linked_player.short_description = "Assigned To"
+    linked_player.admin_order_field = "card__player__user__last_name"
+    
 admin.site.register(Season, SeasonAdmin)
 admin.site.register(Subscription, SubscriptionAdmin)
 admin.site.register(Player, PlayerAdmin)
 admin.site.register(SubscriptionCost, SubscriptionCostAdmin)
 admin.site.register(SubscriptionType, SubscriptionTypeAdmin)
 admin.site.register(DoorEntryCard, DoorEntryCardAdmin)
+admin.site.register(DoorCardEvent, DoorCardEventAdmin)

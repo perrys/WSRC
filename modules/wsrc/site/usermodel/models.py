@@ -137,6 +137,9 @@ class Season(models.Model):
 class SubscriptionType(models.Model):
     short_code = models.CharField(max_length=16)
     name = models.CharField(max_length=32)
+    is_default = models.BooleanField(default=False, help_text="Please ensure only one " +
+                                     "subscription type is set as default")
+    max_age_years = models.IntegerField(blank=True, null=True)
     def __unicode__(self):
         return self.name
     class Meta:
@@ -283,11 +286,26 @@ class DoorEntryCard(models.Model):
     card_validator = validators.RegexValidator(r'^\d{8}$',
                                                'Enter an eight-digit card number.', 'invalid_id')
     player = models.ForeignKey(Player, db_index=True, blank=True, null=True, related_name="doorcards")
-    cardnumber = models.CharField("Card #", max_length=8, unique=True, validators=[card_validator])
+    cardnumber = models.CharField("Card #", max_length=8, primary_key=True, validators=[card_validator])
     is_registered = models.BooleanField("Valid",
                                         help_text="Whether card is registred with the card reader",
                                         default=True)
     date_issued = models.DateField("Issue Date", default=datetime.date.today, blank=True, null=True)
     class Meta:
         verbose_name = "Door Entry Card"
+    def __unicode__(self):
+        result = self.cardnumber
+        if self.player is not None:
+            result += u" [{0}]".format(self.player.get_ordered_name())
+        return result
+
+class DoorCardEvent(models.Model):
+    "Events recorded on the cardreader"
+    card = models.ForeignKey(DoorEntryCard, blank=True, null=True)
+    event = models.CharField(max_length=128, blank=True, db_index=True)
+    timestamp = models.DateTimeField(help_text="Timestamp from the cardreader", db_index=True)
+    received_time = models.DateTimeField(help_text="Server timestamp", auto_now_add=True)
+    class Meta:
+        verbose_name = "Door Card Event"
+
 

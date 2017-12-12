@@ -46,7 +46,7 @@ from django.db.models import Q
 import rest_framework.generics as rest_generics
 from rest_framework.renderers import JSONRenderer
 from rest_framework import serializers
-from rest_framework.parsers import JSONParser
+from rest_framework.parsers import JSONParser, FormParser
 from rest_framework.views import APIView
 from rest_framework.utils.serializer_helpers import ReturnDict
 
@@ -364,9 +364,18 @@ def admin_mailshot_view(request):
                     if entrants.player2 is not None:
                         player_ids.add(entrants.player2.id)
         return player_ids
+    def player_data(p):
+        sub = p.get_current_subscription()
+        
+        return (p.id, {"id": p.id, "full_name": p.user.get_full_name(), "email": p.user.email,
+                       "prefs_receive_email": p.prefs_receive_email,
+                       "subscription_type": {"name": sub.subscription_type.name if sub else None,
+                                             "id": sub.subscription_type.id if sub else None}})
+    players = Player.objects.filter(user__is_active=True).select_related("user")\
+                   .prefetch_related("subscription_set__subscription_type")
+    players = dict([player_data(player) for player in players])
     ctx = {
-        "players": Player.objects.filter(user__is_active=True).select_related("user")\
-                   .prefetch_related("subscription_set__subscription_type"),
+        "players": JSON_RENDERER.render(players),
         "from_email_addresses": [x + "@wokingsquashclub.org" for x in from_email_addresses],
         "subscription_types": SubscriptionType.objects.all(),
         "tournament_player_ids": get_comp_entrants("wsrc_tournaments", "wsrc_qualifiers"),
@@ -375,13 +384,20 @@ def admin_mailshot_view(request):
     return TemplateResponse(request, 'mailshot.html', ctx)
 
 class SendEmail(APIView):
-    parser_classes = (JSONParser,)
+    parser_classes = (JSONParser,FormParser)
+    def post(self, request):
+        return self.put(request)
+
     def put(self, request, format="json"):
-        if not request.user.is_authenticated() or not request.user.is_staff:
+        if not (request.user.is_authenticated() and\
+                (request.user.is_staff or\
+                 request.user.groups.filter(name="Club Login").count() == 1)):
             raise PermissionDenied()
-        email_data = request.data
+        email_data = dict(request.data.items()) # ensure we have a native dictionary
         fmt  = email_data.pop('format')
         body = email_data.pop('body')
+        if 'to' in email_data:
+            email_data["to_list"] = [email_data.pop('to')]
         if fmt == 'mixed':
             email_data['text_body'] = body
             email_data['html_body'] = markdown.markdown(body, extensions=['markdown.extensions.extra'])
@@ -393,11 +409,8 @@ class SendEmail(APIView):
             email_data['html_body'] = body
         debug = False
         if debug:
-            import pprint, time
+            import pprint
             print pprint.pprint(email_data)
-            time.sleep(1)
-            if 'stewart.c.perry@gmail.com' in email_data['bcc_list']:
-                return HttpResponse("Invalid email address", content_type="text/plain", status=403)
         else:
             import wsrc.utils.email_utils as email_utils
             email_utils.send_email(**email_data)
