@@ -62,6 +62,14 @@ class ActivityReport(object):
             result = results[key] = factory()
         return result
 
+    @staticmethod
+    def getitem(record, name):
+        for tok in name.split("."):
+            item = record = getattr(record, tok)
+            if hasattr(item, "__call__"):
+                item = record = item()
+        return item
+
     def get_doorcard_events(self):
         dce_qs = DoorCardEvent.objects\
                               .filter(event="Granted",\
@@ -173,7 +181,7 @@ class ActivityReport(object):
             p_visits = door_events.get(player.pk) or []
             p_sum = player_summary_type(sub, player,
                                         len(p_matches), len(p_bookings), len(p_visits),
-                                        len(p_matches) + len(p_bookings))
+                                        len(p_matches) + len(p_bookings) + len(p_visits))
             players.append(p_sum)
         result_type = collections.namedtuple("ReportData", ['matches', 'bookings', 'door_events', 'players'])
         results = result_type(matches, bookings, door_events, players)
@@ -198,14 +206,7 @@ class ActivityReport(object):
             fmt.update(alt_color_fmt)
             cell_formats[key + "_alt"] = workbook.add_format(fmt)
 
-        def getitem(record, name):
-            for tok in name.split("."):
-                item = record = getattr(record, tok)
-                if hasattr(item, "__call__"):
-                    item = record = item()
-            return item
-        
-        def add_worksheet(name, data, fields, transform_row=None):
+        def add_worksheet(name, data, fields, autofilter=False):
             worksheet = workbook.add_worksheet(name)
             for jdx, field in enumerate(fields):
                 worksheet.set_column(jdx, jdx, field.width)
@@ -220,27 +221,28 @@ class ActivityReport(object):
                         fmt = alt_row_format if field.fmt is None else cell_formats[field.fmt + "_alt"]
                     else:
                         fmt = None if field.fmt is None else cell_formats[field.fmt]
-                    worksheet.write(idx, jdx, getitem(row, field.path), fmt)
-            worksheet.autofilter(0, 0, len(data)+1, len(fields)-1)
+                    worksheet.write(idx, jdx, self.getitem(row, field.path), fmt)
+            if autofilter:
+                worksheet.autofilter(0, 0, len(data)+1, len(fields)-1)
             return worksheet
 
         col_t = collections.namedtuple("Col", ["name", "path", "fmt", "width"])
         add_worksheet("Activity Summary", data.players,
                       [col_t("Name", "player.get_ordered_name", None, 25),
                        col_t("Subscription", "sub.subscription_type.name", None, 15),
-                       col_t("Joined", "player.user.date_joined", "date", 15),
+                       col_t("Joined", "player.user.date_joined.date", "date", 15),
                        col_t("# Matches", "n_matches", None, 12),
                        col_t("# Bookings", "n_bookings", None, 12),
                        col_t("# Visits", "n_visits", None, 12),
                        col_t("Activity", "activity", None, 12),
-                      ])
+                      ], autofilter=True)
         add_worksheet("Matches", self.matches,
                       [col_t("Competition", "competition.group.__unicode__", None, 35),
                        col_t("Name", "competition.name", None, 15),
-                       col_t("Time", "last_updated", "datetime", 20),
+                       col_t("Date", "last_updated.date", "date", 20),
                        col_t("Match", "get_teams_display", None, 40),
                        col_t("Score", "get_scores_display", None, 25),
-                      ])
+                      ], autofilter=True)
         cudata = self.get_court_usage()
         cuws = add_worksheet("Court Usage", cudata,
                              [col_t("Time", "time", None, 10)] +\
