@@ -21,6 +21,7 @@ import StringIO
 import xlsxwriter
 
 from django.db.models import Q
+from django.contrib.staticfiles import finders
 
 from wsrc.site.competitions.models import Match
 from wsrc.site.courts.models import BookingSystemEvent
@@ -70,6 +71,22 @@ class ActivityReport(object):
                 item = record = item()
         return item
 
+    @staticmethod
+    def write_data_to_sheet(worksheet, data, fields, cell_formats, row_idx, col_idx, alt_row_format=None, autofilter=False):
+        for jdx, field in enumerate(fields):
+            worksheet.set_column(jdx, jdx, field.width)
+            worksheet.write(0, jdx, field.name, cell_formats["header"])
+        for idx, row in enumerate(data):
+            idx += row_idx
+            for jdx, field in enumerate(fields):
+                if (idx & 1) == 0 and alt_row_format is not None:
+                    fmt = alt_row_format if field.fmt is None else cell_formats[field.fmt + "_alt"]
+                else:
+                    fmt = None if field.fmt is None else cell_formats[field.fmt]
+                worksheet.write(idx, jdx, ActivityReport.getitem(row, field.path), fmt)
+        if autofilter:
+            worksheet.autofilter(0, 0, len(data)+1, len(fields)-1)
+        
     def get_doorcard_events(self):
         dce_qs = DoorCardEvent.objects\
                               .filter(event="Granted",\
@@ -164,7 +181,7 @@ class ActivityReport(object):
             results.append(result_t._make([time] + avgs))
         return results
 
-    def get_report_data(self):
+    def get_player_activity_data(self):
         
         matches = self.get_matches_played()
         bookings = self.get_courts_booked()
@@ -183,18 +200,18 @@ class ActivityReport(object):
                                         len(p_matches), len(p_bookings), len(p_visits),
                                         len(p_matches) + len(p_bookings) + len(p_visits))
             players.append(p_sum)
-        result_type = collections.namedtuple("ReportData", ['matches', 'bookings', 'door_events', 'players'])
-        results = result_type(matches, bookings, door_events, players)
-        return results
+        return players
 
     def create_report(self):
-        data = self.get_report_data()
         output = StringIO.StringIO()
         workbook = xlsxwriter.Workbook(output, {'in_memory': True, 'remove_timezone': True})
-        header_format = workbook.add_format({'align': 'center', 'valign': 'vcenter', 'bold': False,  'bottom': 1, 'bg_color': '#AEB6BF'})
+        
+        col_t = collections.namedtuple("Col", ["name", "path", "fmt", "width"])
+        
         alt_color_fmt = {'bg_color': '#EBEDEF'}
         alt_row_format = workbook.add_format(alt_color_fmt)
         formats = {
+            "header": {'align': 'center', 'valign': 'vcenter', 'bold': False,  'bottom': 1, 'bg_color': '#AEB6BF'},
             "date": {'num_format': 'd mmm yyyy'},
             "datetime": {'num_format': 'd mmm yyyy HH:MM'},
             "percent": {'num_format': '0.0%'},
@@ -206,28 +223,23 @@ class ActivityReport(object):
             fmt.update(alt_color_fmt)
             cell_formats[key + "_alt"] = workbook.add_format(fmt)
 
+        exec_summary_ws = workbook.add_worksheet("Executive Summary")
+        exec_summary_ws.hide_gridlines(2)
+        image_path = "images/apple-touch-icon-114x114.png"
+        absolute_path = finders.find(image_path)
+        if absolute_path is None:
+            absolute_path = os.path.join("/usr/local/www", image_path)
+        exec_summary_ws.insert_image(1, 0, absolute_path, {'positioning': 3, 'x_offset': 10, 'x_scale': 0.5, 'y_scale': 0.5})
+        exec_summary_ws.write(2, 2, "Activity Data for {start:%d %b %Y} to {end:%d %b %Y}".format(start=self.start_date, end=self.end_date))
+
         def add_worksheet(name, data, fields, autofilter=False):
             worksheet = workbook.add_worksheet(name)
-            for jdx, field in enumerate(fields):
-                worksheet.set_column(jdx, jdx, field.width)
-                worksheet.write(0, jdx, field.name, header_format)
             worksheet.freeze_panes(1, 0)
-            for idx, row in enumerate(data):
-                idx += 1
-                if transform_row:
-                    row = transform_row(row)
-                for jdx, field in enumerate(fields):
-                    if (idx & 1) == 0:
-                        fmt = alt_row_format if field.fmt is None else cell_formats[field.fmt + "_alt"]
-                    else:
-                        fmt = None if field.fmt is None else cell_formats[field.fmt]
-                    worksheet.write(idx, jdx, self.getitem(row, field.path), fmt)
-            if autofilter:
-                worksheet.autofilter(0, 0, len(data)+1, len(fields)-1)
+            self.write_data_to_sheet(worksheet, data, fields, cell_formats, 1, 0,
+                                     alt_row_format, autofilter)
             return worksheet
 
-        col_t = collections.namedtuple("Col", ["name", "path", "fmt", "width"])
-        add_worksheet("Activity Summary", data.players,
+        add_worksheet("Member Activity", self.get_player_activity_data(),
                       [col_t("Name", "player.get_ordered_name", None, 25),
                        col_t("Subscription", "sub.subscription_type.name", None, 15),
                        col_t("Joined", "player.user.date_joined.date", "date", 15),
@@ -236,7 +248,7 @@ class ActivityReport(object):
                        col_t("# Visits", "n_visits", None, 12),
                        col_t("Activity", "activity", None, 12),
                       ], autofilter=True)
-        add_worksheet("Matches", self.matches,
+        add_worksheet("Club Competitions", self.matches,
                       [col_t("Competition", "competition.group.__unicode__", None, 35),
                        col_t("Name", "competition.name", None, 15),
                        col_t("Date", "last_updated.date", "date", 20),
@@ -244,12 +256,13 @@ class ActivityReport(object):
                        col_t("Score", "get_scores_display", None, 25),
                       ], autofilter=True)
         cudata = self.get_court_usage()
-        cuws = add_worksheet("Court Usage", cudata,
+        cuws = add_worksheet("Court Use", cudata,
                              [col_t("Time", "time", None, 10)] +\
                              [col_t(dow, dow, "percent", 10) for dow in WEEKDAYS])
 
+        
         def add_court_usage_chart(col_range, insert_cell):
-            chart = workbook.add_court_usage_chart({'type': 'column'})
+            chart = workbook.add_chart({'type': 'column'})
             chart.set_size({'width': 720})
             chart.set_y_axis({"max": 1, 'num_format': '0%'})
             for dow in col_range:
