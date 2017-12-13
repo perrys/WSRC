@@ -248,8 +248,8 @@ class ActivityReport(object):
                              [col_t("Time", "time", None, 10)] +\
                              [col_t(dow, dow, "percent", 10) for dow in WEEKDAYS])
 
-        def add_chart(col_range, insert_cell):
-            chart = workbook.add_chart({'type': 'column'})
+        def add_court_usage_chart(col_range, insert_cell):
+            chart = workbook.add_court_usage_chart({'type': 'column'})
             chart.set_size({'width': 720})
             chart.set_y_axis({"max": 1, 'num_format': '0%'})
             for dow in col_range:
@@ -258,7 +258,7 @@ class ActivityReport(object):
                     'categories': [cuws.name, 1, 0, len(cudata), 0],
                     'name': [cuws.name, 0, dow]})
             cuws.insert_chart(insert_cell, chart)
-        add_chart(range(1,6), "J2")
-        add_chart(range(6,8), "J17")
+        add_court_usage_chart(range(1,6), "J2")
+        add_court_usage_chart(range(6,8), "J17")
         workbook.close()
         return output.getvalue()
