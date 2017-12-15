@@ -206,8 +206,8 @@ class ActivityReport(object):
         results = [results_t(comp.group, comp, len(c_set)) for comp, c_set in results.iteritems()]
         results.sort(key=lambda x: x.comp.ordering)
         results.sort(key=lambda x: x.group.end_date)
-        return results, [COL_T("Group", "group.name", None, 8),
-                         COL_T("Name", "comp.name", None, 3),
+        return results, [COL_T("Group", "group.name", None, 9),
+                         COL_T("Name", "comp.name", None, 4),
                          COL_T("Matches", "n_matches", None, 2)]
         
     def get_court_usage(self):
@@ -363,9 +363,9 @@ class ActivityReport(object):
         results = [results_t(**datum) for datum in sub_types.values()]
         results.sort(key=lambda (x): x.n_members, reverse=True)
         return results, [COL_T("Subscription", "sub_type", None, 6),
-                         COL_T("Members", "n_members", None, 2),
-                         COL_T("Recently Joined", "n_recent", None, 2),
-                         COL_T("Inactive", "n_inactive", "numeric", 2)]
+                         COL_T("Members", "n_members", None, 3),
+                         COL_T("Recently Joined", "n_recent", None, 3),
+                         COL_T("Inactive", "n_inactive", "numeric", 3)]
 
     def create_report(self):
         output = StringIO.StringIO()
