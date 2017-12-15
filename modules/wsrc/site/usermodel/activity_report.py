@@ -16,7 +16,9 @@
 "Utilities for determining the activity of members of the club"
 
 import collections
+import colorsys
 import datetime
+import os.path
 import StringIO
 import xlsxwriter
 
@@ -131,6 +133,31 @@ class ActivityReport(object):
                 else:
                     worksheet.write(idx, jdx, total, cell_formats["total"])
         return rows
+
+    @staticmethod
+    def write_heatmap(workbook, worksheet, data, cell_formats, row_headers, col_headers, row_idx, col_idx):
+        low_color = (0.7, 0.01, 1.0)
+        high_color = (0.01, 1.0, 1.0)
+        def make_rgb(val):
+            hsv = [low_color[i] + val * (high_color[i] - low_color[i]) for i in range(0,3)]
+            rgb = colorsys.hsv_to_rgb(*hsv)
+            return "#{0:02X}{1:02X}{2:02X}".format(*[int(val*255) for val in rgb])
+        for jdx, header in enumerate(col_headers):
+            jdx = jdx * 2 + col_idx + 1
+            worksheet.merge_range(row_idx, jdx, row_idx, jdx+1, header, cell_formats["header"])
+        for idx, header in enumerate(row_headers):
+            idx += row_idx+1
+            worksheet.write(idx, col_idx, header, cell_formats["header"])
+            worksheet.set_row(idx, 20)
+        for idx, row in enumerate(data):
+            idx += row_idx+1
+            for jdx, val in enumerate(row):
+                jdx = jdx * 2 + col_idx + 1
+                fmt = {'num_format': '0.%', 'bg_color': make_rgb(val)}
+                print fmt
+                fmt = workbook.add_format(fmt)
+                worksheet.merge_range(idx, jdx, idx, jdx+1, val, fmt)
+        return row_idx + 1 + len(data)
     
     def get_doorcard_events(self):
         dce_qs = DoorCardEvent.objects\
@@ -244,13 +271,13 @@ class ActivityReport(object):
         sums = [0] * 7
         first_time = ""
         result_t = collections.namedtuple("CourtUsage", ["time"] + WEEKDAYS)
-        for row in data:
+        for row_idx, row in enumerate(data):
             if bin_idx == 0:
                 first_time = row[0]
             bin_idx += 1
             for dow, val in enumerate(row[1:]):
                 sums[dow] += val
-            if bin_idx == bin_width:
+            if bin_idx == bin_width or row_idx == len(data)-1:
                 time = "{first}-{last}".format(first=first_time, last=row[0])
                 results.append(result_t(time, *[float(val)/bin_width for val in sums]))
                 bin_idx = 0
@@ -288,8 +315,8 @@ class ActivityReport(object):
                 add("Other")
         results = [result_t(key, val[0]/45, float(val[0])/total, val[1]/45, float(val[1])/total_peak) for key,val in results.iteritems()]
         results.sort(key=lambda x: x.slots, reverse=True)
-        return results, [COL_T("Type", "booking_type", None, 6),
-                         COL_T("45m Slots", "slots", None, 3),
+        return results, [COL_T("Type", "booking_type", None, 3),
+                         COL_T("All (45m) Slots", "slots", None, 5),
                          COL_T("", "fraction", "percent", 2),
                          COL_T("Peak Slots", "peak_slots", None, 3),
                          COL_T("", "peak_fraction", "percent", 2),
@@ -396,7 +423,7 @@ class ActivityReport(object):
                              [COL_T(dow, dow, "percent", 10) for dow in WEEKDAYS])
 
         exec_summary_ws.hide_gridlines(2)
-        exec_summary_ws.set_column(0, 255, width=4) # normal width is 8.43 characters
+        exec_summary_ws.set_column(1, 255, width=3.5) # normal width is 8.43 characters
         image_path = "images/apple-touch-icon-114x114.png"
         absolute_path = finders.find(image_path)
         if absolute_path is None:
@@ -449,7 +476,7 @@ class ActivityReport(object):
         row_idx += self.write_data_to_sheet(exec_summary_ws, data, fields, cell_formats, row_idx, 0, alt_row_format,
                                             autofilter=False, totals=[1, 3], width_in_cells=True)
 
-
+        
         
         def make_court_usage_chart(col_range):
             chart = workbook.add_chart({'type': 'column'})
@@ -470,6 +497,13 @@ class ActivityReport(object):
         exec_summary_ws.insert_chart(row_idx, 0, make_court_usage_chart(range(6,8)))
         row_idx += 15
 
+        cudata = self.bucket_court_usage(cudata, 2)
+        row_headers = [row[0].split("-")[0] + "-" for row in cudata]
+        rows = [row[1:] for row in cudata]
+#        cudata = zip(*cudata)
+        row_idx = self.write_heatmap(workbook, exec_summary_ws, rows, cell_formats, row_headers, WEEKDAYS, row_idx, 0)
+        row_idx += 2
+        
         exec_summary_ws.write(row_idx, 0, "Internal Competitions", cell_formats["section_header"])
         row_idx += 2
         player_ids = set()
