@@ -136,7 +136,7 @@ class ActivityReport(object):
 
     @staticmethod
     def write_heatmap(workbook, worksheet, data, cell_formats, row_headers, col_headers, row_idx, col_idx):
-        low_color = (0.7, 0.01, 1.0)
+        low_color = (0.8, 0.01, 1.0)
         high_color = (0.01, 1.0, 1.0)
         def make_rgb(val):
             hsv = [low_color[i] + val * (high_color[i] - low_color[i]) for i in range(0,3)]
