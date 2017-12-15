@@ -278,7 +278,7 @@ class ActivityReport(object):
             for dow, val in enumerate(row[1:]):
                 sums[dow] += val
             if bin_idx == bin_width or row_idx == len(data)-1:
-                time = "{first}-{last}".format(first=first_time, last=row[0])
+                time = "{first}-".format(first=first_time)
                 results.append(result_t(time, *[float(val)/bin_width for val in sums]))
                 bin_idx = 0
                 sums = [0] * 7
