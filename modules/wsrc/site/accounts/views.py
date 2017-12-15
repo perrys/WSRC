@@ -81,7 +81,7 @@ class TransactionView(rest_generics.ListAPIView):
             tran['last_updated_by'] = request.user
             if 'date_cleared' in tran and len(tran['date_cleared']) < 10:
                 tran['date_cleared'] = None
-            sub_id = tran.pop('subscription')
+            sub_id = tran.pop('subscription') if 'subscription' in tran else None
             trans_model = Transaction(**tran)
             models.append(partial(Transaction.save, trans_model))
             if sub_id is not None:
