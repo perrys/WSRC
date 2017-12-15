@@ -238,6 +238,25 @@ class ActivityReport(object):
             results.append(result_t._make([time] + avgs))
         return results
 
+    def bucket_court_usage(self, data, bin_width):
+        results = []
+        bin_idx = 0
+        sums = [0] * 7
+        first_time = ""
+        result_t = collections.namedtuple("CourtUsage", ["time"] + WEEKDAYS)
+        for row in data:
+            if bin_idx == 0:
+                first_time = row[0]
+            bin_idx += 1
+            for dow, val in enumerate(row[1:]):
+                sums[dow] += val
+            if bin_idx == bin_width:
+                time = "{first}-{last}".format(first=first_time, last=row[0])
+                results.append(result_t(time, *[float(val)/bin_width for val in sums]))
+                bin_idx = 0
+                sums = [0] * 7
+        return results
+                
     def get_court_usage_summary(self):
         result_t = collections.namedtuple("CourtSummary", ["booking_type", "slots", "fraction", "peak_slots", "peak_fraction"])
         results = dict([(typ, [0,0]) for typ in ("Club Night", "Teams", "Junior Coaching", "Members", "Other")])
@@ -328,6 +347,7 @@ class ActivityReport(object):
         alt_color_fmt = {'bg_color': '#EBEDEF'}
         alt_row_format = workbook.add_format(alt_color_fmt)
         formats = {
+            "title": {'bold': True,  'font_size': 13},
             "header": {'align': 'center', 'valign': 'vjustify', 'bold': False,  'bottom': 1, 'bg_color': '#AEB6BF'},
             "section_header": {'bold': True,  'underline': True},
             "date": {'num_format': 'd mmm yyyy'},
@@ -370,6 +390,7 @@ class ActivityReport(object):
                        COL_T("Score", "get_scores_display", None, 25),
                       ], autofilter=True)
         cudata = self.get_court_usage()
+        cudata = self.bucket_court_usage(cudata, 4)
         cuws = add_worksheet("Court Use", cudata,
                              [COL_T("Time", "time", None, 10)] +\
                              [COL_T(dow, dow, "percent", 10) for dow in WEEKDAYS])
@@ -381,7 +402,7 @@ class ActivityReport(object):
         if absolute_path is None:
             absolute_path = os.path.join("/usr/local/www", image_path)
         exec_summary_ws.insert_image(0, 0, absolute_path, {'positioning': 3, 'x_offset': 10, 'y_offset': 10, 'x_scale': 0.5, 'y_scale': 0.5})
-        exec_summary_ws.write(2, 3, "Data for {start:%d %b %Y} to {end:%d %b %Y}".format(start=self.start_date, end=self.end_date))
+        exec_summary_ws.write(2, 3, "Data for {start:%d %b %Y} to {end:%d %b %Y}".format(start=self.start_date, end=self.end_date), cell_formats["title"])
 
         row_idx = 6
         exec_summary_ws.write(row_idx, 0, "Membership", cell_formats["section_header"])
