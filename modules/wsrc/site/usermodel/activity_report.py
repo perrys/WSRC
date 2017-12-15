@@ -239,32 +239,43 @@ class ActivityReport(object):
         return results
 
     def get_court_usage_summary(self):
-        result_t = collections.namedtuple("CourtSummary", ["booking_type", "slots", "fraction"])
-        results = dict([(typ, 0) for typ in ("Club Night", "Teams", "Juniors", "Members", "Other")])
+        result_t = collections.namedtuple("CourtSummary", ["booking_type", "slots", "fraction", "peak_slots", "peak_fraction"])
+        results = dict([(typ, [0,0]) for typ in ("Club Night", "Teams", "Junior Coaching", "Members", "Other")])
         total = 0
+        total_peak = 0
         for booking in self.bookings:
             duration_mins = int((booking.end_time - booking.start_time).total_seconds() / 60)
             total += duration_mins
+            is_peak = booking.start_time.time().hour >= 17 and booking.start_time.date().weekday() <= 4
+            if is_peak:
+                total_peak += duration_mins
             name = booking.name.lower().strip()
+            def add(key):
+                totals = results[key]
+                totals[0] += duration_mins
+                if is_peak:
+                    totals[1] += duration_mins
             if name == "club night":
-                results["Club Night"] += duration_mins
+                add("Club Night")
             elif (" vs " in name or " vs. " in name) and\
                  ("mens" in name or "woking" in name or "vets" in name or\
                   "vintage" in name or "ladies" in name or "racketball" in name):
-                results["Teams"] += duration_mins
+                add("Teams")
             elif "junior" in name:
-                results["Juniors"] += duration_mins
+                add("Junior Coaching")
             elif booking.event_type in ["I", ""]:
-                results["Members"] += duration_mins
+                add("Members")
             else:
-                print booking
-                results["Other"] += duration_mins
-        results = [result_t(key, val/45, float(val)/total) for key,val in results.iteritems()]
+                add("Other")
+        results = [result_t(key, val[0]/45, float(val[0])/total, val[1]/45, float(val[1])/total_peak) for key,val in results.iteritems()]
         results.sort(key=lambda x: x.slots, reverse=True)
         return results, [COL_T("Type", "booking_type", None, 6),
-                         COL_T("45m Slots", "slots", None, 2),
-                         COL_T("", "fraction", "percent", 2)]
-                
+                         COL_T("45m Slots", "slots", None, 3),
+                         COL_T("", "fraction", "percent", 2),
+                         COL_T("Peak Slots", "peak_slots", None, 3),
+                         COL_T("", "peak_fraction", "percent", 2),
+        ]
+
     def get_player_activity_data(self):
         matches = self.get_matches_played()
         bookings = self.get_courts_booked()
@@ -415,7 +426,7 @@ class ActivityReport(object):
         row_idx += 1
         data, fields = self.get_court_usage_summary()
         row_idx += self.write_data_to_sheet(exec_summary_ws, data, fields, cell_formats, row_idx, 0, alt_row_format,
-                                            autofilter=False, totals=[1], width_in_cells=True)
+                                            autofilter=False, totals=[1, 3], width_in_cells=True)
 
 
         
@@ -430,6 +441,7 @@ class ActivityReport(object):
                     'name': [cuws.name, 0, dow]})
             return chart
 
+        row_idx += 1
         exec_summary_ws.write(row_idx, 0, "Court utilization at different times of the week is shown in the following charts:")
         row_idx += 2
         exec_summary_ws.insert_chart(row_idx, 0, make_court_usage_chart(range(1,6)))
@@ -452,7 +464,7 @@ class ActivityReport(object):
         row_idx += self.write_data_to_sheet(exec_summary_ws, data, fields, cell_formats, row_idx, 0, alt_row_format,
                                             autofilter=False, totals=[2], width_in_cells=True)
 
-        row_idx += 2
+        row_idx += 1
         exec_summary_ws.write(row_idx, 0, "Note that racketball and junior competitions are not currently captured in this data.")
         workbook.close()
         return output.getvalue()
