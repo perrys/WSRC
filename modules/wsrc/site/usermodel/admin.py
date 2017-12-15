@@ -318,14 +318,18 @@ class DoorEntryCardAdmin(admin.ModelAdmin):
 class DoorCardEventAdmin(admin.ModelAdmin):
     search_fields = ('card__player__user__first_name', 'card__player__user__last_name', 'cardnumber')
     list_select_related = ('card__player__user',)
-    list_display = ('event', 'cardnumber', 'linked_player', 'timestamp', 'received_time')
+    list_display = ('event', 'linked_cardnumber', 'linked_player', 'timestamp', 'received_time')
     list_filter = ("event", "card__player__user__is_active")
 
-    def cardnumber(self, obj):
+    def linked_cardnumber(self, obj):
         if obj.card is None:
             return "(None)"
+        link = urlresolvers.reverse("admin:usermodel_doorentrycard_change", args=[obj.card.pk])
+        return u'<a href="%s">%s</a>' % (link, obj.card.cardnumber)
         return obj.card.cardnumber
-    cardnumber.admin_order_field = "card__cardnumber"
+    linked_cardnumber.short_description = "Card Number"
+    linked_cardnumber.allow_tags = True
+    linked_cardnumber.admin_order_field = "card__cardnumber"
 
     def linked_player(self, obj):
         if obj.card is None or obj.card.player is None:
