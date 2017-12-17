@@ -316,7 +316,7 @@ class DoorEntryCardAdmin(admin.ModelAdmin):
     active.boolean = True
 
 class DoorCardEventAdmin(admin.ModelAdmin):
-    search_fields = ('card__player__user__first_name', 'card__player__user__last_name', 'cardnumber')
+    search_fields = ('card__player__user__first_name', 'card__player__user__last_name', 'card__cardnumber')
     list_select_related = ('card__player__user',)
     list_display = ('event', 'linked_cardnumber', 'linked_player', 'timestamp', 'received_time')
     list_filter = ("event", "card__player__user__is_active")
