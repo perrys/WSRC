@@ -174,9 +174,9 @@ def booking_proxy_view(request):
 
 def generate_tokens(date):
     start_times = {
-        1: datetime.datetime.combine(date, datetime.time(8, 30)),
-        2: datetime.datetime.combine(date, datetime.time(8, 45)),
-        3: datetime.datetime.combine(date, datetime.time(9)),
+        1: datetime.datetime.combine(date, datetime.time(8, 15)),
+        2: datetime.datetime.combine(date, datetime.time(8, 30)),
+        3: datetime.datetime.combine(date, datetime.time(8, 45)),
     }
     court_length = datetime.timedelta(minutes=45)
     def times(court, start):
