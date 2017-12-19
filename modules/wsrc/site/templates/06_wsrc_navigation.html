@@ -33,31 +33,6 @@ $( document ).on( "pagecreate", ".wsrc-site", function( event ) {
 {% for link in navlinks %}
       <li {% if link.icon %}data-icon="{{ link.icon }}"{% endif %}><a href="{% if link.is_reverse_url %}{% url link.url %}{% else %}{{ link.url }}{% endif %}" data-ajax="false">{{ link.name }}</a></li>
 {% endfor %}
-{% comment %}
-      <li><a href="/membership">Membership</a></li>
-      <li><a href="/coaching">Coaching</a></li>
-      <li><a href="/juniors">Juniors</a></li>
-      <li><a href="/social">Social</a></li>
-
-      <li><a href="{% url 'boxes' %}"   data-ajax="false" onclick="$.mobile.loading('show')">Club Leagues</a></li>
-      <li><a href="{% url 'tournaments' %}" data-ajax="false" onclick="$.mobile.loading('show')">Club Tournaments</a></li>
-
-      <li data-icon="calendar"><a href="http://booking.wokingsquashclub.org/" data-ajax="false" onclick="$.mobile.loading('show')">Court Booking</a></li>
-      <li data-icon="calendar"><a href="{% url 'courts' %}" data-ajax="false" onclick="$.mobile.loading('show')">Courts (new)</a></li>
-{% if user.is_authenticated %}
-      <li data-icon="phone"><a href="{% url 'member_list' %}">Members' Details</a></li>
-      <li><a href="/club_management">Club Management</a></li>
-      <li data-icon="comment"><a href="/suggestions">Feedback</a></li>
-<!--
-      <li data-icon="shop"><a href="/merchandise">Merchandise</a></li>
--->
-      <li data-icon="gear"><a href="{% url 'settings' %}">Settings</a></li>
-      <li data-icon="qmark"><a href="/help">Help</a></li>
-{% endif %}
-
-      <li data-icon="star"><a href="/links">Links and Credits</a></li>
-      <li data-icon="mail"><a href="/contact">Contact Us</a></li>
-{% endcomment %}
     </ul>
   </div>
 
