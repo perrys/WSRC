@@ -38,7 +38,6 @@ from django.views.decorators.http import require_safe, require_http_methods
 from icalendar import Calendar, Event, vCalAddress, vText
 
 import wsrc.site.settings.settings as settings
-from wsrc.site.views import add_navigation_links
 from wsrc.utils.form_utils import LabeledSelect, make_readonly_widget
 from wsrc.site.courts.models import BookingSystemEvent
 from wsrc.site.usermodel.models import Player
@@ -276,7 +275,6 @@ def day_view(request, date=None):
       "day_table": table_html,
       "booking_user_name": request.user.get_full_name() if booking_user_id is not None else '' 
     }
-    add_navigation_links(request, context)
     return render(request, 'courts.html', context)
 
 def validate_15_minute_multiple(value):

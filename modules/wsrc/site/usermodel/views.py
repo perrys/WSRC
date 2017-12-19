@@ -38,7 +38,6 @@ from rest_framework.views import APIView
 
 from wsrc.site.courts.models import EventFilter
 from wsrc.site.settings import settings
-from wsrc.site.views import add_navigation_links
 from wsrc.external_sites.booking_manager import BookingSystemSession
 from wsrc.site.usermodel.models import Player, DoorCardEvent
 from wsrc.utils import xls_utils, sync_utils
@@ -67,7 +66,6 @@ class MemberListView(ListView):
 
     def get_context_data(self, **kwargs):
         ctx = super(MemberListView, self).get_context_data(**kwargs)
-        add_navigation_links(self.request, ctx)
         return ctx
 
 
@@ -338,5 +336,4 @@ def settings_view(request):
         'n_notifiers':     len(events),
         'form_saved':      success,
     }
-    add_navigation_links(request, ctx)
     return render(request, 'settings.html', ctx)

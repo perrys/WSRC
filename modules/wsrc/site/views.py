@@ -110,17 +110,10 @@ def get_pagecontent_ctx(page, title=None):
         }
     return result
 
-def add_navigation_links(request, ctx):
-    links = NavigationLink.objects.filter(ordering__gt=0)
-    if not request.user.is_authenticated():
-        links = links.exclude(is_restricted=True)
-    ctx["navlinks"] = links
-
 @require_safe
 def generic_view(request, page):
     "Informational views rendered directly from markdown content stored in the DB"
     ctx = get_pagecontent_ctx(page)
-    add_navigation_links(request, ctx)
     return TemplateResponse(request, 'generic_page.html', ctx)
 
 @require_safe
@@ -128,7 +121,6 @@ def committee_view(request):
     # need a two-pass render for the committee page
     page = 'Committee'
     ctx = get_pagecontent_ctx(page, "Management")
-    add_navigation_links(request, ctx)
     unexpanded_content = render_to_string('generic_page.html', RequestContext(request, ctx))
     template = Template(unexpanded_content)
     response = template.render(Context({'meetings': CommitteeMeetingMinutes.objects.all()}))
@@ -201,7 +193,6 @@ def generate_tokens(date):
 def index_view(request):
 
     ctx = get_pagecontent_ctx('home')
-    add_navigation_links(request, ctx)
     levels = SquashLevels.objects.values('name', 'level', 'player__squashlevels_id').order_by('-level')
     if len(levels) > 0:
         ctx["squashlevels"] = levels
@@ -562,7 +553,6 @@ def maintenance_view(request):
         'data': issues,
         'form': form
     }
-    add_navigation_links(request, kwargs)
     return render(request, "maintenance.html", kwargs)
 
 @login_required
@@ -587,7 +577,6 @@ def suggestions_view(request):
         'data': suggestions,
         'form': form
     }
-    add_navigation_links(request, kwargs)
     return render(request, 'suggestions.html', kwargs)
 
 
