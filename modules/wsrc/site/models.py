@@ -33,9 +33,12 @@ class PageContent(models.Model):
 
 class NavigationNode(models.Model):
     name = models.CharField(max_length=32)
-    parent = models.ForeignKey('self', blank=True, null=True)
+    parent = models.ForeignKey('self', blank=True, null=True, related_name="children")
     ordering = models.IntegerField(unique=True, help_text="higher numbers appear higher")
+    is_restricted = models.BooleanField(default=False, help_text="Login required to view")
     icon = models.CharField(max_length=32, blank=True, null=True)
+    def __unicode__(self):
+        return self.name
     class Meta:
         unique_together = ("parent", "ordering")
         ordering = ["-parent__ordering", "-ordering"]
@@ -44,7 +47,6 @@ class NavigationNode(models.Model):
 class NavigationLink(NavigationNode):
     url = models.CharField(max_length=256)
     is_reverse_url = models.BooleanField(default=False)
-    is_restricted = models.BooleanField(default=False, help_text="Login required to view")
     def __unicode__(self):
         return self.name
     class Meta:
