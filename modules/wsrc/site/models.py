@@ -31,12 +31,46 @@ class PageContent(models.Model):
     class Meta:
         verbose_name_plural = "Page Templates"
 
+class NavigationNodeManager(models.Manager):
+    "Add efficient tree-node manager"
+    def tree(self, authenticated=False):
+        "Return a list of all nodes, containing NavigationLink instances where appropriate"
+        from django.db import connection
+        sql = """
+SELECT `site_navigationnode`.`id`,
+`site_navigationnode`.`name`,
+`site_navigationnode`.`parent_id`,
+`site_navigationnode`.`ordering`,
+`site_navigationnode`.`is_restricted`,
+`site_navigationnode`.`icon`,
+`site_navigationlink`.`navigationnode_ptr_id`,
+`site_navigationlink`.`url`,
+`site_navigationlink`.`is_reverse_url`
+FROM `site_navigationnode`
+LEFT OUTER JOIN `site_navigationlink`  ON ( `site_navigationlink`.`navigationnode_ptr_id` = `site_navigationnode`.`id` )
+WHERE `site_navigationnode`.`ordering` > 0
+"""
+        if not authenticated:
+            sql += " AND `site_navigationnode`.`is_restricted` = False "
+        sql += " ORDER BY `site_navigationnode`.`ordering` DESC"
+        cursor = connection.cursor()
+        cursor.execute(sql)
+        result_list = []
+        for row in cursor.fetchall():
+            if row[6] is None:
+                node = self.model(*row[0:6])
+            else:
+                node = NavigationLink(*row)
+            result_list.append(node)
+        return result_list
+
 class NavigationNode(models.Model):
     name = models.CharField(max_length=32)
     parent = models.ForeignKey('self', blank=True, null=True, related_name="children")
     ordering = models.IntegerField(unique=True, help_text="higher numbers appear higher")
     is_restricted = models.BooleanField(default=False, help_text="Login required to view")
     icon = models.CharField(max_length=32, blank=True, null=True)
+    objects = NavigationNodeManager()
     def __unicode__(self):
         return self.name
     class Meta:
