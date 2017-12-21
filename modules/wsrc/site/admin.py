@@ -23,6 +23,9 @@ from wsrc.site.models import PageContent, EmailContent, MaintenanceIssue,\
     Suggestion, ClubEvent, CommitteeMeetingMinutes, GenericPDFDocument, Image,\
     NavigationLink, NavigationNode
 
+from wsrc.utils.form_utils import CachingModelChoiceField, \
+    get_related_field_limited_queryset, PrefetchRelatedQuerysetMixin
+
 def txt_widget(nrows):
     "Create a standard textarea widget"
     return forms.Textarea(attrs={'cols': 100, 'rows': nrows})
@@ -32,13 +35,24 @@ class PageContentAdmin(admin.ModelAdmin):
         models.TextField: {'widget': txt_widget(30)},
     }
 
-class NavigationLinkAdmin(admin.ModelAdmin):
-    list_display = ("name", "url", "is_reverse_url", "is_restricted", "icon", "parent", "ordering")
-    list_editable = ("parent", "ordering")
+class NavigationForm(forms.ModelForm):
+    "Override parent node in form for more efficient DB interaction"
+    queryset = get_related_field_limited_queryset(NavigationNode.parent.field)
+    parent = CachingModelChoiceField(queryset=queryset)
 
-class NavigationNodeAdmin(admin.ModelAdmin):
+class NavigationLinkAdmin(PrefetchRelatedQuerysetMixin, admin.ModelAdmin):
+    list_display = ("name", "url", "is_reverse_url", "is_restricted", "icon", "parent", "ordering")
+    list_editable = ("parent", "ordering",)
+    prefetch_related_fields = ("parent",)
+    def get_changelist_form(self, request, **kwargs):
+        return NavigationForm
+
+class NavigationNodeAdmin(PrefetchRelatedQuerysetMixin, admin.ModelAdmin):
     list_display = ("name", "is_restricted", "icon", "ordering")
     list_editable = ("ordering",)
+    prefetch_related_fields = ("parent",)
+    def get_changelist_form(self, request, **kwargs):
+        return NavigationForm
 
 class EmailContentAdmin(admin.ModelAdmin):
     formfield_overrides = {
