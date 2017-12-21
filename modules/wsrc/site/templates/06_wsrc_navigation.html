@@ -30,8 +30,30 @@ $( document ).on( "pagecreate", ".wsrc-site", function( event ) {
   <!-- left nav menu: -->
   <div data-role="panel" class="jqm-navmenu-panel" data-position="left" data-display="overlay" data-theme="a" {% if options.no_navigation %}style="display: none;"{% endif %}>
     <ul class="jqm-list ui-alt-icon ui-nodisc-icon">
-{% for link in navlinks %}
-      <li {% if link.icon %}data-icon="{{ link.icon }}"{% endif %}><a href="{% if link.is_reverse_url %}{% url link.url %}{% else %}{{ link.url }}{% endif %}" data-ajax="false">{{ link.name }}</a></li>
+      
+{% for node in navlinks %}
+<!-- {{ node.url }} {{ node.link }} -->
+  {% if node.url %}
+      <li {% if node.icon %}data-icon="{{ node.icon }}"{% endif %}>
+        <a href="{% if node.is_reverse_url %}{% url node.url %}{% else %}{{ node.url }}{% endif %}" data-ajax="false">{{ node.name }}</a>
+      </li>
+  {% else %}
+      <li data-role="collapsible" data-enhanced="true" data-collapsed-icon="carat-d" data-expanded-icon="carat-u" data-iconpos="right" data-inset="false" class="ui-collapsible ui-collapsible-themed-content ui-collapsible-collapsed">
+	<div class="ui-collapsible-heading ui-collapsible-heading-collapsed">
+          <a href="#" class="ui-collapsible-heading-toggle ui-btn ui-btn-icon-right ui-btn-inherit ui-icon-carat-d">{{ node.name }}<span class="ui-collapsible-heading-status"> click to expand contents</span></a>
+	</div>
+	<div class="ui-collapsible-content ui-body-inherit {% if not node.is_expanded %}ui-collapsible-content-collapsed{% endif %}"
+             {% if not node.is_expanded %}aria-hidden="true"{% endif %}>
+	  <ul>
+    {% for child in node.children %}          
+            <li {% if child.icon %}data-icon="{{ child.icon }}"{% endif %}>
+              <a href="{% if child.is_reverse_url %}{% url child.url %}{% else %}{{ child.url }}{% endif %}" data-ajax="false">{{ child.name }}</a>
+            </li>
+    {% endfor %}
+	  </ul>
+	</div>
+      </li>
+  {% endif %}  
 {% endfor %}
     </ul>
   </div>
