@@ -20,18 +20,14 @@ from django.core.urlresolvers import reverse
 from wsrc.site.models import NavigationLink, NavigationNode
 from collections import namedtuple
 
-node_t = namedtuple("Node", ["pk", "is_restricted", "name", "children", "is_expanded"])
+node_t = namedtuple("Node", ["pk", "name", "children", "is_expanded"])
 
 class NavigationMiddleWare:
     def process_template_response(self, request, response):
-        nodes = NavigationNode.objects.filter(ordering__gt=0)
-        links = NavigationLink.objects.filter(ordering__gt=0)
-        if not request.user.is_authenticated():
-            nodes = nodes.exclude(is_restricted=True)
-            links = links.exclude(is_restricted=True)
-        nodes = [node_t(node.pk, node.is_restricted, node.name, [], False) for node in nodes]
+        tree_nodes = NavigationNode.objects.tree(request.user.is_authenticated())
+        nodes = [node_t(node.pk, node.name, [], False) for node in tree_nodes]
         nodes_map = dict([(n.pk, n) for n in nodes])
-        for link in links:
+        for link in [node for node in tree_nodes if hasattr(node, "url")]:
             if link.parent_id is not None:
                 parent = nodes_map[link.parent_id]
                 parent.children.append(link)
@@ -41,6 +37,7 @@ class NavigationMiddleWare:
                     nodes_map[link.parent_id] = parent._replace(is_expanded=True)
             else:
                 nodes_map[link.pk] = link
-        nodes = [nodes_map[node.pk] for node in nodes if node.pk in nodes_map]
+        nodes = [nodes_map[node.pk] for node in tree_nodes if node.pk in nodes_map]
+        
         response.context_data["navlinks"] = nodes
         return response
