@@ -30,7 +30,7 @@ from django.core.exceptions import ValidationError, SuspiciousOperation, Permiss
 from django.core.mail import SafeMIMEMultipart, SafeMIMEText
 from django.core.urlresolvers import reverse as reverse_url
 from django.http import HttpResponse
-from django.shortcuts import render, redirect
+from django.shortcuts import redirect
 from django.template import Template, Context, RequestContext
 from django.template.response import TemplateResponse
 from django.views.decorators.http import require_safe, require_http_methods
@@ -275,7 +275,7 @@ def day_view(request, date=None):
       "day_table": table_html,
       "booking_user_name": request.user.get_full_name() if booking_user_id is not None else '' 
     }
-    return render(request, 'courts.html', context)
+    return TemplateResponse(request, 'courts.html', context)
 
 def validate_15_minute_multiple(value):
   rem = value % 15
@@ -547,7 +547,7 @@ def edit_entry_view(request, id=None):
     'booking_id': id,
     'booking_user_id': booking_user_id    
   }
-  return render(request, 'booking.html', context)
+  return TemplateResponse(request, 'booking.html', context)
 
 def send_calendar_invite(request, slot, recipients, event_type):
   method = "CANCEL" if event_type == "delete" else "REQUEST"
@@ -701,5 +701,5 @@ def calendar_invite_view(request, id):
     'id': id,
     'back_url': reverse_url('booking') + "/{id}".format(**locals()),
   }
-  return render(request, 'cal_invite.html', context)
+  return TemplateResponse(request, 'cal_invite.html', context)
   
