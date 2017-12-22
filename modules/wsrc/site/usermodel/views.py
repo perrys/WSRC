@@ -24,6 +24,7 @@ from django.core.exceptions import PermissionDenied
 from django.db import transaction
 from django.http import HttpResponseBadRequest
 from django import forms
+from django.template.response import TemplateResponse
 from django.shortcuts import render
 from django.views.generic.list import ListView
 
@@ -336,4 +337,4 @@ def settings_view(request):
         'n_notifiers':     len(events),
         'form_saved':      success,
     }
-    return render(request, 'settings.html', ctx)
+    return TemplateResponse(request, 'settings.html', ctx)
