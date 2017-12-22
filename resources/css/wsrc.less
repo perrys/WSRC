@@ -334,7 +334,6 @@ div.centered-dialog {
 .wsrc-site .jqm-content .boxes a,
 .wsrc-site .jqm-content .wsrc-member-list a,
 .wsrc-site .jqm-content ul:not(.jqm-list) li a {
-    font-weight: 400;
     text-decoration: none;
 }
 .wsrc-site .jqm-content strong {
@@ -447,7 +446,12 @@ div.centered-dialog {
     color: #ed3338;
 }
 .jqm-navmenu-panel {
-	position: fixed;
+    position: fixed;
+    color: #003388;
+    .ui-noboxshadow .ui-btn:focus,
+    .ui-noboxshadow .ui-focus {
+	outline: 0;
+    }    
 }
 .jqm-navmenu-panel .ui-listview > li .ui-collapsible-heading {
     margin: 0;
@@ -462,15 +466,10 @@ div.centered-dialog {
     border-top: none !important;
 }
 .jqm-navmenu-panel .ui-listview .ui-listview .ui-btn {
-    padding-left: 1.5em;
-    color: #666;
+    padding-left: 2em;
 }
 .jqm-navmenu-panel .ui-listview .ui-listview .ui-listview .ui-btn {
-    padding-left: 2em;
-    color: #999;
-}
-.jqm-navmenu-panel .ui-listview .ui-listview .ui-btn.ui-btn-active {
-    color: #fff;
+    padding-left: 2.5em;
 }
 .jqm-navmenu-panel .ui-btn:after {
     opacity: .4;
