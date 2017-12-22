@@ -38,6 +38,8 @@ class NavigationMiddleWare:
             else:
                 nodes_map[link.pk] = link
         nodes = [nodes_map[node.pk] for node in tree_nodes if node.pk in nodes_map]
-        
-        response.context_data["navlinks"] = nodes
+        if response.context_data is None:
+            response.context_data = {"navlinks": nodes}
+        else:
+            response.context_data["navlinks"] = nodes
         return response
