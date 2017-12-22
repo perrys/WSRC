@@ -118,10 +118,14 @@ def generic_view(request, page):
 
 @require_safe
 def committee_view(request):
+    from .navigation import NavigationMiddleWare
     # need a two-pass render for the committee page
     page = 'Committee'
     ctx = get_pagecontent_ctx(page, "Management")
-    unexpanded_content = render_to_string('generic_page.html', RequestContext(request, ctx))
+    first_pass = TemplateResponse(request, 'generic_page.html', ctx)
+    NavigationMiddleWare().process_template_response(request, first_pass)
+    first_pass.render()
+    unexpanded_content = first_pass.content
     template = Template(unexpanded_content)
     response = template.render(Context({'meetings': CommitteeMeetingMinutes.objects.all()}))
     return HttpResponse(response)
