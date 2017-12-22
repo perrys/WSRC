@@ -557,7 +557,7 @@ def maintenance_view(request):
         'data': issues,
         'form': form
     }
-    return render(request, "maintenance.html", kwargs)
+    return TemplateResponse(request, "maintenance.html", kwargs)
 
 @login_required
 def suggestions_view(request):
@@ -581,7 +581,7 @@ def suggestions_view(request):
         'data': suggestions,
         'form': form
     }
-    return render(request, 'suggestions.html', kwargs)
+    return TemplateResponse(request, 'suggestions.html', kwargs)
 
 
 class DateTimeTzAwareField(serializers.DateTimeField):
