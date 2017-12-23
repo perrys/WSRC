@@ -30,6 +30,7 @@ from django.core.exceptions import ValidationError, SuspiciousOperation, Permiss
 from django.core.mail import SafeMIMEMultipart, SafeMIMEText
 from django.core.urlresolvers import reverse as reverse_url
 from django.http import HttpResponse
+from django.db.models import Q
 from django.shortcuts import redirect
 from django.template import Template, Context, RequestContext
 from django.template.response import TemplateResponse
@@ -702,4 +703,30 @@ def calendar_invite_view(request, id):
     'back_url': reverse_url('booking') + "/{id}".format(**locals()),
   }
   return TemplateResponse(request, 'cal_invite.html', context)
+
+@login_required
+def agenda_view(request):
+  start_date = request.GET.get("start_date")
+  if start_date is None:
+    start_date = datetime.date.today()
+  else:
+    start_date = timezones.parse_iso_date_to_naive(start_date)
+  agenda_items = BookingSystemEvent.objects.filter(start_time__gte=start_date)
+
+  name = request.GET.get("name")
+  filter_created_by = False
+  if name is None:
+    name = request.user.get_full_name()
+    filter_created_by = True
+    
+  name_clause = Q(name__icontains=name)
+  name_clause |= Q(description__icontains=name)
+  if filter_created_by:
+    myself = Player.get_player_for_user(request.user)
+    if myself is not None:
+      name_clause |= Q(created_by=myself)
+
+  agenda_items = agenda_items.filter(name_clause)
+  context = {'agenda_items': agenda_items, 'name': name}
+  return TemplateResponse(request, 'agenda.html', context)
   

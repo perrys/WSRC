@@ -512,16 +512,37 @@ div.wsrc-membership {
     }
 }
 
-.wsrc-member-list th, .wsrc-member-list td {
-    text-align: left;
-    vertical-align: top;
-    padding-right: 1em;
-    color: @color-body;
+.wsrc-member-list,
+.wsrc-agenda-list {
+    th, td {
+        text-align: left;
+        vertical-align: top;
+        padding-right: 1em;
+        color: @color-body;
+        @ruleset-large: {
+            &.centered {
+                text-align: center;
+            }
+        };
+        .media-guard(@ruleset-large, @breakpoint-widen-frontpage);         
+    }
+    th:last-child,
+    td:last-child {
+        border-bottom: 1px solid;
+    }
 }
 
-.wsrc-member-list th:last-child, .wsrc-member-list td:last-child {
-    border-bottom: 1px solid;
+.wsrc-agenda-list {    
+    .buttonset {
+        text-align: right;
+        padding-right: 0;
+        .ui-table-cell-label {
+            display: none;
+        }
+    }
 }
+
+
 
 .maintenance-table {
     span.c, span.ni {

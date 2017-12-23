@@ -1,0 +1,42 @@
+{% extends "06_wsrc_navigation.html" %}
+{% block pagetitle %}Court Booking{% endblock %}
+{% block page_classes %}edit-entry{% endblock %}
+{% load kwacros %}
+{% loadkwacros 'form_macros.html' %}
+{% block centered_page_content %}
+
+{% if agenda_items|length == 0 %}
+<p>
+  No court bookings related to {{ name }} were found.<sup>*</sup>
+</p>
+{% else %}
+<p>
+  Court bookings related to {{ name }}:<sup>*</sup>
+</p>
+<div class="wsrc-agenda-list">
+  <form>
+    <input id="filterTable-input" data-type="search" placeholder="Search . . .">
+  </form>
+  <table class="wsrc-member-list" data-role="table" data-filter="true" data-input="#filterTable-input">
+    <thead>
+      <tr><th>Name</th><th>Date</th><th class="centered">Court</th><th>Description</th><th>&nbsp;</th></tr>
+    </thead>
+    <tbody>
+      {% for item in agenda_items %}
+      <tr>
+        <td>{{ item.name }}</td>
+        <td>{{ item.start_time|date:"D j M Y g:iA" }}</td>
+        <td class="centered">{{ item.court }}</td>
+        <td>{{ item.description }}</td>
+        <td class="buttonset"><a class="ui-btn ui-btn-inline ui-corner-all ui-btn-icon-left ui-icon-action" href="{% url 'booking' %}/{{ item.event_id }}" data-ajax='false'>Details</a><a class="ui-btn ui-btn-inline ui-corner-all ui-btn-icon-left ui-icon-mail" href="{% url 'cal_invite' %}/{{ item.event_id }}" data-ajax='false'>Send Invite</a></td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endif %}
+
+<div class="wsrc-footnote">
+  <sup>*</sup> new bookings may take a few minutes to show up in this list.
+</div>
+{% endblock %}
