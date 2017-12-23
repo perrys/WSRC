@@ -2,6 +2,7 @@
 
 @breakpoint-jqm-ui-field: 28em;
 @breakpoint-widen-frontpage: 35em;
+@breakpoint-standard-table: 40em;
 @breakpoint-show-navmenu: 60em;
 
 @color-loser: #ed3338;
@@ -524,7 +525,7 @@ div.wsrc-membership {
                 text-align: center;
             }
         };
-        .media-guard(@ruleset-large, @breakpoint-widen-frontpage);         
+        .media-guard(@ruleset-large, @breakpoint-standard-table);         
     }
     th:last-child,
     td:last-child {
@@ -1263,7 +1264,7 @@ div.coaching ul {
 };
 
 /* reflow table when larger than about 640px */
-.media-guard(@membership-table-ruleset, 40em); 
+.media-guard(@membership-table-ruleset, @breakpoint-standard-table); 
 @membership-table-ruleset: {
 	table.wsrc-member-list {
             padding-top: 0em;
@@ -1342,13 +1343,13 @@ div.coaching ul {
 	float: none;
     }
     .jqm-navmenu-panel .ui-listview .ui-btn {
-	padding-left: 12.5%;
+	padding-left: 7.5%;
     }
     .jqm-navmenu-panel .ui-listview .ui-listview .ui-btn {
 	padding-left: 15%;
     }
     .jqm-navmenu-panel .ui-listview .ui-listview .ui-listview .ui-btn {
-        padding-left: 17.5%;
+        padding-left: 22.5%;
     }
 
     .jqm-navmenu-panel .ui-collapsible,
