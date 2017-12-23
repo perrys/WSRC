@@ -1,8 +1,6 @@
 {% extends "06_wsrc_navigation.html" %}
-{% block pagetitle %}Court Booking{% endblock %}
-{% block page_classes %}edit-entry{% endblock %}
+{% block pagetitle %}My Bookings{% endblock %}
 {% load kwacros %}
-{% loadkwacros 'form_macros.html' %}
 {% block centered_page_content %}
 
 {% if agenda_items|length == 0 %}
