@@ -37,8 +37,7 @@ class PageContentAdmin(admin.ModelAdmin):
 
 class NavigationForm(forms.ModelForm):
     "Override parent node in form for more efficient DB interaction"
-    queryset = get_related_field_limited_queryset(NavigationNode.parent.field)
-    parent = CachingModelChoiceField(queryset=queryset)
+    parent = CachingModelChoiceField(queryset=NavigationNode.objects.parent_nodes(), required=False)
 
 class NavigationLinkAdmin(PrefetchRelatedQuerysetMixin, admin.ModelAdmin):
     list_display = ("name", "url", "is_reverse_url", "is_restricted", "icon", "parent", "ordering")
@@ -46,6 +45,7 @@ class NavigationLinkAdmin(PrefetchRelatedQuerysetMixin, admin.ModelAdmin):
     prefetch_related_fields = ("parent",)
     def get_changelist_form(self, request, **kwargs):
         return NavigationForm
+    form = NavigationForm
 
 class NavigationNodeAdmin(PrefetchRelatedQuerysetMixin, admin.ModelAdmin):
     list_display = ("name", "is_restricted", "icon", "ordering")
