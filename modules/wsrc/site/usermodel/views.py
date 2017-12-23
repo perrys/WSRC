@@ -27,6 +27,7 @@ from django import forms
 from django.template.response import TemplateResponse
 from django.shortcuts import render
 from django.views.generic.list import ListView
+from django.utils.decorators import method_decorator
 
 import rest_framework.generics    as rest_generics
 from rest_framework import serializers, status
@@ -50,6 +51,8 @@ JSON_RENDERER = JSONRenderer()
 
 class MemberListView(ListView):
     "Straightforward list view for active members"
+
+    @method_decorator(login_required)
     def dispatch(self, request, *args, **kwargs):
         if not request.user.is_authenticated():
             raise PermissionDenied()
