@@ -117,6 +117,7 @@ def generic_view(request, page):
     return TemplateResponse(request, 'generic_page.html', ctx)
 
 @require_safe
+@login_required
 def committee_view(request):
     from .navigation import NavigationMiddleWare
     # need a two-pass render for the committee page
