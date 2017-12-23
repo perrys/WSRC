@@ -87,7 +87,7 @@ class NavigationNode(models.Model):
         return self.name
     class Meta:
         unique_together = ("parent", "ordering")
-        ordering = ["-parent__ordering", "-ordering"]
+        ordering = ["-ordering"]
         verbose_name = "Navigation Node"
 
 class NavigationLink(NavigationNode):
