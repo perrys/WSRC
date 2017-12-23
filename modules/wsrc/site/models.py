@@ -48,7 +48,7 @@ SELECT `site_navigationnode`.`id`,
 `site_navigationlink`.`is_reverse_url`
 FROM `site_navigationnode`
 LEFT OUTER JOIN `site_navigationlink`  ON ( `site_navigationlink`.`navigationnode_ptr_id` = `site_navigationnode`.`id` )
-WHERE `site_navigationnode`.`ordering` > 0
+WHERE `site_navigationnode`.`ordering` IS NOT NULL
 """
         if not authenticated:
             sql += " AND `site_navigationnode`.`is_restricted` = False "
@@ -79,7 +79,7 @@ FROM `site_navigationlink`
 class NavigationNode(models.Model):
     name = models.CharField(max_length=32)
     parent = models.ForeignKey('self', blank=True, null=True, related_name="children")
-    ordering = models.IntegerField(unique=True, help_text="higher numbers appear higher")
+    ordering = models.IntegerField(help_text="higher numbers appear higher", blank=True, null=True)
     is_restricted = models.BooleanField(default=False, help_text="Login required to view")
     icon = models.CharField(max_length=32, blank=True, null=True)
     objects = NavigationNodeManager()
