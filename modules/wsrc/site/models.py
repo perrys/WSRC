@@ -63,6 +63,18 @@ WHERE `site_navigationnode`.`ordering` > 0
                 node = NavigationLink(*row)
             result_list.append(node)
         return result_list
+    
+    def parent_nodes(self):
+        "Return a queryset excluding navigation nodes which are non-top-level."
+        raw_sql = """
+SELECT `site_navigationlink`.`navigationnode_ptr_id`
+FROM `site_navigationlink`
+"""
+        from django.db import connection
+        cursor = connection.cursor()
+        cursor.execute(raw_sql)
+        link_ids = [row[0] for row in cursor.fetchall()]
+        return self.exclude(id__in=link_ids)
 
 class NavigationNode(models.Model):
     name = models.CharField(max_length=32)
