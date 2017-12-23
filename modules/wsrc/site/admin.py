@@ -48,11 +48,10 @@ class NavigationLinkAdmin(PrefetchRelatedQuerysetMixin, admin.ModelAdmin):
     form = NavigationForm
 
 class NavigationNodeAdmin(PrefetchRelatedQuerysetMixin, admin.ModelAdmin):
-    list_display = ("name", "is_restricted", "icon", "ordering")
+    list_display = ("name", "is_restricted", "icon", "parent", "ordering")
     list_editable = ("ordering",)
     prefetch_related_fields = ("parent",)
-    def get_changelist_form(self, request, **kwargs):
-        return NavigationForm
+    form = NavigationForm
 
 class EmailContentAdmin(admin.ModelAdmin):
     formfield_overrides = {
