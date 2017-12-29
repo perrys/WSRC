@@ -28,6 +28,7 @@ from django.contrib.auth.models import User
 from django.core.exceptions import SuspiciousOperation
 from django.core.mail import SafeMIMEMultipart, SafeMIMEText
 from django.core.urlresolvers import reverse as reverse_url
+from django.db import transaction
 from django.http import HttpResponse
 from django.db.models import Q
 from django.shortcuts import redirect
@@ -604,13 +605,32 @@ def agenda_view(request):
 def notifier_view(request):
     max_filters = 7
     filter_formset_factory = create_notifier_filter_formset_factory(max_filters)
-    
+    success = False    
     player = Player.get_player_for_user(request.user)
     events = EventFilter.objects.filter(player=player)
     initial = [{'player': player}] * (max_filters)
-    eformset = filter_formset_factory(queryset=events, initial=initial)
+    if request.method == 'POST':
+        eformset = filter_formset_factory(request.POST, queryset=events, initial=initial)
+        print "valid: " + str(eformset.is_valid())
+        for form in eformset:
+            print form.has_changed()
+        if eformset.is_valid():
+            with transaction.atomic():
+                for form in eformset:
+                    print form.has_changed()
+                    if form.has_changed():
+                        if form.cleaned_data['player'] != player:
+                            raise PermissionDenied()
+                if eformset.has_changed():
+                    eformset.save()
+                    events = EventFilter.objects.filter(player=player)
+                    eformset = filter_formset_factory(queryset=events, initial=initial)
+                success = True
+    else:
+        eformset = filter_formset_factory(queryset=events, initial=initial)
     context = {
         'notify_formset':  eformset,
         'n_notifiers':     len(events),
-    }    
+        'form_saved':      success,
+    }
     return TemplateResponse(request, 'notifier.html', context)
