@@ -23,10 +23,9 @@ import sys
 import urllib
 
 from django import forms
-from django.forms.fields import BaseTemporalField
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
-from django.core.exceptions import ValidationError, SuspiciousOperation
+from django.core.exceptions import SuspiciousOperation
 from django.core.mail import SafeMIMEMultipart, SafeMIMEText
 from django.core.urlresolvers import reverse as reverse_url
 from django.http import HttpResponse
@@ -37,20 +36,16 @@ from django.views.decorators.http import require_safe
 
 from icalendar import Calendar, Event, vCalAddress, vText
 
+from .forms import START_TIME, END_TIME, RESOLUTION, COURTS,\
+    format_date, make_date_formats, validate_quarter_hour, create_notifier_filter_formset_factory,\
+    BookingForm, CalendarInviteForm
 import wsrc.site.settings.settings as settings
 from wsrc.utils.form_utils import LabeledSelect, make_readonly_widget
-from wsrc.site.courts.models import BookingSystemEvent
+from wsrc.site.courts.models import BookingSystemEvent, EventFilter
 from wsrc.site.usermodel.models import Player
 from wsrc.utils.html_table import Table, Cell, SpanningCell
 from wsrc.utils import timezones, email_utils
 
-COURTS = [1, 2, 3]
-START_TIME =  8*60 + 30
-END_TIME   = 22*60 + 15
-RESOLUTION = 15
-EMPTY_DUR  = 3 * RESOLUTION
-START_TIMES = [datetime.time(hour=t/60, minute=t%60) for t in range(START_TIME, END_TIME-RESOLUTION, RESOLUTION)]
-DURATIONS = [datetime.timedelta(minutes=i) for i in range(15, END_TIME-START_TIME, 15)]
 
 BOOKING_SYSTEM_EMAIL_ADRESS = "court_booking@wokingsquashclub.org"
 
@@ -276,104 +271,6 @@ def day_view(request, date=None):
         "booking_user_name": request.user.get_full_name() if booking_user_id is not None else ''
     }
     return TemplateResponse(request, 'courts.html', context)
-
-def validate_15_minute_multiple(value):
-    rem = value % 15
-    if rem != 0:
-        raise ValidationError("{value} is not a 15-minute multiple".format(**locals()))
-
-def validate_quarter_hour(value):
-    if value.second != 0 or value.microsecond != 0:
-        raise ValidationError("{value} has less than minute resolution".format(**locals()))
-    validate_15_minute_multiple(value.minute)
-
-def validate_quarter_hour_duration(value):
-    value = value.total_seconds()
-    if (value % 60) != 0:
-        raise ValidationError("{value} has less than minute resolution".format(**locals()))
-    validate_15_minute_multiple(value/60)
-
-def make_date_formats():
-    return ['%a %d %b %Y', '%Y-%m-%d']
-
-def make_datetime_formats():
-    return [x + " %H:%M:%S" for x in make_date_formats()]
-
-def format_date(val, fmts):
-    v = datetime.datetime.strptime(val, fmts[1])
-    return v.strftime(fmts[0])
-
-class HourAndMinuteDurationField(BaseTemporalField):
-    default_error_messages = {
-        'required': 'This field is required.',
-        'invalid': 'Enter a valid duration.',
-    }
-    def strptime(self, value, format):
-        return timezones.parse_duration(value)
-    def to_python(self, value):
-        if value in self.empty_values:
-            return None
-        return super(HourAndMinuteDurationField, self).to_python(value)
-
-class BookingForm(forms.Form):
-    name = forms.CharField(max_length=80)
-    description = forms.CharField(required=False, widget=forms.TextInput(attrs={'autofocus': 'autofocus'}))
-
-    date = forms.DateField(input_formats=make_date_formats())
-    start_time = forms.TimeField(label="Time", input_formats=['%H:%M'], validators=[validate_quarter_hour],
-                                 widget=forms.Select(choices=[(t.strftime("%H:%M"), t.strftime("%H:%M")) for t in START_TIMES]))
-    duration = HourAndMinuteDurationField(validators=[validate_quarter_hour_duration], input_formats=[None],
-                                          widget=forms.Select(choices=[(timezones.duration_str(i), timezones.duration_str(i)) for i in DURATIONS]))
-    court = forms.ChoiceField(choices=[(i, str(i)) for i in COURTS])
-    booking_type = forms.ChoiceField(choices=[("I", "Member"), ("E", "Club")])
-
-    created_by = forms.CharField(max_length=80, label="Created By", widget=make_readonly_widget(), required=False)
-    created_ts = forms.DateTimeField(label="Created At", input_formats=make_datetime_formats(), widget=make_readonly_widget(), required=False)
-    timestamp  = forms.DateTimeField(label="Last Updated", input_formats=make_datetime_formats(), widget=make_readonly_widget(), required=False)
-
-    booking_id = forms.IntegerField(required=False, widget=forms.HiddenInput())
-    created_by_id = forms.IntegerField(required=False, widget=forms.HiddenInput())
-    token = forms.CharField(required=False, widget=forms.HiddenInput())
-    no_show = forms.BooleanField(required=False, widget=forms.HiddenInput())
-
-    @staticmethod
-    def transform_booking_system_entry(entry):
-        mapping = {"booking_id": "id", "booking_type": "type", "duration": "duration_mins"}
-        slot = dict(entry)
-        for k, v in mapping.items():
-            value = entry[v]
-            slot[k] = value
-            del slot[v]
-        def format_date1(k, fmts):
-            slot[k] = format_date(slot[k], fmts)
-        format_date1("date", make_date_formats())
-        format_date1("created_ts", make_datetime_formats())
-        format_date1("timestamp", make_datetime_formats())
-        slot["duration"] = timezones.duration_str(datetime.timedelta(minutes=slot["duration"]))
-        return slot
-
-    @staticmethod
-    def transform_booking_system_deleted_entry(entry):
-        timestamp = datetime.datetime.utcfromtimestamp(int(entry["start_time"]))
-        timestamp = timezones.naive_utc_to_local(timestamp, timezones.UK_TZINFO)
-        duration = datetime.timedelta(seconds=(int(entry["end_time"]) - int(entry["start_time"])))
-        data = {
-            "date": timestamp.date(),
-            "start_time": timestamp.time(),
-            "duration": duration,
-            "court": entry["room_id"],
-            "name": entry["name"],
-            "description": entry["description"],
-        }
-        return data
-
-    @staticmethod
-    def empty_form(error=None):
-        booking_form = BookingForm(empty_permitted=True,data={})
-        booking_form.is_valid() # initializes cleaned_data
-        if error is not None:
-            booking_form.add_error(None, error)
-        return booking_form
 
 def edit_entry_view(request, id=None):
     player = Player.get_player_for_user(request.user)
@@ -629,33 +526,6 @@ def create_icalendar(request, cal_data, recipients, method):
     cal.add_component(evt)
     return cal
 
-def get_active_player_choices():
-    return [(None, '')] + [(u.id, u.get_full_name()) for u in User.objects.filter(is_active=True).filter(player__isnull=False).order_by('first_name', 'last_name')]
-
-class CalendarInviteForm(forms.Form):
-    summary = forms.CharField(label="Summary", max_length=80, widget=make_readonly_widget())
-    description = forms.CharField(required=False)
-    date = forms.DateField(input_formats=make_date_formats(), widget=make_readonly_widget())
-    start_time = forms.TimeField(label="Time", input_formats=['%H:%M'], validators=[validate_quarter_hour],
-                                 widget=make_readonly_widget())
-    duration = HourAndMinuteDurationField(validators=[validate_quarter_hour_duration], input_formats=[None],
-                                          widget=make_readonly_widget())
-    location = forms.CharField(widget=make_readonly_widget())
-    booking_id = forms.IntegerField(widget=forms.HiddenInput())
-    court = forms.IntegerField(widget=forms.HiddenInput())
-    invitee_1 = forms.ChoiceField(choices=get_active_player_choices(), widget=LabeledSelect(attrs={'disabled': 'disabled', 'class': 'readonly'}))
-    invitee_2 = forms.ChoiceField(choices=get_active_player_choices(), widget=LabeledSelect(attrs={'autofocus': 'autofocus'}))
-    invitee_3 = forms.ChoiceField(choices=get_active_player_choices(), widget=LabeledSelect, required=False)
-    invitee_4 = forms.ChoiceField(choices=get_active_player_choices(), widget=LabeledSelect, required=False)
-
-    @staticmethod
-    def get_location(booking_data):
-        return "Court {court}, Woking Squash Club, Horsell Moor, Woking GU21 4NR".format(**booking_data)
-
-    @staticmethod
-    def get_summary(booking_data):
-        return "WSRC Court Booking - {name}".format(**booking_data)
-
 @login_required
 def calendar_invite_view(request, id):
     if request.method == "POST":
@@ -732,4 +602,15 @@ def agenda_view(request):
 
 @login_required
 def notifier_view(request):
+    max_filters = 7
+    filter_formset_factory = create_notifier_filter_formset_factory(max_filters)
+    
+    player = Player.get_player_for_user(request.user)
+    events = EventFilter.objects.filter(player=player)
+    initial = [{'player': player}] * (max_filters)
+    eformset = filter_formset_factory(queryset=events, initial=initial)
+    context = {
+        'notify_formset':  eformset,
+        'n_notifiers':     len(events),
+    }    
     return TemplateResponse(request, 'notifier.html', context)
