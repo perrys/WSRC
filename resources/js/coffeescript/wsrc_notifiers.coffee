@@ -25,6 +25,10 @@ class WSRC_notifiers_view
   set_notifier_deleted: (n, val) ->
     fieldset = @form.find("div.notifier_fieldset").eq(n-1)
     fieldset.find("input.delete").val(val)
+
+  toggle_add_button: (disabled) ->
+      @form.find("#add-notifier-button").prop("disabled", disabled)
+    
       
 class WSRC_notifiers_controller
 
@@ -38,7 +42,7 @@ class WSRC_notifiers_controller
     @view.set_notifier_visibility(last_notifier_number, true)
     @view.set_notifier_deleted(last_notifier_number, "")
     if last_notifier_number == (@view.get_max_num_notifiers()-1)
-      @view.form.find("#add-notifier-button").prop("disabled", true)
+      @view.toggle_add_button(true)
     return undefined
       
   remove_notifier: (evt) ->
@@ -46,7 +50,7 @@ class WSRC_notifiers_controller
     @view.set_notifier_visibility(notifier_number, false)
     @view.set_notifier_deleted(notifier_number, "on")
     if notifier_number == (@view.get_max_num_notifiers()-1)
-      @view.form.find("#add-notifier-button").prop("disabled", false)
+      @view.toggle_add_button(false)
     return undefined
       
   @onReady: () ->
