@@ -95,6 +95,9 @@ class CachingModelChoiceField(forms.ModelChoiceField):
         return CachingModelChoiceIterator(self)
     choices = property(_get_choices, forms.ModelChoiceField._set_choices)
 
+class CachingModelMultipleChoiceField(CachingModelChoiceField, forms.ModelMultipleChoiceField):
+    "ModelMultipleChoiceField which substitutes an efficient queryset iterator"
+    
 def get_related_field_limited_queryset(db_field):
     "Get the default queryset for choices for a related field, limited as specified on the model"
     rel_field = db_field.rel
