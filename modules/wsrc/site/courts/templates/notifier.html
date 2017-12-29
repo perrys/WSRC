@@ -1,0 +1,60 @@
+{% extends "06_wsrc_navigation.html" %}
+{% block pagetitle %}Cancellation Emails{% endblock %}
+{% load kwacros %}
+{% loadkwacros 'form_macros.html' %}
+{% block centered_page_content %}
+
+<p>
+  When a court booking is cancelled, the system can send you an email notification, giving you the opportunity to book the slot for yourself. This can be a good way to pick up peak-time court slots.
+</p>
+<p>
+  You can configure notifications for court slots at different times of day and different days in the week. You currently have {{ n_notifiers }} notifier{{ n_notifiers|pluralize }} set up.
+</p>
+<form id="notifiers_form" method="post" action="{% url 'notifier' %}" data-ajax="false" class="toggle-root">
+  {% csrf_token %}
+
+  {% if form_saved %}
+  <span class="form_success_message">Settings saved.</span>
+  {% endif %}
+
+  {% if notify_formset.total_error_count %}
+  <span class="form_error_message ui-btn-icon ui-btn-icon-left ui-icon-alert">Validation Error. Please correct the problem(s) below and resubmit.</span>
+  <!-- {{ notify_formset.errors }} -->
+  {% endif %}
+
+    
+  {{ notify_formset.management_form }}
+  {% for form in notify_formset %}
+  <div class="notifier_fieldset {% if forloop.counter > n_notifiers and form.errors|length == 0 %}toggled{% else %}togglable{% endif %}"
+       id="fieldset-{{ forloop.counter0 }}" data-fieldset-id="{{ forloop.counter0 }}">
+  <fieldset class="notifier">
+    <legend>Notifier</legend>
+    {% for err in form.non_field_errors %}
+    <div class="form_error_message">{{ err }}</div>
+    {% endfor %}
+    
+    {{ form.id }}
+    {% usekwacro createradiofield form.days %}
+    <div class="ui-field-contain">
+      <label>Times:</label>{{ form.earliest }}<span class="ui-btn-inline">&nbsp;to&nbsp;</span>{{ form.latest }}
+    </div>
+      
+    {% usekwacro createfield form.notice_period_minutes %}
+    <input id="{{ form.DELETE.id_for_label }}" name="{{ form.DELETE.html_name }}" type="hidden" class="delete" />
+
+    <button class="delete" data-inline="True" data-icon="delete" type="button">Delete this Notifier</button>
+  </fieldset>
+  </div>
+  {% endfor %}
+  
+  <div class="buttonset">
+    <button class="ui-btn ui-btn-inline ui-corner-all ui-btn-icon-left ui-icon-plus" id="add-notifier-button" type="button">Add a Notifier</button>
+    <button class="ui-btn ui-btn-inline ui-corner-all ui-btn-icon-left ui-icon-check" name="action" value="Update" type="submit">Save Changes</button>
+  </div>
+
+</form>
+<script>
+  wsrc.notifiers.onReady()
+</script>
+
+{% endblock %}
