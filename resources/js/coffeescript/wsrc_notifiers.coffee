@@ -23,12 +23,15 @@ class WSRC_notifiers_view
     wsrc.utils.to_int(@form.find("input[name='form-MAX_NUM_FORMS']").val())
     
   set_notifier_deleted: (n, val) ->
-    fieldset = @form.find("div.notifier_fieldset").eq(n-1)
+    fieldset = @form.find("#fieldset-#{ n }")
     fieldset.find("input.delete").val(val)
 
   toggle_add_button: (disabled) ->
       @form.find("#add-notifier-button").prop("disabled", disabled)
     
+  hide_status_messages: () ->
+      @form.find(".form_success_message").hide()
+      @form.find(".form_error_message").hide()
       
 class WSRC_notifiers_controller
 
@@ -43,6 +46,7 @@ class WSRC_notifiers_controller
     @view.set_notifier_deleted(last_notifier_number, "")
     if last_notifier_number == (@view.get_max_num_notifiers()-1)
       @view.toggle_add_button(true)
+    @view.hide_status_messages()
     return undefined
       
   remove_notifier: (evt) ->
@@ -51,6 +55,7 @@ class WSRC_notifiers_controller
     @view.set_notifier_deleted(notifier_number, "on")
     if notifier_number == (@view.get_max_num_notifiers()-1)
       @view.toggle_add_button(false)
+    @view.hide_status_messages()
     return undefined
       
   @onReady: () ->
