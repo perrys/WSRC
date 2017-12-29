@@ -743,6 +743,9 @@ form.settings-form fieldset {
 }
 
 #notifiers_form {
+    fieldset.notifier:first-child {
+        margin-top: 15px;
+    }
     fieldset.notifier {
         position: relative;
         border-width: 1px;
@@ -785,10 +788,11 @@ span.field-error {
 }
 .form_success_message {
     color: @color-winner;
-    margin-bottom: 15px;
+}
+.form_error_message {
+    color: @color-loser;
 }
 div.form_error_message {
-    color: @color-loser;
     padding-top: 1em;
     padding-bottom: 1em;
     ul > li {
