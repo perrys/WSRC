@@ -22,7 +22,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.core.exceptions import PermissionDenied
 from django.db import transaction
-from django.http import HttpResponseBadRequest
+from django.http import HttpResponse, HttpResponseBadRequest
 from django import forms
 from django.template.response import TemplateResponse
 from django.shortcuts import render
@@ -43,7 +43,9 @@ from wsrc.site.settings import settings
 from wsrc.external_sites.booking_manager import BookingSystemSession
 from wsrc.site.usermodel.models import Player, DoorCardEvent
 from wsrc.utils import xls_utils, sync_utils
+from wsrc.utils.timezones import parse_iso_date_to_naive
 
+from .activity_report import ActivityReport
 from .forms import SettingsUserForm, SettingsPlayerForm, SettingsInfoForm, \
     create_notifier_filter_formset_factory
 
@@ -145,6 +147,7 @@ class DoorCardEventCreateView(rest_generics.CreateAPIView):
     permission_classes = (IsAuthenticated, DjangoModelPermissions,)
     serializer_class = DoorCardEventSerializer
     model = DoorCardEvent
+    queryset = DoorCardEvent.objects.all()
 
 class PlayerListView(rest_generics.ListCreateAPIView):
     "REST view of all players"
@@ -296,6 +299,32 @@ def admin_memberlist_view(request):
     }
     return render(request, "memberlist_admin.html", kwargs)
 
+@login_required
+def member_activity_view(request):
+    if not request.user.is_staff:
+        raise PermissionDenied()
+    start_date = request.GET.get("start_date")
+    end_date = request.GET.get("end_date")
+    if start_date is None or end_date is None:
+        return HttpResponseBadRequest("missing start_date or end_date")
+    try:
+        start_date = parse_iso_date_to_naive(start_date)
+        end_date = parse_iso_date_to_naive(end_date)
+    except ValueError:
+        return HttpResponseBadRequest("bad date format, should be YYYY-MM-DD")
+    reporter = ActivityReport(start_date, end_date)
+    if "djdt" in request.GET:
+        # used for tracing SQL calls in the debug toolbar
+        payload = "<html><body></body></html>"
+        content_type = 'text/html'
+    else:
+        payload = reporter.create_report()
+        content_type = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    response = HttpResponse(payload, content_type=content_type)
+    if "djdt" not in request.GET:
+        response['Content-Disposition'] = 'attachment; filename="activity_{start_date:%Y-%m-%d}_{end_date:%Y-%m-%d}.xlsx"'\
+                                          .format(**locals())
+    return response
 
 
 @login_required

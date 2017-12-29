@@ -48,7 +48,7 @@ class SettingsUserForm(ModelForm):
         fields = ["first_name", "last_name", "username",  "email"]
 
 class SettingsPlayerForm(ModelForm):
-    date_of_birth = DateField(input_formats=["%d/%m/%Y"], label="Date Of Birth", help_text="For Age-Restricted Subscrpitions Only")
+    date_of_birth = DateField(input_formats=["%d/%m/%Y"], label="Date Of Birth", help_text="For Age-Restricted Subscrpitions Only", required=False)
     
     def __init__(self, *args, **kwargs):
         super(SettingsPlayerForm, self).__init__(*args, **kwargs)

@@ -33,9 +33,9 @@ window.WSRC_homepage =
     
     COURT_SLOT_LENGTH = 45
     COURT_START_TIMES =
-      1: (8.5  * 60)
-      2: (8.75 * 60)
-      3: (9    * 60)
+      1: (8.25  * 60)
+      2: (8.5   * 60)
+      3: (8.75  * 60)
     
     abs_minutes = (tstr) ->
       60 * parseInt(tstr.substr(11,13)) + parseInt(tstr.substr(14,16))

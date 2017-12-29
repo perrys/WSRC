@@ -224,7 +224,7 @@ class Match(models.Model):
             return wsrc.utils.bracket.gray_to_binary(rev_gray)
         return None
 
-    def __unicode__(self):
+    def get_teams_display(self):
         teams = u""
         if self.team1 is not None:
             teams += self.team1.get_players_as_string()
@@ -232,6 +232,10 @@ class Match(models.Model):
             if len(teams) > 0:
                 teams += " vs "
             teams += self.team2.get_players_as_string()
+        return teams
+
+    def __unicode__(self):
+        teams = self.get_teams_display()
         buf = u""
         if self.competition_match_id:
             buf += "[{id}] ".format(id=self.competition_match_id)

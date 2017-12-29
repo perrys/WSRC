@@ -284,7 +284,7 @@ class HasPlayerListFilter(admin.SimpleListFilter):
         return [('y', 'Yes'), ('n', 'No')]
     def queryset(self, request, queryset):
         if self.value():
-            flag = self.value() == 'y'
+            flag = self.value() == 'n'
             queryset = queryset.filter(player__isnull=flag)
         return queryset
 
@@ -315,17 +315,35 @@ class DoorEntryCardAdmin(admin.ModelAdmin):
     active.admin_order_field = "player__user__is_active"
     active.boolean = True
 
-class DoorCardEventAdmin(admin.ModelAdmin):
-    search_fields = ('card__player__user__first_name', 'card__player__user__last_name', 'cardnumber')
-    list_select_related = ('card__player__user',)
-    list_display = ('event', 'cardnumber', 'linked_player', 'timestamp', 'received_time')
-    list_filter = ("event", "card__player__user__is_active")
+class EventHasPlayerListFilter(HasPlayerListFilter):
+    "Simple filtering on card__player not null"
+    def queryset(self, request, queryset):
+        if self.value():
+            flag = self.value() == 'n'
+            queryset = queryset.filter(card__player__isnull=flag)
+        return queryset
 
-    def cardnumber(self, obj):
+class DoorEventForm(forms.ModelForm):
+    "Override form for more efficient DB interaction"
+    queryset = get_related_field_limited_queryset(DoorCardEvent.card.field)
+    card = forms.ModelChoiceField(queryset=queryset.select_related("player__user"), required=False)
+
+class DoorCardEventAdmin(admin.ModelAdmin):
+    search_fields = ('card__player__user__first_name', 'card__player__user__last_name', 'card__cardnumber')
+    list_select_related = ('card__player__user',)
+    list_display = ('event', 'linked_cardnumber', 'linked_player', 'timestamp', 'received_time')
+    list_filter = ("event", "card__player__user__is_active", EventHasPlayerListFilter)
+    form = DoorEventForm
+
+    def linked_cardnumber(self, obj):
         if obj.card is None:
             return "(None)"
+        link = urlresolvers.reverse("admin:usermodel_doorentrycard_change", args=[obj.card.pk])
+        return u'<a href="%s">%s</a>' % (link, obj.card.cardnumber)
         return obj.card.cardnumber
-    cardnumber.admin_order_field = "card__cardnumber"
+    linked_cardnumber.short_description = "Card Number"
+    linked_cardnumber.allow_tags = True
+    linked_cardnumber.admin_order_field = "card__cardnumber"
 
     def linked_player(self, obj):
         if obj.card is None or obj.card.player is None:
