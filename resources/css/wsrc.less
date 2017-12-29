@@ -728,16 +728,47 @@ form.settings-form {
         text-align: center;
     }
 }
-form.settings-form fieldset > legend {
-    color: @color-yellow-dot;
-    padding-top: 20px;
-    -webkit-padding-start: 0px;
-    -moz-padding-start: 0px;
-    font-weight: bold;
+
+form.settings-form fieldset {
+    & > legend {
+        color: @color-yellow-dot;
+        padding-top: 20px;
+        -webkit-padding-start: 0px;
+        -moz-padding-start: 0px;
+        font-weight: bold;
+    }
+    div.ui-field-contain {
+        border-bottom-width:0px;
+    }
 }
-form.settings-form fieldset div.ui-field-contain {
-    border-bottom-width:0px;
+
+#notifiers_form {
+    fieldset.notifier {
+        position: relative;
+        border-width: 1px;
+        background-color: #fdfdfd;
+        padding-left: 15px;
+        margin-bottom: 15px;
+        span.ui-btn-inline {
+            margin-top: 0.5em;
+        }
+        button.delete {
+            position: relative;
+            float: right;
+            margin: 15px 15px 15px 0;
+            right: 0px;
+            bottom: 0px;
+            @ruleset-largescreen: {
+                position: absolute;
+            };
+            .media-guard(@ruleset-largescreen, @breakpoint-standard-table);                
+        }
+    }
+    div.buttonset {
+        text-align: center;
+    }
 }
+
 .ui-field-contain span.label::after {
     content: "";
     display: block;
