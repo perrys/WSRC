@@ -14,7 +14,7 @@
   {% csrf_token %}
 
   {% if form_saved %}
-  <span class="form_success_message">Settings saved.</span>
+  <div class="form_success_message">Notification settings saved.</div>
   {% endif %}
 
   {% if notify_formset.total_error_count %}
@@ -35,12 +35,14 @@
     
     {{ form.id }}
     {% usekwacro createradiofield form.days %}
-    <div class="ui-field-contain">
+    <div class="ui-field-contain {% if form.earliest.errors or form.latest.errors %}field-error{% endif %}">
       <label>Times:</label>{{ form.earliest }}<span class="ui-btn-inline">&nbsp;to&nbsp;</span>{{ form.latest }}
+      {% if form.earliest.errors or form.latest.errors %}<div class="clear-all"></div><label>&nbsp;</label><span class="field-error">{% for err in form.earliest.errors %}{{ err }}. {% endfor %}{% for err in form.latest.errors %}{{ err }}. {% endfor %}</span>{% endif %}
     </div>
       
     {% usekwacro createfield form.notice_period_minutes %}
     <input id="{{ form.DELETE.id_for_label }}" name="{{ form.DELETE.html_name }}" type="hidden" class="delete" />
+    {{ form.player }}
 
     <button class="delete" data-inline="True" data-icon="delete" type="button">Delete this Notifier</button>
   </fieldset>
