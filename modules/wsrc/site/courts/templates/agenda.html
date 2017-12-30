@@ -26,7 +26,8 @@
         <td>{{ item.start_time|date:"D j M Y g:iA" }}</td>
         <td class="centered">{{ item.court }}</td>
         <td>{{ item.description }}</td>
-        <td class="buttonset"><a class="ui-btn ui-btn-inline ui-corner-all ui-btn-icon-left ui-icon-action" href="{% url 'booking' %}/{{ item.event_id }}" data-ajax='false'>Details</a><a class="ui-btn ui-btn-inline ui-corner-all ui-btn-icon-left ui-icon-mail" href="{% url 'cal_invite' %}/{{ item.event_id }}" data-ajax='false'>Send Invite</a></td>
+        <td class="buttonset"><a class="ui-btn ui-btn-inline ui-corner-all ui-btn-icon-left ui-icon-action" href="{% url 'booking' %}/{{ item.event_id }}" data-ajax='false'>Details</a><a class="ui-btn ui-btn-inline ui-corner-all ui-btn-icon-left ui-icon-mail {% if item.in_the_past %}wsrc-disabled{% endif %}" href="{% if item.in_the_past %}javascript:{% else %}{% url 'cal_invite' %}/{{ item.event_id }}{% endif %}" data-ajax='false'>Send Invite</a></td>
+        <!-- {{ now }} {{ item.start_time }} -->
       </tr>
       {% endfor %}
     </tbody>
