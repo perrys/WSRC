@@ -15,6 +15,7 @@
 
 import hmac
 
+from django.core.exceptions import ValidationError
 from django.db import models
 from django.utils import timezone
 
@@ -120,6 +121,11 @@ class EventFilter(models.Model):
     latest = models.TimeField()
     days = models.ManyToManyField(DayOfWeek, blank=True)
     notice_period_minutes = models.IntegerField("Minimum Notice")
+    def clean(self):
+        super(EventFilter, self).clean()
+        if self.earliest >= self.latest:
+            raise ValidationError("Earliest must be prior to latest.")
+        
     def __unicode__(self):
         return "EventFilter <%s %s-%s [%s] notice: %s" %\
             (self.player.user.username, self.earliest, self.latest,\
