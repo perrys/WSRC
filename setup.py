@@ -5,13 +5,13 @@ import glob
 import os.path
 
 def get_images(pathelts):
-  images = []
-  for ext in [".jpg", ".ico", ".png", ".gif"]:
-    elts = list(pathelts)
-    elts.append('*'+ext)
-    pattern = os.path.join(*elts)
-    images.extend(glob.glob(pattern))
-  return images
+    images = []
+    for ext in [".jpg", ".ico", ".png", ".gif"]:
+        elts = list(pathelts)
+        elts.append('*'+ext)
+        pattern = os.path.join(*elts)
+        images.extend(glob.glob(pattern))
+    return images
 
 setup(name='WSRC',
       version='1.0',
@@ -20,13 +20,13 @@ setup(name='WSRC',
       author_email='stewart.c.perry@gmail.com',
       maintainer_email='webmaster@wokingsquashclub.org',
       url='http://www.wokingsquashclub.org/',
-      packages=['wsrc', 
-                'wsrc.external_sites', 
-                'wsrc.utils', 
-                'wsrc.site', 
-                'wsrc.site.settings', 
-                'wsrc.site.usermodel', 
-                'wsrc.site.accounts', 
+      packages=['wsrc',
+                'wsrc.external_sites',
+                'wsrc.utils',
+                'wsrc.site',
+                'wsrc.site.settings',
+                'wsrc.site.usermodel',
+                'wsrc.site.accounts',
                 'wsrc.site.courts',
                 'wsrc.site.competitions',
                 'wsrc.site.competitions.templatetags',
