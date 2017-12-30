@@ -55,6 +55,9 @@ class BookingSystemEvent(models.Model):
         dt = self.end_time - self.start_time
         return int(dt.total_seconds() / 60)
 
+    def in_the_past(self):
+        return self.start_time < timezone.now()
+
     def __unicode__(self):
         if self.start_time is None or self.end_time is None:
             return "Invalid event"
