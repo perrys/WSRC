@@ -30,7 +30,7 @@
   <fieldset class="notifier">
     <legend>Notifier</legend>
     {% for err in form.non_field_errors %}
-    <div class="form_error_message">{{ err }}</div>
+    <div class="form_error_message">Error: {{ err }}</div>
     {% endfor %}
     
     {{ form.id }}
