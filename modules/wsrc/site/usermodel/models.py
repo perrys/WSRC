@@ -44,12 +44,12 @@ class Player(models.Model):
                                            help_text="ID on the SquashLevels website")
     england_squash_id  = models.IntegerField(("ES Membership #"), blank=True, null=True,
                                              help_text="England Squash Membership Number")
-    prefs_receive_email  = models.NullBooleanField(("Receive Email"), default=True, null=True, blank=True,
-                                                   help_text="Uncheck if you do not want to receive emails from the club &mdash; match reminders, news, social events etc.")
-    prefs_esra_member  = models.NullBooleanField(("England Squash"), default=True, null=True, blank=True,
-                                                 help_text="Uncheck if you do not want to automatically be signed up for England Squash membership (note you will not be able to play in Surrey league competitions or National competitions).")
+    prefs_receive_email  = models.NullBooleanField(("General Email"), default=True, null=True, blank=True,
+                                                   help_text="Whether or not to receive general emails from the club - news, social events etc.")
+    prefs_esra_member  = models.NullBooleanField(("ES Membership"), default=True, null=True, blank=True,
+                                                 help_text="Automatically sign up for England Squash membership, which is free as part of your subscription (Note: you will not be able to play in surrey league competitions or national competitions if you are not an ES member).")
     prefs_display_contact_details  = models.NullBooleanField(("Visible in List"), default=True, null=True, blank=True,
-                                                 help_text="Unset if you do not want your contact details to appear in the membership list (note that this will make it very difficult for anyone to contact you regarding league games etc).")
+                                                             help_text="Whether your contact details appear in the membership list on this website (Note: it will be very difficult for anyone to contact you regarding league games etc unless you consent to this).")
 
     subscription_regex  = models.CharField(('Regexp for subscription transactions'), max_length=256, null=True, blank=True)
     date_of_birth = models.DateField("DoB", null=True, blank=True)
