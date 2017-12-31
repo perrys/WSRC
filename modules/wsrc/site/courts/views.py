@@ -25,7 +25,7 @@ import urllib
 from django import forms
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
-from django.core.exceptions import SuspiciousOperation
+from django.core.exceptions import SuspiciousOperation, PermissionDenied
 from django.core.mail import SafeMIMEMultipart, SafeMIMEText
 from django.core.urlresolvers import reverse as reverse_url
 from django.db import transaction
@@ -617,7 +617,6 @@ def notifier_view(request):
         if eformset.is_valid():
             with transaction.atomic():
                 for form in eformset:
-                    print form.has_changed()
                     if form.has_changed():
                         if form.cleaned_data['player'] != player:
                             raise PermissionDenied()
