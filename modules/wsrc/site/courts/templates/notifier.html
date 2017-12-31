@@ -1,16 +1,22 @@
 {% extends "06_wsrc_navigation.html" %}
-{% block pagetitle %}Cancellation Emails{% endblock %}
+{% block pagetitle %}Standby Emails{% endblock %}
 {% load kwacros %}
 {% loadkwacros 'form_macros.html' %}
 {% block centered_page_content %}
 
-<p>
-  When a court booking is cancelled, the system can send you an email notification, giving you the opportunity to book the slot for yourself. This can be a good way to pick up peak-time court slots.
-</p>
-<p>
-  You can configure notifications for court slots at different times of day and different days in the week. You currently have {{ n_notifiers }} notifier{{ n_notifiers|pluralize }} set up.
-</p>
 <form id="notifiers_form" method="post" action="{% url 'notifier' %}" data-ajax="false" class="toggle-root">
+
+  <p>
+  When a court booking is cancelled by someone else, the system can send you an email, giving you the opportunity to book the slot for yourself. This can be a good way to pick up  &lsquo;secondary&rsquo; peak-time court slots.
+  </p>
+  <p>
+  You can configure notifications for court slots at different times of day and different days in the week<sup>*</sup>. You currently have {{ n_notifiers }} notifier{{ n_notifiers|pluralize }} set up.
+  <br />
+  <span class="helptext">
+    <sup>*</sup>In setting up a notifier, you are consenting for the club to send you emails relating to court cancellations. You may withdraw your consent at any time by deleting all notifiers.
+  </span>
+  </p>
+
   {% csrf_token %}
 
   {% if form_saved %}
