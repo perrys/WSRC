@@ -332,7 +332,7 @@ def settings_view(request):
     success = False
     settings_form_cls = SettingsPlayerForm
     player = Player.get_player_for_user(request.user)
-    subscription = player.get_current_subscription()
+    subscription = player.get_current_subscription() if player is not None else None
     if subscription is not None and subscription.is_age_sensitive():
         settings_form_cls = SettingsYoungPlayerForm
     
