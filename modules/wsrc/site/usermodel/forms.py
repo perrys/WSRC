@@ -117,6 +117,8 @@ class SettingsInfoForm(Form):
     
     @classmethod
     def create(cls, player):
+        if player is None:
+            return cls()
         data = {"squashlevels_id": player.squashlevels_id,
                 "booking_system_id": player.booking_system_id,
                 "doorcards": player.get_cardnumbers(),
