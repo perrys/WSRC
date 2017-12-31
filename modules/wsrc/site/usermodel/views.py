@@ -38,7 +38,6 @@ from rest_framework.renderers import JSONRenderer
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from wsrc.site.courts.models import EventFilter
 from wsrc.site.settings import settings
 from wsrc.external_sites.booking_manager import BookingSystemSession
 from wsrc.site.usermodel.models import Player, DoorCardEvent
@@ -46,7 +45,7 @@ from wsrc.utils import xls_utils, sync_utils
 from wsrc.utils.timezones import parse_iso_date_to_naive
 
 from .activity_report import ActivityReport
-from .forms import SettingsUserForm, SettingsPlayerForm, SettingsInfoForm, \
+from .forms import SettingsUserForm, SettingsPlayerForm, SettingsYoungPlayerForm, SettingsInfoForm, \
     create_notifier_filter_formset_factory
 
 JSON_RENDERER = JSONRenderer()
@@ -330,43 +329,32 @@ def member_activity_view(request):
 @login_required
 def settings_view(request):
     "Settings editor"
-    max_filters = 7
     success = False
+    settings_form_cls = SettingsPlayerForm
     player = Player.get_player_for_user(request.user)
-    events = EventFilter.objects.filter(player=player)
-    filter_formset_factory = create_notifier_filter_formset_factory(max_filters)
-    initial = [{'player': player}] * (max_filters)
+    subscription = player.get_current_subscription()
+    if subscription is not None and subscription.is_age_sensitive():
+        settings_form_cls = SettingsYoungPlayerForm
+    
     if request.method == 'POST':
-        pform = SettingsPlayerForm(request.POST, instance=player)
+        pform = settings_form_cls(request.POST, instance=player)
         uform = SettingsUserForm(request.POST, instance=request.user)
-        eformset = filter_formset_factory(request.POST, queryset=events, initial=initial)
-        if pform.is_valid() and uform.is_valid() and eformset.is_valid():
+        if pform.is_valid() and uform.is_valid():
             with transaction.atomic():
                 if pform.has_changed():
                     pform.save()
                 if uform.has_changed():
                     uform.save()
-                for form in eformset:
-                    if form.has_changed():
-                        if form.cleaned_data['player'] != player:
-                            raise PermissionDenied()
-                if eformset.has_changed():
-                    eformset.save()
-                    events = EventFilter.objects.filter(player=player)
-                    eformset = filter_formset_factory(queryset=events, initial=initial)
                 success = True
     else:
-        pform = SettingsPlayerForm(instance=player)
+        pform = settings_form_cls(instance=player)
         uform = SettingsUserForm(instance=request.user)
-        eformset = filter_formset_factory(queryset=events, initial=initial)
 
     iform = SettingsInfoForm.create(player)
     ctx = {
         'player_form':     pform,
         'user_form':       uform,
         'info_form':       iform,
-        'notify_formset':  eformset,
-        'n_notifiers':     len(events),
         'form_saved':      success,
     }
     return TemplateResponse(request, 'settings.html', ctx)
