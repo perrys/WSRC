@@ -45,24 +45,17 @@ class SettingsUserForm(ModelForm):
         self.fields["username"].widget.attrs = {'class': 'readonly', 'readonly': 'readonly'}
     class Meta:
         model = User
-        fields = ["first_name", "last_name", "username",  "email"]
+        fields = ["first_name", "last_name", "username", "email"]
 
-class SettingsPlayerForm(ModelForm):
-    date_of_birth = DateField(input_formats=["%d/%m/%Y"], label="Date Of Birth", help_text="For Age-Restricted Subscrpitions Only", required=False)
-    
-    def __init__(self, *args, **kwargs):
-        super(SettingsPlayerForm, self).__init__(*args, **kwargs)
-        instance = getattr(self, 'instance', None)
-        if instance and instance.pk:
-            aged_types = SubscriptionType.objects.filter(max_age_years__isnull=False)
-            aged_type_ids = [subtype.id for subtype in aged_types]
-            sub = instance.get_current_subscription()
-            if sub is not None and sub.subscription_type_id in aged_type_ids:
-                return
-        self.fields["date_of_birth"].widget.attrs = {'class': 'readonly', 'readonly': 'readonly'}
-
+class SettingsPlayerForm(ModelForm):    
     class Meta:
         model = Player
+        fields = ["cell_phone", "other_phone", "prefs_receive_email", "prefs_esra_member", "prefs_display_contact_details"]
+        exclude = ('user', 'date_of_birth')
+
+class SettingsYoungPlayerForm(SettingsPlayerForm):
+    date_of_birth = DateField(input_formats=["%d/%m/%Y"], label="Date Of Birth", help_text="For Age-Restricted Subscrpitions Only", required=False)
+    class Meta(SettingsPlayerForm.Meta):
         fields = ["date_of_birth", "cell_phone", "other_phone", "prefs_receive_email", "prefs_esra_member", "prefs_display_contact_details"]
         exclude = ('user',)
 
