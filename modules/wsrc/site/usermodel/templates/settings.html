@@ -32,55 +32,23 @@
 <legend>Personal Details</legend>
 {% usekwacro createfield user_form.first_name %}
 {% usekwacro createfield user_form.last_name %}
+{% if player_form.date_of_birth %}
 {% usekwacro createfield player_form.date_of_birth %}
+{% endif %}
 {% usekwacro createfield user_form.email %}
 {% usekwacro createfield player_form.cell_phone %}
 {% usekwacro createfield player_form.other_phone %}
 </fieldset>
 
 <fieldset name="contact_details">
-<legend>Preferences</legend>
+<legend>Data Protection Consent</legend>
 {% usekwacro createfield player_form.prefs_receive_email %}
 {% usekwacro createfield player_form.prefs_esra_member %}
 {% usekwacro createfield player_form.prefs_display_contact_details %}
 </fieldset>
 
-<fieldset name="court_booking" class="toggle-root" >
-<legend>Court Booking</legend>
-<div class="ui-field-contain">
-  <label for="notifier_active">Cancellations:</label>
-  <span class="label">You have {{ n_notifiers }} notifier{{ n_notifiers|pluralize }} set up.</span>
-  <button class="ui-btn ui-btn-inline ui-corner-all" id="add-notifier-button">Add</button>
-  <button class="ui-btn ui-btn-inline ui-corner-all" id="remove-notifier-button">Remove</button>
-</div>
-
-{% if notify_formset.total_error_count > 0 %}
-<!-- {{ notify_formset.errors }} -->
-{% endif %}
-
-{{ notify_formset.management_form }}
-{% for form in notify_formset %}
-<div class="notifier_fieldset toggle-root {% if forloop.counter > n_notifiers and form.errors|length == 0 %}toggled{% else %}togglable{% endif %}">
- <h4>Notifier {{ forloop.counter }}</h4>
-
-{% for err in form.non_field_errors %}
-  <div class="form_error_message">{{ err }}</div>
-{% endfor %}
-
- {{ form.id }}
- {% usekwacro createfield form.earliest %}
- {% usekwacro createfield form.latest %}
- {% usekwacro createradiofield form.days %}
- {% usekwacro createfield form.notice_period_minutes %}
- <input id="{{ form.DELETE.id_for_label }}" name="{{ form.DELETE.html_name }}" type="hidden" class="delete"></input>
- {{ form.player }}
-</div>
-{% endfor %}
-
-</fieldset>
-
 <fieldset name="information">
-<legend>Other</legend>
+<legend>General Information</legend>
 {% usekwacro createfield user_form.username %}
 <div class="ui-field-contain">
  <label>Password:</label>
@@ -95,9 +63,5 @@
 <input id="submit_button" type="submit" value="Update" data-theme="b" />
 
 </form>
-
-<script>
-  wsrc.settings.onReady()
-</script>
 
 {% endblock %}
