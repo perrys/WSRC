@@ -45,11 +45,11 @@ class Player(models.Model):
     england_squash_id  = models.IntegerField(("ES Membership #"), blank=True, null=True,
                                              help_text="England Squash Membership Number")
     prefs_receive_email  = models.NullBooleanField(("General Email"), default=True, null=True, blank=True,
-                                                   help_text="Whether or not to receive general emails from the club - news, social events etc.")
+                                                   help_text="Receive general emails from the club - news, social events, competition reminders etc.")
     prefs_esra_member  = models.NullBooleanField(("ES Membership"), default=True, null=True, blank=True,
-                                                 help_text="Automatically sign up for England Squash membership, which is free as part of your subscription (Note: you will not be able to play in surrey league competitions or national competitions if you are not an ES member).")
-    prefs_display_contact_details  = models.NullBooleanField(("Visible in List"), default=True, null=True, blank=True,
-                                                             help_text="Whether your contact details appear in the membership list on this website (Note: it will be very difficult for anyone to contact you regarding league games etc unless you consent to this).")
+                                                 help_text="Automatically sign up for England Squash membership, which is free as part of your subscription. (Note: you will not be able to play in Surrey league competitions or national competitions if you are not an ES member.)")
+    prefs_display_contact_details  = models.NullBooleanField(("Details Visible"), default=True, null=True, blank=True,
+                                                             help_text="Whether your contact details appear in the membership list on this website. (Note: it will be  difficult for anyone to contact you regarding league games etc. unless you consent to this.)")
 
     subscription_regex  = models.CharField(('Regexp for subscription transactions'), max_length=256, null=True, blank=True)
     date_of_birth = models.DateField("DoB", null=True, blank=True)
