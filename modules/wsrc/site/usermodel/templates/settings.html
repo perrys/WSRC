@@ -41,10 +41,13 @@
 </fieldset>
 
 <fieldset name="contact_details">
-<legend>Data Protection Consent</legend>
-{% usekwacro createfield player_form.prefs_receive_email %}
-{% usekwacro createfield player_form.prefs_esra_member %}
-{% usekwacro createfield player_form.prefs_display_contact_details %}
+  <legend>Permission to Use Personal Data<sup style="color: black;">*</sup></legend>
+{% usekwacro createfield_helptext player_form.prefs_receive_email %}
+{% usekwacro createfield_helptext player_form.prefs_esra_member %}
+{% usekwacro createfield_helptext player_form.prefs_display_contact_details %}
+<footer class="helptext">
+<sup>*</sup>From May 2018 you must explicitly consent for your personal data to be used by the club. If any of these questions have not been answered, we will assume the answer is "No".
+</footer>
 </fieldset>
 
 <fieldset name="information">
