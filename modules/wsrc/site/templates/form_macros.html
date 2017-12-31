@@ -35,6 +35,6 @@
   <div class="ui-field-contain">
     {{ field.label_tag }}{{ field }}
 {% if field.errors %}<div class="clear-all"></div><label>&nbsp;</label><span class="field-error">{% for err in field.errors %}{{ err }}. {% endfor %}</span>{% endif %}
-    <div class="clear-all"></div><label>&nbsp;</label><div class="helptext ui-dummy">{{ field.help_text|safe }}</div>
+    <div class="clear-all"></div><label class="empty">&nbsp;</label><div class="helptext ui-dummy">{{ field.help_text|safe }}</div>
   </div>
 {% endkwacro %}
