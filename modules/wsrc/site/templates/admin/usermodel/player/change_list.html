@@ -1,0 +1,50 @@
+{% extends "admin/change_list.html" %}
+{% load i18n admin_urls admin_static admin_list %}
+
+{% block extrastyle %}
+{{ block.super }}
+<style>
+#id_es_csv_file {
+  width: 0.1px;
+  height: 0.1px;
+  opacity: 0;
+  overflow: hidden;
+  position: absolute;
+  z-index: -1;
+}
+#upload-es-csv-form {
+  display: inline-block;
+  float: right;
+  font-size: 0.8em;
+  margin-right: 20em;
+}
+</style>
+{% endblock %}
+
+{% block search %}
+{% if has_add_permission %}
+<form id="upload-es-csv-form" action="{% url 'admin:upload_es_csv' %}" method="post" enctype="multipart/form-data"
+      style="">
+  {% csrf_token %}
+  {% if upload_csv_form.non_field_errors %}{{ form.non_field_errors }}{% endif %}
+  {{ upload_csv_form.es_csv_file }}
+  <label id="es_csv_file_label" for="id_es_csv_file">{{ upload_csv_form.es_csv_file.label }}</label>
+  {% if upload_csv_form.es_csv_file.errors %}{{ upload_csv_form.es_csv_file.errors }}{% endif %}
+  <input type="submit" value="Upload"/>
+</form>
+<div style="clear: left;"></div>
+<script>
+(function() {
+const $ = django.jQuery
+const label = $('#es_csv_file_label')
+$('#id_es_csv_file').on('change', function(evt) {
+  var fileName
+  filename = evt.target.value.split( '\\' ).pop()
+  if (filename)
+    label.text("ES csv file: " + filename)
+})
+})()
+</script>
+{{ block.super }}
+{% endif %}
+{% endblock %}
