@@ -42,7 +42,7 @@ class Player(models.Model):
                                              help_text="ID in the booking system")
     squashlevels_id  = models.IntegerField(("SquashLevels ID"), db_index=True, blank=True, null=True,
                                            help_text="ID on the SquashLevels website")
-    england_squash_id  = models.IntegerField(("ES Membership #"), blank=True, null=True,
+    england_squash_id  = models.CharField(("ES Membership #"), blank=True, null=True, max_length=16,
                                              help_text="England Squash Membership Number")
     prefs_receive_email  = models.NullBooleanField(("Receive Email"), default=True, null=True, blank=True,
                                                    help_text="Uncheck if you do not want to receive emails from the club &mdash; match reminders, news, social events etc.")
