@@ -185,6 +185,24 @@ def update_subscriptions(modeladmin, request, queryset):
             
 update_subscriptions.short_description = "Check/update subscriptions"
 
+class HasESIDListFilter(admin.SimpleListFilter):
+    "Simple filtering on ES ID not null"
+    title = "Has ES ID"
+    parameter_name = "has_es_id"
+    def lookups(self, request, model_admin):
+        return [('y', 'Yes'), ('n', 'No')]
+    def queryset(self, request, queryset):
+        if self.value():
+            yes_flag = self.value() == 'y'
+            if yes_flag:
+                queryset = queryset.filter(models.Q(england_squash_id__isnull=False)\
+                                           & ~models.Q(england_squash_id=''))
+            else:
+                queryset = queryset.filter(models.Q(england_squash_id__isnull=True)\
+                                           | models.Q(england_squash_id=''))
+        return queryset
+
+
 class SubscriptionInline(admin.StackedInline):
     "Simple inline for player in User admin"
     model = Subscription
@@ -198,7 +216,7 @@ class DoorCardInline(admin.TabularInline):
 
 class PlayerAdmin(SelectRelatedQuerysetMixin, PrefetchRelatedQuerysetMixin, admin.ModelAdmin):
     "Admin for Player (i.e. club member) model"
-    list_filter = ('user__is_active', 'subscription__subscription_type', )
+    list_filter = ('user__is_active', 'subscription__subscription_type', HasESIDListFilter)
     list_display = ('ordered_name', 'active', 'date_joined_date', \
                     'get_age', 'subscription_type', 'current_season', 'signed_off',
                     'cell_phone', 'other_phone', 'booking_system_id', 'england_squash_id',
