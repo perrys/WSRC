@@ -15,6 +15,9 @@
 
 "Admin for the membership models"
 
+import csv
+import StringIO
+
 from django import forms
 from django.db import models
 
@@ -24,6 +27,7 @@ from django.contrib.auth.admin import UserAdmin as AuthUserAdmin
 from django.contrib.auth.models import User
 
 from django.core import urlresolvers
+from django.http import HttpResponse
 
 from .models import Player, Season, Subscription, SubscriptionPayment,\
     SubscriptionCost, SubscriptionType, DoorEntryCard, DoorCardEvent
@@ -185,6 +189,24 @@ def update_subscriptions(modeladmin, request, queryset):
             
 update_subscriptions.short_description = "Check/update subscriptions"
 
+class HasESIDListFilter(admin.SimpleListFilter):
+    "Simple filtering on ES ID not null"
+    title = "Has ES ID"
+    parameter_name = "has_es_id"
+    def lookups(self, request, model_admin):
+        return [('y', 'Yes'), ('n', 'No')]
+    def queryset(self, request, queryset):
+        if self.value():
+            yes_flag = self.value() == 'y'
+            if yes_flag:
+                queryset = queryset.filter(models.Q(england_squash_id__isnull=False)\
+                                           & ~models.Q(england_squash_id=''))
+            else:
+                queryset = queryset.filter(models.Q(england_squash_id__isnull=True)\
+                                           | models.Q(england_squash_id=''))
+        return queryset
+
+
 class SubscriptionInline(admin.StackedInline):
     "Simple inline for player in User admin"
     model = Subscription
@@ -196,9 +218,13 @@ class DoorCardInline(admin.TabularInline):
     model = DoorEntryCard
     extra = 0
 
+class PlayerListUploadForm(forms.Form):
+    es_csv_file = forms.FileField(required=False, label="Click to select England Squash csv file. ",
+                                  widget=forms.widgets.ClearableFileInput(attrs={'accept':'.csv'}))
+
 class PlayerAdmin(SelectRelatedQuerysetMixin, PrefetchRelatedQuerysetMixin, admin.ModelAdmin):
     "Admin for Player (i.e. club member) model"
-    list_filter = ('user__is_active', 'subscription__subscription_type', )
+    list_filter = ('user__is_active', 'subscription__subscription_type', HasESIDListFilter)
     list_display = ('ordered_name', 'active', 'date_joined_date', \
                     'get_age', 'subscription_type', 'current_season', 'signed_off',
                     'cell_phone', 'other_phone', 'booking_system_id', 'england_squash_id',
@@ -263,6 +289,76 @@ class PlayerAdmin(SelectRelatedQuerysetMixin, PrefetchRelatedQuerysetMixin, admi
         return '<span id="door_cards">{0}</span>'.format(", ".join(numbers))
     doorcard_numbers.short_description = "Door Cards"
     doorcard_numbers.allow_tags = True
+
+    def get_urls(self):
+        from django.conf.urls import patterns, url
+        urls = super(PlayerAdmin, self).get_urls()
+        my_urls = patterns("", url(r"^upload_es_csv/$", self.admin_site.admin_view(self.upload_csv_view),
+                                   name='upload_es_csv'))
+        return my_urls + urls
+    urls = property(get_urls)
+
+    def changelist_view(self, *args, **kwargs):
+        view = super(PlayerAdmin, self).changelist_view(*args, **kwargs)
+        view.context_data['upload_csv_form'] = PlayerListUploadForm
+        return view
+
+    def upload_csv_view(self, request):
+        if request.method == 'POST':
+            form = PlayerListUploadForm(request.POST, request.FILES)
+            if form.is_valid():
+                members = Player.objects.all().select_related("user")\
+                                              .prefetch_related("subscription_set__subscription_type")\
+                                              .prefetch_related("subscription_set__season")
+                es_id_map = dict([(mem.england_squash_id, mem) for mem in members\
+                                  if mem.england_squash_id is not None\
+                                  and len(mem.england_squash_id) > 0])
+                db_id_map = dict([(mem.pk, mem) for mem in members])
+                name_map = dict([(mem.get_ordered_name(), mem) for mem in members])
+                from wsrc.utils.upload_utils import upload_generator
+                reader = csv.DictReader(upload_generator(request.FILES['es_csv_file']))
+                output = StringIO.StringIO()
+                fields = ["ES ID", "Name", "WSRC Name", "WSRC ID", "Email", "Subscription", "Status"]
+                writer = csv.DictWriter(output, fields, extrasaction='ignore')
+                writer.writer.writerow(fields)
+                def set_fields(row, player, status):
+                    sub = player.get_current_subscription()
+                    sub_str = sub.to_short_string() if sub is not None else ""
+                    row["WSRC Name"] = player.get_ordered_name("utf-8")
+                    row["WSRC ID"] = player.pk
+                    row["Email"] = player.user.email
+                    row["Subscription"] = sub_str
+                    row["Status"] = status
+                    del db_id_map[player.pk]
+                for row in reader:
+                    es_id = row["ES ID"]
+                    if es_id is None or len(es_id) == 0:
+                        continue
+                    existing = es_id_map.get(es_id)
+                    if existing is not None:
+                        set_fields(row, existing, "In Sync")
+                    elif row.get("Status") == "Update":
+                        db_id = int(row["WSRC ID"])
+                        player = db_id_map[db_id]
+                        player.england_squash_id = es_id
+                        player.save()
+                        set_fields(row, player, "Updated - In Sync")
+                    else:
+                        match = name_map.get(row["Name"])
+                        if match is not None:
+                            set_fields(row, match, "Name Match - Update Reqd")
+                        else:
+                            row["Status"] = "No Match"
+                    writer.writerow(row)
+                leftover = [mem for mem in db_id_map.itervalues() if mem.user.is_active]
+                leftover.sort(key=lambda x: x.get_ordered_name())
+                for mem in leftover:
+                    row = {}
+                    set_fields(row, mem, "Missing")
+                    writer.writerow(row)
+                response = HttpResponse(output.getvalue(), content_type="text/csv")
+                response['Content-Disposition'] = 'attachment; filename="es_data.csv"'
+                return response
 
 class SubscriptionCostAdmin(SelectRelatedQuerysetMixin, admin.ModelAdmin):
     list_display = ('subscription_type', 'season', 'joining_fee', 'amount')

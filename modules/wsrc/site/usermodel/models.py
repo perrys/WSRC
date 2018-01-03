@@ -42,7 +42,7 @@ class Player(models.Model):
                                              help_text="ID in the booking system")
     squashlevels_id  = models.IntegerField(("SquashLevels ID"), db_index=True, blank=True, null=True,
                                            help_text="ID on the SquashLevels website")
-    england_squash_id  = models.IntegerField(("ES Membership #"), blank=True, null=True,
+    england_squash_id  = models.CharField(("ES Membership #"), blank=True, null=True, max_length=16,
                                              help_text="England Squash Membership Number")
     prefs_receive_email  = models.NullBooleanField(("General Email"), default=True, null=True, blank=True,
                                                    help_text="Receive general emails from the club - news, social events, competition reminders etc.")
@@ -61,11 +61,13 @@ class Player(models.Model):
         return None
     get_current_subscription.short_description = 'Subscription'
 
-    def get_ordered_name(self):
+    def get_ordered_name(self, encoding=None):
         """
         Returns the last_name plus the first_name, with a comma in between.
         """
         full_name = '%s, %s' % (self.user.last_name, self.user.first_name)
+        if encoding is not None:
+            full_name = full_name.encode(encoding)
         return full_name.strip()
 
     def get_cardnumbers(self):
@@ -266,6 +268,9 @@ class Subscription(models.Model):
 
     def is_age_sensitive(self):
         return self.subscription_type.max_age_years is not None
+
+    def to_short_string(self):
+        return u"{0} ({1})".format(self.subscription_type.name, self.season)
 
     def __unicode__(self):
         return u"{0} ({1}) \u2013 {2}".format(self.player.get_ordered_name(), self.season, self.subscription_type.name)

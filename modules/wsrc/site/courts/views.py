@@ -173,7 +173,7 @@ def create_booking_cell_content (slot, court, date):
     end   = timezones.to_time(start_mins + slot["duration_mins"])
     result = "<div><div class='slot_time'>{start:%H:%M}&ndash;{end:%H:%M}<br><span class='court'>Court {court}</span></div></a>".format(**locals())
     if "id" in slot:
-        result += "<a href='{path}/{id}' data-ajax='false'>{name}</a>".format(path=reverse_url('booking'), id=slot['id'], name=slot['name'])
+        result += u"<a href='{path}/{id}' data-ajax='false'>{name}</a>".format(path=reverse_url('booking'), id=slot['id'], name=slot['name'])
         if slot.get("no_show"):
             result += '<span class="noshow">NO SHOW</span>'
 
