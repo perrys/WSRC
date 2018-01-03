@@ -110,11 +110,11 @@ def create_notifier_filter_formset_factory(max_number):
     )
 
 class SettingsInfoForm(Form):
-    england_squash_id = CharField(label="Eng. Squash ID", widget=make_readonly_widget())
-    squashlevels_id = CharField(label="SquashLevels ID", widget=make_readonly_widget())
-    booking_system_id = CharField(label="Booking System ID", widget=make_readonly_widget())
-    doorcards = CharField(label="Door Cards", widget=make_readonly_widget())
-    subscription = CharField(label="Subscription", widget=make_readonly_widget())
+    england_squash_id = CharField(label="Eng. Squash ID", required=False, widget=make_readonly_widget())
+    squashlevels_id = CharField(label="SquashLevels ID", required=False, widget=make_readonly_widget())
+    booking_system_id = CharField(label="Booking System ID", required=False, widget=make_readonly_widget())
+    doorcards = CharField(label="Door Cards", required=False, widget=make_readonly_widget())
+    subscription = CharField(label="Subscription", required=False, widget=make_readonly_widget())
     
     @classmethod
     def create(cls, player):
