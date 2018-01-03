@@ -110,6 +110,7 @@ def create_notifier_filter_formset_factory(max_number):
     )
 
 class SettingsInfoForm(Form):
+    england_squash_id = CharField(label="Eng. Squash ID", widget=make_readonly_widget())
     squashlevels_id = CharField(label="SquashLevels ID", widget=make_readonly_widget())
     booking_system_id = CharField(label="Booking System ID", widget=make_readonly_widget())
     doorcards = CharField(label="Door Cards", widget=make_readonly_widget())
@@ -121,6 +122,7 @@ class SettingsInfoForm(Form):
             return cls()
         data = {"squashlevels_id": player.squashlevels_id,
                 "booking_system_id": player.booking_system_id,
+                "england_squash_id": player.england_squash_id,
                 "doorcards": player.get_cardnumbers(),
                 "subscription": "{sub.subscription_type.name} [{sub.season}]".format(sub=player.get_current_subscription())
                 }

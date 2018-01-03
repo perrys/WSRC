@@ -43,10 +43,13 @@
 <fieldset name="contact_details">
   <legend>Permission to Use Personal Data<sup style="color: black;">*</sup></legend>
 {% usekwacro createfield_helptext player_form.prefs_receive_email %}
-{% usekwacro createfield_helptext player_form.prefs_esra_member %}
+{% usekwacro createfield_helptext player_form.prefs_esra_member "ES Membership<sup>&dagger;</sup>" %}
 {% usekwacro createfield_helptext player_form.prefs_display_contact_details %}
 <footer class="helptext">
-<sup>*</sup>From May 2018 you must explicitly consent for your personal data to be used by the club. If any of these questions have not been answered, we will assume the answer is "No".
+  <sup>*</sup> From May 2018 you must explicitly consent for your personal data to be used by the club. If any of these questions have not been answered, we will assume the answer is "No".
+  <div style="margin-top: 5px;"/>
+    <sup>&dagger;</sup> For more information, visit the <a href="http://www.englandsquash.com/membership/players">England Squash website</a>. Note that you will not be able to play in Surrey league competitions or national competitions if you are not an ES member.
+  </div>
 </footer>
 </fieldset>
 
@@ -58,9 +61,10 @@
  <label class="ui-btn-c"><input id="id_password" type="checkbox" checked="checked" onclick="document.location='{% url 'password_change' %}'; this.checked=true; return false;"> Set (click to change)</label>
 </div>
 {% usekwacro createfield info_form.subscription %}
-{% usekwacro createfield info_form.booking_system_id %}
+{% usekwacro createfield info_form.england_squash_id %}
 {% usekwacro createfield info_form.squashlevels_id %}
 {% usekwacro createfield info_form.doorcards %}
+{% usekwacro createfield info_form.booking_system_id %}
 </fieldset>
 
 <input id="submit_button" type="submit" value="Update" data-theme="b" />
