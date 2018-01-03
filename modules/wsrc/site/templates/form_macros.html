@@ -31,9 +31,9 @@
 </div>
 {% endkwacro %}
 
-{% kwacro createfield_helptext field %}
+{% kwacro createfield_helptext field label %}
   <div class="ui-field-contain">
-    {{ field.label_tag }}{{ field }}
+    <label for="{{ field.id_for_label }}">{% if label %}{{ label|safe }}{% else %}{{ field.label }}{% endif %}</label>{{ field }}
 {% if field.errors %}<div class="clear-all"></div><label>&nbsp;</label><span class="field-error">{% for err in field.errors %}{{ err }}. {% endfor %}</span>{% endif %}
     <div class="clear-all"></div><label class="empty">&nbsp;</label><div class="helptext ui-dummy">{{ field.help_text|safe }}</div>
   </div>
