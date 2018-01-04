@@ -3,6 +3,7 @@
 {% block pagetype %}courts{% endblock %}
 {% block html_header_extra %}
 {{ block.super }}
+  <meta name="robots" content="noindex" />
 {% if booking_user_id %}
 <script>
 window.WSRC_booking_user_id = {{ booking_user_id }};
