@@ -83,7 +83,7 @@
   const is_set = input.val() && input.val().length > 0
 
   const button_text = is_set ? "Delete" : "Create"
-  const button = $(`<button style='margin-left: 0.5em; border-top: 1px;'>${button_text}</button>`)
+  const button = $(`<button type='button' style='margin-left: 0.5em; border-top: 1px;'>${button_text}</button>`)
   input.after(button)
 
   function do_ajax(message, data) {
