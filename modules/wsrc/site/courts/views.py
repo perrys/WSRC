@@ -273,6 +273,7 @@ def day_view(request, date=None):
     }
     return TemplateResponse(request, 'courts.html', context)
 
+@login_required
 def edit_entry_view(request, id=None):
     player = Player.get_player_for_user(request.user)
     booking_user_id = None if player is None else player.booking_system_id
