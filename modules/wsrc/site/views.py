@@ -94,7 +94,7 @@ AWAY_TEAM_SHORT_NAMES = {
     }
 
 JSON_RENDERER = JSONRenderer()
-LW_REQUEST = collections.namedtuple('LW_REQUEST', ['query_params'])
+LW_REQUEST = collections.namedtuple('LW_REQUEST', ['query_params', 'user'])
 
 LOGGER = logging.getLogger(__name__)
 LOGGER.setLevel(logging.WARNING)
@@ -247,7 +247,7 @@ def index_view(request):
     midnight_tomorrow = midnight_today + datetime.timedelta(days=1)
     bookings = BookingSystemEvent.objects.filter(start_time__gte=cutoff_today, start_time__lt=midnight_tomorrow).order_by('start_time')
 
-    fake_context = {"request": LW_REQUEST({"date": today_str})}
+    fake_context = {"request": LW_REQUEST({"date": today_str}, user=request.user)}
     bookings_data = BookingSerializer(bookings, many=True, context=fake_context).data
 
     ctx["bookings"] = JSON_RENDERER.render(bookings_data)
@@ -635,9 +635,13 @@ class BookingSerializer(serializers.ModelSerializer):
         model = BookingSystemEvent
     @classmethod
     def many_init(cls, *args, **kwargs):
-        kwargs['child'] = cls()
+        kwargs['child'] = cls() if kwargs["context"]["request"].user.is_authenticated()\
+                          else ObfuscatedBookingSerializer()
         return CustomBookingListSerializer(*args, **kwargs)
 
+class ObfuscatedBookingSerializer(BookingSerializer):
+    name = serializers.CharField(source="obfuscated_name", read_only="True")
+    
 class BookingList(rest_generics.ListAPIView):
     serializer_class = BookingSerializer
     def get_queryset(self):
