@@ -311,7 +311,7 @@ class BoxesTemplateViewBase(BoxesViewBase, TemplateView):
     def enrich_entrants(entrants, matches):
         entrants = dict([(e["id"], e) for e in entrants])
         for e in entrants.values():
-            e["Pts"] = 0
+            e["Pts"] = e["P"] = e["F"] = e["A"] = 0
         def append(entrant, field, n):
             points = entrant.get(field) or 0
             points += n
@@ -339,6 +339,42 @@ class BoxesTemplateViewBase(BoxesViewBase, TemplateView):
             totalize(e2, e1, 1)
         return entrants
 
+    @staticmethod
+    def sort_entrants(entrants, matches):
+        def cmp_head_to_head_match(lhs, rhs):
+            matched_match = None
+            for match in matches:
+                if match.team1_id == lhs["id"] and match.team2_id == rhs["id"] or\
+                   match.team2_id == lhs["id"] and match.team1_id == rhs["id"]:
+                    matched_match = match
+                    break
+            if matched_match is None:
+                return 0
+            winner_id = matched_match.get_winner(key_only=True)            
+            if winner_id == lhs["id"]:
+                return 1
+            if winner_id == rhs["id"]:
+                return -1
+            return 0
+                
+        entrants = list(entrants)
+        def fair_compare(lhs, rhs):
+            diff = lhs["Pts"] - rhs["Pts"]
+            if diff == 0:
+                diff = cmp_head_to_head_match(lhs, rhs)
+            if diff == 0:
+                diff = lhs["P"] - rhs["P"]
+            if diff == 0:
+                diff = (lhs["F"] - lhs["A"]) - (rhs["F"] - rhs["A"])
+            if diff == 0:
+                diff = -1 * cmp(lhs["player1__user__last_name"],  rhs["player1__user__last_name"])
+            if diff == 0:
+                diff = -1 * cmp(lhs["player1__user__first_name"],  rhs["player1__user__first_name"])
+            return int(diff)
+                
+        entrants.sort(cmp=fair_compare, reverse=True)
+        return entrants
+    
     def create_entrant_cell(self, entrant, auth_user_id):
         content=u"{full_name}".format(**entrant)
         attrs={
@@ -389,8 +425,6 @@ class BoxesTemplateViewBase(BoxesViewBase, TemplateView):
         return table.toHtmlString(self.get_table_head(competition), self.table_body_attrs)
 
     def create_league_table(self, competition, entrants, auth_user_id):
-        entrants = list(entrants)
-        entrants.sort(key=itemgetter("Pts"), reverse=True)
         attrs = {
             "data-id": str(competition.id),
             "data-name": competition.name,
@@ -446,16 +480,18 @@ class BoxesTemplateViewBase(BoxesViewBase, TemplateView):
             matches = [m for m in all_matches if m.competition_id==comp.id]
             entrants = [e for e in all_entrants if e['competition_id']==comp.id]
             self.enrich_entrants(entrants, matches)
+            sorted_entrants = self.sort_entrants(entrants, matches)
             max_players = max(max_players, len(entrants))
             cfg = self.create_box_config(previous_cfg, comp, entrants, auth_user_id, is_editor)
             cfg["competition"] = comp
             cfg["entrants"] = entrants
+            cfg["sorted_entrants"] = sorted_entrants
             cfg["matches"] = matches
             boxes.append(cfg)
             previous_cfg = cfg
         for box in boxes:
             box["box_table"]    = self.create_box_table(box["competition"], max_players, box["entrants"], box["matches"], auth_user_id)
-            box["league_table"] = self.create_league_table(box["competition"], box["entrants"], auth_user_id)
+            box["league_table"] = self.create_league_table(box["competition"], box["sorted_entrants"], auth_user_id)
 
         self.add_selector(context, possible_groups, group)
         return context
