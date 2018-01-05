@@ -82,6 +82,7 @@ window.WSRC_homepage =
             end_time:    date_prefix + "T" + totimestr (start + COURT_SLOT_LENGTH)
             court:       court
             name:        "_"
+            duration_mins: COURT_SLOT_LENGTH
         start += COURT_SLOT_LENGTH
 
     return bookings.concat(newlist)
@@ -128,7 +129,7 @@ window.WSRC_homepage =
             timepart = getTimeElt(11, 5)
             token = bookings_data.tokens[booking.court][timepart]
             if token
-              name = "<a href='http://booking.wokingsquashclub.org/edit_entry_fixed.php?room=#{ booking.court }&area=1&hour=#{ getTimeElt(11,2) }&minute=#{ getTimeElt(14,2) }&year=#{ getTimeElt(0,4) }&month=#{ getTimeElt(5,2) }&day=#{ getTimeElt(8,2) }&token=#{ token }'>(available)</a>"
+              name = "<a href='#{ WSRC_booking_url }?court=#{ booking.court }&date=#{ getTimeElt(0,10) }&start_time=#{ getTimeElt(11,5) }&duration_mins=#{ booking.duration_mins }&token=#{ token }'>(available)</a>"
         else
           name = booking.name
         cls = if parseInt(getTimeElt(11,2)) < 17 then toggleclass else ""
