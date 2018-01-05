@@ -5,6 +5,7 @@
 {{ block.super }}
 <script>
 window.WSRC_today_bookings = {{ bookings|safe }};
+window.WSRC_booking_url = "{% url 'booking' %}";
 </script>
 {% endblock %}
 {% block centered_page_content %}
