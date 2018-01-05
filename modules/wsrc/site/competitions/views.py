@@ -23,9 +23,7 @@ from wsrc.utils import email_utils
 
 from django.core.exceptions import PermissionDenied, SuspiciousOperation
 from django.core.urlresolvers import reverse
-from django.http import Http404
 from django.shortcuts import get_object_or_404
-from django.shortcuts import redirect
 from django.shortcuts import render
 from django.template import Template, Context
 from django.template.response import TemplateResponse
@@ -47,7 +45,7 @@ import datetime
 import markdown
 import StringIO
 import os.path
-import tournament
+from . import tournament
 from operator import itemgetter
 
 class FakeRequestContext:
@@ -63,7 +61,7 @@ class CompetitionList(rest_generics.ListCreateAPIView):
     serializer_class = CompetitionSerializer
     filter_backends = [rest_framework.filters.OrderingFilter]
     ordering_fields = ("__all__")
-    queryset = Competition.objects.none() # for django model permissions    
+    queryset = Competition.objects.none() # for django model permissions
     def get_queryset(self):
         queryset = Competition.objects.all()
         year = self.request.QUERY_PARAMS.get('year', None)
@@ -112,7 +110,7 @@ class SelfUpdateOrCompetitionEditorPermission(rest_permissions.BasePermission):
                 return True
         return False
 
-            
+
 
 class UpdateMatch(rest_generics.RetrieveUpdateAPIView):
     queryset = Match.objects.all()
@@ -171,18 +169,18 @@ def get_tournament_links(options, selected_comp_or_group):
         comps.sort(key=lambda x: x.name)
         for comp in comps:
             name = comp.name
-            result.append({"year": year, 
-                           "name": name + year_suffix, 
+            result.append({"year": year,
+                           "name": name + year_suffix,
                            "end_date": comp.end_date,
                            "link": reverse(bracket_view) + "/{year}/{name}/{suffix}".format(**locals()),
                            "selected": no_navigation and comp == selected_comp_or_group
                        })
     for group in qset.filter(comp_type="wsrc_qualifiers", active=True):
         year = group.end_date.year
-        year_suffix = no_navigation and " {year}".format(**locals()) or "" 
+        year_suffix = no_navigation and " {year}".format(**locals()) or ""
         name = " ".join(group.name.split()[2:-1]) # remove front and rear sections
-        result.append({"year": year, 
-                       "name": name + " (qualifier)" + year_suffix, 
+        result.append({"year": year,
+                       "name": name + " (qualifier)" + year_suffix,
                        "end_date": group.end_date,
                        "link": "/tournaments/qualifiers/{year}/{name}{suffix}".format(**locals()),
                        "selected": no_navigation and group == selected_comp_or_group
@@ -302,7 +300,7 @@ class BoxesExcelView(BoxesViewBase, View):
         response = HttpResponse(payload, content_type=content_type)
         response['Content-Disposition'] = 'attachment; filename="boxes_{date:%Y-%m-%d}.xlsx"'.format(date=group.end_date)
         return response
-        
+
 class BoxesTemplateViewBase(BoxesViewBase, TemplateView):
 
     box_table_attrs = {}
@@ -317,7 +315,7 @@ class BoxesTemplateViewBase(BoxesViewBase, TemplateView):
         def append(entrant, field, n):
             points = entrant.get(field) or 0
             points += n
-            entrant[field] = points            
+            entrant[field] = points
         for match in matches:
             e1 = entrants[match.team1_id]
             e2 = entrants[match.team2_id]
@@ -340,7 +338,7 @@ class BoxesTemplateViewBase(BoxesViewBase, TemplateView):
             totalize(e1, e2, 0)
             totalize(e2, e1, 1)
         return entrants
-    
+
     def create_entrant_cell(self, entrant, auth_user_id):
         content=u"{full_name}".format(**entrant)
         attrs={
@@ -355,7 +353,7 @@ class BoxesTemplateViewBase(BoxesViewBase, TemplateView):
             if auth_user_id == entrant["player1__user__id"]:
                 merge_classes(attrs, "wsrc-currentuser")
         return Cell(content, attrs, isHeader=True, isHTML=isHTML)
-        
+
     def create_box_table(self, competition, n, entrants, matches, auth_user_id):
         entrants = list(entrants)
         entrants.sort(key=itemgetter("ordering"))
@@ -387,12 +385,12 @@ class BoxesTemplateViewBase(BoxesViewBase, TemplateView):
             table.addCell(Cell(points[0], attrs), p2+2, p1+1)
             table.addCell(Cell(points[1], attrs), p1+2, p2+1)
         for i, entrant in enumerate(entrants):
-            table.addCell(Cell(entrant.get("Pts") or 0, {"class": "points"}), n+2, i+1) 
+            table.addCell(Cell(entrant.get("Pts") or 0, {"class": "points"}), n+2, i+1)
         return table.toHtmlString(self.get_table_head(competition), self.table_body_attrs)
-    
+
     def create_league_table(self, competition, entrants, auth_user_id):
         entrants = list(entrants)
-        entrants.sort(key=itemgetter("Pts"), reverse=True)        
+        entrants.sort(key=itemgetter("Pts"), reverse=True)
         attrs = {
             "data-id": str(competition.id),
             "data-name": competition.name,
@@ -414,28 +412,28 @@ class BoxesTemplateViewBase(BoxesViewBase, TemplateView):
                 attrs["class"] = cls
                 table.addCell(Cell(entrant.get(field) or 0, attrs), j+1, i+1)
         return table.toHtmlString(self.get_table_head(competition), self.table_body_attrs)
-    
+
     def get_table_head(self, comp):
         return None
-    
+
     def add_selector(self, ctx, groups, selected_group):
         leagues = []
         for group in groups:
-            leagues.append({"year": group.end_date.year, 
-                            "end_date": group.end_date, 
+            leagues.append({"year": group.end_date.year,
+                            "end_date": group.end_date,
                             "name": group.name,
                             "id": group.id,
                             "link": reverse(self.reverse_url_name) + "/" + group.end_date.isoformat(),
                             "selected": group == selected_group
                         })
         ctx["selector"] =  {"default_text": "Leagues Ending", "links": leagues}
-    
+
     def get_context_data(self, **kwargs):
         (group, possible_groups) = self.get_competition_group(*self.args, **kwargs)
         context = {
             "competition": {"name": group.name, "id": group.id}
         }
-        
+
         is_editor = self.request.user.has_perm("competitions.change_match")
         auth_user_id = self.request.user.id
         context["boxes"] = boxes = []
@@ -458,7 +456,7 @@ class BoxesTemplateViewBase(BoxesViewBase, TemplateView):
         for box in boxes:
             box["box_table"]    = self.create_box_table(box["competition"], max_players, box["entrants"], box["matches"], auth_user_id)
             box["league_table"] = self.create_league_table(box["competition"], box["entrants"], auth_user_id)
-            
+
         self.add_selector(context, possible_groups, group)
         return context
 
@@ -489,12 +487,12 @@ class BoxesPreviewView(BoxesUserView):
         (group, possible_groups) = super(BoxesPreviewView, self).get_competition_group()
         group = get_object_or_404(CompetitionGroup.objects.filter(comp_type=self.competition_type), pk=group_id)
         return (group, possible_groups)
-    
+
 class BoxesDataView(BoxesUserView):
     template_name = "boxes_data.html"
     league_table_attrs = {}
-    
-class BoxesAdminView(BoxesTemplateViewBase):    
+
+class BoxesAdminView(BoxesTemplateViewBase):
     template_name = "boxes_admin.html"
     box_table_attrs = {"class": " ui-helper-hidden"}
     table_body_attrs = {"class": "ui-widget-content"}
@@ -520,7 +518,7 @@ class BoxesAdminView(BoxesTemplateViewBase):
         for p in player_data:
             p["full_name"] = u"{user__first_name} {user__last_name}".format(**p)
         context['player_data'] = JSON_RENDERER.render(dict([(p["id"], p) for p in player_data]))
-        
+
         # add any unstarted competition
         group_queryset = CompetitionGroup.objects.filter(comp_type=self.competition_type).filter(competition__state="not_started").order_by('-end_date')
         all_entrants = all_leagues = None
@@ -529,7 +527,7 @@ class BoxesAdminView(BoxesTemplateViewBase):
             all_entrants = self.get_all_entrants(group)
             all_leagues = [c for c in group.competition_set.all()]
             context["new_competition_group"] = group
-        
+
         def create_new_box_config(idx):
             result = {"id": None, "players": None}
             if idx == 0:
@@ -549,7 +547,7 @@ class BoxesAdminView(BoxesTemplateViewBase):
                     result["competition"] = leagues[0]
                     entrants.extend([e for e in all_entrants if e["competition_id"] == leagues[0].id])
             while len(entrants) < 6:
-                entrants.append({"id": "", "full_name": ""})                
+                entrants.append({"id": "", "full_name": ""})
             return result
         context['new_boxes'] = [create_new_box_config(i) for i in range(0,21)]
         return context
@@ -573,8 +571,8 @@ def bracket_view(request, year, name, template_name="tournaments.html"):
     html_table = tournament.render_tournament(competition)
 
     ctx = {
-        "competition": competition, 
-        "bracket": html_table, 
+        "competition": competition,
+        "bracket": html_table,
         "bracket_data": bracket_data,
         "is_editor": request.user.is_authenticated and request.user.has_perm("competitions.change_match")
     }
@@ -618,7 +616,7 @@ def bracket_admin_view(request, year=None, name=None):
     comp_data = '{}'
     if name is not None:
         group = get_object_or_404(CompetitionGroup.objects, end_date__year=year, comp_type='wsrc_tournaments')
-        name = name.replace("_", " ")        
+        name = name.replace("_", " ")
         competition = get_object_or_404(group.competition_set, name__iexact=name)
         comp_data = JSON_RENDERER.render(CompetitionSerializer(competition, context={"request": FAKE_REQUEST_CONTEXT}).data)
 
@@ -627,19 +625,19 @@ def bracket_admin_view(request, year=None, name=None):
     edit_tournament_form  = None
     success_message = None
 
-    if request.method == 'POST': 
+    if request.method == 'POST':
 
         queryDict = request.POST
         action = request.POST.get("action", None)
         if action == "new_comp_group":
             new_group_form = NewCompetitionGroupForm(request.POST, auto_id='id_groupform_%s')
-            if new_group_form.is_valid(): 
-                new_group_form.save()            
+            if new_group_form.is_valid():
+                new_group_form.save()
                 new_group_form.success_message = "created group " + str(new_group_form.instance)
         elif action == "new_tournament":
             new_tournament_form = NewTournamentForm(request.POST, auto_id='id_compform_%s')
-            if new_tournament_form.is_valid(): 
-                new_tournament_form.save()            
+            if new_tournament_form.is_valid():
+                new_tournament_form.save()
                 new_tournament_form.success_message = "created tournament " + str(new_tournament_form.instance)
         else:
             return HttpResponseBadRequest("<h1>invalid form data</h1>")
@@ -654,7 +652,7 @@ def bracket_admin_view(request, year=None, name=None):
     tournaments = []
     for group in CompetitionGroup.objects.filter(comp_type="wsrc_tournaments"):
         tournaments.append({"year": group.end_date.year, "competitions": group.competition_set.all()})
-        
+
     return render(request, 'tournaments_admin.html', {
         'edit_tournament_form': edit_tournament_form,
         'new_tournament_form':  new_tournament_form,
@@ -706,13 +704,13 @@ class SendCompetitionEmail(CompetitionEditorPermissionedAPIView):
         to_list = [entrant.player1.user.email for entrant in competition.entrant_set.all()]
         email_template = EmailContent.objects.get(name=template_name)
         email_template = Template(email_template.markup)
-        
+
         context = Context({"competition": competition})
         context["content_type"] = "text/html"
         html_body = markdown.markdown(email_template.render(context))
         context["content_type"] = "text/plain"
         text_body = email_template.render(context)
-    
+
         email_utils.send_email(subject, text_body, html_body, from_address, to_list)
         return HttpResponse(status=204)
 
