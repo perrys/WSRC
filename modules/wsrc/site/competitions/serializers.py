@@ -148,16 +148,11 @@ class CompactMatchField(serializers.RelatedField):
     def to_representation(self, match):
         scores = match.get_scores()
         points = get_box_league_points(match, scores)
-        def safe_get_id(attr):
-            player = getattr(match, attr)
-            if player is not None:
-                return player.id
-            return None
         return {"id": match.id,
                 "competition_match_id": match.competition_match_id,
                 "last_updated": match.last_updated,
-                "team1": safe_get_id("team1"),
-                "team2": safe_get_id("team2"),
+                "team1": match.team1_id,
+                "team2": match.team2_id,
                 "scores": scores,
                 "points": points,
                 "walkover": match.walkover,
