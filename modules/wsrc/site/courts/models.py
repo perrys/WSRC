@@ -21,6 +21,7 @@ from django.utils import timezone
 
 import wsrc.site.settings
 import wsrc.site.usermodel.models as user_models
+from wsrc.utils.text import obfuscate
 
 class BookingSystemEvent(models.Model):
     EVENT_TYPES = (
@@ -57,6 +58,11 @@ class BookingSystemEvent(models.Model):
 
     def in_the_past(self):
         return self.start_time < timezone.now()
+
+    def obfuscated_name(self):
+        toks = self.name.split()
+        toks = [obfuscate(tok) for tok in toks]
+        return " ".join(toks)
 
     def __unicode__(self):
         if self.start_time is None or self.end_time is None:
