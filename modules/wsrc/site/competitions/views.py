@@ -23,6 +23,7 @@ from wsrc.utils import email_utils
 
 from django.core.exceptions import PermissionDenied, SuspiciousOperation
 from django.core.urlresolvers import reverse
+from django.http import Http404
 from django.shortcuts import get_object_or_404
 from django.shortcuts import redirect
 from django.shortcuts import render
@@ -163,10 +164,12 @@ def get_tournament_links(options, selected_comp_or_group):
     result = []
     no_navigation = "no_navigation" in options
     suffix = no_navigation and "?no_navigation" or ""
-    for group in qset.filter(comp_type="wsrc_tournaments"):
+    for group in qset.filter(comp_type="wsrc_tournaments").prefetch_related("competition_set"):
         year = group.end_date.year
-        year_suffix = no_navigation and " {year}".format(**locals()) or "" 
-        for comp in group.competition_set.exclude(state="not_started").order_by("name"):
+        year_suffix = no_navigation and " {year}".format(**locals()) or ""
+        comps = [comp for comp in group.competition_set.all() if comp.state != "not_started"]
+        comps.sort(key=lambda x: x.name)
+        for comp in comps:
             name = comp.name
             result.append({"year": year, 
                            "name": name + year_suffix, 
@@ -558,8 +561,13 @@ def bracket_view(request, year, name, template_name="tournaments.html"):
     else:
         group = get_object_or_404(CompetitionGroup.objects, end_date__year=year, comp_type='wsrc_tournaments')
 
-    name = name.replace("_", " ")        
-    competition = get_object_or_404(group.competition_set, name__iexact=name)
+    name = name.replace("_", " ")
+    comp_set = Competition.objects.filter(group=group, name__iexact=name)\
+                                  .prefetch_related("entrant_set__player1__user",\
+                                                    "entrant_set__player2__user",\
+                                                    "rounds",\
+                                                    "match_set")
+    competition = get_object_or_404(comp_set, name__iexact=name)
 
     bracket_data = JSON_RENDERER.render(CompetitionSerializer(competition, context={"request": FAKE_REQUEST_CONTEXT}).data)
     html_table = tournament.render_tournament(competition)
