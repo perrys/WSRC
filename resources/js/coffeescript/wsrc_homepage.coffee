@@ -129,7 +129,7 @@ window.WSRC_homepage =
             timepart = getTimeElt(11, 5)
             token = bookings_data.tokens[booking.court][timepart]
             if token
-              name = "<a href='#{ WSRC_booking_url }?court=#{ booking.court }&date=#{ getTimeElt(0,10) }&start_time=#{ getTimeElt(11,5) }&duration_mins=#{ booking.duration_mins }&token=#{ token }'>(available)</a>"
+              name = "<a href='#{ WSRC_booking_url }?court=#{ booking.court }&date=#{ encodeURIComponent(getTimeElt(0,10)) }&start_time=#{ encodeURIComponent(getTimeElt(11,5)) }&duration_mins=#{ booking.duration_mins }&token=#{ token }' data-ajax='false'>(available)</a>"
         else
           name = booking.name
         cls = if parseInt(getTimeElt(11,2)) < 17 then toggleclass else ""
