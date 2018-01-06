@@ -6,6 +6,7 @@
 {% block pageattrs %}data-competitionid="{{ competition.id }}"{% endblock %}
 {% load competitions_extras %}
 {% block html_header_extra %}
+<meta name="robots" content="noindex" />
 {{ block.super }}
 <script>
 window.WSRC_bracket_data = {{ bracket_data|safe }};
