@@ -22,6 +22,7 @@ from wsrc.utils.text import obfuscate
 from wsrc.utils.timezones import parse_iso_date_to_naive
 from wsrc.utils import email_utils
 
+from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied, SuspiciousOperation
 from django.core.urlresolvers import reverse
 from django.shortcuts import get_object_or_404
@@ -590,6 +591,7 @@ class BoxesAdminView(BoxesTemplateViewBase):
         context['new_boxes'] = [create_new_box_config(i) for i in range(0,21)]
         return context
 
+#@login_required
 def bracket_view(request, year, name, template_name="tournaments.html"):
     if year is None:
         groups = CompetitionGroup.objects.filter(comp_type='wsrc_tournaments').filter(active=True).order_by("-end_date")
