@@ -61,7 +61,7 @@ class BookingSystemEvent(models.Model):
 
     def obfuscated_name(self):
         toks = self.name.split()
-        toks = [obfuscate(tok) for tok in toks]
+        toks = [obfuscate(tok, to_initial=(len(toks)>1 and idx==0)) for idx,tok in enumerate(toks)]
         return " ".join(toks)
 
     def __unicode__(self):
