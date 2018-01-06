@@ -18,6 +18,7 @@ from wsrc.site.usermodel.models import Player
 from wsrc.site.competitions.models import Competition, CompetitionGroup, Match, Entrant
 from wsrc.site.competitions.serializers import CompetitionSerializer, CompetitionGroupSerializer, MatchSerializer, get_box_league_points
 from wsrc.utils.html_table import Table, Cell, SpanningCell, merge_classes
+from wsrc.utils.text import obfuscate
 from wsrc.utils.timezones import parse_iso_date_to_naive
 from wsrc.utils import email_utils
 
@@ -213,10 +214,13 @@ class BoxesViewBase(object):
                 }
 
     @staticmethod
-    def get_all_entrants(comp_group):
+    def get_all_entrants(comp_group, show_names=False):
         fields = ["id", "player1__id", "player1__user__id", "player1__user__first_name", "player1__user__last_name", "handicap", "ordering", "competition_id"]
         entrants = [p for p in Entrant.objects.filter(competition__group=comp_group).order_by('ordering').values(*fields)]
         for e in entrants:
+            if not show_names:
+                for idx, key in enumerate(["player1__user__first_name", "player1__user__last_name"]):
+                    e[key] = obfuscate(e[key], to_initial=(idx==0))
             e["full_name"] = " ".join([e["player1__user__first_name"], e["player1__user__last_name"]])
         return entrants
 
@@ -285,7 +289,7 @@ class BoxesExcelView(BoxesViewBase, View):
         boxes = []
         max_players = 0
         previous_cfg = None
-        all_entrants = self.get_all_entrants(group)
+        all_entrants = self.get_all_entrants(group, request.user.is_authenticated())
         all_leagues = [c for c in group.competition_set.all()]
         for comp in all_leagues:
             entrants = [e for e in all_entrants if e['competition_id']==comp.id]
@@ -382,13 +386,11 @@ class BoxesTemplateViewBase(BoxesViewBase, TemplateView):
             "data-player_id":  str(entrant["player1__id"]),
             "data-entrant_id": str(entrant["id"]),
         }
-        isHTML=False
         if auth_user_id is not None:
             content = u"<a href='{url}?filter-ids={id}' class='ui-link'>{content}</a>".format(url=reverse("member_list"), id=entrant["player1__id"], content=content)
-            isHTML=True
             if auth_user_id == entrant["player1__user__id"]:
                 merge_classes(attrs, "wsrc-currentuser")
-        return Cell(content, attrs, isHeader=True, isHTML=isHTML)
+        return Cell(content, attrs, isHeader=True, isHTML=True)
 
     def create_box_table(self, competition, n, entrants, matches, auth_user_id):
         entrants = list(entrants)
@@ -474,7 +476,7 @@ class BoxesTemplateViewBase(BoxesViewBase, TemplateView):
         max_players = 0
         previous_cfg = None
         all_matches = [m for m in Match.objects.filter(competition__group=group)]
-        all_entrants = self.get_all_entrants(group)
+        all_entrants = self.get_all_entrants(group, self.request.user.is_authenticated())
         all_leagues = [c for c in group.competition_set.all()]
         for comp in all_leagues:
             matches = [m for m in all_matches if m.competition_id==comp.id]
@@ -560,7 +562,7 @@ class BoxesAdminView(BoxesTemplateViewBase):
         all_entrants = all_leagues = None
         if group_queryset.count() > 0:
             group = group_queryset[0]
-            all_entrants = self.get_all_entrants(group)
+            all_entrants = self.get_all_entrants(group, self.request.user.is_authenticated())
             all_leagues = [c for c in group.competition_set.all()]
             context["new_competition_group"] = group
 
