@@ -3,6 +3,10 @@
 {% load kwacros %}
 {% loadkwacros 'form_macros.html' %}
 
+{% block html_header_extra %}
+<meta name="robots" content="noindex" />
+{% endblock %}
+
 {% block titleprefix %}Login - {% endblock %}
 {% block pagetype %}login{% endblock %}
 
