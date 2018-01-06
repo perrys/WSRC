@@ -40,6 +40,10 @@
     <div class="clear-all"></div>
   </form>
 
+  {% if not user.is_authenticated %}
+  <p class="page_info">Players' names have been obscured. To view the boxes in full please <a href="/login?next={% url 'boxes' %}" data-ajax="false">Log In</a>.</p>
+  {% endif %}
+  
   <div id="source_boxes" class="competition-wrapper" data-id="{{ competition.id }}">
 {% for box_config in boxes %}
 <!-- {{ box_config.colspec }} {{ box_config.nthcol }} -->
