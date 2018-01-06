@@ -49,7 +49,13 @@ def shorten(text, max_words):
         return " ".join(words[:max_words]) + "..."
     return text
 
-def obfuscate(astr):
+def obfuscate(astr, to_initial=False):
     if len(astr) <= 1:
         return astr
-    return astr[0] + "".join(['_'] * (len(astr)-1))
+    if to_initial:
+      return astr[0] + "."    
+    if len(astr) < 4:
+      return astr[0] + "&hellip;"
+    if len(astr) < 5:
+      return astr[0:2] + "&hellip;"
+    return astr[0:2] + "&hellip;" + astr[-1]
