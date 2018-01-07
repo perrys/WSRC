@@ -591,7 +591,7 @@ class BoxesAdminView(BoxesTemplateViewBase):
         context['new_boxes'] = [create_new_box_config(i) for i in range(0,21)]
         return context
 
-#@login_required
+@login_required
 def bracket_view(request, year, name, template_name="tournaments.html"):
     if year is None:
         groups = CompetitionGroup.objects.filter(comp_type='wsrc_tournaments').filter(active=True).order_by("-end_date")
