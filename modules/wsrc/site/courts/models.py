@@ -60,6 +60,8 @@ class BookingSystemEvent(models.Model):
         return self.start_time < timezone.now()
 
     def obfuscated_name(self):
+        if self.event_type == "E":
+            return self.name
         toks = self.name.split()
         toks = [obfuscate(tok, to_initial=(len(toks)>1 and idx==0)) for idx,tok in enumerate(toks)]
         return " ".join(toks)
