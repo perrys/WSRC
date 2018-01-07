@@ -381,7 +381,7 @@ class BoxesTemplateViewBase(BoxesViewBase, TemplateView):
         return entrants
     
     def create_entrant_cell(self, entrant, auth_user_id):
-        content=u"{full_name}".format(**entrant)
+        content=u"<span>{full_name}</span>".format(**entrant)
         attrs={
             "class": "text player",
             "data-player_id":  str(entrant["player1__id"]),
