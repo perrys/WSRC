@@ -1,41 +1,80 @@
-{% extends "04_wsrc_header.html" %}
-
-{% load kwacros %}
-{% loadkwacros 'form_macros.html' %}
+{% extends "03_bootstrap_page_structure.html" %}
 
 {% block html_header_extra %}
+{{ block.super }}
 <meta name="robots" content="noindex" />
+<style>
+ body {
+     background-color: #eee;
+ }
+ .form-signin {
+     max-width: 330px;
+     padding: 15px;
+     margin: 40px auto 0 auto;
+ }
+ .form-signin .form-signin-heading,
+ .form-signin .checkbox {
+     margin-bottom: 10px;
+ }
+ .form-signin .checkbox {
+     font-weight: normal;
+ }
+ .form-signin .form-control {
+     position: relative;
+     height: auto;
+     -webkit-box-sizing: border-box;
+     -moz-box-sizing: border-box;
+     box-sizing: border-box;
+     padding: 10px;
+     font-size: 16px;
+ }
+ .form-signin .form-control:focus {
+     z-index: 2;
+ }
+ .form-signin input[type="email"] {
+     margin-bottom: -1px;
+     border-bottom-right-radius: 0;
+     border-bottom-left-radius: 0;
+ }
+ .form-signin input[type="password"] {
+     margin-bottom: 10px;
+     border-top-left-radius: 0;
+     border-top-right-radius: 0;
+ }
+ #tr_logo {
+     position: absolute;
+     top: 15px;
+     left: 15px;
+ }
+ 
+</style>  
 {% endblock %}
 
 {% block titleprefix %}Login - {% endblock %}
-{% block pagetype %}login{% endblock %}
 
-{% block page_content %}
-
-<div class="ui-popup ui-body-inherit ui-overlay-shadow ui-corner-all centered-dialog">
- <div data-role="header" data-theme="a">
-  <h2>Login</h2>
-  <a href="#" data-rel="back" class="ui-btn ui-corner-all ui-shadow ui-btn-a ui-icon-delete ui-btn-icon-notext ui-btn-right">Close</a>
- </div>
-
-{% if form.errors %}
-<div class="form_errors">
- <span class="form_error_message ui-btn-icon ui-btn-icon-left ui-icon-alert" style="display: inline; padding-left: 2em;">
-Invalid username/password.
- </span>
- <p>Please try again or <a href="/password/reset/" class="form_error_message" data-ajax="false" style="text-decoration: underline;">reset your password</a>.</p>
-{% endif %}
-
- <form id="login_form" class="dialog-form" method="post" action="" data-ajax="false">{% csrf_token %}
-  <fieldset name="password_details">
-{% usekwacro createfield form.username %}
-{% usekwacro createfield form.password %}
-  </fieldset>
-  <input type="submit" value="Go" data-theme="b"></input>
+{% block centered_page_content %}
+<img id="tr_logo" src="/static/images/ball_logo_180x180.png" class="hidden-xs hidden-sm" />
+<form class="form-signin" method="post" action="" >{% csrf_token %}
+  {% if form.errors %}
+  <div class="form_errors">
+    <span class="form_error_message ui-btn-icon ui-btn-icon-left ui-icon-alert" style="display: inline; padding-left: 2em;">
+      Invalid username/password.
+    </span>
+    <p>Please try again or <a href="/password/reset/" class="form_error_message" data-ajax="false" style="text-decoration: underline;">reset your password</a>.</p>
+    {% endif %}
+  
+  <h2 class="form-signin-heading">Please sign in</h2>
+  <label for="{{ form.username.id_for_label }}" class="sr-only">Username</label>
+  <input name="{{ form.username.name }}" id="{{ form.username.id_for_label }}" class="form-control" placeholder="Username" required="" autofocus="">
+  <label for="{{ form.password.id_for_label }}" class="sr-only">Password</label>
+  <input name="{{ form.password.name }}" type="password" id="{{ form.password.id_for_label }}" class="form-control" placeholder="Password" required="">
   <input type="hidden" name="next" value="{% if next %}{{ next }}{% else %}{% url 'homepage' %}{% endif %}" />
   <input type="hidden" name="current_username" value="{{ user.username }}" />
-  <script type="text/javascript">document.getElementById("id_username").focus();</script>
- </form>
-</div>
-
+  <div class="checkbox">
+    <label>
+      <input type="checkbox" value="remember-me"> Remember me
+    </label>
+  </div>
+  <button class="btn btn-lg btn-primary btn-block" type="submit">Sign in</button>
+</form>
 {% endblock %}
