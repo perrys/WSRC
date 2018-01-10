@@ -1,99 +1,169 @@
 {% extends "06_wsrc_navigation.html" %}
 {% block pagetitle %}Home{% endblock %}
-{% block pagetype %}home{% endblock %}
 {% block html_header_extra %}
 {{ block.super }}
-<script>
-window.WSRC_today_bookings = {{ bookings|safe }};
-window.WSRC_booking_url = "{% url 'booking' %}";
-</script>
+<style>
+ .panel .restricted {
+     min-height: 28em;
+     max-height: 28em;
+     overflow: auto;
+ }
+ .jumbotron h1 {
+     margin-top: 0;
+ }
+ .jumbotron p:last-child {
+     margin-bottom: 0;
+ }
+ .score.won {
+     color: #3eb249;
+ }
+ .score.lost {
+     color: #ed3338;
+ }
+ .nobreak {
+     white-space: nowrap;
+ } 
+ #evening_bookings td:first-child {
+     width: 7em;
+ }
+ #evening_bookings td:last-child {
+     width: 3em;
+ }
+ #court-date-buttons {
+     margin-top: -2px;
+ }
+ .row.content-panels {
+     margin-bottom: 30px;
+ }
+</style>  
 {% endblock %}
+
 {% block centered_page_content %}
 
-<div id="main_div"> 
-
+<!-- Main jumbotron for a primary marketing message or call to action -->
+<div class="jumbotron">
   {{ pagedata.content|safe }}
+</div>
 
-  <div class="ui-grid-a ui-responsive">
-    <div class="ui-block-a">
-      <div class="jqm-block-content">
-        <h3>News</h3>
-        <div class="restricted">
-          <table id="facebook_news">
-            <tbody>
-            </tbody>
-          </table>
-        </div>
+<div class="row content-panels">
+  <div class="col-xs-12 col-sm-6 col-md-4">
+    <div class="panel panel-default">
+      <div class="panel-heading"><h3 class="panel-title">News</h3></div>
+      <div class="panel-body restricted">
+        <table id="facebook_news" class="table table-striped table-condensed">
+          <tbody>
+          </tbody>
+        </table>
       </div>
     </div>
-    <div class="ui-block-b">
-      <div class="jqm-block-content toggle-root">
-        <h3>Courts</h3>
-        <div class="headed-box restricted-with-footnote">
-          <div class="ui-bar" data-theme="b" data-role="header" data-position="inline">
-            <h4>Today</h4>
-            <a id="btn_booking_previous" href="javascript:WSRC_homepage.booking_advance(-1);" class="ui-btn ui-btn-a ui-icon-arrow-l ui-btn-icon-notext ui-corner-all ui-btn-left">
-            </a>
-            <a id="btn_booking_next" href="javascript:WSRC_homepage.booking_advance(1);" class="ui-btn ui-btn-a ui-icon-arrow-r ui-btn-icon-notext ui-corner-all ui-btn-right">
-            </a>
-          </div>
-          <div class="ui-body">
-            <table id="evening_bookings" data-basedate="{{ today }}" data-dayoffset="0">
-              <tbody>
-              </tbody>
-            </table>
-          </div>
-        </div>
-        <div class="footnote togglable toggle-link" id="booking_seeall_toggle"><a href="#">(see all)</a></div>
-        <div class="footnote toggled toggle-link"><a href="#">(evenings)</a></div>
-      </div>
-    </div>
-    <div class="ui-block-a">
-      <div class="jqm-block-content toggle-root">
-        <h3>Results</h3>
-        <div class="restricted-with-footnote">
-          <table>
-{% for row in leaguemaster %}
-<tr class="{% cycle 'odd' 'even' %} {% if forloop.counter0 < leaguemaster_recent_min_idx or forloop.counter0 > leaguemaster_recent_max_idx %}toggled{% endif %}">
-<td class='nobreak'>{% if row.url %}<a href='http://county.leaguemaster.co.uk/{{ row.url }}'>{% endif %}{{ row.date|date:"d M" }}{% if row.url %}</a>{% endif %}</td>
-<td class='nobreak'>{{ row.team }} ({{ row.home_or_away }})</td>
-<td>{{ row.opponents }}</td>
-<td class="nobreak {{ row.class }}{% if not row.points %} empty{% endif %}">{% if row.points %}{{ row.scores|safe }} ({{ row.points|safe }}){% endif %}</td></tr>
-{% endfor %}
-          </table>
-        </div>
+  </div>
+  <div class="col-xs-12 col-sm-6 col-md-4">
+    <div class="panel panel-default toggle-root">
+      <div class="panel-heading"><h3 class="panel-title">Results</h3></div>
+      <div class="panel-body restricted">
+        <table class="table table-striped table-condensed results">
+          {% for row in leaguemaster %}
+          <tr class="{% if forloop.counter0 < leaguemaster_recent_min_idx or forloop.counter0 > leaguemaster_recent_max_idx %}toggled{% endif %}">
+            <td class='nobreak'>{% if row.url %}<a href='http://county.leaguemaster.co.uk/{{ row.url }}'>{% endif %}{{ row.date|date:"d M" }}{% if row.url %}</a>{% endif %}</td>
+            <td class='nobreak'>{{ row.team }} ({{ row.home_or_away }})</td>
+            <td>{{ row.opponents }}</td>
+            <td class="nobreak score {{ row.class }}{% if not row.points %} empty{% endif %}">{% if row.points %}{{ row.scores|safe }} ({{ row.points|safe }}){% endif %}</td></tr>
+          {% endfor %}
+        </table>
         <div class="footnote togglable toggle-link"><a href="#">(see all)</a></div>
         <div class="footnote toggled toggle-link"><a href="#">(recent)</a></div>
       </div>
     </div>
-    <div class="ui-block-b">
-      <div class="jqm-block-content toggle-root">
-        <h3>SquashLevels</h3>
-        <div class="restricted-with-footnote">
-          <table>
-{% for row in squashlevels %}
-<tr class="{% cycle 'odd' 'even' %} {% if forloop.counter > 10 %}toggled{% endif %}"><td>{% if row.player__squashlevels_id %}<a href='http://www.squashlevels.com/player_detail.php?player={{ row.player__squashlevels_id }}&show=last12m'>{{ row.name }}</a>{% else %}{{ row.name }}{% endif %}</td><td class='nobreak'>{{ row.last_match_date|date:'d M' }}</td><td>{{ row.level }}</td></tr>
-{% endfor %}
-          </table>
-        </div>
-        <div class="footnote togglable toggle-link"><a href="#">(see all)</a></div>
-        <div class="footnote toggled toggle-link"><a href="#">(top 10)</a></div>
-      </div>
-    </div>        	
   </div>
+  <div class="col-xs-12 col-sm-6 col-md-4">
+    <div class="panel panel-default toggle-root">
+      <div class="panel-heading">
+        <div id="court-date-buttons" style="inline-block" class="pull-right">
+          <button id="court-back-btn" class="btn btn-default btn-xs">
+            <span class="glyphicon glyphicon-chevron-left"></span>
+          </button>
+          <span id="court-date-indicator">Today</span>
+          <button id="court-fwd-btn" class="btn btn-default btn-xs">
+            <span class="glyphicon glyphicon-chevron-right"></span>
+          </button>
+        </div>
+        
+        <h3 class="panel-title">Court Bookings</h3>
+      </div>
+      <div class="panel-body restricted">
+        <table id="evening_bookings" class="table table-striped table-condensed" data-basedate="{{ today }}" data-dayoffset="0">
+          <tbody>
+          </tbody>
+        </table>
+        <div class="footnote togglable toggle-link" id="booking_seeall_toggle"><a href="#">(see all)</a></div>
+        <div class="footnote toggled toggle-link"><a href="#">(evenings)</a></div>
+      </div>
+    </div>
+  </div>
+{% if user.is_authenticated %}
+  <div class="col-xs-12 col-sm-6 col-md-4">
+    <div class="panel panel-default toggle-root">
+      <div class="panel-heading">
+        <h3 class="panel-title">SquashLevels</h3>
+      </div>
+      <div class="panel-body restricted">
+        <table class="table table-striped table-condensed">
+          <tbody>
+{% for row in squashlevels %}
+            <tr class="{% if forloop.counter > 10 %}toggled{% endif %}"><td>{% if row.player__squashlevels_id %}<a href='http://www.squashlevels.com/player_detail.php?player={{ row.player__squashlevels_id }}&show=last12m'>{{ row.name }}</a>{% else %}{{ row.name }}{% endif %}</td><td class='nobreak'>{{ row.last_match_date|date:'d M' }}</td><td>{{ row.level }}</td></tr>
+{% endfor %}
+          </tbody>
+        </table>
+        <div class="footnote togglable toggle-link" id="booking_seeall_toggle"><a href="#">(see all)</a></div>
+        <div class="footnote toggled toggle-link"><a href="#">(evenings)</a></div>
+      </div>
+    </div>
+  </div>
+{% endif %}
 </div>
-
-<script>
-$( document ).on( "pagecontainershow", ".wsrc-site", function( event ) {
-  var last = document.getElementById("leaguemaster_{{ leaguemaster_last_result_idx|add:'-5' }}");
-  if (last != null && last.scrollIntoView != undefined)
-    last.scrollIntoView();
-  WSRC.onIndexPageShow();
-})
-</script>
-
 {% endblock %}
 
-{% block last_updated %}
-last updated: {{ pagedata.last_updated|date:"d M Y" }}
+{% block body_script_extra %}
+<script src="/static/js/wsrc_utils.js"></script>
+<script src="/static/js/wsrc_homepage.js"></script>
+<script>
+ 
+ var url = "/data/facebook";
+ $.ajax(url, {
+     method: "GET",
+     datatype: "json",
+     processData: true,
+     success: function(data, status, jqxhr) {
+         WSRC_homepage.refresh_facebook(data);
+         return true;
+     },
+     failure: function(xhr, status) {
+         alert("ERROR #{ xhr.status }: #{ xhr.statusText }\nResponse: #{ xhr.responseText }\n\nUnable to fetch facebook data.")
+     },
+ })
+
+ var last = document.getElementById("leaguemaster_{{ leaguemaster_last_result_idx|add:'-5' }}")
+ if (last != null && last.scrollIntoView != undefined)
+     last.scrollIntoView()
+
+ window.WSRC_booking_url = "{% url 'booking' %}"
+ var today_bookings = {{ bookings|safe }}
+ WSRC_homepage.display_court_bookings(today_bookings, 0, WSRC_user_player_id)
+ 
+ $(".toggle-link a").on("click", function(evt) {
+     wsrc.utils.toggle(evt.target)
+     evt.preventDefault()
+     return false;
+ })
+
+ $("#court-back-btn").on("click", function(evt) {
+     WSRC_homepage.booking_advance(-1)
+     evt.target.blur();
+ })
+ $("#court-fwd-btn").on("click", function(evt) {
+     WSRC_homepage.booking_advance(1)
+     evt.target.blur();
+ })
+</script>
+
 {% endblock %}
