@@ -21,6 +21,7 @@ from wsrc.site.models import NavigationLink, NavigationNode
 from collections import namedtuple
 
 node_t = namedtuple("Node", ["pk", "name", "children", "is_expanded"])
+link_t = namedtuple("Link", ["pk", "name", "url", "is_active"])
 
 class NavigationMiddleWare:
     def process_template_response(self, request, response):
@@ -30,13 +31,18 @@ class NavigationMiddleWare:
         for link in [node for node in tree_nodes if hasattr(node, "url")]:
             if link.parent_id is not None:
                 parent = nodes_map[link.parent_id]
-                parent.children.append(link)
-                del nodes_map[link.pk]
                 url = reverse(link.url) if link.is_reverse_url else link.url
                 if request.path.startswith(url):
                     nodes_map[link.parent_id] = parent._replace(is_expanded=True)
+                    link = link_t(link.pk, link.name, link.url, True)
+                parent.children.append(link)
+                del nodes_map[link.pk]
             else:
+                url = reverse(link.url) if link.is_reverse_url else link.url
+                if request.path.startswith(url):
+                    link = link_t(link.pk, link.name, link.url, True)
                 nodes_map[link.pk] = link
+
         nodes = [nodes_map[node.pk] for node in tree_nodes if node.pk in nodes_map]
         if response.context_data is None:
             response.context_data = {"navlinks": nodes}
