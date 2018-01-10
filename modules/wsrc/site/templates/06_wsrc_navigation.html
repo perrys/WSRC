@@ -38,5 +38,8 @@
   {% endif %}
   {% endfor %}
 </ul>
-<button type="button" class="btn btn-default navbar-btn navbar-right" style="margin-right: 0;">{% if user.is_authenticated %}Log out{% else %}Log in{% endif %}</button>
+<div class="navbar-right" style="margin-right: 15px;" >
+<a id="login_logout_btn" class="btn btn-default navbar-btn navbar-right" href="{% if user.is_authenticated %}{% url 'logout' %}?next=/home{% else %}{% url 'login' %}{% endif %}">{% if user.is_authenticated %}Sign out{% else %}Sign in{% endif %}</a>
+{% if user.is_authenticated %}<span class="navbar-text hidden-xs hidden-sm">Signed in as {{ user.get_full_name }}</span>{% endif %}
+</div>
 {% endblock %}
