@@ -1,0 +1,40 @@
+{% extends "01_basic_structure.html" %}
+
+{% block html_header %}
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- The above 3 meta tags *must* come first in the head; any other head content must come *after* these tags -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="google-site-verification" content="LOIHqzpH9dkUKtOXPjmHnEg6jRqzA83LzEpvpx7s1lg" />
+
+{% block html_header_meta_extra %}{% endblock %}
+
+<title>{% block titleprefix %}{% endblock %}Woking Squash Rackets Club</title>
+
+<link rel="shortcut icon" type="image/x-icon" href="/static/images/favicon.ico" />
+<link rel="apple-touch-icon" href="/static/images/apple-touch-icon-57x57.png">
+<link rel="apple-touch-icon" sizes="114x114" href="/static/images/apple-touch-icon-114x114.png">
+
+<!-- Bootstrap core CSS -->
+<link href="/static/css/bootstrap.css" rel="stylesheet">
+<!-- Bootstrap theme -->
+<link href="/static/css/bootstrap-theme.css" rel="stylesheet">
+<!-- IE10 viewport hack for Surface/desktop Windows 8 bug -->
+<link href="/static/css/ie10-viewport-bug-workaround.css" rel="stylesheet">
+
+
+<!-- Custom styles for this template -->
+<link href="/static/css/wsrc.css" rel="stylesheet">
+
+<!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
+<!--[if lt IE 9]>
+  <script src="https://oss.maxcdn.com/html5shiv/3.7.3/html5shiv.min.js"></script>
+  <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
+<![endif]-->
+
+{% block html_header_extra %}{% endblock %}
+
+{% endblock %}

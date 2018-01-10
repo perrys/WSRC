@@ -1,11 +1,19 @@
-{% extends "03_jqm_page_structure.html" %}
+{% extends "03_bootstrap_page_structure.html" %}
 
-{% block page_header_classes %}jqm-header{% endblock %}
-{% block page_header %}
-<div class="centered-content-wrapper">
-{% block page_header_extra %}{% endblock %}
-  <p>{% block pagetitle %}{% endblock %}</p>
-  <h2 class="large-top-logo"><a href="/home" data-ajax="false" onclick="$.mobile.loading('show')"><img src="/static/images/logo_137x70.png" width="137" height="70" alt="Woking Squash Club"></a></h2>
-  <h2 class="small-top-logo"><a href="/home" data-ajax="false" onclick="$.mobile.loading('show')"><img src="/static/images/logo_98x50.png" width="98" height="50" alt="Woking Squash Club" ></a></h2>
-</div>
+{% block body_header %}
+{{ block.super }}
+
+<!-- Fixed navbar -->
+<nav class="navbar navbar-inverse navbar-static-top">
+  <div class="container">
+    <div class="navbar-header">
+      <a class="navbar-brand" style="padding: 0 15px;" href="/home"><img src="/static/images/logo_98x50_alpha.png" style="padding-left: 10px; padding-right: 1em;" /></a>
+{% block navbar_header %}{% endblock %}
+    </div>
+    <div id="navbar" class="navbar-collapse collapse">
+{% block navbar %}{% endblock %}
+    </div>
+  </div>
+</nav>
+
 {% endblock %}

@@ -1,78 +1,42 @@
 {% extends "05_wsrc_footer.html" %}
 
-{% block html_header_extra %}
-<script>
-$( document ).on( "pagecreate", ".wsrc-site", function( event ) {
-  var page = $( this );
-  $( ".jqm-navmenu-panel ul" ).listview();
-  $( ".menu-link a" ).on( "click", function() {
-    var panel = page.find( ".jqm-navmenu-panel:not(.jqm-panel-page-nav)" ).panel();
-    panel.panel( "open" );
-  });
-});
-</script>
-{% endblock %}{% comment "html_header_extra" %}{% endcomment %}
-
-{% block page_header_extra %}
-  <div class="topicon menu-link">
-    <a class="centered-icon" href="#"><img src="/static/css/images/bars-white.png" width="14" height="14" alt="Menu"></a>
-    <a href="#">Menu</a>
-  </div>
-  <div class="topicon login-link">
-    <a class="centered-icon" href="{% if user.is_authenticated %}/logout_dialog{% else %}/login?next={{ request.get_full_path }}{% endif %}" {% if user.is_authenticated %}data-transition="none"{% else %}data-ajax="false"{% endif %}><img src="/static/css/images/user-white.png" width="14" height="14" alt="Login"></a>
-    <a href="{% if user.is_authenticated %}/logout_dialog{% else %}/login?next={{ request.get_full_path }}{% endif %}" {% if user.is_authenticated %}data-transition="none"{% else %}data-ajax="false"{% endif %}>{% if user.is_authenticated %}{{ user.first_name }}{% else %}Login{% endif %}</a>
-  </div>
+{% block navbar_header %}
+<button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
+  <span class="sr-only">Toggle navigation</span>
+  <span class="icon-bar"></span>
+  <span class="icon-bar"></span>
+  <span class="icon-bar"></span>
+</button>
 {% endblock %}
 
-{% block page_content_classes %}jqm-content{% endblock %}
-{% block page_content %}
-<div class="centered-content-wrapper" {% if options.no_navigation %}style="max-width: 90%;"{% endif %}>
-  <!-- left nav menu: -->
-  <div data-role="panel" class="jqm-navmenu-panel" data-position="left" data-display="overlay" data-theme="a" {% if options.no_navigation %}style="display: none;"{% endif %}>
-    <ul class="jqm-list ui-alt-icon ui-nodisc-icon ui-noboxshadow">
-      
-{% for node in navlinks %}
-<!-- {{ node.url }} {{ node.link }} -->
+{% block navbar %}
+<ul class="nav navbar-nav">
+  {% for node in navlinks %}
   {% if node.url %}
-      <li {% if node.icon %}data-icon="{{ node.icon }}"{% endif %}>
-        <a href="{% if node.is_reverse_url %}{% url node.url %}{% else %}{{ node.url }}{% endif %}" data-ajax="false">{{ node.name }}</a>
-      </li>
+  <li class="{% if node.is_active %}active{% endif %}">
+    <a href="{% if node.is_reverse_url %}{% url node.url %}{% else %}{{ node.url }}{% endif %}">{{ node.name }}</a>
+  </li>
   {% else %}
-      <li data-role="collapsible" data-enhanced="true" data-collapsed-icon="carat-d" data-expanded-icon="carat-u" data-iconpos="right" data-inset="false" class="ui-collapsible ui-collapsible-themed-content {% if not node.is_expanded %}ui-collapsible-collapsed{% endif %}">
-	<div class="ui-collapsible-heading {% if not node.is_expanded %}ui-collapsible-heading-collapsed{% endif %}">
-          <a href="#" class="ui-collapsible-heading-toggle ui-btn ui-btn-icon-right ui-btn-inherit ui-icon-carat-{% if node.is_expanded %}u{% else %}d{% endif %}">{{ node.name }}<span class="ui-collapsible-heading-status"> click to expand contents</span></a>
-	</div>
-	<div class="ui-collapsible-content ui-body-inherit {% if not node.is_expanded %}ui-collapsible-content-collapsed{% endif %}"
-             {% if not node.is_expanded %}aria-hidden="true"{% endif %}>
-	  <ul>
-    {% for child in node.children %}          
-            <li {% if child.icon %}data-icon="{{ child.icon }}"{% endif %}>
-              <a href="{% if child.is_reverse_url %}{% url child.url %}{% else %}{{ child.url }}{% endif %}" data-ajax="false">{{ child.name }}</a>
-            </li>
+  <li class="dropdown {% if node.is_expanded %}active{% endif %}">
+    <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">{{ node.name }}<span class="caret"></span></a>
+    <ul class="dropdown-menu">
+    {% for child in node.children %}
+    {% if child.url != "null" %}
+    <li class="{% if child.is_active %}active{% endif %}">
+      <a href="{% if child.is_reverse_url %}{% url child.url %}{% else %}{{ child.url }}{% endif %}">{{ child.name }}</a>
+    </li>
+    {% else %}
+    {% if child.name|lower == "separator" %}
+    <li class="divider" role="separator"></li>
+    {% else %}
+    <li class="dropdown-header">{{ child.name }}</li>
+    {% endif %}
+    {% endif %}
     {% endfor %}
-	  </ul>
-	</div>
-      </li>
-  {% endif %}  
-{% endfor %}
     </ul>
-  </div>
-
-  <div class="nonmenu-content" {% if options.no_navigation %}style="width: 100%; margin: 0; padding: 0;"{% endif %}> 
-  {% block centered_page_content %}{% endblock %}
-  </div>
-</div>
-{% endblock %}{% comment "centered-content-wrapper" %}{% endcomment %}
-
-{% block extra_page_content %}
-  <div data-role="popup" id="errorPopupDialog" data-overlay-theme="b" data-theme="b" data-dismissible="false" style="max-width:400px;">
-    <div data-role="header" data-theme="a">
-      <h1>Error</h1>
-    </div>
-    <div class="ui-content">
-      <h3 class="ui-title">__ERROR__</h3> <!-- to be replaced be real error message -->
-      <a href="#" class="ui-btn ui-corner-all ui-shadow ui-btn-inline ui-btn-b" data-rel="back" data-transition="flow">Ok</a>
-    </div>
-  </div>
-{% endblock %}{% comment "extra_page_content" %}{% endcomment %}
-
+  </li>
+  {% endif %}
+  {% endfor %}
+</ul>
+<button type="button" class="btn btn-default navbar-btn navbar-right" style="margin-right: 0;">{% if user.is_authenticated %}Log out{% else %}Log in{% endif %}</button>
+{% endblock %}

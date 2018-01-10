@@ -1,0 +1,32 @@
+{% extends "02_bootstrap_head.html" %}
+
+{% block html_body %}
+{% block body_header %}{% endblock %}
+{% block body_main %}
+<div class="container" role="main">
+  {% block centered_page_content %}{% endblock %}
+</div>
+{% endblock %}
+{% block body_footer %}{% endblock %}
+
+<!--    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script> -->
+<script src="/static/js/jquery.js"></script>
+<script>window.jQuery || document.write('<script src="../../assets/js/vendor/jquery.min.js"><\/script>')</script>
+<script src="/static/js/bootstrap.js"></script>
+  
+<!-- IE10 viewport hack for Surface/desktop Windows 8 bug -->
+<script src="/static/js/ie10-viewport-bug-workaround.js"></script>
+
+<script>
+{% if user and user.is_authenticated %}
+window.WSRC_user_player_id = {% if user.player %}{{ user.player.id }}{% else %}-1{% endif %};
+window.WSRC_username = "{{ user.username }}";
+{% else %}
+window.WSRC_user_player_id = -1;
+window.WSRC_username = null;
+{% endif %}
+</script>
+
+{% block body_script_extra %}{% endblock %}
+
+{% endblock %}
