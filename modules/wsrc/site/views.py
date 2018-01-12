@@ -314,6 +314,7 @@ def kiosk_view(request):
     return TemplateResponse(request, 'kiosk.html', {})
 
 def login(request, *args, **kwargs):
+    last_username = request.COOKIES.get("last_username")
     response = auth_views.login(request, *args, **kwargs)
     if request.method == "POST":
         if request.POST.get("remember_username"):
@@ -322,11 +323,10 @@ def login(request, *args, **kwargs):
                 response.set_cookie("last_username", last_username, max_age = 30 * 24 * 60 * 60)
         else:
             response.delete_cookie("last_username")
-    elif request.method == "GET":
-        last_username = request.COOKIES.get("last_username")
-        if last_username is not None:
-            response.context_data["last_username"] = last_username
-            response.context_data["remember_username"] = True
+            last_username = None
+    if last_username is not None and hasattr(response, "context_data"):
+        response.context_data["last_username"] = last_username
+        response.context_data["remember_username"] = True
     return response
 
 @login_required
