@@ -142,21 +142,20 @@ window.WSRC_homepage =
   booking_advance: (days) ->
     # Reload court bookings for appropriate date after one of the buttons has been pressed
     table = $("#evening_bookings")
-    container = table.parents(".jqm-block-content")
     basedate = table.data("basedate")
     dayoffset = parseInt(table.data("dayoffset"))
     dayoffset += days
     url = "/data/bookings?date=#{ basedate }&day_offset=#{ dayoffset }"    
-    wsrc.ajax.GET(url,
-      successCB: (data) =>
+    $.ajax(url,
+      method: "GET"
+      datatype: "json",
+      processData: true,
+      success: (data) =>
         table.data("dayoffset", dayoffset)
-        container.find("h4").html(wsrc.utils.get_day_humanized(basedate, dayoffset))
+        $("#court-date-indicator").html(wsrc.utils.get_day_humanized(basedate, dayoffset))
         this.display_court_bookings(data, dayoffset, WSRC_user_player_id?)
         return true
       failureCB: (xhr, status) =>
-        table.find("tbody").hide()
-        err_container = container.find("p").show()
-        err_container.html(xhr.responseText)    
-        return false
+        alert("ERROR #{ xhr.status }: #{ xhr.statusText }\nResponse: #{ xhr.responseText }\n\nUnable to fetch court bookings.")
     )
 
