@@ -28,7 +28,7 @@ urlpatterns = patterns('',
     url(r'^$',       wsrc.site.views.index_view),
     url(r'^home/?$', wsrc.site.views.index_view, name="homepage"),
 
-    url(r'^login/?$',  auth_views.login, {'template_name': 'login.html', 'authentication_form': SpaceTranslatingAuthenticationForm}, name='login'),
+    url(r'^login/?$',  wsrc.site.views.login, {'template_name': 'login.html', 'authentication_form': SpaceTranslatingAuthenticationForm}, name='login'),
     url(r'^logout/?$', auth_views.logout, name='logout'),
     url(r'^logout_dialog/?$', wsrc.site.views.logout_dialog_view, name='logout_dialog'),
 

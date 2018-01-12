@@ -26,6 +26,7 @@ from wsrc.utils import timezones, email_utils
 
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import PasswordChangeForm
+from django.contrib.auth import views as auth_views
 from django.forms.widgets import Textarea
 from django.middleware.csrf import get_token
 from django.core.mail import SafeMIMEMultipart, SafeMIMEText
@@ -311,6 +312,22 @@ def facebook_view(request):
 @require_safe
 def kiosk_view(request):
     return TemplateResponse(request, 'kiosk.html', {})
+
+def login(request, *args, **kwargs):
+    response = auth_views.login(request, *args, **kwargs)
+    if request.method == "POST":
+        if request.POST.get("remember_username"):
+            last_username = request.POST.get("username")
+            if last_username is not None and response.status_code == 302:
+                response.set_cookie("last_username", last_username, max_age = 30 * 24 * 60 * 60)
+        else:
+            response.delete_cookie("last_username")
+    elif request.method == "GET":
+        last_username = request.COOKIES.get("last_username")
+        if last_username is not None:
+            response.context_data["last_username"] = last_username
+            response.context_data["remember_username"] = True
+    return response
 
 @login_required
 def logout_dialog_view(request):
