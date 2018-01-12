@@ -46,6 +46,9 @@
      top: 15px;
      left: 15px;
  }
+ .form-signin > .well {
+     margin-top: 15px;
+ }
  
 </style>  
 {% endblock %}
@@ -55,15 +58,16 @@
 {% block centered_page_content %}
 <img id="tr_logo" src="/static/images/ball_logo_180x180.png" class="hidden-xs hidden-sm" />
 <form class="form-signin" method="post" action="" >{% csrf_token %}
-  {% if form.errors %}
-  <div class="form_errors">
-    <span class="form_error_message ui-btn-icon ui-btn-icon-left ui-icon-alert" style="display: inline; padding-left: 2em;">
-      Invalid username/password.
-    </span>
-    <p>Please try again or <a href="/password/reset/" class="form_error_message" data-ajax="false" style="text-decoration: underline;">reset your password</a>.</p>
-    {% endif %}
   
+  {% if form.errors %}
+  <div class="alert alert-danger" role="alert">
+    Invalid username or password.<br />
+    Please try again.
+  </div>
+  {% else %}
   <h2 class="form-signin-heading">Please sign in</h2>
+  {% endif %}
+  
   <label for="{{ form.username.id_for_label }}" class="sr-only">Username</label>
   <input name="{{ form.username.name }}" id="{{ form.username.id_for_label }}" class="form-control" placeholder="Username" required="" {% if not last_username %}autofocus=""{% endif %} value="{{ last_username }}">
   <label for="{{ form.password.id_for_label }}" class="sr-only">Password</label>
@@ -76,5 +80,6 @@
     </label>
   </div>
   <button class="btn btn-lg btn-primary btn-block" type="submit">Sign in</button>
+  <div class="well">Forgotten your username or password?<br /><a href="/password/reset/">Click here to reset</a>.</div>
 </form>
 {% endblock %}
