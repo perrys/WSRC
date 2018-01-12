@@ -38,7 +38,6 @@ urlpatterns = patterns('',
     url(r'^password/reset/complete/$',auth_views.password_reset_complete, name='password_reset_complete'),
     url(r'^password/change/$', auth_views.password_change, name='password_change'),
     url(r'^password/change/done/$', auth_views.password_change_done, name='password_change_done'),
-    url(r'^change_password/?$', wsrc.site.views.change_password_view),
 
     url(r'^memberlist/admin/?', wsrc.site.usermodel.views.admin_memberlist_view),
     url(r'^memberlist/?$', wsrc.site.usermodel.views.MemberListView.as_view(), name="member_list"),

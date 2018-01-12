@@ -313,26 +313,8 @@ def kiosk_view(request):
     return TemplateResponse(request, 'kiosk.html', {})
 
 @login_required
-def change_password_view(request):
-
-    success = False
-    if request.method == 'POST':
-        form = PasswordChangeForm(user=request.user, data=request.POST)
-        if form.is_valid():
-            form.save()
-            update_session_auth_hash(request, form.user)
-            success = True
-        return redirect(reverse_url(settings_view))
-    else:
-        form = PasswordChangeForm(user=request.user)
-
-    ctx = {"set_password_form": form}
-    return TemplateResponse(request, 'change_password.html', ctx)
-
-@login_required
 def logout_dialog_view(request):
     return TemplateResponse(request, 'logout.html')
-
 
 @login_required
 def admin_mailshot_view(request):
