@@ -34,7 +34,7 @@ class NavigationMiddleWare:
                 url = reverse(link.url) if link.is_reverse_url else link.url
                 if request.path.startswith(url):
                     nodes_map[link.parent_id] = parent._replace(is_expanded=True)
-                    link = link_t(link.pk, link.name, link.url, True)
+                    link = link_t(link.pk, link.name, url, True)
                 parent.children.append(link)
                 del nodes_map[link.pk]
             else:
