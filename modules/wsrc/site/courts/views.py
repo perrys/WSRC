@@ -428,6 +428,12 @@ def edit_entry_view(request, id=None):
         booking_form.fields[field].widget = make_readonly_widget()
     for field in hidden_fields:
         booking_form.fields[field].widget = forms.HiddenInput()
+    for field in booking_form.fields.values():
+        classes = field.widget.attrs.get('class')
+        if classes:
+            field.widget.attrs['class'] = classes + ' form-control'
+        else:
+            field.widget.attrs['class'] = 'form-control'
 
     back = request.REQUEST.get("next")
     if back is None:
