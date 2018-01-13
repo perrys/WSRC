@@ -1,15 +1,16 @@
 {% extends "06_wsrc_navigation.html" %}
+
 {% block html_header_extra %}
 {{ block.super }}
-  <meta name="robots" content="noindex" />
+<meta name="robots" content="noindex" />
+<link href="/static/css/courts.css" rel="stylesheet" />
 {% endblock %}
-{% block pagetitle %}Court Booking{% endblock %}
-{% block page_classes %}edit-entry{% endblock %}
-{% load kwacros %}
-{% loadkwacros 'form_macros.html' %}
+  
+{% block titleprefix %}Booking Detail{% endblock %}
+
 {% block centered_page_content %}
 
-<form method="POST" data-ajax="false" class="settings-form">
+<form method="POST" class="booking form-horizontal">
 <input type="hidden" name="next" value="{{ back_url }}"/>
 
 <fieldset>
@@ -18,38 +19,37 @@
 {% include "form_snippet.html" with form=booking_form %}
 
 {% if booking_form.no_show.value %}
- <div class="ui-field-contain">
-  <label>&nbsp;</label>
-  <span class="noshow">This court has been reported as unused (NO&nbsp;SHOW)</span>
- </div>
+<div class="alert alert-danger noshow_alert" role="alert">
+  This court has been reported as unused (NO&nbsp;SHOW)
+</div>
 {% endif %}
 
 <div class="buttonset">
 {% if mode ==  'create' %}
  {% if booking_form.is_valid %}
- <button class="ui-btn ui-btn-inline ui-corner-all ui-btn-icon-left ui-icon-check" type="submit">Book this Court</button>
+ <button class="btn btn-default" type="submit"><span class="glyphicon glyphicon-ok"></span>&nbsp;Book this Court</button>
  {% endif %}
 {% else %}
  {% if mode == 'update' %}
-  <button name="action" value="Update" class="ui-btn ui-btn-inline ui-corner-all ui-btn-icon-left ui-icon-check" type="submit">Update</button>
+  <button name="action" value="Update" class="btn btn-default" type="submit"><span class="glyphicon glyphicon-ok"></span>&nbsp;Update</button>
   {% if days_diff < 0 or seconds_diff < 0 %} 
-  <button name="action" value="Delete" class="ui-btn ui-btn-inline ui-corner-all ui-btn-icon-left ui-icon-delete" onclick="if (! confirm('Are you sure you want to delete this entry?\n')) return false;">Delete</button>
+  <button name="action" value="Delete" class="btn btn-default" onclick="if (! confirm('Are you sure you want to delete this entry?\n')) return false;"><span class="glyphicon glyphicon-remove"></span>&nbsp;Delete</button>
   {% endif %}
  {% endif %}
  {% if days_diff != None %} 
  {% if days_diff < 0 or days_diff == 0 and seconds_diff < 0 %} 
-  <a class="ui-btn ui-btn-inline ui-corner-all ui-btn-icon-left ui-icon-calendar" href="{% url 'cal_invite' %}/{{ booking_id }}" data-ajax='false' title="Send a calendar invite for this booking">Send Invite</a>
+  <a class="btn btn-default" href="{% url 'cal_invite' %}/{{ booking_id }}" data-ajax='false' title="Send a calendar invite for this booking"><span class="glyphicon glyphicon-calendar"></span>&nbsp;Send Invite</a>
  {% endif %}
  {% if booking_user_id and days_diff == 0 and seconds_diff > 900 %}
   {% if not booking_form.no_show.value %}                   
-   <button name="action" value="report_noshow" class="ui-btn ui-btn-inline ui-corner-all ui-btn-icon-left ui-icon-alert" onclick="if (! confirm('Are you sure you want to report this court as unused?\n')) return false;">Report a NO-SHOW</button>
+   <button name="action" value="report_noshow" class="btn btn-default" onclick="if (! confirm('Are you sure you want to report this court as unused?\n')) return false;"><span class="glyphicon glyphicon-exclamation-sign"></span>&nbsp;Report a NO-SHOW</button>
   {% else %}
-   <button name="action" value="remove_noshow" class="ui-btn ui-btn-inline ui-corner-all ui-btn-icon-left ui-icon-alert">Remove NO-SHOW</button>   
+   <button name="action" value="remove_noshow" class="btn btn-default"><span class="glyphicon glyphicon-trash"></span>&nbsp;Remove NO-SHOW</button>   
   {% endif %}
  {% endif %}
  {% endif %}
 {% endif %}
-<a class="ui-btn ui-btn-inline ui-corner-all ui-btn-icon-left ui-icon-back" href="{{ back_url }}" data-role="back" data-ajax='false'>Back</a>
+<a class="btn btn-default" href="{{ back_url }}" data-role="back"><span class="glyphicon glyphicon-step-backward"></span>&nbsp;Back</a>
 </div>
 
 </fieldset>
