@@ -231,7 +231,7 @@ def render_day_table(court_slots, date, server_time, allow_booking_shortcut):
             elif "token" in slot:
                 attrs["title"] = 'click to book'
                 if allow_booking_shortcut:
-                    attrs["onclick"] = "wsrc.court_booking.instance.handle_booking_request(event, this)"
+                    attrs["onclick"] = "handle_booking_request(event, this)"
                 else:
                     attrs["onclick"] = "document.location.href='{href}'".format(href=make_booking_link(slot))
                 classes.append("available")
