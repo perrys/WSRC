@@ -4,12 +4,15 @@
 @color-booking-system: darken(@brand-info, 30%);
 @color-booking-highlight: @gray-lighter;
 
-form.booking {
+form.booking, form.cal_invite {
     max-width: @screen-sm-min;
     padding: 15px;
     margin: 0 auto 15px auto;
     .buttonset {
         text-align: center;
+        .btn {
+            margin-top: 15px;
+        }
     }
     .noshow_alert {
         text-align: center;
