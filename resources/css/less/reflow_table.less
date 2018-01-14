@@ -1,0 +1,39 @@
+@import "variables.less";
+
+table.table-reflow {
+    .centered {
+        @media (min-width: @screen-sm-min) {
+            text-align: center;
+        }
+    }
+    
+    thead th {
+        @media (max-width: @screen-sm-min) {
+            display: none;
+        }
+    }
+    tbody tr:last-child {
+        @media (max-width: @screen-sm-min) {
+            border-bottom: 1px #ddd solid;
+        }
+    }
+    tbody td {
+        @media (max-width: @screen-sm-min) {
+            display: block;
+            border-top: 0;
+        }
+        &:first-child {
+            @media (max-width: @screen-sm-min) {
+                border-top: 1px #ddd solid;
+            }
+        }
+        & > span:first-child {
+            display: inline-block;
+            min-width: 25%;
+            font-weight: bold;
+            @media (min-width: @screen-sm-min) {
+                display: none;
+            }
+        }
+    }
+}
