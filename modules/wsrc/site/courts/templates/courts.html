@@ -18,7 +18,7 @@
       <span class="input-group-btn">
         <a class="btn btn-default previous" title="Go to previous day [Alt-P]" href='{% url "courts" %}/{{ prev_date|date:"Y-m-d" }}'><span class="glyphicon glyphicon-chevron-left"></span></a>
       </span>
-      <input type="text" class="form-control date-input" placedholder="YYYY-MM-DD" value='{{ date|date:"D, j N Y" }}'>
+      <input type="text" class="form-control date-input" placeholder="YYYY-MM-DD" value='{{ date|date:"D, j N Y" }}'>
       <div class="input-group-btn">
         <a class="btn btn-default refresh" title="Refresh all data [Alt-R]" href='{% url 'courts' %}/{{ date|date:"Y-m-d" }}'><span class="glyphicon glyphicon-refresh"></span></a>
         <a class="btn btn-default next" title="Go to next day [Alt-N]" href='{% url 'courts' %}/{{ next_date|date:"Y-m-d" }}'><span class="glyphicon glyphicon-chevron-right"></span></a>
@@ -38,7 +38,7 @@
       <span class="input-group-btn">
         <a class="btn btn-default previous" title="Go to previous day [Alt-P]" href='{% url "courts" %}/{{ prev_date|date:"Y-m-d" }}'><span class="glyphicon glyphicon-chevron-left"></span></a>
       </span>
-      <input type="text" class="form-control date-input" placedholder="YYYY-MM-DD" value='{{ date|date:"D, j N Y" }}'>
+      <input type="text" class="form-control date-input" placeholder="YYYY-MM-DD" value='{{ date|date:"D, j N Y" }}'>
       <div class="input-group-btn">
         <a class="btn btn-default refresh" title="Refresh all data [Alt-R]" href='{% url 'courts' %}/{{ date|date:"Y-m-d" }}'><span class="glyphicon glyphicon-refresh"></span></a>
         <a class="btn btn-default next" title="Go to next day [Alt-N]" href='{% url 'courts' %}/{{ next_date|date:"Y-m-d" }}'><span class="glyphicon glyphicon-chevron-right"></span></a>
@@ -46,7 +46,7 @@
     </div>
   </div>
 </form>
-<footer>
+</footer>
 
 <form id="court_booking_form" method="POST" action="{% url 'booking' %}">
 {% csrf_token %}
@@ -208,3 +208,4 @@
 </script>
 
 {% endblock %}
+
