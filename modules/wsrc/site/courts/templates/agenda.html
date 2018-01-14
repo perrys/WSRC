@@ -1,6 +1,24 @@
 {% extends "06_wsrc_navigation.html" %}
-{% block pagetitle %}My Bookings{% endblock %}
-{% load kwacros %}
+
+{% block html_header_extra %}
+{{ block.super }}
+<meta name="robots" content="noindex" />
+<link href="/static/css/reflow_table.css" rel="stylesheet" />
+<style>
+ #agenda_table {
+     margin-bottom: 5px;
+ }
+ footer {
+     margin-bottom: 30px;
+ }
+ tbody tr:last-child {
+     border-bottom: 1px #ddd solid;
+ }
+</style>
+{% endblock %}
+
+{% block titleprefix %}My Bookings - {% endblock %}
+
 {% block centered_page_content %}
 
 {% if agenda_items|length == 0 %}
@@ -8,34 +26,30 @@
   No court bookings related to {{ name }} were found.<sup>*</sup>
 </p>
 {% else %}
-<p>
-  Court bookings related to {{ name }}:<sup>*</sup>
-</p>
-<div class="wsrc-agenda-list">
-  <form>
-    <input id="filterTable-input" data-type="search" placeholder="Search . . .">
-  </form>
-  <table class="wsrc-member-list" data-role="table" data-filter="true" data-input="#filterTable-input">
-    <thead>
-      <tr><th>Name</th><th>Date</th><th class="centered">Court</th><th>Description</th><th>&nbsp;</th></tr>
-    </thead>
-    <tbody>
-      {% for item in agenda_items %}
-      <tr>
-        <td>{{ item.name }}</td>
-        <td>{{ item.start_time|date:"D j M Y g:iA" }}</td>
-        <td class="centered">{{ item.court }}</td>
-        <td>{{ item.description }}</td>
-        <td class="buttonset"><a class="ui-btn ui-btn-inline ui-corner-all ui-btn-icon-left ui-icon-action" href="{% url 'booking' %}/{{ item.event_id }}" data-ajax='false'>Details</a><a class="ui-btn ui-btn-inline ui-corner-all ui-btn-icon-left ui-icon-mail {% if item.in_the_past %}wsrc-disabled{% endif %}" href="{% if item.in_the_past %}javascript:{% else %}{% url 'cal_invite' %}/{{ item.event_id }}{% endif %}" data-ajax='false'>Send Invite</a></td>
-        <!-- {{ now }} {{ item.start_time }} -->
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
-</div>
+<h4>Court bookings related to {{ name }}:<sup>*</sup></h4>
+
+<table class="table table-striped table-reflow" id="agenda_table">
+  <thead>
+    <tr><th>Name</th><th>Date</th><th class="centered">Court</th><th>Description</th><th>&nbsp;</th></tr>
+  </thead>
+  <tbody>
+    {% for item in agenda_items %}
+    <tr>
+      <td><span>Name:</span> {{ item.name }}</td>
+      <td><span>Date:</span>{{ item.start_time|date:"D j M Y g:iA" }}</td>
+      <td class="centered"><span>Court:</span><span>{{ item.court }}</span></td>
+      <td><span>Description:</span>{{ item.description }}</td>      
+      <td class="buttonset"><span>&nbsp;</span>
+        <a class="btn btn-default" href="{% url 'booking' %}/{{ item.event_id }}">Details</a>
+        <a class="btn btn-default {% if item.in_the_past %}disabled{% endif %}" href="{% if item.in_the_past %}javascript:{% else %}{% url 'cal_invite' %}/{{ item.event_id }}{% endif %}">Send Invite</a>
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
 {% endif %}
 
-<div class="wsrc-footnote">
+<footer class="small">
   <sup>*</sup> new bookings may take a few minutes to show up in this list.
-</div>
+</footer>
 {% endblock %}
