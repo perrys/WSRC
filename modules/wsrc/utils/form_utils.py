@@ -52,6 +52,15 @@ class LabeledSelect(forms.Select):
 def make_readonly_widget():
     return forms.TextInput(attrs={'class': 'readonly', 'readonly': 'readonly', 'style': 'text-align: left'})
 
+def add_formfield_attrs(form):
+    for field in form.fields.values():
+        classes = field.widget.attrs.get('class')
+        if classes:
+            field.widget.attrs['class'] = classes + ' form-control'
+        else:
+            field.widget.attrs['class'] = 'form-control'
+    return form
+
 class SelectRelatedForeignFieldMixin(object):
     "Use in a ModelAdmin to ensure that foreign field querysets have select_related()"
     def formfield_for_foreignkey(self, db_field, request=None, **kwargs):

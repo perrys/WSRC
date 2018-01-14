@@ -41,7 +41,7 @@ from .forms import START_TIME, END_TIME, RESOLUTION, COURTS,\
     format_date, make_date_formats, validate_quarter_hour, create_notifier_filter_formset_factory,\
     BookingForm, CalendarInviteForm
 import wsrc.site.settings.settings as settings
-from wsrc.utils.form_utils import LabeledSelect, make_readonly_widget
+from wsrc.utils.form_utils import LabeledSelect, make_readonly_widget, add_formfield_attrs
 from wsrc.site.courts.models import BookingSystemEvent, EventFilter
 from wsrc.site.usermodel.models import Player
 from wsrc.utils.html_table import Table, Cell, SpanningCell
@@ -428,12 +428,7 @@ def edit_entry_view(request, id=None):
         booking_form.fields[field].widget = make_readonly_widget()
     for field in hidden_fields:
         booking_form.fields[field].widget = forms.HiddenInput()
-    for field in booking_form.fields.values():
-        classes = field.widget.attrs.get('class')
-        if classes:
-            field.widget.attrs['class'] = classes + ' form-control'
-        else:
-            field.widget.attrs['class'] = 'form-control'
+    add_formfield_attrs(booking_form)
 
     back = request.REQUEST.get("next")
     if back is None:
@@ -574,6 +569,7 @@ def calendar_invite_view(request, id):
                 pass
             form = CalendarInviteForm(initial=booking_data)
 
+    add_formfield_attrs(form)
     context = {
         'form': form,
         'id': id,
