@@ -1,27 +1,27 @@
 {% extends "06_wsrc_navigation.html" %}
-{% block pagetitle %}Court Booking{% endblock %}
-{% block page_classes %}edit-entry{% endblock %}
-{% load kwacros %}
-{% loadkwacros 'form_macros.html' %}
+
+{% block html_header_extra %}
+{{ block.super }}
+<meta name="robots" content="noindex" />
+<link href="/static/css/courts.css" rel="stylesheet" />
+{% endblock %}
+
+{% block titleprefix %}Invite - {% endblock %}
+
 {% block centered_page_content %}
-
-
-<div id="booking_calendar_invite_form">
-  <form method="POST" class="settings-form" data-ajax="false" >
-    <fieldset>
+<form method="POST" class="form-horizontal cal_invite">{% csrf_token %}
+  <fieldset>
     <legend>Send Calendar Event</legend>
-    {% csrf_token %}
+    
     <input type="hidden" name="next" value="{{ back_url }}"/>
 
     {% include "form_snippet.html" %}
     
-<div class="buttonset">
-  <button class="ui-btn ui-btn-inline ui-corner-all ui-btn-icon-left ui-icon-check">Send Invite</button>
-  <a data-referer="{{ referer }}" class="ui-btn ui-btn-inline ui-corner-all ui-btn-icon-left ui-icon-back" href="{{ back_url }}" data-role="back" data-ajax='false'>Back</a>
-</div>
-</fieldset>
-  </form>
-</div>
-
+    <div class="buttonset">
+      <button class="btn btn-default"><span class="glyphicon glyphicon-ok"></span>&nbsp;Send&nbsp;Invite</button>
+      <a class="btn btn-default" href="{{ back_url }}" data-role="back"><span class="glyphicon glyphicon-step-backward"></span>&nbsp;Back</a>
+    </div>
+  </fieldset>
+</form>
 {% endblock %}
 
