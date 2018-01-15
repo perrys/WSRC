@@ -14,7 +14,7 @@ all: all.min.js all_admin.js all_admin_mailshot.js all_admin_accounts.js all_adm
 %.min.js: %.js
 	$(MINIFY) $< -o $@
 
-ORDERED_MAIN_JS_SRCS = _jquery.js pre_jqm.js _jquery.mobile.js _jquery.ui.datepicker.js legacy_shims.js jquery.bxslider.js wsrc_utils.js wsrc_ajax.js wsrc_homepage.js wsrc_notifiers.js wsrc_tournaments.js wsrc_boxes.js wsrc_result_form.js wsrc_court_booking.js wsrc.js 
+ORDERED_MAIN_JS_SRCS = _jquery.js _jquery.ui.datepicker.js legacy_shims.js wsrc_utils.js wsrc_ajax.js wsrc_homepage.js wsrc_notifiers.js wsrc_tournaments.js wsrc_boxes.js wsrc_result_form.js wsrc_court_booking.js wsrc.js 
 
 all.js: $(ORDERED_MAIN_JS_SRCS)
 	cat $(ORDERED_MAIN_JS_SRCS) > $@
@@ -37,9 +37,6 @@ all_admin_boxes.js: _jquery.js _jquery-ui.js jquery.loadmask.js wsrc_utils.js ws
 _jquery.js:
 	wget http://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.js -O $@
 
-
-_jquery.mobile.js:
-	wget http://ajax.googleapis.com/ajax/libs/jquerymobile/1.4.3/jquery.mobile.js -O $@
 
 _jquery-ui.js:
 	wget https://ajax.googleapis.com/ajax/libs/jqueryui/1.11.2/jquery-ui.js -O $@
