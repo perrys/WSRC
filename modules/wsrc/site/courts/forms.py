@@ -25,7 +25,7 @@ from django.forms.models import modelformset_factory
 from django import forms
 
 from wsrc.utils import timezones
-from wsrc.utils.form_utils import make_readonly_widget, LabeledSelect, CachingModelMultipleChoiceField
+from wsrc.utils.form_utils import make_readonly_widget, LabeledSelect, CachingModelMultipleChoiceField, add_formfield_attrs
 from wsrc.site.courts.models import DayOfWeek, EventFilter
 
 COURTS = [1, 2, 3]
@@ -168,6 +168,9 @@ class NotifierForm(forms.ModelForm):
     class Meta:
         model = EventFilter
         fields = ["earliest", "latest", "notice_period_minutes", "days", "player"]
+    def __init__(self, *args, **kwargs):
+        super(NotifierForm, self).__init__(*args, **kwargs)
+        add_formfield_attrs(self)
  
 def create_notifier_filter_formset_factory(max_number):
     time_choices = [
