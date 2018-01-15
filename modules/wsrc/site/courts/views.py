@@ -614,9 +614,6 @@ def notifier_view(request):
     initial = [{'player': player}] * (max_filters)
     if request.method == 'POST':
         eformset = filter_formset_factory(request.POST, queryset=events, initial=initial)
-        print "valid: " + str(eformset.is_valid())
-        for form in eformset:
-            print form.has_changed()
         if eformset.is_valid():
             with transaction.atomic():
                 for form in eformset:
