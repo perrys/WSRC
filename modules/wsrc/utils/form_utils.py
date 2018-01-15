@@ -54,6 +54,8 @@ def make_readonly_widget():
 
 def add_formfield_attrs(form):
     for field in form.fields.values():
+        if hasattr(field.widget, "get_renderer"): # radio and checkbox widgets
+            continue
         classes = field.widget.attrs.get('class')
         if classes:
             field.widget.attrs['class'] = classes + ' form-control'
