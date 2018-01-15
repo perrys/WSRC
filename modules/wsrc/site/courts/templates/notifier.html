@@ -1,68 +1,125 @@
 {% extends "06_wsrc_navigation.html" %}
-{% block pagetitle %}Standby Emails{% endblock %}
-{% load kwacros %}
-{% loadkwacros 'form_macros.html' %}
+
+{% block html_header_extra %}
+{{ block.super }}
+<meta name="robots" content="noindex" />
+<link href="/static/css/courts.css" rel="stylesheet" />
+<style>
+ .toggled {
+     display: none;
+ }
+ form.notifier select {
+     width: auto;
+     display: inline-block;
+ }
+ form.notifier legend {
+     border-bottom: 0;
+ }
+ .notifier_fieldset {
+     padding-bottom: 15px;
+     padding-top: 15px;
+     border-bottom: 1px #ddd solid;
+ }
+ .notifier_fieldset:first-child {
+     border-top: 1px #ddd solid;
+ }
+</style>
+{% endblock %}
+
+{% block titleprefix %}Standby Emails - {% endblock %}
+
 {% block centered_page_content %}
 
-<form id="notifiers_form" method="post" action="{% url 'notifier' %}" data-ajax="false" class="toggle-root">
-
+<form method="POST" class="notifier form-horizontal">{% csrf_token %}
+  <div class="well">
   <p>
   When a court booking is cancelled by someone else, the system can send you an email, giving you the opportunity to book the slot for yourself. This can be a good way to pick up  &lsquo;secondary&rsquo; peak-time court slots.
   </p>
   <p>
-  You can configure notifications for court slots at different times of day and different days in the week<sup>*</sup>. You currently have {{ n_notifiers }} notifier{{ n_notifiers|pluralize }} set up.
-  <br />
-  <span class="helptext">
-    <sup>*</sup>In setting up a notifier, you are consenting for the club to send you emails relating to court cancellations. You may withdraw your consent at any time by deleting all notifiers.
-  </span>
+    You can configure notifications for court slots at different times of day and different days in the week.<sup>*</sup> You currently have <strong>{{ n_notifiers }}</strong> notifier{{ n_notifiers|pluralize }} set up.
   </p>
-
-  {% csrf_token %}
+  </div>
 
   {% if form_saved %}
-  <div class="form_success_message">Notification settings saved.</div>
+  <div class="alert alert-success">Notification settings saved.</div>
   {% endif %}
 
   {% if notify_formset.total_error_count %}
-  <span class="form_error_message ui-btn-icon ui-btn-icon-left ui-icon-alert">Validation Error. Please correct the problem(s) below and resubmit.</span>
-  <!-- {{ notify_formset.errors }} -->
+  <div class="alert alert-danger">
+    Validation Error. Please correct the problem(s) below and resubmit.
+  </div>
   {% endif %}
-
     
   {{ notify_formset.management_form }}
+
+  <div class="fields">
   {% for form in notify_formset %}
   <div class="notifier_fieldset {% if forloop.counter > n_notifiers and form.errors|length == 0 %}toggled{% else %}togglable{% endif %}"
        id="fieldset-{{ forloop.counter0 }}" data-fieldset-id="{{ forloop.counter0 }}">
   <fieldset class="notifier">
-    <legend>Notifier</legend>
-    {% for err in form.non_field_errors %}
-    <div class="form_error_message">Error: {{ err }}</div>
-    {% endfor %}
-    
-    {{ form.id }}
-    {% usekwacro createradiofield form.days %}
-    <div class="ui-field-contain {% if form.earliest.errors or form.latest.errors %}field-error{% endif %}">
-      <label>Times:</label>{{ form.earliest }}<span class="ui-btn-inline">&nbsp;to&nbsp;</span>{{ form.latest }}
-      {% if form.earliest.errors or form.latest.errors %}<div class="clear-all"></div><label>&nbsp;</label><span class="field-error">{% for err in form.earliest.errors %}{{ err }}. {% endfor %}{% for err in form.latest.errors %}{{ err }}. {% endfor %}</span>{% endif %}
+    {% if form.non_field_errors %}
+    <div class="alert alert-danger">
+      {% for err in form.non_field_errors %}
+      {{ err }}<br />
+      {% endfor %}
     </div>
-      
-    {% usekwacro createfield form.notice_period_minutes %}
-    <input id="{{ form.DELETE.id_for_label }}" name="{{ form.DELETE.html_name }}" type="hidden" class="delete" />
+    {% endif %}
+    
     {{ form.player }}
+    {{ form.id }}
+    <div class="form-group {% if form.days.errors %}has-error{% endif %}">
+      <label class="col-sm-3 control-label" for="{{ form.days.id_for_label }}">{{ form.days.label }}:</label>
+      <div class="col-sm-9">
+        {% for choice in form.days %}
+        <label class="checkbox-inline">{{ choice.tag }}&nbsp;{{ choice.choice_label }}</label>
+        {% endfor %}
+        {% if form.days.errors %}
+        <span class="help-block">{% for err in form.days.errors %}{{ err }}. {% endfor %}</span>
+        {% endif %}
+      </div>
+    </div>
+    <div class="form-group {% if form.earliest.errors or form.latest.errors %}has-error{% endif %} time-fields">
+      <label class="col-sm-3 control-label">Times:</label>
+      <div class="col-sm-9">
+        {{ form.earliest }}&nbsp;to&nbsp;{{ form.latest }}
+        {% if form.earliest.errors or form.latest.errors %}
+        <span class="help-block">{% for err in form.earliest.errors %}{{ err }}. {% endfor %}{% for err in form.latest.errors %}{{ err }}. {% endfor %}</span>        
+        {% endif %}
+      </div>
+    </div>
 
-    <button class="delete" data-inline="True" data-icon="delete" type="button">Delete this Notifier</button>
+    <div class="form-group {% if form.notice_period_minutes.errors %}has-error{% endif %}">
+      <span class="col-sm-3 control-label">{{ form.notice_period_minutes.label_tag }}</span>
+      <div class="col-sm-9">
+        {{ form.notice_period_minutes }}
+        {% if form.notice_period_minutes.errors %}
+        <span class="help-block">{% for err in form.notice_period_minutes.errors %}{{ err }}. {% endfor %}</span>
+        {% endif %}
+      </div>
+    </div>
+
+    <input id="{{ form.DELETE.id_for_label }}" name="{{ form.DELETE.html_name }}" type="hidden" class="delete" />
+    <button class="btn btn-default delete pull-right" type="button"><span class="glyphicon glyphicon-remove"></span>&nbsp;Delete this Notifier</button>
   </fieldset>
   </div>
   {% endfor %}
+  </div>
   
   <div class="buttonset">
-    <button class="ui-btn ui-btn-inline ui-corner-all ui-btn-icon-left ui-icon-plus" id="add-notifier-button" type="button">Add a Notifier</button>
-    <button class="ui-btn ui-btn-inline ui-corner-all ui-btn-icon-left ui-icon-check" name="action" value="Update" type="submit">Save Changes</button>
+    <button class="btn btn-default" id="add-notifier-button" type="button"><span class="glyphicon glyphicon-plus"></span>&nbsp;Add a Notifier</button>
+    <button class="btn btn-default" name="action" value="Update" type="submit"><span class="glyphicon glyphicon-ok"></span>&nbsp;Save Changes</button>
   </div>
 
+  <footer class="small">
+    <sup>*</sup>In setting up a notifier, you are consenting for the club to send you emails relating to court cancellations. You may withdraw your consent at any time by deleting all notifiers.
+  </span>
 </form>
-<script>
-  wsrc.notifiers.onReady()
-</script>
 
+{% endblock %}
+
+{% block body_script_extra %}
+<script src="/static/js/wsrc_notifiers.js"></script>
+<script>
+ wsrc.notifiers.onReady()
+</script>
 {% endblock %}
