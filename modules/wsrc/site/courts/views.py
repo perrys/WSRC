@@ -29,7 +29,7 @@ from django.core.exceptions import SuspiciousOperation, PermissionDenied
 from django.core.mail import SafeMIMEMultipart, SafeMIMEText
 from django.core.urlresolvers import reverse as reverse_url
 from django.db import transaction
-from django.http import HttpResponse
+from django.http import HttpResponse, HttpResponsePermanentRedirect
 from django.db.models import Q
 from django.shortcuts import redirect
 from django.template.response import TemplateResponse
@@ -251,7 +251,6 @@ def render_day_table(court_slots, date, server_time, allow_booking_shortcut):
     table_head = "<thead><tr><td class='time-col'></td>{courts}<td class='time-col'></td></tr></thead>".format(courts=court_headers)
     return table.toHtmlString(table_head)
 
-
 @require_safe
 def day_view(request, date=None):
     if date is None:
@@ -273,6 +272,12 @@ def day_view(request, date=None):
     }
     return TemplateResponse(request, 'courts.html', context)
 
+def day_view_redirect(request, date=None):
+    url = reverse_url(day_view)
+    if date is not None:
+        url += "/" + date
+    return HttpResponsePermanentRedirect(url)
+    
 @login_required
 def edit_entry_view(request, id=None):
     player = Player.get_player_for_user(request.user)
