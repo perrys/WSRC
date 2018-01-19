@@ -21,38 +21,6 @@ from rest_framework.exceptions import ValidationError
 from wsrc.site.usermodel.models import Player
 from wsrc.site.competitions.models import CompetitionGroup, Competition, Match, Entrant, CompetitionRound
 
-SCORE_TO_POINTS_MAPPING = {3 : {0: (7, 2), 1: (6, 3), 2: (5, 4)},
-                           2 : {0: (4, 2), 1: (4, 3), 2: (4, 4)},
-                           1 : {0: (3, 2), 1: (3, 3)},
-                           0 : {0: (2, 2)}}
-
-def toPoints(x, y):
-    if x > y:
-        tup = (x, y)
-        reverse = False
-    else:
-        tup = (y, x)
-        reverse = True
-    if tup[0] == 999:
-        total = (7, 0)
-    else:
-        total = SCORE_TO_POINTS_MAPPING[tup[0]][tup[1]]
-    if reverse:
-        return (total[1], total[0])
-    return total
-
-def get_box_league_points(match, scores=None):
-    if scores is None:
-        scores = match.get_scores()
-    if match.walkover is not None:
-        points = (match.walkover == 1) and [7, 2] or [2, 7]
-    else:
-        sets_won = match.get_sets_won(scores)
-        points = None
-        if sets_won is not None:
-            points = toPoints(min(sets_won[0], 3), min(sets_won[1], 3))
-    return points
-
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
@@ -147,7 +115,7 @@ class StatusField(serializers.CharField):
 class CompactMatchField(serializers.RelatedField):
     def to_representation(self, match):
         scores = match.get_scores()
-        points = get_box_league_points(match, scores)
+        points = match.get_box_league_points(scores)
         return {"id": match.id,
                 "competition_match_id": match.competition_match_id,
                 "last_updated": match.last_updated,
