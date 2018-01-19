@@ -3,11 +3,8 @@
 {% block titleprefix %}{{ competition.name }} - {% endblock %}
 
 {% block html_header_extra %}
-{{ block.super }}
 <meta name="robots" content="noindex" />
-<script>
- var wsrc_boxes_data = {"matches": {}};
-</script>
+{{ block.super }}
 <style>
  .center {
      text-align: center;
@@ -132,9 +129,9 @@
 <div id="drop_clear" class="clearfix"></div>
 
 <ul class="nav nav-tabs header">
-  <li role="presentation" {% if view_type == "boxes"   %}class="active"{% endif %}><a href="?view=boxes">Boxes</a></li>
-  <li role="presentation" {% if view_type == "tables"  %}class="active"{% endif %}><a href="?view=tables">Tables</a></li>
-  <li role="presentation" {% if view_type == "results" %}class="active"{% endif %}><a href="?view=results">Match Results</a></li>
+  <li role="presentation" {% if view_type == "boxes"   %}class="active"{% endif %}><a href="?view=boxes" onclick="return setview(this)">Boxes</a></li>
+  <li role="presentation" {% if view_type == "tables"  %}class="active"{% endif %}><a href="?view=tables" onclick="return setview(this)">Tables</a></li>
+  <li role="presentation" {% if view_type == "results" %}class="active"{% endif %}><a href="?view=results" onclick="return setview(this)">Match Results</a></li>
 </ul>
 
 {% if not user.is_authenticated %}
@@ -157,10 +154,10 @@
         </div>
         <h3 class="panel-title">{% if user.is_authenticated %}<a href="{% url 'member_list' %}?filter-ids={% for e in box_config.entrants %}{% if e.player1__id %}{% if forloop.counter0 > 0 %},{% endif %}{{ e.player1__id }}{% endif %}{% endfor %}">{% endif %}{{ box_config.name }}{% if user.is_authenticated %}</a>{% endif %}</h3>
       </div>
-      <div class="panel-body" data-id="{{ box_config.id }}">
-        <div {% if view_type != "boxes" %}style="display: none;"{% endif %}>{{ box_config.box_table|safe }}</div>
-        <div {% if view_type != "tables" %}style="display: none;"{% endif %}>{{ box_config.league_table|safe }}</div>
-        <div {% if view_type != "results" %}style="display: none;"{% endif %}>
+      <div class="panel-body table-container" data-id="{{ box_config.id }}">
+        <div class="boxes"   {% if view_type != "boxes" %}style="display: none;"{% endif %}>{{ box_config.box_table|safe }}</div>
+        <div class="tables" {% if view_type != "tables" %}style="display: none;"{% endif %}>{{ box_config.league_table|safe }}</div>
+        <div class="results" {% if view_type != "results" %}style="display: none;"{% endif %}>
           <table class="table table-condensed results">
             <thead>
               <tr><th>Player</th><th colspan="5" class="center">Scores</th><th class="center">Pts</th></tr>
@@ -205,8 +202,29 @@
 
 
 {% block body_script_extra %}
-<script src="/static/js/wsrc_boxes.js"></script>
 <script>
- wsrc.boxes.onReady(wsrc_boxes_data)
+ function setview(target) {
+     var params = target.href.split("?")[1].split("&");
+     var view = null;
+     for (var idx in params) {
+         var vals = params[idx].split("=");
+         if (vals[0] === "view") {
+             view = vals[1];
+             break;
+         }
+     }
+     if (view && history) {
+         $(".table-container > *").hide();
+         $(".table-container > ." + view).show();
+         var tabs = $("ul.header li")
+         tabs.removeClass("active");
+         tabs.each(function(idx, elt) {
+             if (elt.firstElementChild == target)
+                 $(elt).addClass("active");
+         });
+         history.pushState({}, "", target.href);
+         return false;
+     }
+ }
 </script>
 {% endblock %}
