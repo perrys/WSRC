@@ -2,7 +2,7 @@
 class WSRC_notifiers_view
 
   constructor: () ->
-    @form = $('#notifiers_form')
+    @form = $('form.notifier')
 
   get_last_notifier: () ->
     fieldsets = @form.find("div.notifier_fieldset")
@@ -20,7 +20,8 @@ class WSRC_notifiers_view
       
 
   get_max_num_notifiers: () ->
-    wsrc.utils.to_int(@form.find("input[name='form-MAX_NUM_FORMS']").val())
+    val = @form.find("input[name='form-MAX_NUM_FORMS']").val()
+    parseInt(val, 10)
     
   set_notifier_deleted: (n, val) ->
     fieldset = @form.find("#fieldset-#{ n }")
@@ -62,5 +63,7 @@ class WSRC_notifiers_controller
     @instance = new WSRC_notifiers_controller()
     
 
-wsrc.notifiers = WSRC_notifiers_controller
+unless window.wsrc?
+  window.wsrc = {}
+window.wsrc.notifiers = WSRC_notifiers_controller
 
