@@ -16,7 +16,7 @@
 from wsrc.site.models import EmailContent
 from wsrc.site.usermodel.models import Player
 from wsrc.site.competitions.models import Competition, CompetitionGroup, Match, Entrant
-from wsrc.site.competitions.serializers import CompetitionSerializer, CompetitionGroupSerializer, MatchSerializer, get_box_league_points
+from wsrc.site.competitions.serializers import CompetitionSerializer, CompetitionGroupSerializer, MatchSerializer
 from wsrc.utils.html_table import Table, Cell, SpanningCell, merge_classes
 from wsrc.utils.text import obfuscate
 from wsrc.utils.timezones import parse_iso_date_to_naive
@@ -325,7 +325,7 @@ class BoxesTemplateViewBase(BoxesViewBase, TemplateView):
             e1 = entrants[match.team1_id]
             e2 = entrants[match.team2_id]
             scores = match.get_scores()
-            points = get_box_league_points(match, scores)
+            points = match.get_box_league_points(scores)
             winner = match.get_winner(scores, True)
             def totalize(entrant, other_entrant, idx):
                 other_idx = 1 if idx == 0 else 0
@@ -388,7 +388,7 @@ class BoxesTemplateViewBase(BoxesViewBase, TemplateView):
             "data-entrant_id": str(entrant["id"]),
         }
         if auth_user_id is not None:
-            content = u"<a href='{url}?filter-ids={id}' class='ui-link'>{content}</a>".format(url=reverse("member_list"), id=entrant["player1__id"], content=content)
+            content = u"<a href='{url}?filter-ids={id}'>{content}</a>".format(url=reverse("member_list"), id=entrant["player1__id"], content=content)
             if auth_user_id == entrant["player1__user__id"]:
                 merge_classes(attrs, "wsrc-currentuser")
         return Cell(content, attrs, isHeader=True, isHTML=True)
@@ -403,7 +403,7 @@ class BoxesTemplateViewBase(BoxesViewBase, TemplateView):
             "data-name": competition.name,
         }
         attrs.update(self.box_table_attrs)
-        merge_classes(attrs, "boxes boxtable ui-table")
+        merge_classes(attrs, "boxes table")
         table = Table(n+3, n+1, attrs)
         table.addCell(SpanningCell(2, 1, "", {"class": "noborder"}), 0, 0)
         for i in range(0, n):
@@ -415,12 +415,12 @@ class BoxesTemplateViewBase(BoxesViewBase, TemplateView):
             cell = self.create_entrant_cell(entrant, auth_user_id)
             table.addCell(cell, 0, i+1)
         for i in range(len(entrants), n):
-            table.addCell(Cell("", {"class": "noborder"}, isHeader=True), 0, i+1)
+            table.addCell(Cell("", {"class": "player"}, isHeader=True), 0, i+1)
         attrs = {"class": "number"}
         for match in matches:
             p1 = entrant_id_to_index_map[match.team1_id]
             p2 = entrant_id_to_index_map[match.team2_id]
-            points = get_box_league_points(match)
+            points = match.get_box_league_points()
             table.addCell(Cell(points[0], attrs), p2+2, p1+1)
             table.addCell(Cell(points[1], attrs), p1+2, p2+1)
         for i, entrant in enumerate(entrants):
@@ -433,7 +433,7 @@ class BoxesTemplateViewBase(BoxesViewBase, TemplateView):
             "data-name": competition.name,
         }
         attrs.update(self.league_table_attrs)
-        merge_classes(attrs, "boxes leaguetable ui-table")
+        merge_classes(attrs, "leagues table")
 
         fields = ["P", "W", "D", "L", "F", "A", "Pts"]
         table = Table(len(fields)+1, len(entrants)+1, attrs)
@@ -476,7 +476,8 @@ class BoxesTemplateViewBase(BoxesViewBase, TemplateView):
         context["boxes"] = boxes = []
         max_players = 0
         previous_cfg = None
-        all_matches = [m for m in Match.objects.filter(competition__group=group)]
+        all_matches = Match.objects.filter(competition__group=group).select_related("team1__player1__user", "team2__player1__user")
+        all_matches = [m.cache_scores() for m in all_matches]
         all_entrants = self.get_all_entrants(group, self.request.user.is_authenticated())
         all_leagues = [c for c in group.competition_set.all()]
         for comp in all_leagues:
@@ -501,24 +502,15 @@ class BoxesTemplateViewBase(BoxesViewBase, TemplateView):
 
 class BoxesUserView(BoxesTemplateViewBase):
     template_name = "boxes.html"
-    league_table_attrs = {"style": "display: none;"}
+    league_table_attrs = {}
     reverse_url_name = "boxes"
 
     def get_context_data(self, **kwargs):
         context = super(BoxesUserView, self).get_context_data(**kwargs)
-        for box in context["boxes"]:
-            def serialize(m):
-                data = MatchSerializer(m).data
-                scores = m.get_scores()
-                data["scores"] = scores
-                data["points"] = get_box_league_points(m, scores)
-                return data
-            matches_data = [serialize(m) for m in box["matches"]]
-            box["matches_data"] = JSON_RENDERER.render(matches_data)
-
         set_view_options(self.request, context)
         if "no_navigation" in context["options"]:
             del context["selector"]
+        context["view_type"] = self.request.GET.get("view") or "boxes"
         return context
 
 class BoxesPreviewView(BoxesUserView):
