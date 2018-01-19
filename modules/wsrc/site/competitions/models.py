@@ -21,6 +21,29 @@ import wsrc.site.usermodel.models as user_models
 
 # Create your models here.
 
+class BoxLeaguePoints:
+    SCORE_TO_POINTS_MAPPING = {3 : {0: (7, 2), 1: (6, 3), 2: (5, 4)},
+                               2 : {0: (4, 2), 1: (4, 3), 2: (4, 4)},
+                               1 : {0: (3, 2), 1: (3, 3)},
+                               0 : {0: (2, 2)}}
+    @classmethod
+    def toPoints(self_cls, x, y):
+        if x > y:
+            tup = (x, y)
+            reverse = False
+        else:
+            tup = (y, x)
+            reverse = True
+        if tup[0] == 999:
+            total = (7, 0)
+        else:
+            total = self_cls.SCORE_TO_POINTS_MAPPING[tup[0]][tup[1]]
+        if reverse:
+            return (total[1], total[0])
+        return total
+    
+    
+
 class CompetitionGroup(models.Model):
     """A grouping of competitions, e.g. a set of league boxes"""
     GROUP_TYPES = (
@@ -133,6 +156,14 @@ class Match(models.Model):
     walkover = models.IntegerField(blank=True, null=True, choices=WALKOVER_RESULTS)
     last_updated = models.DateTimeField(auto_now=True)
 
+    def __init__(self, *args, **kwargs):
+        super(Match, self).__init__(*args, **kwargs)
+        self.cached_scores = None
+
+    def cache_scores(self):
+        self.cached_scores = self.get_scores()
+        return self
+
     def clean(self):
         """Validates the model before it is saved to the database - used when
            data is uploaded in forms e.g. by the generic admin pages."""
@@ -153,6 +184,8 @@ class Match(models.Model):
         return (self.team1_score1 is None or self.team2_score1 is None) and self.walkover is None
 
     def get_scores(self):
+        if self.cached_scores is not None:
+            return self.cached_scores
         def getScore(n):
             s1 = getattr(self, "team1_score%d" % n)
             s2 = getattr(self, "team2_score%d" % n)
@@ -162,8 +195,9 @@ class Match(models.Model):
         scores = [getScore(n) for n in range(1,6)]
         return [score for score in scores if score is not None]
 
-    def get_scores_display(self):
-        scores = self.get_scores()
+    def get_scores_display(self, scores=None):
+        if scores is None:
+            scores = self.get_scores()
         def fmt(s):
             return "-".join([i is not None and "%d" % (i,) or "(None)" for i in s])
         return ", ".join([fmt(s) for s in scores])
@@ -174,10 +208,34 @@ class Match(models.Model):
             scores = self.get_scores()
         if len(scores) == 0:
             return None
-        t1wins = reduce(lambda total, val: (val[0] > val[1]) and total+1 or total, scores, 0)
-        t2wins = reduce(lambda total, val: (val[1] > val[0]) and total+1 or total, scores, 0)
+        t1wins = t2wins = 0
+        for score in scores:
+            if score[0] > score[1]:
+                t1wins += 1
+            elif score[1] > score[0]:
+                t2wins += 1
         return (t1wins, t2wins)
 
+    def get_box_league_points(self, scores=None):
+        if self.walkover is not None:
+            points = (self.walkover == 1) and [7, 2] or [2, 7]
+        else:
+            if scores is None:
+                scores = self.get_scores()
+            sets_won = self.get_sets_won(scores)
+            points = (0, 0)
+            if sets_won is not None:
+                points = BoxLeaguePoints.toPoints(min(sets_won[0], 3), min(sets_won[1], 3))
+        return points
+
+    def get_box_league_points_team1(self, scores=None):
+        points = self.get_box_league_points(scores)
+        return points[0]
+    
+    def get_box_league_points_team2(self, scores=None):
+        points = self.get_box_league_points(scores)
+        return points[1]
+    
     def get_winner(self, scores=None, key_only=False):
         def get_entrant(i):
             attr = "team{i}".format(i=i)
