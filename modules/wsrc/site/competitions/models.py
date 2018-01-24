@@ -14,7 +14,7 @@
 # along with WSRC.  If not, see <http://www.gnu.org/licenses/>.
 
 from django.db import models
-from django.core.exceptions import ValidationError
+from django.core.exceptions import ValidationError, NON_FIELD_ERRORS
 import wsrc.utils.bracket
 
 import wsrc.site.usermodel.models as user_models
@@ -169,12 +169,32 @@ class Match(models.Model):
            data is uploaded in forms e.g. by the generic admin pages."""
         if self.team1 is None and self.team2 is None:
             raise ValidationError("Match must have at least one entrant")
+        entrants = [entrant.pk for entrant in self.competition.entrant_set.all()]
         def is_entrant(e):
-            return e is None or self.competition.entrant_set.filter(id=e.id).count() == 1
+            return e is None or e.pk in entrants
         if not is_entrant(self.team1):
             raise ValidationError("{entrant} is not part of this competition".format(entrant=self.team1))
         if not is_entrant(self.team2):
             raise ValidationError("{entrant} is not part of this competition".format(entrant=self.team2))
+        if self.team1 == self.team2:
+            raise ValidationError("Two opponents in the same match must be different!")
+        if self.walkover is None and (self.team1_score1 is None or self.team2_score1 is None):
+            raise ValidationError("Require at least one score in a match, or a walkover")
+
+    def validate_unique(self, exclude):
+        super(Match, self).validate_unique(exclude)
+        matches = self.competition.match_set
+        if self.pk:
+            matches = matches.exclude(pk=self.pk)
+        def order(id1, id2):
+            if id1 > id2:
+                return (id1, id2)
+            return (id2, id1)
+        opponents = dict([(order(match.team1_id, match.team2_id), match) for match in matches.all()])
+        existing = opponents.get(order(self.team1_id, self.team2_id))
+        if existing is not None:
+            err = "A match with the same opponents already exists for this competition"
+            raise ValidationError({NON_FIELD_ERRORS: ValidationError(err, code="match_exists", params={"match": existing})})
 
     def get_team(self, team_number_1_or_2):
         entrant = getattr(self, "team%(team_number_1_or_2)d" % locals())
