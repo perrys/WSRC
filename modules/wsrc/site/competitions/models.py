@@ -247,7 +247,7 @@ class Match(models.Model):
         buf = u""
         if self.competition_match_id:
             buf += "[{id}] ".format(id=self.competition_match_id)
-        buf += "{teams} @{timestamp:%Y-%m-%dT%H:%M}".format(teams=teams, timestamp=self.last_updated)
+        buf += u"{teams} @{timestamp:%Y-%m-%dT%H:%M}".format(teams=teams, timestamp=self.last_updated)
         return buf
     class Meta:
         verbose_name_plural = "matches"
