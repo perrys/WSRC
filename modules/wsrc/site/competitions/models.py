@@ -99,8 +99,16 @@ class Entrant(models.Model):
             return opponents[0].user.get_full_name()
         return " & ".join([p.get_short_name() for p in opponents])
 
+    def get_players_as_string_ordered(self):
+        opponents = self.get_players()
+        if opponents is None:
+            return None
+        if len(opponents) == 1:
+            return opponents[0].get_ordered_name()
+        return " & ".join([p.get_ordered_name() for p in opponents])
+
     def __unicode__(self):
-        result = u"[{id}] {team}".format(id=self.id, team=self.get_players_as_string())
+        result = u"{team} [{id}]".format(id=self.id, team=self.get_players_as_string_ordered())
         if self.handicap:
             result += " ({hcap}{suffix})".format(hcap=self.handicap, suffix=self.hcap_suffix or "")
         else:
