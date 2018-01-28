@@ -49,7 +49,7 @@ class MatchForm(forms.ModelForm):
     entrant_queryset = get_related_field_limited_queryset(comp_models.Match.team1.field)\
                       .select_related("player1__user", "player2__user")
     team1 = CachingModelChoiceField(queryset=entrant_queryset)
-    team2 = CachingModelChoiceField(queryset=entrant_queryset)
+    team2 = CachingModelChoiceField(queryset=entrant_queryset, required=False)
     comp_queryset = get_related_field_limited_queryset(comp_models.Entrant.competition.field)\
                       .select_related("group")
     competition = CachingModelChoiceField(queryset=comp_queryset)
@@ -129,6 +129,7 @@ class MatchAdminForm(MatchForm):
         super(MatchAdminForm, self).__init__(*args, **kwargs)
         self.fields['team1'].queryset = self.fields['team2'].queryset =\
                                         self.instance.competition.entrant_set.select_related()
+        self.fields['team1'].required = self.fields['team2'].required = False
 
 class MatchAdmin(admin.ModelAdmin):
     form = MatchAdminForm
