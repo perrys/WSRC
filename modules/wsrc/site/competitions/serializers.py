@@ -138,9 +138,13 @@ class CompetitionSerializer(serializers.ModelSerializer):
 
     def __init__(self, *args, **kwargs):
         expanded = False
+        exclude_entrants = False
         if "expand" in kwargs:
             expanded = True
             del kwargs["expand"]
+        if "exclude_entrants" in kwargs:
+            exclude_entrants = True
+            del kwargs["exclude_entrants"]
         elif "context" in kwargs:
             queryParams = kwargs["context"]["request"].GET
             expanded = "expand" in queryParams
@@ -150,6 +154,8 @@ class CompetitionSerializer(serializers.ModelSerializer):
 
         if not expanded:
             self.fields.pop("matches")
+        if exclude_entrants:
+            self.fields.pop("entrants")
 
     def update_entrants(self, instance, entrants):
         for e in instance.entrant_set.all():
