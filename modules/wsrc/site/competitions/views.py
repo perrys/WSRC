@@ -13,10 +13,11 @@
 # You should have received a copy of the GNU General Public License
 # along with WSRC.  If not, see <http://www.gnu.org/licenses/>.
 
+from .forms import MatchScoresForm
 from wsrc.site.models import EmailContent
 from wsrc.site.usermodel.models import Player
 from wsrc.site.competitions.models import Competition, CompetitionGroup, Match, Entrant
-from wsrc.site.competitions.serializers import CompetitionSerializer, CompetitionGroupSerializer, MatchSerializer
+from wsrc.site.competitions.serializers import CompetitionSerializer, CompetitionGroupSerializer, MatchSerializer, EntrantSerializer
 from wsrc.utils.html_table import Table, Cell, SpanningCell, merge_classes
 from wsrc.utils.text import obfuscate
 from wsrc.utils.timezones import parse_iso_date_to_naive
@@ -32,6 +33,8 @@ from django.template.response import TemplateResponse
 from django.forms import ModelForm, ModelChoiceField
 from django.http import HttpResponse, HttpResponseBadRequest
 from django.views.generic import TemplateView, View
+from django.views.generic.edit import UpdateView, CreateView, SingleObjectMixin
+from django.utils.decorators import method_decorator
 
 import rest_framework.filters
 import rest_framework.status
@@ -93,23 +96,33 @@ class CompetitionGroupDetail(rest_generics.RetrieveUpdateDestroyAPIView):
 
 class SelfUpdateOrCompetitionEditorPermission(rest_permissions.BasePermission):
     def has_permission(self, request, view):
-        if request.method in rest_permissions.SAFE_METHODS:
+        if request.user.is_superuser:
             return True
-        elif request.method == "PUT" or request.method == "PATCH":
-            if request.user.has_perm("competitions.change_match"):
-                return True
-        elif request.method == "POST":
+        elif request.method == "GET" \
+             or request.method == "PUT" \
+             or request.method == "POST" \
+             or request.method == "PATCH":
             if request.user.has_perm("competitions.change_match"):
                 return True
         elif request.method == "DELETE":
             if request.user.has_perm("competitions.delete_match"):
                 return True
         player = get_object_or_404(Player.objects.all(), user=request.user)
-        for i in (1,2):
-            entrant_id = request.data.get("team%(i)d" % locals())
-            entrant = get_object_or_404(Entrant.objects.all(), id=entrant_id)
-            if entrant.player1 == player or entrant.player2 == player:
+        entrants = []
+        if hasattr(view, "object"):
+            match = view.object
+            if match is None: # new match
                 return True
+            entrants = [match.team1, match.team2]
+            for entrant in entrants:
+                if entrant.player1 == player or entrant.player2 == player:
+                    return True
+        else:
+            for i in (1,2):
+                entrant_id = request.data.get("team%(i)d" % locals())
+                entrant = get_object_or_404(Entrant.objects.all(), id=entrant_id)
+                if entrant.player1 == player or entrant.player2 == player:
+                    return True
         return False
 
 
@@ -622,6 +635,116 @@ def squashlevels_upload_view(request):
             for match in competition.match_set.all():
                 matches.append(match)
     return TemplateResponse(request, context={"matches": matches}, template="squashlevels_upload.csv", content_type='text/csv')
+
+class PermissionedView(View):
+    "Borrowed from the Django Rest Framework - check permissions before dispatch"
+
+    def get_permissions(self):
+        "Instantiates and returns the list of permissions that this view requires."
+        if not hasattr(self, "permission_classes"):
+            return []
+        return [permission() for permission in self.permission_classes]
+
+    def check_permissions(self, request):
+        """
+        Check if the request should be permitted.
+        Raises an appropriate exception if the request is not permitted.
+        """
+        for permission in self.get_permissions():
+            if not permission.has_permission(request, self):
+                raise PermissionDenied()
+
+    def dispatch(self, request, *args, **kwargs):
+        self.check_permissions(request)
+        return super(PermissionedView, self).dispatch(request, *args, **kwargs)
+
+class MatchEntryViewBase(PermissionedView):
+    template_name = 'match_result.html'
+    form_class = MatchScoresForm
+    competition = None
+    entrant_set = None
+    permission_classes = (SelfUpdateOrCompetitionEditorPermission,)
+
+    @method_decorator(login_required)
+    def dispatch(self, request, *args, **kwargs):
+        comp_id = int(self.kwargs.get("comp_id"))
+        self.competition = Competition.objects.select_related("group").get(pk=comp_id)
+        self.entrant_set = Entrant.objects.select_related("player1__user", "player2__user").filter(competition=self.competition)
+        return super(MatchEntryViewBase, self).dispatch(request, *args, **kwargs)
+
+    def get_queryset(self):
+        matches = Match.objects.select_related("competition__group")
+        matches = matches.select_related("team1__player1__user", "team2__player1__user", "team1__player2__user", "team2__player2__user", )
+        comp_id = self.kwargs.get("comp_id")
+        result = matches.filter(competition_id=comp_id)
+        return result
+
+    def get_context_data(self, **kwargs):
+        context = super(MatchEntryViewBase, self).get_context_data(**kwargs)
+        context["competition"] = self.competition
+        context["competition_group"] = self.competition.group
+        context["is_editor"] = self.request.user.has_perm("competitions.change_match")
+        comp_data = CompetitionSerializer(self.competition, expand=True, exclude_entrants=True).data
+        entrant_data = EntrantSerializer(self.entrant_set, many=True).data
+        entrant_map = dict([(entrant["id"], entrant) for entrant in entrant_data])
+        context["competition_data"] = JSON_RENDERER.render(comp_data)
+        context["entrants_map_data"] = JSON_RENDERER.render(entrant_map)
+        agent = self.request.META.get("HTTP_USER_AGENT")
+        # Eugh - user agent sniffing. I don't see a better way though..
+        horizontal_layout = True
+        if agent is not None and "iPad" not in agent:
+            for test in ["iPhone", "Android", "Mobile"]:
+                if test in agent:
+                    horizontal_layout = False
+                    break
+        context["horizontal_scores"] = horizontal_layout
+        return context
+
+    def get_form_kwargs(self):
+        result = super(MatchEntryViewBase, self).get_form_kwargs()
+        comp_id = self.kwargs.get("comp_id")
+        result['comp_id'] = comp_id
+        return result
+
+    def get_success_url(self):
+        comp_id = self.kwargs.get("comp_id")
+        competition = Competition.objects.select_related("group").get(pk=comp_id)
+        date = competition.group.end_date.isoformat()
+        url = self.request.path
+        if competition.group.comp_type == "wsrc_boxes":
+            url = reverse(BoxesUserView.reverse_url_name) + "/" + date
+        elif competition.group.comp_type == "wsrc_tournaments":
+            url = reverse("tournaments", year=competition.group.end_date.year, name=competition.name)
+        return url
+
+class MatchUpdateView(MatchEntryViewBase, UpdateView):
+    context_object_name = "match"
+    def get_form_kwargs(self):
+        result = super(MatchUpdateView, self).get_form_kwargs()
+        result['mode'] = 'update'
+        return result
+
+    def dispatch(self, request, *args, **kwargs):
+        self.object = self.get_object()
+        return super(MatchUpdateView, self).dispatch(request, *args, **kwargs)
+
+class MatchCreateView(MatchEntryViewBase, CreateView):
+    def get_form_kwargs(self):
+        result = super(MatchCreateView, self).get_form_kwargs()
+        result["initial"]["competition"] = self.competition
+        team1 = None
+        for entrant in self.entrant_set:
+            for player in [entrant.player1, entrant.player2]:
+                if player is not None and player.user == self.request.user:
+                    team1 = entrant
+                    break
+            if team1 is not None:
+                result["initial"]["team1"] = team1
+                break
+        return result
+    def dispatch(self, request, *args, **kwargs):
+        self.object = None
+        return super(MatchCreateView, self).dispatch(request, *args, **kwargs)
 
 class NewCompetitionGroupForm(ModelForm):
     class Meta:
