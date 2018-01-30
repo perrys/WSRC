@@ -1,0 +1,27 @@
+{% extends "06_wsrc_navigation.html" %}
+
+{% block html_header_extra %}
+{{ block.super }}
+<meta name="robots" content="noindex" />
+<link href="/static/css/scores.css" rel="stylesheet" />
+{% block html_header_extra_extra %}{% endblock %}
+{% endblock %}
+  
+{% block titleprefix %}Score Entry - {% endblock %}
+
+{% block centered_page_content %}
+{% include "match_result_form.html" %}
+{% endblock %}
+
+{% block body_script_extra %}
+<script src="/static/js/wsrc_result_form.js"></script>
+<script>
+ var competition_data = {{ competition_data|safe }};
+ var entrants_map_data = {{ entrants_map_data|safe }};
+ var match_id = {% if match %}{{ match.id }}{% else %}null{% endif %};
+ var form = $("form.match-result");
+ var base_url = "{% url 'match_create' comp_id=competition.id %}";
+ var result_form_controller = new wsrc.result_form(form, competition_data, entrants_map_data, match_id, base_url);
+ 
+</script>
+{% endblock %}

@@ -1,100 +1,122 @@
-<form class="match-result-form" method="POST" action="." onsubmit="wsrc.result_form.on_submit(this); return false" >{% csrf_token %}
-  <div style="padding:10px 20px;">
-    <select name="team1" data-theme="a" data-native-menu="false" onchange="wsrc.result_form.on_team_selected(this)">
-      <option value=""> - </option>
-    </select>
-    <select name="team2" data-theme="a" data-native-menu="false" onchange="wsrc.result_form.on_team_selected(this)">
-      <option value=""> - </option>
-    </select>
-    <fieldset data-role="controlgroup" data-type="horizontal" class="match-type" {% if not is_editor %}style="display: none;"{% endif %}>
-      <label class="centered-text">Match
-        <input type="radio" name="result_type" value="normal" checked="checked" onchange="wsrc.result_form.on_result_type_changed(this)">
-      </label>
-      <label class="centered-text">Walkover
-        <input type="radio" name="result_type" value="walkover" onchange="wsrc.result_form.on_result_type_changed(this)">
-      </label>
-    </fieldset>
- 
-    <p class="walkover-input" style="display: none;">
-      <label class="ui-hidden-accessible">Winner:</label>
-      <select name="walkover_result" data-theme="a" data-native-menu="false" onchange="wsrc.result_form.on_walkover_result_changed(this)">
-        <option value="">Winner</option>
-      </select>
-    </p>
 
-    <table class="score-entry">
+<form class="match-result form-horizontal" method="POST">
+  <fieldset>
+    <legend>Match Result</legend>
+
+    {% if form.errors %}
+    <div class="alert alert-danger">ERROR. Please correct the problem(s) below and resubmit, or hit "Back" to revert.
+      <ul>
+        {% for err in form.non_field_errors %}
+        <li>{{ err|safe }}</li>
+        {% endfor %}
+      </ul>
+    </div>
+    {% endif %}
+
+    <div class="form-group ">
+      <span class="col-sm-3 control-label">Competition Group: </span>
+      <div class="col-sm-9">
+        <p class="form-control-static">{{ competition_group.name }}</p>
+      </div>
+    </div>
+    <div class="form-group ">
+      <span class="col-sm-3 control-label">Competition: </span>
+      <div class="col-sm-9">
+        <p class="form-control-static">{{ competition.name }}</p>
+      </div>
+    </div>
+
+  {% if match %}
+    <div class="form-group ">
+      <span class="col-sm-3 control-label">Match: </span>
+      <div class="col-sm-9">
+        <p class="form-control-static">{{ match.get_teams_display }}</p>
+      </div>
+    </div>
+  {% else %}
+  {% include "form_field_snippet.html" with field=form.team1 %}
+  {% include "form_field_snippet.html" with field=form.team2 %}
+  {% endif %}
+  
+    <div {% if not is_editor %}style="display: none;"{% endif %}>
+      {% include "form_field_radio_snippet.html" with field=form.walkover %}    
+    </div>
+
+    <table class="table table-condensed score-entry {% if horizontal_scores %}horizontal{% else %}vertical{% endif %}">
+      {% if horizontal_scores %}
+      <thead>
+        <tr>
+          <th class="col-sm-3"></th>
+          <th class="score-row-label">Set&nbsp;1</th>
+          <th class="score-row-label">Set&nbsp;2</th>
+          <th class="score-row-label">Set&nbsp;3</th>
+          <th class="score-row-label">Set&nbsp;4</th>
+          <th class="score-row-label">Set&nbsp;5</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr class="score-row">
+          <th class="col-sm-3 score-column header-team1">{% if match %}{{ match.team1.get_players_as_string }}{% else %}Opponent 1{% endif %}</th>
+          <td class="score-column">{{ form.team1_score1 }}</td>
+          <td class="score-column">{{ form.team1_score2 }}</td>
+          <td class="score-column">{{ form.team1_score3 }}</td>
+          <td class="score-column">{{ form.team1_score4 }}</td>
+          <td class="score-column">{{ form.team1_score5 }}</td>
+        </tr>
+        <tr class="score-row">
+          <th class="col-sm-3 score-column header-team2">{% if match %}{{ match.team2.get_players_as_string }}{% else %}Opponent 2{% endif %}</th>
+          <td class="score-column">{{ form.team2_score1 }}</td>
+          <td class="score-column">{{ form.team2_score2 }}</td>
+          <td class="score-column">{{ form.team2_score3 }}</td>
+          <td class="score-column">{{ form.team2_score4 }}</td>
+          <td class="score-column">{{ form.team2_score5 }}</td>
+        </tr>
+      </tbody>
+      {% else %}
+      <thead>
       <tr>
         <th></th>
-        <th class="score-column header-team1">Team 1</th>
-        <th class="score-column header-team2">Team 2</th>
+        <th class="score-column header-team1">{% if match %}{{ match.team1.get_players_as_string }}{% else %}Opponent 1{% endif %}</th>
+        <th class="score-column header-team2">{% if match %}{{ match.team2.get_players_as_string }}{% else %}Opponent 1{% endif %}</th>
       </tr>
+      </thead>
+      <tbody>
       <tr class="score-row" data-set="1">
-        <td class="score-row-label">Set&nbsp;1:</td>
-        <td class="score-column">
-          <div>
-            <input name="team1_score1" type="number" data-clear-btn="false" onchange="wsrc.result_form.on_score_changed(this)"/>
-          </div>
-        </td>
-        <td class="score-column">
-          <div>
-            <input name="team2_score1" type="number" data-clear-btn="false" onchange="wsrc.result_form.on_score_changed(this)"/>
-          </div>
-        </td>
+        <th class="score-row-label">Set&nbsp;1</th>
+        <td class="score-column">{{ form.team1_score1 }}</td>
+        <td class="score-column">{{ form.team2_score1 }}</td>
       </tr>
       <tr class="score-row" data-set="2">
-        <td class="score-row-label">Set&nbsp;2:</td>
-        <td class="score-column">
-          <div>
-            <input name="team1_score2" type="number" data-clear-btn="false" onchange="wsrc.result_form.on_score_changed(this)"/>
-          </div>
-        </td>
-        <td class="score-column">
-          <div>
-            <input name="team2_score2" type="number" data-clear-btn="false" onchange="wsrc.result_form.on_score_changed(this)"/>
-          </div>
-        </td>
+        <th class="score-row-label">Set&nbsp;2</th>
+        <td class="score-column">{{ form.team1_score2 }}</td>
+        <td class="score-column">{{ form.team2_score2 }}</td>
       </tr>
       <tr class="score-row" data-set="3">
-        <td class="score-row-label">Set&nbsp;3:</td>
-        <td class="score-column">
-          <div>
-            <input name="team1_score3" type="number" data-clear-btn="false" onchange="wsrc.result_form.on_score_changed(this)"/>
-          </div>
-        </td>
-        <td class="score-column">
-          <div>
-            <input name="team2_score3" type="number" data-clear-btn="false" onchange="wsrc.result_form.on_score_changed(this)"/>
-          </div>
-        </td>
+        <th class="score-row-label">Set&nbsp;3</th>
+        <td class="score-column">{{ form.team1_score3 }}</td>
+        <td class="score-column">{{ form.team2_score3 }}</td>
       </tr>
       <tr class="score-row" data-set="4">
-        <td class="score-row-label">Set&nbsp;4:</td>
-        <td class="score-column">
-          <div>
-            <input name="team1_score4" type="number" data-clear-btn="false" onchange="wsrc.result_form.on_score_changed(this)"/>
-          </div>
-        </td>
-        <td class="score-column">
-          <div>
-            <input name="team2_score4" type="number" data-clear-btn="false" onchange="wsrc.result_form.on_score_changed(this)"/>
-          </div>
-        </td>
+        <th class="score-row-label">Set&nbsp;4</th>
+        <td class="score-column">{{ form.team1_score4 }}</td>
+        <td class="score-column">{{ form.team2_score4 }}</td>
       </tr>
       <tr class="score-row" data-set="5">
-        <td class="score-row-label">Set&nbsp;5:</td>
-        <td class="score-column">
-          <div>
-            <input name="team1_score5" type="number" data-clear-btn="false" onchange="wsrc.result_form.on_score_changed(this)"/>
-          </div>
-        </td>
-        <td class="score-column">
-          <div>
-            <input name="team2_score5" type="number" data-clear-btn="false" onchange="wsrc.result_form.on_score_changed(this)"/>
-          </div>
-        </td>
+        <th class="score-row-label">Set&nbsp;5</th>
+        <td class="score-column">{{ form.team1_score5 }}</td>
+        <td class="score-column">{{ form.team2_score5 }}</td>
       </tr>
+      </tbody>
+      {% endif %}
     </table>
-    <p>
-      <button type="submit" class="ui-btn ui-corner-all ui-shadow ui-btn-b ui-btn-icon-right ui-icon-check" disabled="disabled">Submit</button>
-  </div>
+
+    <div class="buttonset">
+      <button class="btn btn-primary" type="submit"><span class="glyphicon glyphicon-ok"></span>&nbsp;Submit</button>
+    </div>
+  </fieldset>
+  
+  {% csrf_token %}
+  {% for hidden in form.hidden_fields %}
+  {{ hidden }}
+  {% endfor %}
 </form>
