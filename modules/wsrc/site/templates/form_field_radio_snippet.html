@@ -1,0 +1,11 @@
+<div class="form-group {% if field.errors %}has-error{% endif %}">
+  <label class="col-sm-3 control-label" for="{{ field.id_for_label }}">{{ field.label }}:</label>
+  <div class="col-sm-9">
+    {% for choice in field %}
+    <label class="{% if label_class %}{{ label_class }}{% else %}radio-inline{% endif %}">{{ choice.tag }}&nbsp;<span class="label-text">{{ choice.choice_label }}<span></label>
+    {% endfor %}
+    {% if field.errors %}
+    <span class="help-block">{% for err in field.errors %}{{ err }}. {% endfor %}</span>
+    {% endif %}
+  </div>
+</div>
