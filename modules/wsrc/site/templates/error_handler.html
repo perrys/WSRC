@@ -1,19 +1,10 @@
 {% extends "04_wsrc_header.html" %}
 
 
-{% block page_header_classes %}jqm-header{% endblock %}
-{% block page_header %}
-<div class="centered-content-wrapper">
-    <p>{% block error_title %}{% endblock %}</p>
-    <h2 class="large-top-logo"><a href="/home" data-ajax="false" onclick="$.mobile.loading('show')"><img src="/static/images/logo_137x70.png" width="137" height="70" alt="Woking Squash Club"></a></h2>
-    <h2 class="small-top-logo"><a href="/home" data-ajax="false" onclick="$.mobile.loading('show')"><img src="/static/images/logo_98x50.png" width="98" height="50" alt="Woking Squash Club" ></a></h2>
-</div>
-{% endblock %}{% comment "page_header" %}{% endcomment %}
+{% block centered_page_content %}
 
-{% block page_content %}
-<div class="centered-content-wrapper">
-
-  <div class="error-handler-message">{% block error_message %}{% endblock %}</div>
-
+<div class="alert alert-danger">
+  <p><strong>{% block error_title %}{% endblock %}</strong></p>
+  <p>{% block error_message %}{% endblock %}</p>
 </div>
 {% endblock %}
