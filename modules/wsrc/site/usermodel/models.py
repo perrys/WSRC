@@ -25,6 +25,7 @@ import datetime
 import re
 
 import wsrc.site.accounts.models as account_models
+from wsrc.utils.text import obfuscate
 
 class Player(models.Model):
 
@@ -69,6 +70,10 @@ class Player(models.Model):
         if encoding is not None:
             full_name = full_name.encode(encoding)
         return full_name.strip()
+
+    def get_obfuscated_name(self):
+        """Return an anonomized version of this player's name"""
+        return "{0} {1}".format(obfuscate(self.user.first_name, to_initial=True), obfuscate(self.user.last_name))
 
     def get_cardnumbers(self):
         """

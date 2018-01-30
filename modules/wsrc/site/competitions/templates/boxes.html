@@ -185,7 +185,7 @@
                 <th colspan="7">{{ match.last_updated|date:"D, j N Y" }}</th>
               </tr>
               <tr class="player1">
-                <th class="player {% if match.get_winner == match.team1 %}winner{% endif %}">{{ match.team1.player1.user.get_full_name }}</th>
+                <th class="player {% if match.get_winner == match.team1 %}winner{% endif %}">{% with player=match.team1.player1 %}{% if user.is_authenticated %}{{ player.user.get_full_name }}{% else %}{{ player.get_obfuscated_name|safe }}{% endif %}{% endwith %}</th>
                 <td class="{% if match.team1_score1 > match.team2_score1 %}win{% endif %}">{{ match.team1_score1|default_if_none:"" }}</td>
                 <td class="{% if match.team1_score2 > match.team2_score2 %}win{% endif %}">{{ match.team1_score2|default_if_none:"" }}</td>
                 <td class="{% if match.team1_score3 > match.team2_score3 %}win{% endif %}">{{ match.team1_score3|default_if_none:"" }}</td>
@@ -194,7 +194,7 @@
                 <td class='{% if match.get_winner == match.team1 %}win{% endif %}'>{{ match.get_box_league_points_team1|default_if_none:"" }}</td>
               </tr>
               <tr class="player2">
-                <th class="player {% if match.get_winner == match.team2 %}winner{% endif %}">{{ match.team2.player1.user.get_full_name }}</th>
+                <th class="player {% if match.get_winner == match.team2 %}winner{% endif %}">{% with player=match.team2.player1 %}{% if user.is_authenticated %}{{ player.user.get_full_name }}{% else %}{{ player.get_obfuscated_name|safe }}{% endif %}{% endwith %}</th>
                 <td class="{% if match.team2_score1 > match.team1_score1 %}win{% endif %}">{{ match.team2_score1|default_if_none:"" }}</td>
                 <td class="{% if match.team2_score2 > match.team1_score2 %}win{% endif %}">{{ match.team2_score2|default_if_none:"" }}</td>
                 <td class="{% if match.team2_score3 > match.team1_score3 %}win{% endif %}">{{ match.team2_score3|default_if_none:"" }}</td>
