@@ -10,6 +10,7 @@ resources/js/wsrc*.js
 resources/css/*.min.css
 resources/css/all*.css
 resources/css/_*.css
+resources/css/wsrc_*.css
 
 resources/images/sources
 resources/images/icons-png
