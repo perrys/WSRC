@@ -53,7 +53,9 @@ class ActivityReport(object):
                                                     "team1__player2__user", "team2__player2__user",
                                                     "competition__group")\
                                     .filter(last_updated__gte=self.start_date,\
-                                            last_updated__lt=self.end_date)
+                                            last_updated__lt=self.end_date,\
+                                            team1_id__isnull=False, team2_id__isnull=False,\
+                                            team1_score1__isnull=False, team2_score1__isnull=False)
         self.bookings = BookingSystemEvent.objects\
                                           .select_related("created_by")\
                                           .filter(start_time__gte=self.start_date, start_time__lt=self.end_date)
