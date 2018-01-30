@@ -238,11 +238,6 @@ class WSRC_boxes
     form.data("controller", form_controller)
     dialog.popup('open')
 
-  handle_league_changed: (selector) ->
-    $.mobile.loading("show")
-    link = $(selector).val()
-    document.location = link
-
   handle_edit_clicked: (comp_id) ->
     matches = wsrc_boxes_data.matches[comp_id]
     entrants = @get_entrants(comp_id)
@@ -724,7 +719,10 @@ class WSRC_boxes_admin extends WSRC_boxes
 
     
 
+unless window.wsrc?
+  window.wsrc = {}
 window.wsrc.boxes = WSRC_boxes
-admin = wsrc.utils.add_object_if_unset(window.wsrc, "admin")
-admin.boxes = WSRC_boxes_admin
+unless window.wsrc.admin?
+  window.wsrc.admin = {}
+wsrc.admin.boxes = WSRC_boxes_admin
  
