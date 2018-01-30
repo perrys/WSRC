@@ -33,10 +33,15 @@ HEADER_ROWS       = 3
 ROWS_PER_OPPONENT = 2 # we use rowspan=2 to allow "half" cell offsets
 ROWS_PER_MATCH    = 3 * ROWS_PER_OPPONENT
 
-def render_match(table, col, row, bracketIndex, matchIndex, idPrefix):
+def render_match(table, col, row, bracketIndex, matchIndex, idPrefix, match_map):
 
     binomialId = (1<<bracketIndex) + matchIndex
     attrs = dict(locals())
+    match = match_map.get(binomialId)
+    attrs["match_state"] = "empty_match"
+    if match is not None:
+        match.cache_scores()
+        attrs["match_state"] = "partial-match" if match.is_unplayed() else "copleted-match"
 
     class Position:
         def __init__(self, col, row):
@@ -45,10 +50,22 @@ def render_match(table, col, row, bracketIndex, matchIndex, idPrefix):
 
     cursor = Position(col, row)
 
-    def addToRow(cls, content="", id=None):
+    def get_match_content(key, is_top):
+        if match is None:
+            return NON_BRK_SPACE
+        item = match
+        team = "1" if is_top else "2"
+        for tok in key.split("."):
+            item = getattr(item, tok.format(team=team))
+            if hasattr(item, "__call__"):
+                item = item()
+        return NON_BRK_SPACE if item is None else str(item)
+
+    def addToRow(cls, key, is_top, cell_id=None):
         attrs = {"class": cls}
-        if id is not None:
-            attrs["id"] = id
+        content = get_match_content(key, is_top)
+        if cell_id is not None:
+            attrs["id"] = cell_id
         c = SpanningCell(1, ROWS_PER_OPPONENT, unicode(content), attrs)
         table.addCell(c, cursor.col, cursor.row)
         cursor.col += c.ncols
@@ -56,10 +73,20 @@ def render_match(table, col, row, bracketIndex, matchIndex, idPrefix):
 
     def addOpponent(isTop):
         attrs["pos_identifier"] = isTop and 't' or 'b'
-        addToRow("seed empty-match ui-corner-%(pos_identifier)sl" % attrs, NON_BRK_SPACE)
-        addToRow("player empty-match", NON_BRK_SPACE, "match_%(idPrefix)s_%(binomialId)d_%(pos_identifier)s" % attrs)
-        for ii in range(0, SETS_PER_MATCH):
-            last = addToRow("score empty-match", NON_BRK_SPACE)
+        addToRow("seed %(match_state)s ui-corner-%(pos_identifier)sl" % attrs, "team{team}.get_seed", isTop)
+        prefix_class = ""
+        team_id = None
+        if match is not None and not match.is_unplayed():
+            team_id = match.team1_id if isTop else match.team2_id
+            if match.get_winner(key_only=True) == team_id:
+                prefix_class = "winner "
+        addToRow(prefix_class + "player %(match_state)s" % attrs, "team{team}.get_players_as_string", isTop,\
+                 "match_%(idPrefix)s_%(binomialId)d_%(pos_identifier)s" % attrs)
+        for ii in range(1, SETS_PER_MATCH+1):
+            prefix_class = ""
+            if team_id is not None and match.get_winner_of_set(ii, key_only=True) == team_id:
+                prefix_class = "winningscore "
+            last = addToRow(prefix_class + "score %(match_state)s" % attrs, "team{team}_score" + str(ii), isTop)
         last.attrs["class"] += " ui-corner-%(pos_identifier)sr" % attrs
 #        last.content = str(binomialId)
 
@@ -70,7 +97,7 @@ def render_match(table, col, row, bracketIndex, matchIndex, idPrefix):
 
 
 
-def render_bracket(table, nbrackets, bracketNumber, compressFirstRound, idPrefix, previousRowIndices = None):
+def render_bracket(table, nbrackets, bracketNumber, compressFirstRound, idPrefix, match_map, previousRowIndices = None):
 
     isFirstRound = (bracketNumber == nbrackets)
     isCompressedFirstRound = compressFirstRound and isFirstRound
@@ -98,7 +125,7 @@ def render_bracket(table, nbrackets, bracketNumber, compressFirstRound, idPrefix
             matchIndex = i+1
         else:
             matchIndex = i/2
-        render_match(table, column, avg, bracketNumber-1, matchIndex, idPrefix)
+        render_match(table, column, avg, bracketNumber-1, matchIndex, idPrefix, match_map)
         if isFirstRound:
             if compressFirstRound and not isCompressedFirstRound:
                 table.addCell(BOTTOM_LINK, column-2, avg+2)
@@ -127,6 +154,7 @@ def count_brackets(competition):
 def render_tournament(competition):
     """Generate an html table showing an empty bracket, sized for the given competition."""
 
+    match_map = dict([(match.competition_match_id, match) for match in competition.match_set.all()])
     tournamentId = competition.id
     nbrackets = competition.nbrackets()
 
@@ -183,7 +211,7 @@ def render_tournament(competition):
     # now draw the brackets
     previousRowIndices = None
     for i in range(nbrackets, 0, -1):
-        previousRowIndices = render_bracket(table, nbrackets, i, compressFirstRound, tournamentId, previousRowIndices)
+        previousRowIndices = render_bracket(table, nbrackets, i, compressFirstRound, tournamentId, match_map, previousRowIndices)
         if compressFirstRound and i == nbrackets:
             previousRowIndices = None
 
