@@ -25,16 +25,6 @@
 <script src="https://maxcdn.bootstrapcdn.com/js/ie10-viewport-bug-workaround.js"></script>
 {% endif %}
   
-<script>
-{% if user and user.is_authenticated %}
-window.WSRC_user_player_id = {% if user.player %}{{ user.player.id }}{% else %}-1{% endif %};
-window.WSRC_username = "{{ user.username }}";
-{% else %}
-window.WSRC_user_player_id = -1;
-window.WSRC_username = null;
-{% endif %}
-</script>
-
 {% block body_script_extra %}{% endblock %}
 
 {% endblock %}
