@@ -135,10 +135,10 @@ class Entrant(models.Model):
 
 class Match(models.Model):
     """A match which forms part of a competition."""
-    WALKOVER_RESULTS = (
-        (1, "Team 1"),
-        (2, "Team 2"),
-    )
+    WALKOVER_RESULTS = [
+        (1, "Opponent 1"),
+        (2, "Opponent 2"),
+    ]
     competition = models.ForeignKey(Competition)
     competition_match_id = models.IntegerField(help_text="Unique ID of this match within its competition", blank=True, null=True)
     team1 = models.ForeignKey(Entrant, related_name="match_1+", blank=True, null=True)
@@ -179,7 +179,7 @@ class Match(models.Model):
         if self.team1 == self.team2:
             raise ValidationError("Two opponents in the same match must be different!")
         if self.walkover is None and (self.team1_score1 is None or self.team2_score1 is None):
-            raise ValidationError("Require at least one score in a match, or a walkover")
+            raise ValidationError("At least one score is required, or a walkover")
 
     def validate_unique(self, exclude):
         super(Match, self).validate_unique(exclude)
