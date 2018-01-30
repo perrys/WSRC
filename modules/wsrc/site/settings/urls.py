@@ -78,6 +78,9 @@ urlpatterns = patterns('',
     url(r'^tournaments/(\d{4})/([\w\s]+)/?$',       wsrc.site.competitions.views.bracket_view),
     url(r'^tournaments/?',                          wsrc.site.competitions.views.bracket_view, {"year":None, "name":"Open"} , name="tournaments"),
 
+    url(r'^competition/(?P<comp_id>\d+)/match/(?P<pk>\d+)/?$', wsrc.site.competitions.views.MatchUpdateView.as_view(competition=None), name='match_update'),
+    url(r'^competition/(?P<comp_id>\d+)/match/?$', wsrc.site.competitions.views.MatchCreateView.as_view(competition=None), name="match_create"),
+                       
     url(r'^settings/?$', wsrc.site.usermodel.views.settings_view, name="settings"),
 
     url(r'^kiosk/?$', wsrc.site.views.kiosk_view, name="kiosk"),
