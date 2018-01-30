@@ -3,7 +3,7 @@
 LESSC = lessc --no-color --strict-math=on
 MINIFY = minify --no-comments
 
-CSS_TARGETS = courts.css reflow_table.css all_admin.css all_mailshot.css all_accounts.css all_admin_memberlist.css all_admin_boxes.css _jquery.mobile.datepicker.css
+CSS_TARGETS = courts.css reflow_table.css scores.css all_admin.css all_mailshot.css all_accounts.css all_admin_memberlist.css all_admin_boxes.css _jquery.mobile.datepicker.css
 
 .INTERMEDIATE: _wsrc_html5.css _wsrc_legacy.css _wsrc_accounts.css _wsrc_admin_memberlist.css _wsrc_admin_boxes.css
 .SECONDARY: _jquery.mobile.datepicker.css _jquery.dataTables.css _jquery-ui.css
