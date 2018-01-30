@@ -1,0 +1,9 @@
+<div class="form-group {% if field.errors %}has-error{% endif %}">
+  <span class="col-sm-3 control-label">{{ field.label_tag }}</span>
+  <div class="col-sm-9">
+    {{ field }}
+    {% if field.errors %}
+    <span class="help-block">{% for err in field.errors %}{{ err }}. {% endfor %}</span>
+    {% endif %}
+  </div>
+</div>
