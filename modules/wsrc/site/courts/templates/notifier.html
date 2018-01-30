@@ -67,17 +67,9 @@
     
     {{ form.player }}
     {{ form.id }}
-    <div class="form-group {% if form.days.errors %}has-error{% endif %}">
-      <label class="col-sm-3 control-label" for="{{ form.days.id_for_label }}">{{ form.days.label }}:</label>
-      <div class="col-sm-9">
-        {% for choice in form.days %}
-        <label class="checkbox-inline">{{ choice.tag }}&nbsp;{{ choice.choice_label }}</label>
-        {% endfor %}
-        {% if form.days.errors %}
-        <span class="help-block">{% for err in form.days.errors %}{{ err }}. {% endfor %}</span>
-        {% endif %}
-      </div>
-    </div>
+
+    {% include "form_field_radio_snippet.html" with field=form.days label_class='checkbox-inline' %}
+    
     <div class="form-group {% if form.earliest.errors or form.latest.errors %}has-error{% endif %} time-fields">
       <label class="col-sm-3 control-label">Times:</label>
       <div class="col-sm-9">
@@ -88,15 +80,7 @@
       </div>
     </div>
 
-    <div class="form-group {% if form.notice_period_minutes.errors %}has-error{% endif %}">
-      <span class="col-sm-3 control-label">{{ form.notice_period_minutes.label_tag }}</span>
-      <div class="col-sm-9">
-        {{ form.notice_period_minutes }}
-        {% if form.notice_period_minutes.errors %}
-        <span class="help-block">{% for err in form.notice_period_minutes.errors %}{{ err }}. {% endfor %}</span>
-        {% endif %}
-      </div>
-    </div>
+    {% include "form_field_snippet.html" with field=form.notice_period_minutes %}
 
     <input id="{{ form.DELETE.id_for_label }}" name="{{ form.DELETE.html_name }}" type="hidden" class="delete" />
     <button class="btn btn-default delete pull-right" type="button"><span class="glyphicon glyphicon-remove"></span>&nbsp;Delete this Notifier</button>
