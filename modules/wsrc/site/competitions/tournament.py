@@ -35,7 +35,7 @@ ROWS_PER_MATCH    = 3 * ROWS_PER_OPPONENT
 
 def render_match(table, col, row, bracketIndex, matchIndex, idPrefix):
 
-    binomialId = (1<<bracketIndex) + matchIndex  
+    binomialId = (1<<bracketIndex) + matchIndex
     attrs = dict(locals())
 
     class Position:
@@ -47,7 +47,8 @@ def render_match(table, col, row, bracketIndex, matchIndex, idPrefix):
 
     def addToRow(cls, content="", id=None):
         attrs = {"class": cls}
-        if id is not None: attrs["id"] = id
+        if id is not None:
+            attrs["id"] = id
         c = SpanningCell(1, ROWS_PER_OPPONENT, unicode(content), attrs)
         table.addCell(c, cursor.col, cursor.row)
         cursor.col += c.ncols
@@ -79,7 +80,7 @@ def render_bracket(table, nbrackets, bracketNumber, compressFirstRound, idPrefix
     else:
         nmatches = 1 << (bracketNumber - 1)
     column = 1 + (nbrackets-bracketNumber) * COLS_PER_BRACKET
-    
+
     if previousRowIndices is None:
         previousRowIndices = []
         for j in range(0, nmatches):
@@ -87,13 +88,13 @@ def render_bracket(table, nbrackets, bracketNumber, compressFirstRound, idPrefix
             previousRowIndices.append(pos)
             previousRowIndices.append(pos)
 
-    rowIndices = []                    
+    rowIndices = []
 
     for i in range(0, 2*nmatches, 2):
         diff = previousRowIndices[i+1] - previousRowIndices[i]
         avg  = previousRowIndices[i]   + diff / 2
         rowIndices.append(avg)
-        if isCompressedFirstRound: 
+        if isCompressedFirstRound:
             matchIndex = i+1
         else:
             matchIndex = i/2
@@ -117,7 +118,7 @@ def count_brackets(competition):
     try:
         maxId = reduce(max, [int(x.competition_match_id) for x in competition.match_set.all()], 0)
     except Exception, e:
-        print 
+        print
         for c in competition.match_set.all().order_by("competition_match_id"):
             print c.__dict__
         raise e
@@ -129,7 +130,7 @@ def render_tournament(competition):
     tournamentId = competition.id
     nbrackets = competition.nbrackets()
 
-    # figure out the number of matches in the first round. If it is equal or less than half of the possible slots 
+    # figure out the number of matches in the first round. If it is equal or less than half of the possible slots
     # then show the first round parallel with the second round
     maxSecondRoundId = (1<<(nbrackets-1))-1
     firstRoundMatches = competition.match_set.filter(competition_match_id__gt=maxSecondRoundId)
@@ -172,11 +173,11 @@ def render_tournament(competition):
     # first column; nbsp in the top row
     for i in range(1, nrows):
         content = NON_BRK_SPACE
-        if (i > 0): 
+        if (i > 0):
             content = ""
         attribs = {'class': "verticalspacer"}
         if i == (nrows-1):
-            attribs["class"] += " spacercalc"        
+            attribs["class"] += " spacercalc"
         table.addCell(Cell(content, attribs), 0, i)
 
     # now draw the brackets
@@ -195,7 +196,7 @@ def render_tournament(competition):
         table.addCell(Cell('', {"class": "spacercalc"}), col, nrows-1) # seed
         col += 2
         table.addCell(SpanningCell(SETS_PER_MATCH, 1, '', {"class": "spacercalc"}), col, nrows-1) # links
-        col += SETS_PER_MATCH    
+        col += SETS_PER_MATCH
 
     return etree.tostring(table.toHtml(), encoding='UTF-8', method='html')
 
@@ -204,55 +205,55 @@ def get_current_competitions():
     comps = [c for c in tournament_group.competition_set.all()]
     tournament_groups = CompetitionGroup.objects.filter(comp_type="wsrc_qualifiers", active=True)
     for group in tournament_groups:
-      comps.extend([c for c in group.competition_set.all()])
+        comps.extend([c for c in group.competition_set.all()])
     return comps
 
 def get_unplayed_matches(comp):
     def exclude_played_matches(queryset):
-      predicate = (Q(team1_score1__isnull=True) | Q(team2_score1__isnull=True)) & Q(walkover__isnull=True)
-      return queryset.filter(predicate)
+        predicate = (Q(team1_score1__isnull=True) | Q(team2_score1__isnull=True)) & Q(walkover__isnull=True)
+        return queryset.filter(predicate)
     if comp.group.comp_type in ("wsrc_qualifiers", "wsrc_boxes"):
-      unplayed_matches = []
-      entrants = comp.entrant_set.all()
-      nentrants = len(entrants)
-      for i in range(0,nentrants):
-        for j in range(i+1, nentrants):
-          first_entrant = entrants[i]
-          second_entrant = entrants[j]
-          query = (
-            Q(team1=first_entrant,team2=second_entrant) | 
-            Q(team2=first_entrant,team1=second_entrant) 
-            )
-          existing_matches = comp.match_set.filter(query)
-          if existing_matches.count() > 0: # a match is already present in the DB
-            if existing_matches.count() > 1:
-              raise Exception("more than one match returned for competition {comp}, player1={p1}, player2={p2}".format(comp=comp.name, p1=first_entrant.player, p2=second_entrant.player))
-            if exclude_played_matches(existing_matches).count() > 0:
-              unplayed_matches.extend(existing_matches)
-          else: # nothing in the DB
-            new_match = Match(competition=comp, team1=first_entrant, team2=second_entrant)
-            unplayed_matches.append(new_match)
+        unplayed_matches = []
+        entrants = comp.entrant_set.all()
+        nentrants = len(entrants)
+        for i in range(0,nentrants):
+            for j in range(i+1, nentrants):
+                first_entrant = entrants[i]
+                second_entrant = entrants[j]
+                query = (
+                  Q(team1=first_entrant,team2=second_entrant) |
+                  Q(team2=first_entrant,team1=second_entrant)
+                  )
+                existing_matches = comp.match_set.filter(query)
+                if existing_matches.count() > 0: # a match is already present in the DB
+                    if existing_matches.count() > 1:
+                        raise Exception("more than one match returned for competition {comp}, player1={p1}, player2={p2}".format(comp=comp.name, p1=first_entrant.player, p2=second_entrant.player))
+                    if exclude_played_matches(existing_matches).count() > 0:
+                        unplayed_matches.extend(existing_matches)
+                else: # nothing in the DB
+                    new_match = Match(competition=comp, team1=first_entrant, team2=second_entrant)
+                    unplayed_matches.append(new_match)
     else:
-      at_least_one_player_expr = Q(team1__isnull=False) | Q(team2__isnull=False)
-      unplayed_matches = comp.match_set.filter(at_least_one_player_expr)
-      unplayed_matches = exclude_played_matches(unplayed_matches)
+        at_least_one_player_expr = Q(team1__isnull=False) | Q(team2__isnull=False)
+        unplayed_matches = comp.match_set.filter(at_least_one_player_expr)
+        unplayed_matches = exclude_played_matches(unplayed_matches)
 
     return unplayed_matches
 
 def get_previous_match(match, team_number):
     previous_match_id = match.competition_match_id << 1
     if team_number == 2:
-      previous_match_id += 1
-    return Match.objects.filter(competition_id = match.competition_id).get(competition_match_id=previous_match_id) 
+        previous_match_id += 1
+    return Match.objects.filter(competition_id = match.competition_id).get(competition_match_id=previous_match_id)
 
 def get_team_number(match, player_id):
     "Get the team number for this player in the given match"
     for team_number in [1,2]:
-      team = match.get_team(team_number)
-      if team is not None:
-        for player in team.get_players():
-          if player.id == player_id:
-            return team_number
+        team = match.get_team(team_number)
+        if team is not None:
+            for player in team.get_players():
+                if player.id == player_id:
+                    return team_number
     return None
 
 def other_team_number(team_number):
@@ -285,7 +286,7 @@ def reset(comp_id, entrants):
     for e in entrants:
         e["player1"] = e["player1"]["id"]
         e["player2"] = e.get("player2") and e["player2"]["id"] or None
-        serializer = EntrantDeSerializer(data=e)        
+        serializer = EntrantDeSerializer(data=e)
         if not serializer.is_valid():
             print serializer.errors
             raise Exception(serializer.errors)
@@ -299,8 +300,8 @@ def reset(comp_id, entrants):
 def submit_match_winner(match, winning_team):
     match.save()
     get_or_create_next_match(match.competition, match.competition_match_id, winning_team)
-    
-        
+
+
 @transaction.atomic
 def set_rounds(comp_id, rounds):
     competition = Competition.objects.get(pk=comp_id)
