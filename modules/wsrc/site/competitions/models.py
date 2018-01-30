@@ -122,6 +122,9 @@ class Entrant(models.Model):
             return opponents[0].user.get_full_name()
         return " & ".join([p.get_short_name() for p in opponents])
 
+    def get_seed(self):
+        return self.ordering if self.seeded else None
+
     def __unicode__(self):
         result = u"[{id}] {team}".format(id=self.id, team=self.get_players_as_string())
         if self.handicap:
@@ -276,6 +279,23 @@ class Match(models.Model):
         elif wins[0] < wins[1]:
             winners = get_entrant(2)
         return winners
+
+    def get_winner_of_set(self, setnumber, scores=None, key_only=False):
+        "Indicate winner of a particular set [1..5]"
+        def get_entrant(i):
+            attr = "team{i}".format(i=i)
+            if key_only: attr += "_id"
+            return getattr(self, attr)
+        if scores is None:
+            scores = self.get_scores()
+        set_scores = scores[setnumber-1] if len(scores) >= setnumber else None
+        if set_scores is None:
+            return None
+        if set_scores[0] > set_scores[1]:
+            return get_entrant(1)
+        if set_scores[0] < set_scores[1]:
+            return get_entrant(2)
+        return None
 
     def is_knockout_comp(self):
         return self.competition.group.comp_type == "wsrc_tournaments"
