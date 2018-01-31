@@ -73,7 +73,7 @@ def render_match(table, col, row, bracketIndex, matchIndex, idPrefix, match_map)
 
     def addOpponent(isTop):
         attrs["pos_identifier"] = isTop and 't' or 'b'
-        addToRow("seed %(match_state)s ui-corner-%(pos_identifier)sl" % attrs, "team{team}.get_seed", isTop)
+        addToRow("seed %(match_state)s ui-corner-%(pos_identifier)sl" % attrs, "team{team}.get_seed_or_handicap", isTop)
         prefix_class = ""
         team_id = None
         if match is not None and not match.is_unplayed():

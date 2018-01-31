@@ -122,8 +122,15 @@ class Entrant(models.Model):
             return opponents[0].user.get_full_name()
         return " & ".join([p.get_short_name() for p in opponents])
 
-    def get_seed(self):
-        return self.ordering if self.seeded else None
+    def get_seed_or_handicap(self):
+        if self.seeded:
+            return self.ordering
+        if self.handicap is not None:
+            handicap = self.handicap
+            if self.hcap_suffix is not None:
+                handicap = "{0}{1}".format(self.handicap, self.hcap_suffix)
+            return handicap
+        return None
 
     def __unicode__(self):
         result = u"[{id}] {team}".format(id=self.id, team=self.get_players_as_string())
