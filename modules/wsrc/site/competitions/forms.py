@@ -43,6 +43,7 @@ class MatchScoresForm(forms.ModelForm):
         if self.comp_id is not None:
             self.comp_id = int(self.comp_id)
         mode = kwargs.pop('mode', None)
+        with_teams = kwargs.pop('with_teams', False)
         super(MatchScoresForm, self).__init__(*args, **kwargs)
         self.fields['competition'].widget = forms.HiddenInput()
         self.fields['walkover'].label = "Walkover To"
@@ -51,8 +52,9 @@ class MatchScoresForm(forms.ModelForm):
             match = kwargs["instance"]
             walkover_choices = [(1, match.team1.get_players_as_string()),
                                 (2, match.team2.get_players_as_string())]
-            self.fields.pop('team1')
-            self.fields.pop('team2')
+            if not with_teams:
+                self.fields.pop('team1')
+                self.fields.pop('team2')
         elif self.comp_id:
             entrant_queryset = self.entrant_queryset.filter(competition_id=self.comp_id)
             self.fields['team1'].queryset = entrant_queryset

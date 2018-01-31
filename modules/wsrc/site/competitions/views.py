@@ -722,6 +722,8 @@ class MatchUpdateView(MatchEntryViewBase, UpdateView):
     def get_form_kwargs(self):
         result = super(MatchUpdateView, self).get_form_kwargs()
         result['mode'] = 'update'
+        if self.request.POST.get("team1") and self.request.POST.get("team2"):
+            result['with_teams'] = True
         return result
 
     def dispatch(self, request, *args, **kwargs):
