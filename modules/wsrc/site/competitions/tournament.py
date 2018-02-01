@@ -38,10 +38,10 @@ def render_match(table, col, row, bracketIndex, matchIndex, idPrefix, match_map)
     binomialId = (1<<bracketIndex) + matchIndex
     attrs = dict(locals())
     match = match_map.get(binomialId)
-    attrs["match_state"] = "empty_match"
+    attrs["match_state"] = "empty-match"
     if match is not None:
         match.cache_scores()
-        attrs["match_state"] = "partial-match" if match.is_unplayed() else "copleted-match"
+        attrs["match_state"] = "partial-match" if match.is_unplayed() else "completed-match"
 
     class Position:
         def __init__(self, col, row):
@@ -73,21 +73,26 @@ def render_match(table, col, row, bracketIndex, matchIndex, idPrefix, match_map)
 
     def addOpponent(isTop):
         attrs["pos_identifier"] = isTop and 't' or 'b'
-        addToRow("seed %(match_state)s ui-corner-%(pos_identifier)sl" % attrs, "team{team}.get_seed_or_handicap", isTop)
+        addToRow("seed %(match_state)s corner-%(pos_identifier)sl" % attrs, "team{team}.get_seed_or_handicap", isTop)
         prefix_class = ""
         team_id = None
         if match is not None and not match.is_unplayed():
             team_id = match.team1_id if isTop else match.team2_id
             if match.get_winner(key_only=True) == team_id:
                 prefix_class = "winner "
-        addToRow(prefix_class + "player %(match_state)s" % attrs, "team{team}.get_players_as_string", isTop,\
-                 "match_%(idPrefix)s_%(binomialId)d_%(pos_identifier)s" % attrs)
+        player_cell = addToRow(prefix_class + "player %(match_state)s" % attrs, "team{team}.get_players_as_string", isTop,\
+                               "match_%(idPrefix)s_%(binomialId)d_%(pos_identifier)s" % attrs)
+        if team_id is not None:
+            player_cell.attrs["data-team"] = str(team_id)
+            walkover_cmp = 1 if isTop else 2
+            if match.walkover is not None and match.walkover != walkover_cmp:
+                player_cell.attrs["class"] += " walked-over"
         for ii in range(1, SETS_PER_MATCH+1):
             prefix_class = ""
             if team_id is not None and match.get_winner_of_set(ii, key_only=True) == team_id:
                 prefix_class = "winningscore "
             last = addToRow(prefix_class + "score %(match_state)s" % attrs, "team{team}_score" + str(ii), isTop)
-        last.attrs["class"] += " ui-corner-%(pos_identifier)sr" % attrs
+        last.attrs["class"] += " corner-%(pos_identifier)sr" % attrs
 #        last.content = str(binomialId)
 
     addOpponent(True)
@@ -226,6 +231,7 @@ def render_tournament(competition):
         table.addCell(SpanningCell(SETS_PER_MATCH, 1, '', {"class": "spacercalc"}), col, nrows-1) # links
         col += SETS_PER_MATCH
 
+    table.compress()
     return etree.tostring(table.toHtml(), encoding='UTF-8', method='html')
 
 def get_current_competitions():
