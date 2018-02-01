@@ -1,64 +1,61 @@
 {% extends "06_wsrc_navigation.html" %}
 
 {% block titleprefix %}{{ competition.name }} {{ competition.end_date|date:'Y' }} - {% endblock %}
-{% block pagetitle %}{{ competition.name }} Tournament {{ competition.end_date|date:'Y' }}{% endblock %}
-{% block pagetype %}tournament{% endblock %}
-{% block pageattrs %}data-competitionid="{{ competition.id }}"{% endblock %}
 {% load competitions_extras %}
 {% block html_header_extra %}
 <meta name="robots" content="noindex" />
 {{ block.super }}
-<script>
-window.WSRC_bracket_data = {{ bracket_data|safe }};
-window.WSRC_is_authenticated = {% if user.is_authenticated %}true{% else %}false{% endif %};
-</script>
+<link href="/static/css/wsrc_tournaments.css" rel="stylesheet" />
 {% endblock %}
 
 
 {% block centered_page_content %}
 
-  <form id="page-control-form" method="GET" action="#" onsubmit="return false;" >  
-    <div class="left-control-box">
-      <select name="tournament_year_and_name" onchange="WSRC.onTournamentSelected(this)">
-        <option value="">{{ selector.default_text }} . . .</option>
-{% regroup selector.links|dictsortreversed:'year' by year as yearly_links %}
-{% for year in yearly_links %}
-        <optgroup label="{{ year.grouper }}">
-{% for comp in year.list %}
-          <option value="{{ comp.link }}" {% if comp.selected %}selected="selected"{% endif %}>{{ comp.name }}</option>
-{% endfor %}
-        </optgroup>
-{% endfor %}
-      </select>
-    </div>
-    <div class="right-control-box">
-      <fieldset data-role="controlgroup" data-type="horizontal" data-shadow="true">
-        <button id="edit-button" data-inline="true" class="ui-btn ui-icon-edit ui-btn-icon-right {% if not user.is_authenticated %}ui-state-disabled{% endif %}" {% if user.is_authenticated %}onclick="wsrc.Tournament.on_edit_clicked(this);"{% endif %}>Edit</button>
-      </fieldset>
-      <fieldset data-role="controlgroup" data-type="horizontal" data-shadow="true">
-        <button id="bracket-refresh-button" data-inline="true" class="ui-btn ui-icon-refresh ui-btn-icon-right">Refresh</button>
-      </fieldset>
-    </div>
-    <div class="clear-all"></div>
+<div class="controls">
+  <form id="page-control-form" class="form-inline">
+    <select class="form-control" name="tournament_year_and_name" onchange="document.location = $(this).val()">
+      <option value="">{{ selector.default_text }} . . .</option>
+      {% regroup selector.links|dictsortreversed:'year' by year as yearly_links %}
+      {% for year in yearly_links %}
+      <optgroup label="{{ year.grouper }}">
+        {% for comp in year.list %}
+        <option value="{{ comp.link }}" {% if comp.selected %}selected="selected"{% endif %}>{{ comp.name }}</option>
+        {% endfor %}
+      </optgroup>
+      {% endfor %}
+    </select>
+    <a type="button" class="btn btn-primary" href="{% url 'match_create' comp_id=competition.id %}" onclick=""><span class="glyphicon glyphicon-edit"></span>Score Entry</a>
   </form>
+  <div id="drop_clear" class="clearfix"></div>
+  <h3>{{ competition.name }}&nbsp;{{ competition.end_date|date:'Y' }}</h3>
+</div>
 
-  <div class="competition-wrapper">
+<div class="competition-wrapper">
   {{ bracket|safe }}
-  </div>
+</div>
 {% endblock %}{% comment "centered_page_content" %}{% endcomment %}
 
 
-{% block extra_page_content %}
-{{ block.super }}
-<div data-role="popup" id="score_entry_dialog" data-overlay-theme="b" data-theme="a" data-dismissible="true">
-  <div data-role="header" data-theme="a">
-    <h2>Match Result</h2>
-    <a href="#" data-rel="back" class="ui-btn ui-corner-all ui-shadow ui-btn-a ui-icon-delete ui-btn-icon-notext ui-btn-right">Close</a>
-  </div>
-  <div class="ui-content">
+{% block body_script_extra %}
+<script>
+ var playerElts = jQuery("td.player");
+ playerElts.unbind()  
+ playerElts = playerElts.filter(":not(td.empty-match)");
+ 
+ playerElts.mouseenter(function(evt) {
+     var target = $(evt.target);
+     var myteam = target.data("team");
+     if (! myteam)
+         return false;
+     var matches = jQuery("td.player").filter(function() {
+         var theirteam = $(this).data("team");
+         return myteam == theirteam
+     });
+     matches.addClass("wsrc-highlight")
+ });
 
-{% include "match_result_form.html" %}
-
-  </div>
-</div>
-{% endblock %}{% comment "extra_page_content" %}{% endcomment %}
+ playerElts.mouseleave(function(evt) {
+     jQuery("td.wsrc-highlight").removeClass("wsrc-highlight");
+ });
+</script>  
+{% endblock %}
