@@ -12,13 +12,17 @@ class WSRC_result_form
   constructor: (@form, @competition_data, @entrants_map, @match_id, @base_path) ->
     @team1_selector = @form.find("select[name='team1']")
     @team2_selector = @form.find("select[name='team2']")
+    @match_selector = @form.find(":input[name='match']")
     @team1_selector.on('change', (evt) => @handle_team_selected(evt))
     @team2_selector.on('change', (evt) => @handle_team_selected(evt))
+    @match_selector.on("change", (evt) => @handle_match_changed(evt))
     @form.find(":input[name='walkover']").on("change", (evt) => @handle_result_type_changed(evt))
     @form.find("table.score-entry :input").on("change", (evt) => @handle_score_changed(evt))
     unless @match_id?
-      @handle_team_selected({target: @team1_selector});
-      @handle_team_selected({target: @team2_selector});
+      if @team1_selector.length
+        @handle_team_selected({target: @team1_selector});
+      if @team2_selector.length
+        @handle_team_selected({target: @team2_selector});
     @do_validation()
 
   toggle_disabled: (selector, enable) ->    
@@ -63,9 +67,9 @@ class WSRC_result_form
           $(elt).show()
       if other_team_id?
         if op_1_or_2 == "1"
-          @load_scores_for_match(team_id, other_team_id)
+          @load_scores_for_opponents(team_id, other_team_id)
         else
-          @load_scores_for_match(other_team_id, team_id)
+          @load_scores_for_opponents(other_team_id, team_id)
         blank_scores = false
     if blank_scores
       @blank_scores()
@@ -76,6 +80,18 @@ class WSRC_result_form
 
   handle_score_changed: () ->
     @do_validation()
+    
+  handle_match_changed: (evt) ->
+    selector = $(evt.target)
+    @match_id = selector.val() or null
+    if @match_id
+      @match_id = parseInt(@match_id, 10)
+      match = (amatch for amatch in @competition_data.matches when amatch.id == @match_id)
+      match = if match.length then match[0] else null
+      @set_opponent_name(@entrants_map[match?.team1]?.name, 1)
+      @set_opponent_name(@entrants_map[match?.team2]?.name, 2)
+      @load_scores_for_match(match)
+      @do_validation()
     
   # check that the entered scores are a valid match result. We need at
   # least one valid set result. Multiple sets cannot contain blank
@@ -99,8 +115,13 @@ class WSRC_result_form
         blank_row_found = true
     return not isNaN(total) and total > 0
 
+  validate_match: () ->
+    if @match_selector.length == 0
+      return true
+    return @match_selector.val()
+
   validate_players: () ->
-    if @match_id?
+    if @team1_selector.length == 0 and @team2_selector.length == 0
       return true # selectors have been removed
     val = WSRC_result_form.get_selected_id(@team1_selector) and WSRC_result_form.get_selected_id(@team2_selector)
     return val?
@@ -111,13 +132,13 @@ class WSRC_result_form
     
   do_validation: () ->
     is_valid = false
-    if @validate_players()
+    if @validate_players() and @validate_match()
       is_walkover = @validate_walkover()
       @toggle_disabled(":input[name='walkover']", true)
       @toggle_disabled("table.score-entry :input", not is_walkover)
       is_valid = is_walkover or @validate_scores()
       @toggle_disabled("button[type='submit']", is_valid)
-#g      if is_walkover
+#      if is_walkover
 #        @blank_scores()
     else
       @toggle_disabled(":input[name='walkover']", false)
@@ -145,14 +166,19 @@ class WSRC_result_form
   blank_scores: () ->
     @form.find("table.score-entry :input").val("")
 
-  load_scores_for_match: (team1_id, team2_id) ->
-
-    @blank_scores()
+  load_scores_for_opponents: (team1_id, team2_id) ->
     [existing_match, isreversed] = WSRC_result_form.find_match_for_ids(@competition_data.matches, team1_id, team2_id)
-
+    @load_scores_for_match(existing_match, isreversed)
     action = ""
     if existing_match
       action = @base_path + "/#{ existing_match.id }"
+    if history
+      history.pushState({}, "", action)
+    @form[0].action = action
+
+  load_scores_for_match: (existing_match, isreversed) ->
+    @blank_scores()
+    if existing_match
       if existing_match.walkover
         radio = @form.find("input[name='walkover'][value='#{ existing_match.walkover }']")
         radio.prop("checked", true)
@@ -167,9 +193,6 @@ class WSRC_result_form
           @form.find(":input[name='team1_score#{ idx }']").val(s[p1idx])
           @form.find(":input[name='team2_score#{ idx }']").val(s[p2idx])
           idx += 1
-    if history
-      history.pushState({}, "", action)
-    @form[0].action = action
     
 unless window.wsrc
   window.wsrc = {}
