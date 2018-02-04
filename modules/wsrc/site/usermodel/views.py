@@ -22,6 +22,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.core.exceptions import PermissionDenied
 from django.db import transaction
+from django.db.models import Q
 from django.http import HttpResponse, HttpResponseBadRequest
 from django import forms
 from django.template.response import TemplateResponse
@@ -50,6 +51,10 @@ from .forms import SettingsUserForm, SettingsPlayerForm, SettingsYoungPlayerForm
 
 JSON_RENDERER = JSONRenderer()
 
+
+class SearchForm(forms.Form):
+    search = forms.CharField()
+
 class MemberListView(ListView):
     "Straightforward list view for active members"
 
@@ -60,17 +65,35 @@ class MemberListView(ListView):
         return super(MemberListView, self).dispatch(request, *args, **kwargs)
 
     def get_queryset(self):
-        return Player.objects.values("id", "user__first_name", "user__last_name", "user__email",\
+        queryset = Player.objects.select_related("user")\
+                                 .filter(user__is_active=True) \
+                                 .exclude(prefs_display_contact_details=False) \
+                                 .order_by('user__first_name', 'user__last_name')
+        filter_text = self.request.REQUEST.get("search")
+        filter_ids = self.request.REQUEST.get("filter-ids")
+        if filter_text is not None:
+            queryset = queryset.filter(Q(user__first_name__icontains=filter_text) |\
+                                       Q(user__last_name__icontains=filter_text) |\
+                                       Q(other_phone__icontains=filter_text) |\
+                                       Q(cell_phone__icontains=filter_text))
+        if filter_ids is not None:
+            ids = filter_ids.split(",")
+            clause = None
+            for an_id in ids:
+                aclause = Q(pk=an_id)
+                clause = clause | aclause if clause is not None else aclause
+            queryset = queryset.filter(clause)
+                
+        return queryset.values("id", "user__first_name", "user__last_name", "user__email",\
                                      "other_phone", "cell_phone", "user__is_active") \
-                             .filter(user__is_active=True) \
-                             .exclude(prefs_display_contact_details=False) \
-                             .order_by('user__first_name', 'user__last_name')
 
     def get_template_names(self):
         return ["memberlist.html"]
 
     def get_context_data(self, **kwargs):
         ctx = super(MemberListView, self).get_context_data(**kwargs)
+        form = SearchForm(data=self.request.REQUEST)
+        ctx["form"] = form
         return ctx
 
 
