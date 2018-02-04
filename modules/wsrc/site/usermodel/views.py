@@ -74,6 +74,7 @@ class MemberListView(ListView):
         if filter_text is not None:
             queryset = queryset.filter(Q(user__first_name__icontains=filter_text) |\
                                        Q(user__last_name__icontains=filter_text) |\
+                                       Q(user__email__icontains=filter_text) |\
                                        Q(other_phone__icontains=filter_text) |\
                                        Q(cell_phone__icontains=filter_text))
         if filter_ids is not None:
