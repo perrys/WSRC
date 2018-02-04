@@ -24,7 +24,7 @@
       </optgroup>
       {% endfor %}
     </select>
-    <a type="button" class="btn btn-primary" href="{% url 'match_create' comp_id=competition.id %}" onclick=""><span class="glyphicon glyphicon-edit"></span>Score Entry</a>
+    <a type="button" class="btn btn-primary" href="{% url 'match_choose_and_update' comp_id=competition.id %}" onclick=""><span class="glyphicon glyphicon-edit"></span>Score Entry</a>
   </form>
   <div id="drop_clear" class="clearfix"></div>
   <h3>{{ competition.name }}&nbsp;{{ competition.end_date|date:'Y' }}</h3>
@@ -57,5 +57,28 @@
  playerElts.mouseleave(function(evt) {
      jQuery("td.wsrc-highlight").removeClass("wsrc-highlight");
  });
+
+ function open_score_entry_dialog(elt) {
+     console.log(elt);
+     var matchId = parseInt($(elt).data("match"), 10);
+     document.location.href="{% url 'match_create' comp_id=competition.id %}/" + matchId 
+ };
+ 
+ playerElts = playerElts.filter(":not(td.completed-match)");
+ playerElts = playerElts.filter(":not(td.partial-match)");
+ playerElts.dblclick(function(evt) {
+     return open_score_entry_dialog(evt.target);
+ });
+ playerElts.on("taphold", function(evt) {
+     return open_score_entry_dialog(evt.target);
+ });
+ playerElts.siblings().filter(".score").dblclick(function(evt) {
+     var target = evt.target;
+     while (!target.classList.contains("player")) {
+         target = target.previousSibling;
+     }
+     return open_score_entry_dialog(target);
+ });
+ 
 </script>  
 {% endblock %}
