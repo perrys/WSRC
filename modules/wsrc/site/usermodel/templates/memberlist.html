@@ -46,13 +46,13 @@ form.form-search:before {
         <th>Mobile</th>
       </tr>
     </thead>
-    <tbody class="wsrc-filterable">
+    <tbody class="filterable">
 {% for member in object_list %}
 <tr class="" data-wsrcfilter="{{ member.id }}">
-  <td><span>Name:</span> {{ member.user__first_name }} {{ member.user__last_name }}</td>
-  <td><span>E-Mail:</span> <a href="mailto:{{ member.user__email }}">{{ member.user__email }}</a></td>
-  <td><span>Phone:</span> <a href="tel:{{ member.other_phone|urlencode }}">{{ member.other_phone }}</a></td>
-  <td><span>Mobile:</span> <a href="sms:{{ member.cell_phone|urlencode }}">{{ member.cell_phone }}</a></td>
+  <td><span>Name:</span> <span class="searchtext">{{ member.user__first_name }} {{ member.user__last_name }}</span></td>
+  <td><span>E-Mail:</span> <a href="mailto:{{ member.user__email }}" class="searchtext">{{ member.user__email }}</a></td>
+  <td><span>Phone:</span> <a href="tel:{{ member.other_phone|urlencode }}" class="searchtext">{{ member.other_phone }}</a></td>
+  <td><span>Mobile:</span> <a href="sms:{{ member.cell_phone|urlencode }}" class="searchtext">{{ member.cell_phone }}</a></td>
 </tr>
 {% endfor %}
     </tbody>
@@ -60,3 +60,30 @@ form.form-search:before {
 </div>
 {% endblock %}
 
+{% block body_script_extra %}
+<script>
+ var form = $("form.form-search")
+ form.submit(function(evt) {
+     evt.preventDefault()
+     var search_val = form.find(":input[name='search']").val()
+     search_val = search_val.toLowerCase()
+     $("tbody.filterable tr").each(function(idx, elt) {
+         var row = $(elt);
+         var passed = true
+         if (search_val) {
+             passed = false
+             row.find(".searchtext").each(function(idx, elt) {
+                 if (elt.innerText.toLowerCase().indexOf(search_val) >= 0) {
+                     passed = true
+                     return false
+                 }
+             });
+         }
+         if (passed)
+             row.show()
+         else
+             row.hide()
+     });         
+ });
+</script>
+{% endblock %}
