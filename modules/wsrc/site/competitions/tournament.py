@@ -38,10 +38,17 @@ def render_match(table, col, row, bracketIndex, matchIndex, idPrefix, match_map)
     binomialId = (1<<bracketIndex) + matchIndex
     attrs = dict(locals())
     match = match_map.get(binomialId)
-    attrs["match_state"] = "empty-match"
-    if match is not None:
+
+    match_state = ""
+    if match is None:
+        match_state = "empty-match"
+    else:
         match.cache_scores()
-        attrs["match_state"] = "partial-match" if match.is_unplayed() else "completed-match"
+        if match.team1 is None or match.team2 is None:
+            match_state = "partial-match"
+        elif not match.is_unplayed():
+            match_state = "completed-match"
+    attrs["match_state"] = match_state
 
     class Position:
         def __init__(self, col, row):
@@ -57,6 +64,8 @@ def render_match(table, col, row, bracketIndex, matchIndex, idPrefix, match_map)
         team = "1" if is_top else "2"
         for tok in key.split("."):
             item = getattr(item, tok.format(team=team))
+            if item is None:
+                return NON_BRK_SPACE 
             if hasattr(item, "__call__"):
                 item = item()
         return NON_BRK_SPACE if item is None else str(item)
@@ -82,6 +91,8 @@ def render_match(table, col, row, bracketIndex, matchIndex, idPrefix, match_map)
                 prefix_class = "winner "
         player_cell = addToRow(prefix_class + "player %(match_state)s" % attrs, "team{team}.get_players_as_string", isTop,\
                                "match_%(idPrefix)s_%(binomialId)d_%(pos_identifier)s" % attrs)
+        if match is not None:
+            player_cell.attrs["data-match"] = str(match.id)
         if team_id is not None:
             player_cell.attrs["data-team"] = str(team_id)
             walkover_cmp = 1 if isTop else 2
