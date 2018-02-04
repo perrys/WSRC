@@ -714,7 +714,7 @@ class MatchEntryViewBase(PermissionedView):
         if competition.group.comp_type == "wsrc_boxes":
             url = reverse(BoxesUserView.reverse_url_name) + "/" + date
         elif competition.group.comp_type == "wsrc_tournaments":
-            url = reverse("tournaments", year=competition.group.end_date.year, name=competition.name)
+            url = reverse("tournament", args=(competition.group.end_date.year, competition.name))
         return url
 
 class MatchUpdateView(MatchEntryViewBase, UpdateView):
@@ -729,6 +729,25 @@ class MatchUpdateView(MatchEntryViewBase, UpdateView):
     def dispatch(self, request, *args, **kwargs):
         self.object = self.get_object()
         return super(MatchUpdateView, self).dispatch(request, *args, **kwargs)
+
+class MatchChooseAndUpdateView(MatchUpdateView):
+    "Hybrid view allowing match id to be passed as a POST parameter, rather than as part of the URL"
+    context_object_name = "match"    
+
+    def get_form_kwargs(self):
+        result = super(MatchUpdateView, self).get_form_kwargs()
+        result["initial"]["competition"] = self.competition
+        result['mode'] = 'choose_and_update'
+        return result
+
+    def get_object(self, queryset=None):
+        "Allow match_id to be passed in as a POST parameter"
+        if queryset is None:
+            queryset = self.get_queryset()
+        match_id = self.request.POST.get("match", None)
+        if match_id is not None:
+            return get_object_or_404(queryset, pk=match_id)
+        return None
 
 class MatchCreateView(MatchEntryViewBase, CreateView):
     def get_form_kwargs(self):
