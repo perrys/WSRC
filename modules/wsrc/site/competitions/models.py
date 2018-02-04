@@ -190,6 +190,10 @@ class Match(models.Model):
             raise ValidationError("Two opponents in the same match must be different!")
         if self.walkover is None and (self.team1_score1 is None or self.team2_score1 is None):
             raise ValidationError("At least one score is required, or a walkover")
+        if self.competition.group.comp_type == "wsrc_tournaments":
+            winner = self.get_winner()
+            if winner is None:
+                raise ValidationError("Tournament matches must have a winner")
 
     def validate_unique(self, exclude):
         super(Match, self).validate_unique(exclude)
@@ -206,6 +210,14 @@ class Match(models.Model):
             err = "A match with the same opponents already exists for this competition"
             raise ValidationError({NON_FIELD_ERRORS: ValidationError(err, code="match_exists", params={"match": existing})})
 
+    def save(self, *args, **kwargs):
+        super(Match, self).save(*args, **kwargs)
+        if self.competition.group.comp_type == "wsrc_tournaments":
+            winner = self.get_winner()
+            if winner is not None and self.competition_match_id > 1:
+                from .tournament import get_or_create_next_match
+                get_or_create_next_match(self.competition, self.competition_match_id, winner)
+        
     def get_team(self, team_number_1_or_2):
         entrant = getattr(self, "team%(team_number_1_or_2)d" % locals())
         return entrant or None
