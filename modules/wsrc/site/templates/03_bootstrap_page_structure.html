@@ -3,7 +3,7 @@
 {% block html_body %}
 {% block body_header %}{% endblock %}
 {% block body_main %}
-<div class="container" role="main">
+<div class="{% block container-classes %}container{% endblock %}" role="main">
   {% block centered_page_content %}{% endblock %}
 </div>
 {% endblock %}

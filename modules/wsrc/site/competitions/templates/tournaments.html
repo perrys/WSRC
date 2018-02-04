@@ -1,13 +1,13 @@
 {% extends "06_wsrc_navigation.html" %}
 
 {% block titleprefix %}{{ competition.name }} {{ competition.end_date|date:'Y' }} - {% endblock %}
-{% load competitions_extras %}
 {% block html_header_extra %}
 <meta name="robots" content="noindex" />
 {{ block.super }}
 <link href="/static/css/wsrc_tournaments.css" rel="stylesheet" />
 {% endblock %}
 
+{% block container-classes %}container{% if competition.nbrackets > 5 %}-fluid{% endif %}{% endblock %}
 
 {% block centered_page_content %}
 
@@ -30,7 +30,7 @@
   <h3>{{ competition.name }}&nbsp;{{ competition.end_date|date:'Y' }}</h3>
 </div>
 
-<div class="competition-wrapper">
+<div class="competition-wrapper center-block">
   {{ bracket|safe }}
 </div>
 {% endblock %}{% comment "centered_page_content" %}{% endcomment %}
