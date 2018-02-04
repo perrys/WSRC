@@ -26,17 +26,21 @@
       </div>
     </div>
 
-  {% if match %}
+    {% if match %}
     <div class="form-group ">
       <span class="col-sm-3 control-label">Match: </span>
       <div class="col-sm-9">
         <p class="form-control-static">{{ match.get_teams_display }}</p>
       </div>
     </div>
-  {% else %}
-  {% include "form_field_snippet.html" with field=form.team1 %}
-  {% include "form_field_snippet.html" with field=form.team2 %}
-  {% endif %}
+    {% else %}
+    {% if form.match %}
+    {% include "form_field_snippet.html" with field=form.match %}
+    {% else %}    
+    {% include "form_field_snippet.html" with field=form.team1 %}
+    {% include "form_field_snippet.html" with field=form.team2 %}
+    {% endif %}
+    {% endif %}
   
     <div {% if not is_editor %}style="display: none;"{% endif %}>
       {% include "form_field_radio_snippet.html" with field=form.walkover %}    
