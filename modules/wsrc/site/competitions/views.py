@@ -33,7 +33,7 @@ from django.template.response import TemplateResponse
 from django.forms import ModelForm, ModelChoiceField
 from django.http import HttpResponse, HttpResponseBadRequest
 from django.views.generic import TemplateView, View
-from django.views.generic.edit import UpdateView, CreateView, SingleObjectMixin
+from django.views.generic.edit import UpdateView, CreateView
 from django.utils.decorators import method_decorator
 
 import rest_framework.filters
