@@ -1,23 +1,62 @@
 {% extends "06_wsrc_navigation.html" %}
 {% block titleprefix %}Member List - {% endblock %}
-{% block pagetitle %}Member List{% endblock %}
-{% block pagetype %}memberlist{% endblock %}
+
+{% block html_header_extra %}
+<meta name="robots" content="noindex" />
+{{ block.super }}
+<link href="/static/css/wsrc_reflow_table.css" rel="stylesheet" />
+<style>
+input.search-query {
+    padding-left:26px;
+}
+form.form-search {
+    position: relative;
+    padding-bottom: 15px;
+}
+form.form-search:before {
+    display: block;
+    width: 14px;
+    height: 14px;
+    content: "\e003";
+    font-family: 'Glyphicons Halflings';
+    background-position: -48px 0;
+    position: absolute;
+    top:8px;
+    left:8px;
+    opacity: .5;
+    z-index: 1000;
+}
+</style>
+{% endblock %}
 {% block centered_page_content %}
 
-    <div class="wsrc-member-list">
-      <form>
-        <input id="filterTable-input" data-type="search" placeholder="Search . . .">
-      </form>
-      <table class="wsrc-member-list" data-role="table" data-filter="true" data-input="#filterTable-input">
-        <thead>
-          <tr><th>Name</th><th>E-Mail</th><th>Telephone</th><th>Mobile</th></tr>
-        </thead>
-        <tbody class="wsrc-filterable">
-{% for member in object_list %}
-<tr class="" data-wsrcfilter="{{ member.id }}"><td>{{ member.user__first_name }} {{ member.user__last_name }}</td><td><a href="mailto:{{ member.user__email }}">{{ member.user__email }}</a></td><td><a href="tel:{{ member.other_phone|urlencode }}">{{ member.other_phone }}</a></td><td><a href="sms:{{ member.cell_phone|urlencode }}">{{ member.cell_phone }}</a></td></tr>
-{% endfor %}
-        </tbody>
-      </table>
+<div class="wsrc-member-list">
+  <form class="form-inline form-search pull-right">
+    <div class="input-group"> <!-- {{ form.search }} -->
+      <input name="search" class="form-control search-query" placeholder="Search . . ." {% if form.search.value %}value="{{ form.search.value }}"{% endif %}>
+      <span class="input-group-btn"><button type="submit" class="btn btn-primary"> Search</button></span>
     </div>
+  </form>
+  <table class="table table-striped table-compact table-reflow">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>E-Mail</th>
+        <th>Telephone</th>
+        <th>Mobile</th>
+      </tr>
+    </thead>
+    <tbody class="wsrc-filterable">
+{% for member in object_list %}
+<tr class="" data-wsrcfilter="{{ member.id }}">
+  <td><span>Name:</span> {{ member.user__first_name }} {{ member.user__last_name }}</td>
+  <td><span>E-Mail:</span> <a href="mailto:{{ member.user__email }}">{{ member.user__email }}</a></td>
+  <td><span>Phone:</span> <a href="tel:{{ member.other_phone|urlencode }}">{{ member.other_phone }}</a></td>
+  <td><span>Mobile:</span> <a href="sms:{{ member.cell_phone|urlencode }}">{{ member.cell_phone }}</a></td>
+</tr>
+{% endfor %}
+    </tbody>
+  </table>
+</div>
 {% endblock %}
 
