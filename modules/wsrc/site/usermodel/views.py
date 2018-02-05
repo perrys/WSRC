@@ -44,10 +44,10 @@ from wsrc.external_sites.booking_manager import BookingSystemSession
 from wsrc.site.usermodel.models import Player, DoorCardEvent
 from wsrc.utils import xls_utils, sync_utils
 from wsrc.utils.timezones import parse_iso_date_to_naive
+from wsrc.utils.form_utils import add_formfield_attrs
 
 from .activity_report import ActivityReport
-from .forms import SettingsUserForm, SettingsPlayerForm, SettingsYoungPlayerForm, SettingsInfoForm, \
-    create_notifier_filter_formset_factory
+from .forms import SettingsUserForm, SettingsPlayerForm, SettingsYoungPlayerForm, SettingsInfoForm
 
 JSON_RENDERER = JSONRenderer()
 
@@ -375,6 +375,10 @@ def settings_view(request):
         uform = SettingsUserForm(instance=request.user)
 
     iform = SettingsInfoForm.create(player)
+    add_formfield_attrs(pform)
+    add_formfield_attrs(uform)
+    add_formfield_attrs(iform)
+
     ctx = {
         'player_form':     pform,
         'user_form':       uform,
