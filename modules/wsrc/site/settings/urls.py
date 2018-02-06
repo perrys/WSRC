@@ -43,6 +43,7 @@ urlpatterns = patterns('',
     url(r'^memberlist/?$', wsrc.site.usermodel.views.MemberListView.as_view(), name="member_list"),
     url(r'^maintenance/?$', wsrc.site.views.maintenance_view, name="maintenance"),
     url(r'^suggestions/?$', wsrc.site.views.suggestions_view, name="suggestions"),
+    url(r'^suggestion/?$', wsrc.site.views.SuggestionCreateView.as_view(), name="create_suggestion"),
 
     url(r'^courts/?$', wsrc.site.courts.views.day_view_redirect),
     url(r'^courts/(\d{4}-\d{2}-\d{2})/?$', wsrc.site.courts.views.day_view_redirect),

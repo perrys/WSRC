@@ -27,7 +27,8 @@ from wsrc.utils import timezones, email_utils
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import PasswordChangeForm
 from django.contrib.auth import views as auth_views
-from django.forms.widgets import Textarea
+from django.forms.fields import CharField
+from django.forms.widgets import Textarea, HiddenInput
 from django.middleware.csrf import get_token
 from django.core.mail import SafeMIMEMultipart, SafeMIMEText
 from django.core.exceptions import PermissionDenied
@@ -43,6 +44,7 @@ from django.template.response import TemplateResponse
 from django.template.loader import render_to_string
 from django.utils import timezone
 from django.views.decorators.http import require_safe, require_http_methods
+from django.views.generic.edit import CreateView
 from django.db.models import Q
 
 import rest_framework.generics as rest_generics
@@ -559,6 +561,16 @@ def maintenance_view(request):
     }
     return TemplateResponse(request, "maintenance.html", kwargs)
 
+class SuggestionForm(ModelForm):
+    suggester = CharField(widget=HiddenInput())
+    class Meta:
+        model = Suggestion
+        fields = ["description", "suggester"]
+    
+class SuggestionCreateView(CreateView):
+    template_name = 'suggestion_form.html'
+    form_class = SuggestionForm
+    
 @login_required
 def suggestions_view(request):
     if request.method == 'POST':
