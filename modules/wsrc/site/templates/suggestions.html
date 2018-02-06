@@ -1,50 +1,44 @@
 {% extends "06_wsrc_navigation.html" %}
 {% block titleprefix %}Suggestion Box - {% endblock %}
-{% block pagetitle %}Suggestion Box{% endblock %}
-{% block pagetype %}suggestions{% endblock %}
-{% load kwacros %}
-{% loadkwacros 'form_macros.html' %}
+
+{% block html_header_extra %}
+<meta name="robots" content="noindex" />
+{{ block.super }}
+<link href="/static/css/wsrc_reflow_table.css" rel="stylesheet" />
+<style>
+ td > span {
+     padding-right: 5px;
+ }
+</style>
+{% endblock %}
+
 {% block centered_page_content %}
 
-<h1 class="mobile-hidden">Suggestions</h1> 
-
-<p>
-If you have a suggestion, please submit it using the form below. You will receive confirmation of receipt, and the committee will review all suggestions at the next meeting.
-</p>
-<p>
-<em>Note:</em> to report problems with the building or facilities, please use the <a href="/maintenance">maintenance log</a> page.
-</p>
-
-<a href='#suggestion_popup_form'  data-rel="popup" data-position-to="window" class="ui-btn ui-corner-all ui-shadow ui-btn-inline ui-icon-comment ui-btn-icon-left ui-btn-a" data-transition="pop">Make a Suggestion.</a>
-
-      <table data-role="table" class="wsrc-member-list">
-        <thead>
-          <tr><th>Suggestion</th><th>Reported By</th><th>Reported On</th><th>Reviewed Date</th><th>Comment</th></tr>
-        </thead>
-        <tbody>
-{% for row in data %}
-          <tr>
-            <td style="text-align: justify;">{{ row.description }}</td>
-            <td>{{ row.suggester.user.get_full_name }}</td>
-            <td>{{ row.submitted_date|date:'d M Y' }}</td>
-            <td>{{ row.reviewed_date|date:'d M Y' }}</td>
-            <td>{{ row.comment|default:"" }}</td>
-          </tr>
-{% endfor %}
-        </tbody>
-      </table>
-
-
-<div data-role="popup" id="suggestion_popup_form" data-theme="b" >
-  <div data-role="header" data-theme="c">
-    <h2>Make a Suggestion</h2>
-    <a href="#" data-rel="back" class="ui-btn ui-corner-all ui-shadow ui-btn-a ui-icon-delete ui-btn-icon-notext ui-btn-right">Close</a>
-  </div>
- <form method="post" action="{% url 'suggestions' %}" data-ajax="false">{% csrf_token %}
-<!-- we don't bother to report errors from previous sumissions in this popup -->
-{% usekwacro createfield form.description True submit_button_value="Submit" %}
- </form>
+<h3>Suggestion Box</h3>
+<div class="well">
+  <p>
+    The management committee reviews all new suggestions at committee meetings, held every 1&ndash;2 months. To submit your idea, click below.
+  </p>
+  <a href='{% url 'create_suggestion' %}' class="btn btn-primary">Make a Suggestion</a>
+  <div class="clearfix"></div>
 </div>
+
+<table class="table table-striped table-compact table-reflow">
+  <thead>
+    <tr><th>Suggestion</th><th>Made By</th><th>On</th><th>Reviewed</th><th>Response</th></tr>
+  </thead>
+  <tbody>
+    {% for row in data %}
+    <tr>
+      <td><span>Suggestion: </span>{{ row.description }}</td>
+      <td><span>Made By: </span>{{ row.suggester.user.get_full_name }}</td>
+      <td><span>On: </span>{{ row.submitted_date|date:'d M Y' }}</td>
+      <td><span>Reviewed: </span>{{ row.reviewed_date|date:'d M Y' }}</td>
+      <td><span>Response: </span>{{ row.comment|default:"" }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
 
 
 {% endblock %}
