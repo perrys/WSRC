@@ -24,7 +24,7 @@
       </optgroup>
       {% endfor %}
     </select>
-    <a type="button" class="btn btn-primary" href="{% url 'match_choose_and_update' comp_id=competition.id %}" onclick=""><span class="glyphicon glyphicon-edit"></span>Score Entry</a>
+    <a type="button" class="btn btn-primary" href="{% url 'match_choose_and_update' comp_id=competition.id %}{% if options.no_navigation %}?no_navigation{% endif %}"><span class="glyphicon glyphicon-edit"></span>Score Entry</a>
   </form>
   <div id="drop_clear" class="clearfix"></div>
   <h3>{{ competition.name }}&nbsp;{{ competition.end_date|date:'Y' }}</h3>
@@ -61,7 +61,7 @@
  function open_score_entry_dialog(elt) {
      console.log(elt);
      var matchId = parseInt($(elt).data("match"), 10);
-     document.location.href="{% url 'match_create' comp_id=competition.id %}/" + matchId 
+     document.location.href="{% url 'match_create' comp_id=competition.id %}/" + matchId {% if options.no_navigation %}+ "?no_navigation"{% endif %}
  };
  
  playerElts = playerElts.filter(":not(td.completed-match)");

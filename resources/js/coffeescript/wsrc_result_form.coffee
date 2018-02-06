@@ -9,7 +9,7 @@ class WSRC_result_form
   # 4b otherwise score-entry must have at least one score populated
   # 5. Ready for submit 
 
-  constructor: (@form, @competition_data, @entrants_map, @match_id, @base_path) ->
+  constructor: (@form, @competition_data, @entrants_map, @match_id, @base_path, @base_path_suffix) ->
     @team1_selector = @form.find("select[name='team1']")
     @team2_selector = @form.find("select[name='team2']")
     @match_selector = @form.find(":input[name='match']")
@@ -171,7 +171,7 @@ class WSRC_result_form
     @load_scores_for_match(existing_match, isreversed)
     action = ""
     if existing_match
-      action = @base_path + "/#{ existing_match.id }"
+      action = @base_path + "/#{ existing_match.id }"  + @base_path_suffix
     if history
       history.pushState({}, "", action)
     @form[0].action = action

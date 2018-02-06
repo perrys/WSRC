@@ -689,6 +689,7 @@ class MatchEntryViewBase(PermissionedView):
         entrant_map = dict([(entrant["id"], entrant) for entrant in entrant_data])
         context["competition_data"] = JSON_RENDERER.render(comp_data)
         context["entrants_map_data"] = JSON_RENDERER.render(entrant_map)
+        set_view_options(self.request, context)
         agent = self.request.META.get("HTTP_USER_AGENT")
         # Eugh - user agent sniffing. I don't see a better way though..
         horizontal_layout = True
@@ -715,6 +716,8 @@ class MatchEntryViewBase(PermissionedView):
             url = reverse(BoxesUserView.reverse_url_name) + "/" + date
         elif competition.group.comp_type == "wsrc_tournaments":
             url = reverse("tournament", args=(competition.group.end_date.year, competition.name))
+        if "no_navigation" in self.request.GET:
+            url += "?no_navigation"
         return url
 
 class MatchUpdateView(MatchEntryViewBase, UpdateView):

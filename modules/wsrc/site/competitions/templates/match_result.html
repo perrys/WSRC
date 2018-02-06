@@ -21,7 +21,8 @@
  var match_id = {% if match %}{{ match.id }}{% else %}null{% endif %};
  var form = $("form.match-result");
  var base_url = "{% url 'match_create' comp_id=competition.id %}";
- var result_form_controller = new wsrc.result_form(form, competition_data, entrants_map_data, match_id, base_url);
+ var base_path_suffix = "{% if options.no_navigation %}?no_navigation{% endif %}"
+ var result_form_controller = new wsrc.result_form(form, competition_data, entrants_map_data, match_id, base_url, base_path_suffix);
  
 </script>
 {% endblock %}

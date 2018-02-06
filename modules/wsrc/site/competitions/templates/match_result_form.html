@@ -1,5 +1,5 @@
 
-<form class="match-result form-horizontal" method="POST">
+<form class="match-result form-horizontal" method="POST" {% if options.no_navigation %}action="?no_navigation"{% endif %}>
   <fieldset>
     <legend>Match Result</legend>
 
