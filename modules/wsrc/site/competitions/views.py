@@ -507,6 +507,8 @@ class BoxesTemplateViewBase(BoxesViewBase, TemplateView):
             boxes.append(cfg)
             previous_cfg = cfg
         for box in boxes:
+            if "no_navigation" in self.request.GET: # remove player links from this table
+                auth_user_id = None
             box["box_table"]    = self.create_box_table(box["competition"], max_players, box["entrants"], box["matches"], auth_user_id)
             box["league_table"] = self.create_league_table(box["competition"], box["sorted_entrants"], auth_user_id)
 
@@ -689,6 +691,7 @@ class MatchEntryViewBase(PermissionedView):
         entrant_map = dict([(entrant["id"], entrant) for entrant in entrant_data])
         context["competition_data"] = JSON_RENDERER.render(comp_data)
         context["entrants_map_data"] = JSON_RENDERER.render(entrant_map)
+        context["back_url"] = self.get_success_url()
         set_view_options(self.request, context)
         agent = self.request.META.get("HTTP_USER_AGENT")
         # Eugh - user agent sniffing. I don't see a better way though..

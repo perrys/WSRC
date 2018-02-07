@@ -169,7 +169,7 @@
           <a type="button" class="btn btn-primary btn-xs" href="{% url 'match_create' comp_id=box_config.id %}{% if options.no_navigation %}?no_navigation{% endif %}"><span class="glyphicon glyphicon-edit"></span>Score Entry</a>
 {% endif %}
         </div>
-        <h3 class="panel-title" id="comp_{{ box_config.id }}">{% if user.is_authenticated %}<a href="{% url 'member_list' %}?filter-ids={% for e in box_config.entrants %}{% if e.player1__id %}{% if forloop.counter0 > 0 %},{% endif %}{{ e.player1__id }}{% endif %}{% endfor %}">{% endif %}{{ box_config.name }}{% if user.is_authenticated %}</a>{% endif %}</h3>
+        <h3 class="panel-title" id="comp_{{ box_config.id }}">{% if user.is_authenticated and not options.no_navigation %}<a href="{% url 'member_list' %}?filter-ids={% for e in box_config.entrants %}{% if e.player1__id %}{% if forloop.counter0 > 0 %},{% endif %}{{ e.player1__id }}{% endif %}{% endfor %}">{% endif %}{{ box_config.name }}{% if user.is_authenticated %}</a>{% endif %}</h3>
       </div>
       <div class="panel-body table-container" data-id="{{ box_config.id }}">
         <div class="boxes"   {% if view_type != "boxes" %}style="display: none;"{% endif %}>{{ box_config.box_table|safe }}</div>
