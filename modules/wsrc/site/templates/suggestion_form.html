@@ -21,17 +21,37 @@
 
 {% block centered_page_content %}
 
-<form method="post" class="form">{% csrf_token %}
-  <legend>Make a Suggestion</legend>
+<form method="post" class="form">
+  {% csrf_token %}
+  {% for hidden in form.hidden_fields %}
+  {{ hidden }}
+  {% endfor %}
+
+  {% if form.errors %}
+  <div class="alert alert-danger">ERROR. Please correct the problem(s) below and resubmit, or hit "Back" to revert.
+    <ul>
+      {% for err in form.non_field_errors %}
+      <li class="form_error_message">{{ err|safe }}</li>
+      {% endfor %}
+    </ul>
+  </div>
+  {% endif %}
+
+  <legend>{% if mode == "maintenance" %}Report a Problem{% else %}Make a Suggestion{% endif %}</legend>
   <div class="well">
+    {% if mode == "maintenance" %}
+    To report a maintenance issue at the club, please use the form below.
+    You will receive confirmation of receipt by email, and the log will be updated as the issue is reviewed and fixed.
+    {% else %}
     <p>
-    If you have a suggestion for improvements to the club or changes to how it is run, please submit it using the form below.
+      If you have a suggestion for improvements to the club or changes to how it is run, please submit it using the form below.
       You will get a receipt confirmation by email, and the committee will review all suggestions at the next meeting.
     </p>
     <strong>Note:</strong> to report problems with the building or facilities, please use the <a href="/maintenance" class="underline">maintenance log</a> form instead.
+    {% endif %}
   </div>
   <div class="form-group {% if field.errors %}has-error{% endif %}">
-    <textarea class="form-control" name="description" rows="10" placeholder="My suggestion is&hellip;"></textarea>
+    <textarea class="form-control" name="description" rows="10" placeholder="{% if mode == "maintenance" %}There is a problem with{% else %}My suggestion is{% endif %}&hellip;"></textarea>
   </div>
   <div class="buttonset">
     <button class="btn btn-primary" type="submit" value="Update"><span class="glyphicon glyphicon-ok"></span>&nbsp;Submit</button>

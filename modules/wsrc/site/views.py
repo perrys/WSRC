@@ -27,12 +27,12 @@ from wsrc.utils import timezones, email_utils
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import PasswordChangeForm
 from django.contrib.auth import views as auth_views
-from django.forms.fields import CharField
+from django.forms.fields import CharField, IntegerField
 from django.forms.widgets import Textarea, HiddenInput
 from django.middleware.csrf import get_token
 from django.core.mail import SafeMIMEMultipart, SafeMIMEText
-from django.core.exceptions import PermissionDenied
-from django.core.urlresolvers import reverse as reverse_url
+from django.core.exceptions import PermissionDenied, SuspiciousOperation
+from django.core.urlresolvers import reverse_lazy
 from django.db import transaction
 from django.forms import ModelForm, TextInput
 from django.http import HttpResponse
@@ -534,21 +534,6 @@ def notify(template_name, kwargs, subject, to_list, cc_list, from_address, attac
 
 @login_required
 def maintenance_view(request):
-    if request.method == 'POST':
-        form = MaintenanceForm(request.POST)
-        if form.is_valid(): # if the form is invalid (i.e. empty) just do nothing
-            with transaction.atomic():
-                instance = form.save(commit=False)
-                instance.reporter = request.user.player
-                instance.save()
-                context = {"issue": instance}
-                to_list = [request.user.email, MAINT_OFFICER_EMAIL_ADRESS]
-                cc_list = [COMMITTEE_EMAIL_ADDRESS]
-                notify("MaintenanceIssueReceipt", context,
-                       subject="WSRC Maintenance", to_list=to_list,
-                       cc_list=cc_list, from_address=MAINT_OFFICER_EMAIL_ADRESS)
-    form = MaintenanceForm()
-
     issues = [issue for issue in MaintenanceIssue.objects.all().order_by('-reported_date')]
     cmp_map = {'ar': 1, 'aa': 2, 'ni': 3, 'c': 3}
     def status_cmp(x, y):
@@ -557,41 +542,60 @@ def maintenance_view(request):
 
     kwargs = {
         'data': issues,
-        'form': form
     }
     return TemplateResponse(request, "maintenance.html", kwargs)
 
 class SuggestionForm(ModelForm):
-    suggester = CharField(widget=HiddenInput())
     class Meta:
         model = Suggestion
         fields = ["description", "suggester"]
     
+class MaintenanceForm(ModelForm):
+    class Meta:
+        model = MaintenanceIssue
+        fields = ["description", "reporter"]
+
 class SuggestionCreateView(CreateView):
     template_name = 'suggestion_form.html'
+    success_url = reverse_lazy("suggestions")
     form_class = SuggestionForm
-    
+    fields = ["description"]
+    def form_valid(self, form):
+        form.instance.suggester = self.request.user.player
+        result = super(SuggestionCreateView, self).form_valid(form)
+        email_target = COMMITTEE_EMAIL_ADDRESS
+        context = {"suggestion": self.object}
+        to_list = [self.request.user.email, email_target]
+        notify("SuggestionReceipt", context,
+               subject="WSRC New Suggestion", to_list=to_list,
+               cc_list=None, from_address=COMMITTEE_EMAIL_ADDRESS)
+        return result
+
+class MaintenanceIssueCreateView(CreateView):
+    template_name = 'suggestion_form.html'
+    form_class = MaintenanceForm
+    success_url = reverse_lazy("maintenance")
+    fields = ["description"]
+    def get_context_data(self, **kwargs):
+        result = super(MaintenanceIssueCreateView, self).get_context_data(**kwargs)
+        result["mode"] = "maintenance"
+        return result
+    def form_valid(self, form):
+        form.instance.reporter = self.request.user.player
+        result = super(MaintenanceIssueCreateView, self).form_valid(form)
+        context = {"issue": self.object}
+        to_list = [self.request.user.email, MAINT_OFFICER_EMAIL_ADRESS]
+        cc_list = [COMMITTEE_EMAIL_ADDRESS]
+        notify("MaintenanceIssueReceipt", context,
+               subject="WSRC Maintenance", to_list=to_list,
+               cc_list=cc_list, from_address=MAINT_OFFICER_EMAIL_ADRESS)
+        return result
+
 @login_required
 def suggestions_view(request):
-    if request.method == 'POST':
-        form = SuggestionForm(request.POST)
-        if form.is_valid(): # if the form is invalid (i.e. empty) just do nothing
-            with transaction.atomic():
-                instance = form.save(commit=False)
-                instance.suggester = request.user.player
-                instance.save()
-                email_target = COMMITTEE_EMAIL_ADDRESS
-                context = {"suggestion": instance}
-                to_list = [request.user.email, email_target]
-                notify("SuggestionReceipt", context,
-                       subject="WSRC New Suggestion", to_list=to_list,
-                       cc_list=None, from_address=COMMITTEE_EMAIL_ADDRESS)
-
     suggestions = Suggestion.objects.all().order_by('-submitted_date')
-    form = SuggestionForm()
     kwargs = {
         'data': suggestions,
-        'form': form
     }
     return TemplateResponse(request, 'suggestions.html', kwargs)
 

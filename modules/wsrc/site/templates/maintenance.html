@@ -1,47 +1,50 @@
 {% extends "06_wsrc_navigation.html" %}
 {% block titleprefix %}Club Maintenence - {% endblock %}
-{% block pagetitle %}Club Maintenence{% endblock %}
-{% block pagetype %}maintenance{% endblock %}
-{% load kwacros %}
-{% loadkwacros 'form_macros.html' %}
+
+{% block html_header_extra %}
+<meta name="robots" content="noindex" />
+{{ block.super }}
+<link href="/static/css/wsrc_reflow_table.css" rel="stylesheet" />
+<style>
+ span.c, span.ni {
+     color: #339933;
+ }
+ span.ar {
+     color: #993333;
+ }
+ span.aa {
+     color: #666600;
+ }
+</style>
+{% endblock %}
+
 {% block centered_page_content %}
 
-<h1 class="mobile-hidden">Maintenence</h1> 
+<h3>Maintenence</h3> 
 
-<p>
-This page keeps track of maintenance issues at the club. To report a new problem, please click below. You will receive confirmation of receipt, and the log will be updated as the issue is reviewed and fixed.
-<br>
-<a href='#main_popup_form'  data-rel="popup" data-position-to="window" class="ui-btn ui-corner-all ui-shadow ui-btn-inline ui-icon-comment ui-btn-icon-left ui-btn-a" data-transition="pop">Report a Problem.</a>
-</p>
-      <table class="wsrc-member-list maintenance-table" data-role="table">
-        <thead>
-          <tr><th>Description</th><th>Reported By</th><th>Reported On</th><th>Status</th><th>Target Date</th><th>Comment</th></tr>
-        </thead>
-        <tbody>
-{% for row in data %}
-          <tr>
-            <td>{{ row.description }}</td>
-            <td>{{ row.reporter.user.get_full_name }}</td>
-            <td>{{ row.reported_date|date:'d M Y' }}</td>
-            <td><span class="{{ row.status }}">{{ row.get_status_display }}</span></td>
-            <td>{{ row.target_date|date:'d M Y' }}</td>
-            <td>{{ row.comment|default:"" }}</td>
-          </tr>
-{% endfor %}
-        </tbody>
-      </table>
-
-
-<div data-role="popup" id="main_popup_form" data-theme="b">
-  <div data-role="header" data-theme="c">
-    <h2>Report A Problem</h2>
-    <a href="#" data-rel="back" class="ui-btn ui-corner-all ui-shadow ui-btn-a ui-icon-delete ui-btn-icon-notext ui-btn-right">Close</a>
-  </div>
- <form method="post" action="{% url 'wsrc.site.views.maintenance_view' %}" data-ajax="false">{% csrf_token %}
-<!-- we don't bother to report errors from previous sumissions in this popup -->
-{% usekwacro createfield form.description True submit_button_value="Submit" %}
- </form>
+<div class="well">
+  <p>
+    This page keeps track of maintenance issues at the club. To report a new problem, please click below. 
+  </p>
+  <a href='{% url "create_maintenance_issue" %}' class="btn btn-primary">Report a Problem</a>
 </div>
+<table class="table table-striped table-compact table-reflow">
+  <thead>
+    <tr><th>Description</th><th>Reported By</th><th>Reported On</th><th>Status</th><th>Target Date</th><th>Comment</th></tr>
+  </thead>
+  <tbody>
+    {% for row in data %}
+    <tr>
+      <td><span>Description:</span> {{ row.description }}</td>
+      <td><span>Reporter:</span> {{ row.reporter.user.get_full_name }}</td>
+      <td><span>Date:</span> {{ row.reported_date|date:'d M Y' }}</td>
+      <td><span>Status:</span> <span class="{{ row.status }}">{{ row.get_status_display }}</span></td>
+      <td><span>Target Date:</span> {{ row.target_date|date:'d M Y' }}</td>
+      <td><span>Comment:</span> {{ row.comment|default:"" }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
 
 
 {% endblock %}

@@ -42,6 +42,7 @@ urlpatterns = patterns('',
     url(r'^memberlist/admin/?', wsrc.site.usermodel.views.admin_memberlist_view),
     url(r'^memberlist/?$', wsrc.site.usermodel.views.MemberListView.as_view(), name="member_list"),
     url(r'^maintenance/?$', wsrc.site.views.maintenance_view, name="maintenance"),
+    url(r'^maintenance_issue/?$', wsrc.site.views.MaintenanceIssueCreateView.as_view(), name="create_maintenance_issue"),
     url(r'^suggestions/?$', wsrc.site.views.suggestions_view, name="suggestions"),
     url(r'^suggestion/?$', wsrc.site.views.SuggestionCreateView.as_view(), name="create_suggestion"),
 
@@ -128,6 +129,7 @@ from django.conf import settings
 from django.conf.urls import include, url
 if settings.DEBUG:
     import debug_toolbar
+    from django.conf.urls.static import static
     urlpatterns = [
-        url(r'^__debug__/', include(debug_toolbar.urls)),
-    ] + urlpatterns
+        url(r'^__debug__/', include(debug_toolbar.urls)),      
+    ] + urlpatterns + static(settings.MEDIA_URL, document_root = settings.MEDIA_ROOT)
