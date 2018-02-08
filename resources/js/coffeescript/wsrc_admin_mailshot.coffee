@@ -65,7 +65,7 @@ class WSRC_admin_mailshot
       opts['successCB'] = (xhr, status) ->
         jqmask.unmask()
         if end < email_addresses.length
-          pause = 2
+          pause = 5
           jqmask.mask("Waiting for #{ pause } seconds...")
           resume = () ->
             jqmask.unmask()
