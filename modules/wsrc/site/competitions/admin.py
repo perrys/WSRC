@@ -154,6 +154,7 @@ class EntrantAdmin(admin.ModelAdmin):
     list_display = ("competition", "player1", "player2", "ordering", "handicap", "seeded")
     list_filter = ('competition__group', 'competition__name')
     list_editable = ('handicap', 'seeded')
+    search_fields = ('player1__user__first_name', 'player1__user__last_name', 'player2__user__first_name', 'player2__user__last_name')
     form = EntrantForm
     def get_queryset(self, request):
         qs = super(EntrantAdmin, self).get_queryset(request)
