@@ -13,9 +13,11 @@
 <ul class="nav navbar-nav">
   {% for node in navlinks %}
   {% if node.url %}
+  {% if not user.is_authenticated or not node.name == "Join Us" %}{% comment %}TODO: implement this in the data model{% endcomment %}
   <li class="{% if node.is_active %}active{% endif %}">
     <a href="{% if node.is_reverse_url %}{% url node.url %}{% else %}{{ node.url }}{% endif %}">{{ node.name }}</a>
   </li>
+  {% endif %}
   {% else %}
   <li class="dropdown {% if node.is_expanded %}active{% endif %}">
     <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">{{ node.name }}<span class="caret"></span></a>
