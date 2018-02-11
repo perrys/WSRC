@@ -67,6 +67,7 @@ import logging
 import time
 import base64
 import os.path
+from bs4 import BeautifulSoup
 
 
 FACEBOOK_GRAPH_URL              = "https://graph.facebook.com/"
@@ -107,7 +108,7 @@ def get_pagecontent_ctx(page, title=None):
     result = {
         "pagedata": {
             "title": title is not None and title or data.page,
-            "content": markdown.markdown(data.markup),
+            "content": markdown.markdown(data.markup, extensions=["markdown.extensions.toc"]),
             "last_updated": data.last_updated,
             },
         }
@@ -118,6 +119,40 @@ def generic_view(request, page):
     "Informational views rendered directly from markdown content stored in the DB"
     ctx = get_pagecontent_ctx(page)
     return TemplateResponse(request, 'generic_page.html', ctx)
+
+@require_safe
+def generic_nav_view(request, page, template):
+    "Specialized view for the about page which adds a navigation tree dynamically"
+    ctx = get_pagecontent_ctx(page)
+    # parse the content to find the IDs of title (H3,H4) elements,
+    # which were inserted by the Markdown TOC extension, and use those
+    # to form a navigation tree..
+    content = ctx["pagedata"]["content"]
+    maindoc = BeautifulSoup(content, "lxml")
+    navtree = BeautifulSoup("<ul class='nav'></ul>", "lxml")
+    def subelement(parent, child_tag, text=None, class_=None, **kwargs):
+        tag = navtree.new_tag(child_tag, **kwargs)
+        if text is not None:
+            tag.string = text
+        if class_ is not None:
+            tag["class"] = class_
+        if parent is not None:
+            parent.append(tag)
+        return tag
+    last_ul = None
+    for header in maindoc.find_all(["h3", "h4"]):
+        pending = None
+        if header.name == "h3":            
+            item = subelement(navtree.ul, "li")
+            pending = subelement(None, "ul", class_="nav")
+        else:
+            item = subelement(last_ul, "li")
+        subelement(item, "a", text=header.string, href='#{uid}'.format(uid=header['id']))
+        if pending:
+            last_ul = pending
+            item.append(pending)
+    ctx["pagedata"]["navtree"] = str(navtree.ul)
+    return TemplateResponse(request, template, ctx)
 
 @require_safe
 @login_required
