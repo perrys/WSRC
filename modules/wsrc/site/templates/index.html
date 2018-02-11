@@ -130,20 +130,9 @@
 <script src="/static/js/all.js"></script>
 <script>
  
- var url = "/data/facebook";
- $.ajax(url, {
-     method: "GET",
-     datatype: "json",
-     processData: true,
-     success: function(data, status, jqxhr) {
-         WSRC_homepage.refresh_facebook(data);
-         return true;
-     },
-     failure: function(xhr, status) {
-         alert("ERROR #{ xhr.status }: #{ xhr.statusText }\nResponse: #{ xhr.responseText }\n\nUnable to fetch facebook data.")
-     }
- })
-
+ var url = "{% url 'facebook' %}";
+ WSRC_homepage.load_facebook(url);
+ 
  var last = document.getElementById("leaguemaster_{{ leaguemaster_last_result_idx|add:'-5' }}")
  if (last != null && last.scrollIntoView != undefined)
      last.scrollIntoView()
@@ -151,21 +140,9 @@
  window.WSRC_booking_url = "{% url 'booking' %}"
  var today_bookings = {{ bookings|safe }}
  WSRC_homepage.display_court_bookings(today_bookings, 0, WSRC_user_player_id)
- 
- $(".toggle-link a").on("click", function(evt) {
-     wsrc.utils.toggle(evt.target)
-     evt.preventDefault()
-     return false;
- })
 
- $("#court-back-btn").on("click", function(evt) {
-     WSRC_homepage.booking_advance(-1)
-     evt.target.blur();
- })
- $("#court-fwd-btn").on("click", function(evt) {
-     WSRC_homepage.booking_advance(1)
-     evt.target.blur();
- })
+ WSRC_homepage.init_event_listeners();
+ 
 </script>
 
 {% endblock %}

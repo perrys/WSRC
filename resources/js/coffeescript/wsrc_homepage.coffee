@@ -28,6 +28,18 @@ window.WSRC_homepage =
           odd = true
         table.append(row)
 
+  load_facebook: (url) ->
+     $.ajax(url, 
+       method: "GET",
+       datatype: "json",
+       processData: true,
+       success: (data, status, jqxhr) ->
+         WSRC_homepage.refresh_facebook(data);
+         return true;
+       failure: (xhr, status) ->
+         alert("ERROR #{ xhr.status }: #{ xhr.statusText }\nResponse: #{ xhr.responseText }\n\nUnable to fetch facebook data.")
+     )
+
   add_empty_slots: (bookings, date_prefix) ->
     # Scan todays bookings and insert empty court slots
     
@@ -159,3 +171,20 @@ window.WSRC_homepage =
         alert("ERROR #{ xhr.status }: #{ xhr.statusText }\nResponse: #{ xhr.responseText }\n\nUnable to fetch court bookings.")
     )
 
+  init_event_listeners: () ->
+    $(".toggle-link a").on("click", (evt) ->
+      wsrc.utils.toggle(evt.target)
+      evt.preventDefault()
+      return false
+    )
+
+    $("#court-back-btn").on("click", (evt) ->
+       WSRC_homepage.booking_advance(-1)
+       evt.target.blur()
+    )
+
+    $("#court-fwd-btn").on("click", (evt) ->
+      WSRC_homepage.booking_advance(1)
+      evt.target.blur();
+    )
+    
