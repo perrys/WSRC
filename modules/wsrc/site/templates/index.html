@@ -81,7 +81,7 @@
   <div class="col-xs-12 col-sm-6 col-lg-4">
     <div class="panel panel-default toggle-root">
       <div class="panel-heading">
-        <div id="court-date-buttons" style="inline-block" class="pull-right">
+        <div id="court-date-buttons" class="pull-right">
           <button id="court-back-btn" class="btn btn-default btn-xs">
             <span class="glyphicon glyphicon-chevron-left"></span>
           </button>
@@ -98,7 +98,7 @@
           <tbody>
           </tbody>
         </table>
-        <div class="footnote togglable toggle-link" id="booking_seeall_toggle"><a href="#">(see all)</a></div>
+        <div class="footnote togglable toggle-link"><a href="#">(see all)</a></div>
         <div class="footnote toggled toggle-link"><a href="#">(evenings)</a></div>
       </div>
     </div>
@@ -117,7 +117,7 @@
 {% endfor %}
           </tbody>
         </table>
-        <div class="footnote togglable toggle-link" id="booking_seeall_toggle"><a href="#">(see all)</a></div>
+        <div class="footnote togglable toggle-link"><a href="#">(see all)</a></div>
         <div class="footnote toggled toggle-link"><a href="#">(evenings)</a></div>
       </div>
     </div>
@@ -127,8 +127,7 @@
 {% endblock %}
 
 {% block body_script_extra %}
-<script src="/static/js/wsrc_utils.js"></script>
-<script src="/static/js/wsrc_homepage.js"></script>
+<script src="/static/js/all.js"></script>
 <script>
  
  var url = "/data/facebook";
