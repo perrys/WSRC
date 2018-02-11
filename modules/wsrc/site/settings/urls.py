@@ -89,7 +89,7 @@ urlpatterns = patterns('',
     url(r'^kiosk/?$', wsrc.site.views.kiosk_view, name="kiosk"),
                        
 
-    url(r'^data/facebook$', wsrc.site.views.facebook_view),
+    url(r'^data/facebook$', wsrc.site.views.facebook_view, name="facebook"),
     url(r'^data/bookings$', wsrc.site.views.BookingList.as_view()),
     url(r'^data/accounts/',  include(wsrc.site.accounts.data_urls)),
     url(r'^data/memberlist/',  include(wsrc.site.usermodel.data_urls)),
