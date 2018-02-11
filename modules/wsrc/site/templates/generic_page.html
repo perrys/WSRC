@@ -2,10 +2,6 @@
 
 {% block titleprefix %}{{ pagedata.title|capfirst }} - {% endblock %}
 
-{% block pagetitle %}{{ pagedata.title|capfirst }}{% endblock %}
-
-{% block pagetype %}{{ pagedata.title|lower }}{% endblock %}
-
 {% block centered_page_content %}
 {{ pagedata.content|safe }}
 {% endblock %}
