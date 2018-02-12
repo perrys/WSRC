@@ -62,149 +62,20 @@
 {% endblock %}
 
 {% block body_script_extra %}
-<script src="/static/js/_jquery-ui.js"></script>
-<script src="/static/js/wsrc_utils.js"></script>
-
-<script>
-{% if booking_user_id %}
- window.WSRC_booking_user_id = {{ booking_user_id }}
- window.WSRC_booking_user_name = "{{ booking_user_name }}"
- window.WSRC_booking_user_auth_token = "{{ booking_user_auth_token }}"
+{% if debug %}
+<script src="/static/js/jquery-ui.js"></script>
+{% else %}
+<script
+  src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js"
+  integrity="sha256-VazP97ZCwtekAsvgPBSUwPFKdrwD3unUfSGVYrahUqU="
+   crossorigin="anonymous"></script>
 {% endif %}
-
- var datepicker_options = {
-     dateFormat: "D, d M yy",
-     firstDay: 1,
-     showOtherMonths: true,
-     selectOtherMonths: true,
-     onSelect: function(text, picker) {
-         date = new Date(picker.selectedYear, picker.selectedMonth, picker.selectedDay);
-         fast_load_day(date);
-     }
- }
- var datepicker = $("input.date-input").datepicker(datepicker_options).show()
- widget = datepicker.datepicker("widget")
- widget.hide().detach()
- widget.appendTo("body .container")
-
- function start_load_spinner() {
-     $(".refresh span").addClass("glyphicon-refresh-animate")
- }
- 
- function stop_load_spinner() {
-     $(".refresh span").removeClass("glyphicon-refresh-animate")
- }
- 
- function fast_load_day(date) {
-     var date_str = wsrc.utils.js_to_iso_date_str(date);
-     start_load_spinner();
-     var opts = {
-         url: "{% url 'courts' %}/" + date_str + "?table_only=1",
-         type: 'GET',
-         success: function(data, status, jqxhr) {
-             stop_load_spinner();
-             return update_view(date, data);
-         },
-         error: function(xhr, status) {
-             stop_load_spinner();
-             return alert("ERROR " + xhr.status + ": " + xhr.statusText + "\nResponse: " + xhr.responseText + "\n\nUnable to fetch court bookings.");
-         }
-     };
-     return jQuery.ajax(opts);
- };
-
- function update_view(date, data) {
-     var datepicker, table, url;
-     table = $("div#booking-day table");
-     table.replaceWith(data);
-     $("input.date-input").datepicker("setDate", date);
-     if (history) {
-         url = "{% url 'courts' %}/" + wsrc.utils.js_to_iso_date_str(date);
-         return history.pushState({}, "", url);
-     }
- };
-
- function load_day_table(offset) {
-     var d1, table;
-     table = $("div#booking-day table");
-     d1 = new Date(table.data("date"));
-     if (offset) {
-         d1.setDate(d1.getDate() + offset);
-     }
-     fast_load_day(d1);
- };
-
- function duration_str(mins) {
-     var hours = Math.floor(mins / 60);
-     var mins = mins % 60;
-     result = "";
-     if (hours > 0) {
-         result += "" + hours + " hour" + (wsrc.utils.plural(hours)) + " ";
-     }
-     if (mins > 0) {
-         result += "" + mins + " minute" + (wsrc.utils.plural(mins)) + " ";
-     }
-     return result;
- }
- 
+<script src="/static/js/all.js"></script>
+<script>
+ var controller = wsrc.court_booking.onReady("{% url 'courts' %}");
  function handle_booking_request(e, elt) {
-     var court, duration, form, msg, opts, set, start_time, table, td;
-     e.stopPropagation();
-     e.preventDefault();
-     var td = $(elt);
-     var table = td.parents("table");
-     var court = td.data("court");
-     var start_time = td.data("start_time");
-     var duration = td.data("duration_mins");
-     var msg = "Would you like to make the following booking?\n\n" + (table.data('date_str')) + "\n" + start_time + " for " + duration_str(duration) + "\nCourt " + court;
-     if (confirm(msg)) {
-         var form = $("form#court_booking_form");
-         function set_val(k, v) {
-             form.find("input[name='" + k + "']").val(v);
-         };
-         set_val("court", court);
-         set_val("start_time", start_time);
-         set_val("date", table.data("date"));
-         set_val("token", td.data("token"));
-         set_val("duration", "" + duration + " mins");
-         opts = {
-             url: form.attr("action"),
-             type: 'POST',
-             data: form.serialize(),
-             success: function(data, status, jqxhr) {
-                 stop_load_spinner();
-                 load_day_table(0);
-             },
-             error: function(xhr, status) {
-                 stop_load_spinner();
-                 form.submit();
-             }
-         };
-         start_load_spinner();
-         jQuery.ajax(opts);
-     }
-     return false;
- };
- 
- $("a.previous").attr("href", "javascript:load_day_table(-1)")
- $("a.refresh").attr("href", "javascript:load_day_table()")
- $("a.next").attr("href", "javascript:load_day_table(1)")
-
- $(document).keydown(function(e) {
-     if (e.altKey && e.which === 82) {
-         e.preventDefault();
-         load_day_table(0);
-     }
-     if (e.altKey && e.which === 80) {
-         e.preventDefault();
-         load_day_table(-1);
-     }
-     if (e.altKey && e.which === 78) {
-         e.preventDefault();
-         load_day_table(1);
-     }
- })
- 
+     return controller.handle_booking_request(e, elt);
+ }
 </script>
 
 {% endblock %}
