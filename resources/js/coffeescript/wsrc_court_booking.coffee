@@ -1,10 +1,5 @@
 utils =
         
-  time_str:  (mins) ->
-    pad_zeros = (n) ->
-      if n < 10 then "0#{ n }" else n
-    return "#{ pad_zeros(Math.floor(mins/60)) }:#{ pad_zeros(mins%60) }"
-
   duration_str:  (mins) ->
     hours = Math.floor(mins/60)
     mins  = mins % 60
@@ -25,67 +20,60 @@ class WSRC_court_booking
       selectOtherMonths: true
       onSelect: (text, obj) =>
         @handle_date_selected(obj)
-    datepicker = $("#booking_datepicker_container input.date-input").datepicker(datepicker_options)
+    datepicker = $("input.date-input").datepicker(datepicker_options).show()
     # jquery-ui appends this to the body, but we need it appended to
     # the page wrapper for the overlays and CSS to work properly:
     widget = datepicker.datepicker("widget")
     widget.hide().detach()
-    widget.appendTo("#page_wrapper")
-    # ensure that clicking anywhere on the input or icon brings up the datepicker:
-    $("#booking_datepicker_container div.ui-input-text").on("click", () ->
-      datepicker.datepicker("show") 
-    )
+    widget.appendTo("body .container")
     
-    $("#booking_datepicker_container a.previous").attr("href", "javascript:wsrc.court_booking.on('load_day_table', -1)")
-    $("#booking_datepicker_container a.refresh").attr("href",  "javascript:wsrc.court_booking.on('load_day_table')")
-    $("#booking_datepicker_container a.next").attr("href",     "javascript:wsrc.court_booking.on('load_day_table', 1)")
-    $("div#booking-day").on("swipeleft", () =>
-      @load_day_table(1)
-    )
-    $("div#booking-day").on("swiperight", () =>
-      @load_day_table(-1)
-    )
+    $("a.previous").on("click", (evt) => @load_day_table(evt, -1))
+    $("a.refresh").on("click", (evt) => @load_day_table(evt))
+    $("a.next").on("click", (evt) => @load_day_table(evt, 1))
+
     $(document).keydown( (e) =>
       if e.altKey and e.which == 82 # 'r' key 
         e.preventDefault()
-        @load_day_table(0)
+        @load_day_table(e, 0)
       if e.altKey and e.which == 80 # 'p' key 
-        e.preventDefault()
-        @load_day_table(-1)
+        @load_day_table(e, -1)
       if e.altKey and e.which == 78 # 'n' key 
-        e.preventDefault()
-        @load_day_table(1)
+        e.preventDefault(e)
+        @load_day_table(e, 1)
     )
 
+  start_load_spinner: () ->
+     $(".refresh span").addClass("glyphicon-refresh-animate")
+ 
+  stop_load_spinner: () ->
+    $(".refresh span").removeClass("glyphicon-refresh-animate")
+ 
   fast_load_day: (date) ->
     date_str = wsrc.utils.js_to_iso_date_str(date)
     opts =
       url: @base_path + "/" + date_str + "?table_only=1"
       type: 'GET' 
       success: (data, status, jqxhr) =>
-        jQuery.mobile.loading("hide")
+        @stop_load_spinner()
         @update_view(date, data)
       error: (xhr, status) =>
-        jQuery.mobile.loading("hide")
+        @stop_load_spinner()
         alert("ERROR #{ xhr.status }: #{ xhr.statusText }\nResponse: #{ xhr.responseText }\n\nUnable to fetch court bookings.")
-    jQuery.mobile.loading("show", 
-      text: "Fetching " + date_str
-      textVisible: false
-      theme: "a"
-    )
+    @start_load_spinner()
     jQuery.ajax(opts)
 
   update_view: (date, data) ->
     table = $("div#booking-day table")
     table.replaceWith(data)
-    datepicker = $("#booking_datepicker_container input.date-input")
-    datepicker.datepicker("setDate", date)
-    $("#booking_footer div.date").text($.datepicker.formatDate("D, d M yy", date))
+    $("input.date-input").datepicker("setDate", date);
     if history
       url = @base_path + "/" +  wsrc.utils.js_to_iso_date_str(date)
       history.pushState({}, "", url)
 
-  load_day_table: (offset) ->
+  load_day_table: (evt, offset) ->
+    if evt
+      evt.stopPropagation()
+      evt.preventDefault()
     table = $("div#booking-day table")    
     d1 = new Date(table.data("date"))
     if offset
@@ -115,15 +103,12 @@ class WSRC_court_booking
         type: 'POST'
         data: form.serialize()
         success: (data, status, jqxhr) =>
-          jQuery.mobile.loading("hide")
-          @load_day_table(0)
+          @stop_load_spinner()
+          @load_day_table(null, 0)
         error: (xhr, status) =>
-          jQuery.mobile.loading("hide")
+          @stop_load_spinner()
           form.submit()
-      jQuery.mobile.loading("show", 
-        textVisible: false
-        theme: "a"
-      )
+      @start_load_spinner()
       jQuery.ajax(opts)
     return false
     
@@ -131,10 +116,6 @@ class WSRC_court_booking
     date = new Date(picker.selectedYear, picker.selectedMonth, picker.selectedDay)
     @fast_load_day(date)
     
-  @on: (method) ->
-    args = $.fn.toArray.call(arguments)
-    @instance[method].apply(@instance, args[1..])
-
   @onReady: (base_path) ->
     @instance = new WSRC_court_booking(base_path)
         
