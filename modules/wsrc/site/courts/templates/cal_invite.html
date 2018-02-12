@@ -10,16 +10,18 @@
 
 {% block centered_page_content %}
 <form method="POST" class="form-horizontal cal_invite">{% csrf_token %}
+  <div class="well">
+    <p>Use the form below to send an iCalendar event to your opponent(s), to remind them about your booking.</p>
+    <p>iCalendar is a form of email attachment which is understood by most other calendar applications, including Google, Apple, Microsoft.</p>
+  </div>
   <fieldset>
-    <legend>Send Calendar Event</legend>
-    
     <input type="hidden" name="next" value="{{ back_url }}"/>
 
     {% include "form_snippet.html" %}
     
     <div class="buttonset">
-      <button class="btn btn-default"><span class="glyphicon glyphicon-ok"></span>&nbsp;Send&nbsp;Invite</button>
-      <a class="btn btn-default" href="{{ back_url }}" data-role="back"><span class="glyphicon glyphicon-step-backward"></span>&nbsp;Back</a>
+      <button class="btn btn-success"><span class="glyphicon glyphicon-ok"></span>&nbsp;Send&nbsp;Event</button>
+      <a class="btn btn-info" href="{{ back_url }}" data-role="back"><span class="glyphicon glyphicon-step-backward"></span>Go&nbsp;Back</a>
     </div>
   </fieldset>
 </form>

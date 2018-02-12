@@ -27,29 +27,29 @@
 <div class="buttonset">
 {% if mode ==  'create' %}
  {% if booking_form.is_valid %}
- <button class="btn btn-default" type="submit"><span class="glyphicon glyphicon-ok"></span>&nbsp;Book this Court</button>
+ <button class="btn btn-success" type="submit"><span class="glyphicon glyphicon-ok"></span>&nbsp;Book this Court</button>
  {% endif %}
 {% else %}
  {% if mode == 'update' %}
-  <button name="action" value="Update" class="btn btn-default" type="submit"><span class="glyphicon glyphicon-ok"></span>&nbsp;Update</button>
+  <button name="action" value="Update" class="btn btn-success" type="submit"><span class="glyphicon glyphicon-ok"></span>&nbsp;Update</button>
   {% if days_diff < 0 or seconds_diff < 0 %} 
-  <button name="action" value="Delete" class="btn btn-default" onclick="if (! confirm('Are you sure you want to delete this entry?\n')) return false;"><span class="glyphicon glyphicon-remove"></span>&nbsp;Delete</button>
+  <button name="action" value="Delete" class="btn btn-danger" onclick="if (! confirm('Are you sure you want to delete this entry?\n')) return false;"><span class="glyphicon glyphicon-remove"></span>&nbsp;Delete</button>
   {% endif %}
  {% endif %}
  {% if days_diff != None %} 
  {% if days_diff < 0 or days_diff == 0 and seconds_diff < 0 %} 
-  <a class="btn btn-default" href="{% url 'cal_invite' %}/{{ booking_id }}" data-ajax='false' title="Send a calendar invite for this booking"><span class="glyphicon glyphicon-calendar"></span>&nbsp;Send Invite</a>
+  <a class="btn btn-primary" href="{% url 'cal_invite' %}/{{ booking_id }}" title="Send a calendar invite for this booking"><span class="glyphicon glyphicon-calendar"></span>&nbsp;Notify&nbsp;Opponent</a>
  {% endif %}
  {% if booking_user_id and days_diff == 0 and seconds_diff > 900 %}
   {% if not booking_form.no_show.value %}                   
-   <button name="action" value="report_noshow" class="btn btn-default" onclick="if (! confirm('Are you sure you want to report this court as unused?\n')) return false;"><span class="glyphicon glyphicon-exclamation-sign"></span>&nbsp;Report a NO-SHOW</button>
+   <button name="action" value="report_noshow" class="btn btn-danger" onclick="if (! confirm('Are you sure you want to report this court as unused?\n')) return false;"><span class="glyphicon glyphicon-exclamation-sign"></span>&nbsp;Report a NO-SHOW</button>
   {% else %}
-   <button name="action" value="remove_noshow" class="btn btn-default"><span class="glyphicon glyphicon-trash"></span>&nbsp;Remove NO-SHOW</button>   
+   <button name="action" value="remove_noshow" class="btn btn-primary"><span class="glyphicon glyphicon-trash"></span>&nbsp;Remove NO-SHOW</button>   
   {% endif %}
  {% endif %}
  {% endif %}
 {% endif %}
-<a class="btn btn-default" href="{{ back_url }}" data-role="back"><span class="glyphicon glyphicon-step-backward"></span>&nbsp;Back</a>
+<a class="btn btn-info" href="{{ back_url }}" data-role="back"><span class="glyphicon glyphicon-step-backward"></span>&nbsp;Go&nbsp;Back</a>
 </div>
 
 </fieldset>
