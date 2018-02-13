@@ -128,8 +128,8 @@ def generic_nav_view(request, page, template):
     # which were inserted by the Markdown TOC extension, and use those
     # to form a navigation tree..
     content = ctx["pagedata"]["content"]
-    maindoc = BeautifulSoup(content, "lxml")
-    navtree = BeautifulSoup("<ul class='nav'></ul>", "lxml")
+    maindoc = BeautifulSoup(content, "html.parser")
+    navtree = BeautifulSoup("<ul class='nav'></ul>", "html.parser")
     def subelement(parent, child_tag, text=None, class_=None, **kwargs):
         tag = navtree.new_tag(child_tag, **kwargs)
         if text is not None:
