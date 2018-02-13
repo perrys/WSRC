@@ -2,9 +2,9 @@
 # -*- mode: makefile-gmake; -*-
 
 COFFEECC = coffee -c
-MINIFY = minify --no-comments
+MINIFY = minify 
 
-.SECONDARY: _jquery.js _jquery.mobile.js _jquery-ui.js _jquery.dataTables.js
+.SECONDARY: _jquery.js _jquery-ui.js _jquery.dataTables.js
 
 all: all.min.js all_admin.js all_admin_mailshot.js all_admin_accounts.js all_admin_memberlist.js all_admin_boxes.js
 
@@ -12,9 +12,9 @@ all: all.min.js all_admin.js all_admin_mailshot.js all_admin_accounts.js all_adm
 	coffee -c -p $< > $@
 
 %.min.js: %.js
-	$(MINIFY) $< -o $@
+	$(MINIFY) $< > $@
 
-ORDERED_MAIN_JS_SRCS = _jquery.js _jquery.ui.datepicker.js legacy_shims.js wsrc_utils.js wsrc_ajax.js wsrc_homepage.js wsrc_notifiers.js wsrc_tournaments.js wsrc_boxes.js wsrc_result_form.js wsrc_court_booking.js wsrc.js 
+ORDERED_MAIN_JS_SRCS = wsrc_utils.js wsrc_homepage.js wsrc_notifiers.js wsrc_court_booking.js wsrc_tournaments.js wsrc_result_form.js
 
 all.js: $(ORDERED_MAIN_JS_SRCS)
 	cat $(ORDERED_MAIN_JS_SRCS) > $@
