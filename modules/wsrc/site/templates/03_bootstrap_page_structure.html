@@ -24,7 +24,13 @@
         crossorigin="anonymous"></script>
 <script src="https://maxcdn.bootstrapcdn.com/js/ie10-viewport-bug-workaround.js"></script>
 {% endif %}
-  
+
+{% if debug %}
+<script src="/static/js/all.js"></script>
+{% else %}
+<script src="/static/js/all.min.js"></script>
+{% endif %}
+
 <script>
 {% if user and user.is_authenticated %}
 window.WSRC_user_player_id = {% if user.player %}{{ user.player.id }}{% else %}-1{% endif %};
