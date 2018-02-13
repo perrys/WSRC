@@ -37,48 +37,10 @@
 
 
 {% block body_script_extra %}
+<script src="/static/js/all.js"></script>
 <script>
  var playerElts = jQuery("td.player");
  playerElts.unbind()  
- playerElts = playerElts.filter(":not(td.empty-match)");
- 
- playerElts.mouseenter(function(evt) {
-     var target = $(evt.target);
-     var myteam = target.data("team");
-     if (! myteam)
-         return false;
-     var matches = jQuery("td.player").filter(function() {
-         var theirteam = $(this).data("team");
-         return myteam == theirteam
-     });
-     matches.addClass("wsrc-highlight")
- });
-
- playerElts.mouseleave(function(evt) {
-     jQuery("td.wsrc-highlight").removeClass("wsrc-highlight");
- });
-
- function open_score_entry_dialog(elt) {
-     console.log(elt);
-     var matchId = parseInt($(elt).data("match"), 10);
-     document.location.href="{% url 'match_create' comp_id=competition.id %}/" + matchId {% if options.no_navigation %}+ "?no_navigation"{% endif %}
- };
- 
- playerElts = playerElts.filter(":not(td.completed-match)");
- playerElts = playerElts.filter(":not(td.partial-match)");
- playerElts.dblclick(function(evt) {
-     return open_score_entry_dialog(evt.target);
- });
- playerElts.on("taphold", function(evt) {
-     return open_score_entry_dialog(evt.target);
- });
- playerElts.siblings().filter(".score").dblclick(function(evt) {
-     var target = evt.target;
-     while (!target.classList.contains("player")) {
-         target = target.previousSibling;
-     }
-     return open_score_entry_dialog(target);
- });
- 
+ var controller = new wsrc.Tournament("{% url 'match_create' comp_id=competition.id %}" {% if options.no_navigation %}, true{% endif %})
 </script>  
 {% endblock %}
