@@ -160,7 +160,7 @@ class CalendarInviteForm(forms.Form):
 
     @staticmethod
     def get_summary(booking_data):
-        return "WSRC Court Booking - {name}".format(**booking_data)
+        return u"WSRC Court Booking - {name}".format(**booking_data)
 
 
 class NotifierForm(forms.ModelForm):

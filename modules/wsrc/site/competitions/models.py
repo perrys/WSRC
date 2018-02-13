@@ -132,8 +132,16 @@ class Entrant(models.Model):
             return handicap
         return None
 
+    def get_players_as_string_ordered(self):
+        opponents = self.get_players()
+        if opponents is None:
+            return None
+        if len(opponents) == 1:
+            return opponents[0].get_ordered_name()
+        return " & ".join([p.get_ordered_name() for p in opponents])
+
     def __unicode__(self):
-        result = u"[{id}] {team}".format(id=self.id, team=self.get_players_as_string())
+        result = u"{team} [{id}]".format(id=self.id, team=self.get_players_as_string_ordered())
         if self.handicap:
             result += " ({hcap}{suffix})".format(hcap=self.handicap, suffix=self.hcap_suffix or "")
         else:
@@ -356,7 +364,7 @@ class Match(models.Model):
         buf = u""
         if self.competition_match_id:
             buf += "[{id}] ".format(id=self.competition_match_id)
-        buf += "{teams} @{timestamp:%Y-%m-%dT%H:%M}".format(teams=teams, timestamp=self.last_updated)
+        buf += u"{teams} @{timestamp:%Y-%m-%dT%H:%M}".format(teams=teams, timestamp=self.last_updated)
         return buf
     class Meta:
         verbose_name_plural = "matches"
