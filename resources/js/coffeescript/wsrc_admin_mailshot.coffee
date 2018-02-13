@@ -46,7 +46,7 @@ class WSRC_admin_mailshot
     csrf_token = $("input[name='csrfmiddlewaretoken']").val()
     email_addresses = wsrc.utils.unique_field_list(players, "email")
     jqmask = $("body")
-    batch_size = 50
+    batch_size = 40
     data =
       subject:      $("input[name='subject']").val()
       body:         $("textarea[name='email_body']").val()
@@ -65,7 +65,7 @@ class WSRC_admin_mailshot
       opts['successCB'] = (xhr, status) ->
         jqmask.unmask()
         if end < email_addresses.length
-          pause = 2
+          pause = 4
           jqmask.mask("Waiting for #{ pause } seconds...")
           resume = () ->
             jqmask.unmask()
