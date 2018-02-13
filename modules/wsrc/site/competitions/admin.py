@@ -15,6 +15,7 @@
 
 from django import forms
 from django.contrib import admin
+from django.core import urlresolvers
 
 # Register your models here.
 
@@ -134,12 +135,19 @@ class MatchAdminForm(MatchForm):
 class MatchAdmin(admin.ModelAdmin):
     form = MatchAdminForm
     list_filter = ('competition__group', 'competition__name')
-    list_display = ("competition", "team1", "team2", "competition_match_id", "get_scores_display", "walkover", "last_updated")
+    list_display = ("id", "competition_link", "team1", "team2", "competition_match_id", "get_scores_display", "walkover", "last_updated")
     list_editable = ("competition_match_id", )
     def get_queryset(self, request):
         qs = super(MatchAdmin, self).get_queryset(request)
         qs = qs.select_related('competition__group', 'team1__player1__user', 'team1__player2__user', 'team2__player1__user', 'team2__player2__user')
         return qs
+    def competition_link(self, obj):
+        link = urlresolvers.reverse("admin:competitions_competition_change", args=[obj.competition.id])
+        link = u'<a href="{0}">{1}</a>'\
+               .format(link, obj.competition.name)
+        return link
+    competition_link.allow_tags = True
+    competition_link.short_description = u"Competition"    
 admin.site.register(comp_models.Match, MatchAdmin)
 
 class EntrantAdmin(admin.ModelAdmin):
