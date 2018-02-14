@@ -4,10 +4,6 @@
 @color-booking-system: darken(@brand-info, 30%);
 @color-booking-highlight: @gray-lighter;
 
-button span.glyphicon {
-    margin-right: 3px;
-}
-
 form.booking, form.cal_invite, form.notifier {
     max-width: @screen-sm-min;
     padding: 15px;
@@ -21,25 +17,6 @@ form.booking, form.cal_invite, form.notifier {
     .noshow_alert {
         text-align: center;
     }
-}
-
-
-footer {
-    margin-top: 30px;
-    margin-bottom: 30px;
-    width: 100%;
-}
-
-body > .container {
-    padding-left: 5px;
-    padding-right: 5px;
-    @media (min-width: @screen-sm-min) {
-        padding-left: 15px;
-        padding-right: 15px;
-    };
-    @media (min-width: @screen-lg-min) {
-        width: @screen-md-min;
-    };
 }
 
 .datepicker_container {
@@ -126,15 +103,6 @@ table.booking_day {
         }
     }
 }
-
-div#booking_footer {
-    padding: 1em 0.5em;
-    text-align:center;
-    & > div {
-        display: inline-block;
-    }
-}
-
 
 
 @gray-almost-lighter: #ddd;

@@ -1,0 +1,35 @@
+
+@import "variables.less";
+
+body > div.container,
+body > div.container-fluid {
+
+    margin-top: 20px;
+    margin-bottom: 30px;
+
+    @media (max-width: @screen-sm-min) {
+        padding-left: 10px;
+        padding-right: 10px;
+    };
+    @media (min-width: @screen-lg-min) {
+        width: @screen-md-min;
+        .navbar-nav .open .dropdown-menu>li>a {
+            padding-top: 10px;
+            padding-bottom: 10px;
+        }
+    }
+
+    & > footer {
+        margin-top: 30px;
+        width: 100%;
+    }
+
+}
+
+.underline {
+    text-decoration: underline;
+}
+
+button span.glyphicon {
+    margin-right: 3px;
+}

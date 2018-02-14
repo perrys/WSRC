@@ -4,14 +4,13 @@
 {% block html_header_extra %}
 <meta name="robots" content="noindex" />
 {{ block.super }}
-<link href="/static/css/wsrc_tournaments.css" rel="stylesheet" />
 {% endblock %}
 
 {% block container-classes %}container{% if competition.nbrackets > 5 %}-fluid{% endif %}{% endblock %}
 
 {% block centered_page_content %}
 
-<div class="controls">
+<div class="tournament-controls">
   <form id="page-control-form" class="form-inline">
     <select class="form-control" name="tournament_year_and_name" onchange="document.location = $(this).val()">
       <option value="">{{ selector.default_text }} . . .</option>

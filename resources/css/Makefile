@@ -3,15 +3,18 @@
 LESSC = lessc --no-color --strict-math=on
 MINIFY = minify --no-comments
 
-CSS_TARGETS = wsrc_tournaments.css wsrc_courts.css wsrc_reflow_table.css wsrc_scores.css all_admin.css all_mailshot.css all_accounts.css all_admin_memberlist.css all_admin_boxes.css _jquery.mobile.datepicker.css
+CSS_TARGETS = _jquery.mobile.datepicker.css wsrc_common.css wsrc_courts.css wsrc_tournaments.css wsrc_reflow_table.css wsrc_scores.css
 
-.INTERMEDIATE: _wsrc_html5.css _wsrc_legacy.css _wsrc_accounts.css _wsrc_admin_memberlist.css _wsrc_admin_boxes.css
 .SECONDARY: _jquery.mobile.datepicker.css _jquery.dataTables.css _jquery-ui.css
+.PHONY: all
 
-all: $(CSS_TARGETS)
+all: all.css all_admin.css all_mailshot.css all_accounts.css
 
 %.min.css: %.css
 	$(MINIFY) $<
+
+all.css:  $(CSS_TARGETS)
+	cat $(CSS_TARGETS) > $@
 
 all_admin.css: _jquery-ui.css jquery.loadmask.css wsrc_admin.css
 	cat _jquery-ui.css jquery.loadmask.css wsrc_admin.css > $@
