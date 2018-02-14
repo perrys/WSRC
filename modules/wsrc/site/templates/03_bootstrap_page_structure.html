@@ -4,6 +4,12 @@
 {% block body_header %}{% endblock %}
 {% block body_main %}
 <div class="{% block container-classes %}container{% endblock %}" role="main">
+  <noscript>
+    <div class="alert alert-warning">
+      <p><strong>Your web browser has javascript disabaled</strong>. Most parts of this website should work, but the navigation menu will look odd and some interactions may seem a little clunky.</p>
+      <p>If you did not deliberately disable javascript, you should <a href="https://www.enable-javascript.com/" style="text-decoration: underline;">go to your browser's settings page</a> and switch it back on.</p>
+    </div>
+  </noscript>
   {% block centered_page_content %}{% endblock %}
 </div>
 {% endblock %}

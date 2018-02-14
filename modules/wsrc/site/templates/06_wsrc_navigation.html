@@ -24,7 +24,7 @@
     <ul class="dropdown-menu">
     {% for child in node.children %}
     {% if child.url != "null" %}
-    <li class="{% if child.is_active %}active{% endif %}">
+    <li class="{% if child.is_active %}active{% endif %} {% if child.url|slice:':4' == "http" %}external{% endif %}">
       <a href="{% if child.is_reverse_url %}{% url child.url %}{% else %}{{ child.url }}{% endif %}">{{ child.name }}</a>
     </li>
     {% else %}
