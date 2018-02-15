@@ -1,17 +1,17 @@
 # -*- mode: makefile-gmake; -*-
 
 LESSC = lessc --no-color --strict-math=on
-MINIFY = minify --no-comments
+MINIFY = minify 
 
 CSS_TARGETS = _jquery.mobile.datepicker.css wsrc_common.css wsrc_courts.css wsrc_tournaments.css wsrc_reflow_table.css wsrc_scores.css
 
 .SECONDARY: _jquery.mobile.datepicker.css _jquery.dataTables.css _jquery-ui.css
 .PHONY: all
 
-all: all.css all_admin.css all_mailshot.css all_accounts.css
+all: all.css all.min.css all_admin.css all_mailshot.css all_accounts.css
 
 %.min.css: %.css
-	$(MINIFY) $<
+	$(MINIFY) $< > $@
 
 all.css:  $(CSS_TARGETS)
 	cat $(CSS_TARGETS) > $@
