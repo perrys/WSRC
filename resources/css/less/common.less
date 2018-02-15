@@ -1,6 +1,20 @@
 
 @import "variables.less";
 
+body {
+    font-family: "Open Sans", Helvetica, Arial, sans-serif;
+}
+
+body > nav {
+    font-family: "Roboto", Helvetica, Arial, sans-serif;
+    @media (max-width: @screen-sm-min) {
+        .navbar-nav .open .dropdown-menu>li>a {
+            padding-top: 10px;
+            padding-bottom: 10px;
+        }
+    }
+}
+
 body > div.container,
 body > div.container-fluid {
 
@@ -11,19 +25,21 @@ body > div.container-fluid {
         padding-left: 10px;
         padding-right: 10px;
     };
-    @media (min-width: @screen-lg-min) {
-        width: @screen-md-min;
-        .navbar-nav .open .dropdown-menu>li>a {
-            padding-top: 10px;
-            padding-bottom: 10px;
-        }
-    }
-
     & > footer {
         margin-top: 30px;
         width: 100%;
     }
 
+    .btn {
+        font-family: "Roboto", Helvetica, Arial, sans-serif;
+    }
+}
+
+body > div.container.restrict-width,
+body > div.container-fluid.restrict-width {
+    @media (min-width: @screen-lg-min) {
+        width: @screen-md-min;
+    }
 }
 
 .underline {
