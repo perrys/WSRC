@@ -48,7 +48,7 @@ setup(name='WSRC',
                       'wsrc.site.usermodel': ['templates/*.html']
                       },
       scripts = ['scripts/wsrc'],
-      data_files = [('www/css', glob.glob(os.path.join('resources', 'css', 'all_*.css'))),
+      data_files = [('www/css', glob.glob(os.path.join('resources', 'css', 'all*.css'))),
                     ('www/js', glob.glob(os.path.join('resources', 'js', 'all*.js'))),
                     ('www/images', get_images(['resources', 'images'])),
                     ('www/css/images', get_images(['resources', 'css', 'images'])),
