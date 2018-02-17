@@ -25,33 +25,37 @@ TOURNAMENTS_EMAIL_ADDRESS = "tournaments@wokingsquashclub.org"
 def manage_tournament_bookings(username, password):
 
     ADVANCE_BOOKING_DAYS = 10
-    RELEASE_BOOKING_DAYS = 5
-    TARGET_TIME          = datetime.time(19, 0)
+    RELEASE_BOOKING_DAYS = 2
+    TARGET_SLOTS         = [(datetime.time(18, 15), 2), (datetime.time(19, 0), 2)]
     TARGET_DAYS          = [0,1,2,3] # monday - thursday
-    TARGET_COURT         = 1
-    TARGET_DESCRIPTION   = "Unreserved - will be released 5 days in advance"
+    TARGET_DESCRIPTION   = "Unreserved - will be released 2 days in advance"
     TARGET_NAME          = "Tournament Matches"
 
-    today = datetime.today()
-    target_date = today + datatime.timedelta(days=ADVANCE_BOOKING_DAYS)
+    today = datetime.date.today()
+    target_date = today + datetime.timedelta(days=ADVANCE_BOOKING_DAYS)
     from wsrc.external_sites.booking_manager import BookingSystemSession
     session = BookingSystemSession(username, password)
-    if target_date.weekday() in TARGET_DAYS:
-        time = datetime.datetime.combine(target_date, TARGET_TIME)
-        LOGGER.info("Booking tournament court @ {1}".format(time.isoformat))
-        session.make_booking(time, TARGET_COURT, TARGET_DESCRIPTION, TARGET_NAME)
 
-    booking_events = get_booked_courts(session)
+    if target_date.weekday() in TARGET_DAYS:
+        for time, court in TARGET_SLOTS:
+            try:
+                date_and_time = datetime.datetime.combine(target_date, time)
+                LOGGER.info("Booking tournament court @ {0}".format(date_and_time.isoformat))
+                session.make_admin_booking(target_date, time, 45, court, TARGET_NAME, TARGET_DESCRIPTION, "E")
+            except Exception:
+                LOGGER.exception("unable to book court")
+
+    booking_events, start_date = session.get_booked_courts(today)
     for evt in booking_events:
-        ndays = evt.time.date() - target_date
+        ndays = (evt.start_time.date() - target_date).days
         if ndays < RELEASE_BOOKING_DAYS:
             if evt.name.lower().find("tournament") >= 0:
                 if evt.description.lower().find("unreserved") >= 0:
-                    LOGGER.info("deleting booking id {0}, time: {1}, name: \"{2}\", description: \"{3}\"".format(evt.get_booking_id(),
-                                                                                                                 evt.time.isoformat(" "),
+                    LOGGER.info("deleting booking id {0}, time: {1}, name: \"{2}\", description: \"{3}\"".format(evt.event_id,
+                                                                                                                 evt.start_time.isoformat(" "),
                                                                                                                  evt.name,
                                                                                                                  evt.description))
-                    session.delete_booking(evt.get_booking_id())
+                    session.delete_booking(evt.event_id)
 
 def email_report_overdue_tournament_matches():
     import wsrc.site.competitions.tournament as tournament_utils
@@ -285,10 +289,10 @@ if __name__ == "__main__":
     elif command in ("manage-tournament-bookings"):
 
         def usage():
-            prog = os.path.basename(argv[0])
-            sys.stderr.write("USAGE: %s %s --username=<user> --password=<pw>\n" % (prog, argv[1]))
+            prog = os.path.basename(sys.argv[0])
+            sys.stderr.write("USAGE: %s %s --username=<user> --password=<pw>\n" % (prog, sys.argv[1]))
         try:
-            optlist, args = getopt.getopt(argv[2:], "u:p:h", ["username=", "password="])
+            optlist, args = getopt.getopt(args, "u:p:h", ["username=", "password="])
         except getopt.GetoptError as err:
             sys.stderr.write(str(err) + "\n")
             usage()
@@ -297,7 +301,7 @@ if __name__ == "__main__":
         username = password = None
         for opt,val in optlist:
             if opt in ["-u", "--username"]:
-                useranme = val
+                username = val
             elif opt in ["-p", "--password"]:
                 password = val
             elif opt in ["-h"]:
@@ -310,7 +314,7 @@ if __name__ == "__main__":
             usage()
             sys.exit(1)
 
-        manage-tournament-bookings(username, password)
+        manage_tournament_bookings(username, password)
 
     elif command in ("send-tournament-reminders"):
         def usage():
