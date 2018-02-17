@@ -608,19 +608,14 @@ def bracket_view(request, year, name, template_name="tournaments.html"):
 
     name = name.replace("_", " ")
     comp_set = Competition.objects.filter(group=group, name__iexact=name)\
-                                  .prefetch_related("entrant_set__player1__user",\
-                                                    "entrant_set__player2__user",\
-                                                    "rounds",\
+                                  .prefetch_related("rounds",\
                                                     "match_set")
     competition = get_object_or_404(comp_set, name__iexact=name)
-
-    bracket_data = JSON_RENDERER.render(CompetitionSerializer(competition, context={"request": FAKE_REQUEST_CONTEXT}).data)
     html_table = tournament.render_tournament(competition)
 
     ctx = {
         "competition": competition,
         "bracket": html_table,
-        "bracket_data": bracket_data,
         "is_editor": request.user.is_authenticated and request.user.has_perm("competitions.change_match")
     }
     options = set_view_options(request, ctx)

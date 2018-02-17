@@ -170,7 +170,10 @@ def count_brackets(competition):
 def render_tournament(competition):
     """Generate an html table showing an empty bracket, sized for the given competition."""
 
-    match_map = dict([(match.competition_match_id, match) for match in competition.match_set.all()])
+    matches = competition.match_set
+    matches = matches.select_related("team1__player1__user", "team2__player1__user", "team1__player2__user", "team2__player2__user", )
+
+    match_map = dict([(match.competition_match_id, match) for match in matches])
     tournamentId = competition.id
     nbrackets = competition.nbrackets()
 
