@@ -68,7 +68,7 @@ def render_match(table, col, row, bracketIndex, matchIndex, idPrefix, match_map)
                 return NON_BRK_SPACE 
             if hasattr(item, "__call__"):
                 item = item()
-        return NON_BRK_SPACE if item is None else str(item)
+        return NON_BRK_SPACE if item is None else unicode(item)
 
     def addToRow(cls, key, is_top, cell_id=None):
         attrs = {"class": cls}
