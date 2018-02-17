@@ -38,6 +38,7 @@ class BookingSystemSession:
     BOOKING_PAGE = "/edit_entry_handler_admin.php"
     USERS_API    = "/api/users.php"
     ENTRIES_API  = '/api/entries.php'
+    DELETE_PAGE  = "/del_entry.php"
 
     def __init__(self, username=None, password=None):
         self.base_url = url = settings.BOOKING_SYSTEM_ORIGIN
@@ -163,11 +164,33 @@ class BookingSystemSession:
         self.client.redirect_recorder.clear()
         response = self.client.request(url, params)
         redirections = self.client.redirect_recorder.redirections
-        print redirections
-        status = redirections[0][0] if len(redirections) > 0 else response.getcode()
-        if status != httplib.FOUND:
-            body = response.read()
-            raise Exception("failed to create booking, status: {0}, body: {1}".format(status, body))
+        if len(redirections) > 0 and redirections[0][0] == httplib.FOUND:
+            LOGGER.info("booked court %(court)d@%(timestring)s" % locals())
+            return
+
+        status = response.getcode()
+        body = response.read()
+        if body.find("The new booking will conflict") > -1:
+            raise Exception("conflict! failed to book court %(court)d@%(timestring)s" % locals())
+        raise Exception("unexpected status returned for booking request: %(status)d, response body: %(body)s" % locals())
+
+    def delete_booking(self, booking_id):
+        booking_id = int(booking_id)
+        params = {
+            "id": booking_id,
+            "method": "DELETE"
+        }
+        response = self.client.get(BookingSystemSession.DELETE_PAGE, params)
+        redirections = self.client.redirect_recorder.redirections
+        if len(redirections) > 0 and redirections[0][0] == httplib.FOUND:
+            LOGGER.info("deleted booking id %(booking_id)d" % locals())
+            return
+
+        status = response.getcode()
+        body = response.read()
+        if body.find("The new booking will conflict") > -1:
+            raise Exception("conflict! failed to book court %(court)d@%(timestring)s" % locals())
+        raise Exception("unexpected status returned for booking request: %(status)d, response body: %(body)s" % locals())
 
 @transaction.atomic
 def sync_db_booking_events(events, start_date, end_date):
