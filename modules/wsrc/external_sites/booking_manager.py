@@ -165,7 +165,7 @@ class BookingSystemSession:
         response = self.client.request(url, params)
         redirections = self.client.redirect_recorder.redirections
         if len(redirections) > 0 and redirections[0][0] == httplib.FOUND:
-            LOGGER.info("booked court %(court)d@%(timestring)s" % locals())
+            LOGGER.info("booked court {court}@{date:%Y-%m-%d} {time:%H:%M}".format(court=court, date=date, time=time))
             return
 
         status = response.getcode()
