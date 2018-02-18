@@ -171,7 +171,7 @@ class BookingSystemSession:
         status = response.getcode()
         body = response.read()
         if body.find("The new booking will conflict") > -1:
-            raise Exception("conflict! failed to book court %(court)d@%(timestring)s" % locals())
+            raise Exception("conflict! failed to book court {court}@{date:%Y-%m-%d} {time:%H:%M}".format(court=court, date=date, time=time))
         raise Exception("unexpected status returned for booking request: %(status)d, response body: %(body)s" % locals())
 
     def delete_booking(self, booking_id):
