@@ -137,6 +137,21 @@ table.bracket {
 	    margin-bottom: 0;
         }
     }
+    @media print {
+        form {
+            display: none;
+        }
+    }
+}
+
+#print_only_logo {
+    display: none;
+    @media print {
+        display: block;
+        position: absolute;
+        bottom: 25px;
+        right: 25px;
+    }
 }
 
 
