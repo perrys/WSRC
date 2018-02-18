@@ -59,6 +59,7 @@ class EmailContentAdmin(admin.ModelAdmin):
     }
 
 class ClubEventAdmin(admin.ModelAdmin):
+    list_display = ("title", "display_date", "display_time")
     formfield_overrides = {
         models.TextField: {'widget': txt_widget(20)},
     }
