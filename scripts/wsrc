@@ -41,7 +41,7 @@ def manage_tournament_bookings(username, password):
         for time, court in TARGET_SLOTS:
             try:
                 date_and_time = datetime.datetime.combine(target_date, time)
-                LOGGER.info("Booking tournament court @ {0}".format(date_and_time.isoformat))
+                LOGGER.info("Booking tournament court @ {0}".format(date_and_time.isoformat()))
                 session.make_admin_booking(target_date, time, 45, court, TARGET_NAME, TARGET_DESCRIPTION, "E")
             except Exception:
                 LOGGER.exception("unable to book court")
