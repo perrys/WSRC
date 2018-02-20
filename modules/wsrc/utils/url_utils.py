@@ -14,10 +14,12 @@
 # along with WSRC.  If not, see <http://www.gnu.org/licenses/>.
 
 import cookielib
-import httplib2
+import json
 import logging
 import urllib
 import urllib2
+
+import httplib2
 
 LOGGER = logging.getLogger(__name__)
 LOGGER.setLevel(logging.INFO)
@@ -34,6 +36,26 @@ def get_content(url, params, headers=None):
     opener = httplib2.Http()
     (resp_headers, content) = opener.request(url, "GET", headers=headers)
     return content
+
+def get_access_token(url, grant_type, client_id, client_secret, redirect_uri=None, temp_access_code=None):
+    """
+    Retrieve an access token from Oauth-type authorization servers.
+    GRANT_TYPE would normally be "client_credentials" or "authorization_code". If it
+    is the latter, a temp_auth_code should be provided
+    """
+    params = {
+        "grant_type":    grant_type,
+        "client_id" :    client_id,
+        "client_secret": client_secret,
+    }
+    if redirect_uri is not None:
+        params["redirect_uri"] = redirect_uri
+    if temp_access_code is not None:
+        params["code"] = temp_access_code
+    params = urllib.urlencode(params)
+    response = urllib2.urlopen(url, params)
+    data = json.load(response)
+    return data.get("access_token")
 
 class MyHTTPRedirectHandler(urllib2.HTTPRedirectHandler):
     def __init__(self):
