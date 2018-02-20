@@ -1,0 +1,97 @@
+{% extends "admin/change_form.html" %}
+
+{% block after_field_sets %}
+<script>
+  {{ block.super }}
+ (function() {
+     const $ = django.jQuery
+     const temp_access_code_input = $("input[name='temporary_access_code']")
+     const query = document.location.search
+     var button
+
+     const new_spinner = function(adiv) {
+         const my_div = adiv
+         my_div.text("|")
+         function next() {
+             const val = my_div.text()
+             var newval = "|"
+             if (val == "|" ) newval = "/"
+             else if (val == "/" ) newval = "-"
+             else if (val == "-" ) newval = "\\"
+             else if (val == "\\" ) newval = "|"
+             else return
+             my_div.text(newval)
+             window.setTimeout(next, 100)
+         }
+         return {
+             start: function(){next()},
+             stop: function(){my_div.text("")},
+         }
+     }
+     
+     function do_ajax(message, data) {
+         const csrf_token = $("input[name='csrfmiddlewaretoken']").val()
+         const button_text = button.text()
+         const message_div = $(`<div style='margin-left: 0.5em; display: inline-block'>${message} <span class="spinner"></span></div>`)
+         button.after(message_div)
+         const spinner = new_spinner(message_div.find(".spinner"))
+         settings = {
+             headers: {"X-CSRFToken": csrf_token},
+             type: 'PUT',
+             contentType: "application/json",
+             data: JSON.stringify(data),
+             dataType: "json",
+             processData: false,
+             complete: function() {
+                 spinner.stop()
+                 message_div.remove()        
+             },
+             error: function(xhr, txt) {
+                 alert(`Error returned from server [${txt}], status: ${xhr.statusCode()}, body:\n${xhr.responseText}`)
+             },
+             success: function(data, xhr) {
+                 const input = $("input[name='access_token']")
+                 const token = data.access_token
+                 input.val(token)
+                 const msg = `Success, new access token: ${token}\n\nPlease save IMMEDIATELY to capture this change.`
+                 alert(msg)
+             },
+         }
+         const url = `{% url 'oauth_token_exchange' object_id %}`
+         spinner.start()
+         $.ajax(url, settings)
+     }      
+     
+     function handler(evt) {
+         evt.stopPropagation()
+         evt.preventDefault()
+         data = {"temporary_access_code": temp_access_code_input.val()}
+         const message = "Would you like to exchange the temporary code for a permanent access code?\n\n"
+         if (confirm(message)) {
+             do_ajax("Exchanging tokens... ", data)
+         }
+         return null
+     }
+
+     if (query && query[0] == '?') {
+         const params = query.slice(1)
+                             .split('&')
+                             .reduce((params, param) => {
+                                 let [ key, value ] = param.split('=');
+                                 params[key] = value ? decodeURIComponent(value.replace(/\+/g, ' ')) : '';
+                                 return params;
+                             }, { });
+         
+         if (params.code) {
+             temp_access_code_input.val(params.code)
+             button = $(`<button type='button' style='margin-left: 0.5em; border-top: 1px;'>Exchange for Access Token</button>`)
+             temp_access_code_input.after(button)
+             button.on('click', handler)
+         }
+     }
+     
+
+ })()
+</script>
+{% endblock %}
+
