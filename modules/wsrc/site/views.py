@@ -353,23 +353,8 @@ def admin_mailshot_view(request):
                             "treasurer",
                             "webmaster"]
     def get_comp_entrants(*group_types):
-        clause = None
-        for group_type in group_types:
-            q = Q(comp_type=group_type)
-            if clause is None:
-                clause = q
-            else:
-                clause |= q
-        groups = CompetitionGroup.objects.filter(clause).filter(active=True)\
-                 .prefetch_related("competition_set__entrant_set__player1", "competition_set__entrant_set__player2")
-        player_ids = set()
-        for group in groups:
-            for comp in group.competition_set.all():
-                for entrants in comp.entrant_set.all():
-                    player_ids.add(entrants.player1.id)
-                    if entrants.player2 is not None:
-                        player_ids.add(entrants.player2.id)
-        return player_ids
+        players = CompetitionGroup.get_comp_entrants(*group_types)
+        return [player.id for player in players]
     def player_data(p):
         sub = p.get_current_subscription()
         
