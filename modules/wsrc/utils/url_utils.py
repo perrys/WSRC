@@ -32,10 +32,15 @@ def get_url_params(url):
 
 def get_content(url, params, headers=None):
     url += "?" + urllib.urlencode(params)
-    LOGGER.info("Fetching {url}".format(**locals()))
+    LOGGER.debug("Fetching {url}".format(**locals()))
     opener = httplib2.Http()
     (resp_headers, content) = opener.request(url, "GET", headers=headers)
     return content
+
+def request(url, method, body=None, headers=None):
+    LOGGER.debug("%s %s: %s", method, url, body)
+    opener = httplib2.Http()
+    return opener.request(url, method, headers=headers, body=body)
 
 def get_access_token(url, grant_type, client_id, client_secret, redirect_uri=None, temp_access_code=None):
     """
