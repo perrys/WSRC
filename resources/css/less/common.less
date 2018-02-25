@@ -8,6 +8,11 @@ body {
 body > nav {
     font-family: "Roboto", Helvetica, Arial, sans-serif;
     @media (max-width: @screen-sm-min) {
+        & > .container,
+        & > .container-fluid {
+            padding-left: 10px;
+            padding-right: 10px;
+        }
         .navbar-nav .open .dropdown-menu>li>a {
             padding-top: 10px;
             padding-bottom: 10px;
