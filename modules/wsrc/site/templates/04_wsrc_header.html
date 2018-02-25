@@ -7,7 +7,10 @@
 <nav class="navbar navbar-inverse navbar-static-top" {% if options.no_navigation %}style="display: none;"{% endif %}>
   <div class="{% block container-classes %}container{% endblock %}">
     <div class="navbar-header">
-      <a class="navbar-brand" style="padding-top: 0;" href="/home"><img src="/static/images/logo_98x50_alpha.png" width="98" height="50" alt="Woking Squash Rackets Club" class="hidden-lg"/><img src="/static/images/logo_137x70_alpha.png" width="137" height="70" alt="Woking Squash Rackets Club" class="visible-lg" /></a>
+      <a class="navbar-brand" style="padding-top: 0;" href="/home">
+        <svg width="98"  height="50" class="visible-xs visible-sm"><image xlink:href="/static/images/logo_rectanglular_alpha.svg" src="/static/images/logo_98x50_alpha.png"  width="98"  height="50" alt="Woking Squash Rackets Club" class="visible-xs visible-sm"/></svg>
+        <svg width="137" height="70" class="visible-md visible-lg"><image xlink:href="/static/images/logo_rectanglular_alpha.svg" src="/static/images/logo_137x70_alpha.png" width="137" height="70" alt="Woking Squash Rackets Club" class="visible-md visible-lg"/></svg>
+      </a>
 {% block navbar_header %}{% endblock %}
     </div>
     <div id="navbar" class="navbar-collapse collapse">
