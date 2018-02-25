@@ -275,6 +275,7 @@ if __name__ == "__main__":
         django.setup()
 
     import wsrc.external_sites.main
+    import wsrc.external_sites.mailchimp
 
     command = sys.argv[1]
     args = sys.argv[2:]
@@ -286,6 +287,9 @@ if __name__ == "__main__":
 
     elif command in ("sync-leaguemaster"):
         wsrc.external_sites.main.cmdline_sync_leaguemaster(*args)
+
+    elif command in ("sync-mailchimp"):
+        wsrc.external_sites.mailchimp.sync()
 
     elif command in ("manage-tournament-bookings"):
 
