@@ -70,9 +70,6 @@ import os.path
 from bs4 import BeautifulSoup
 
 
-FACEBOOK_GRAPH_URL              = "https://graph.facebook.com/"
-FACEBOOK_GRAPH_ACCESS_TOKEN_URL = FACEBOOK_GRAPH_URL + "oauth/access_token"
-
 WSRC_FACEBOOK_PAGE_ID = 576441019131008
 COURT_SLOT_LENGTH = datetime.timedelta(minutes=45)
 
@@ -303,13 +300,20 @@ def facebook_view(request):
             self.statuscode = statuscode
             self.errortype = errortype
 
-    def fb_get(url):
-        h = httplib2.Http()
-        (resp_headers, content) = h.request(url, "GET")
+    oauth_record = get_object_or_404(OAuthAccess, name="Facebook")
+
+    def fb_get():
+        url = oauth_record.auth_server_uri + "/" + str(WSRC_FACEBOOK_PAGE_ID) + "/feed"
+        params = {
+            # no longer have to pre-request an access token, can just provide ids from server-side call:
+            "access_token": "{id}|{secret}".format(id=oauth_record.client_id, secret=oauth_record.client_secret)
+        }
+        url += "?" + urllib.urlencode(params)
+        (resp_headers, content) = url_utils.request(url, "GET")
         if resp_headers.status != httplib.OK:
             LOGGER.error("unable to fetch FB data, status = " + str(resp_headers.status) + ", response: " +  content)
+            exception = None
             if len(content) > 0:
-                exception = None
                 try:
                     response = json.loads(content)
                     error = response.get("error")
@@ -322,24 +326,9 @@ def facebook_view(request):
             raise exception
         return content
 
-    def obtain_auth_token():
-        LOGGER.info("Refreshing Facebook access token...")
-        params = {
-            "grant_type":    "client_credentials",
-            "client_id" :    settings.FB_APP_ID,
-            "client_secret": settings.FB_APP_SECRET,
-            }
-        url = FACEBOOK_GRAPH_ACCESS_TOKEN_URL +  "?" + urllib.urlencode(params)
-        data = json.loads(fb_get(url))
-        token = data.get("access_token")
-        return token
-
-    # First get an access token (using a pre-configured app ID) then use that to get the page feed
-    token = obtain_auth_token()
-    url = FACEBOOK_GRAPH_URL + str(WSRC_FACEBOOK_PAGE_ID) + "/feed?" + urllib.urlencode({"access_token": token})
     try:
         # the response is JSON so pass it straight through
-        return HttpResponse(fb_get(url), content_type="application/json")
+        return HttpResponse(fb_get(), content_type="application/json")
     except FBException, e:
         msg = "ERROR: Unable to fetch Facebook page: {msg} [{code}] - {type}".format(msg=str(e), code=e.statuscode, type=e.errortype)
         return HttpResponse(content=msg,
@@ -766,10 +755,10 @@ class OAuthExchangeTokenView(APIView):
         print temp_access_code
         token_uri = oauth_record.auth_server_uri + oauth_record.token_endpoint
         token = url_utils.get_access_token(token_uri,
-                                          grant_type="authorization_code",
-                                          client_id=oauth_record.client_id,
-                                          client_secret= oauth_record.client_secret,
-                                          redirect_uri=oauth_record.redirect_uri,
-                                          temp_access_code=temp_access_code)
+                                           grant_type="authorization_code",
+                                           client_id=oauth_record.client_id,
+                                           client_secret=oauth_record.client_secret,
+                                           redirect_uri=oauth_record.redirect_uri,
+                                           temp_access_code=temp_access_code)
         return HttpResponse(json.dumps({"access_token": token}), status=201)
-        
+
