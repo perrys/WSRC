@@ -17,12 +17,12 @@
 import sys
 
 from wsrc.site.models import PageContent, SquashLevels, LeagueMasterFixtures, MaintenanceIssue,\
-    Suggestion, ClubEvent, CommitteeMeetingMinutes, NavigationLink
+    Suggestion, ClubEvent, CommitteeMeetingMinutes, NavigationLink, OAuthAccess
 from wsrc.site.competitions.models import CompetitionGroup
 from wsrc.site.courts.models import BookingSystemEvent
 from wsrc.site.usermodel.models import Player, SubscriptionType
 import wsrc.site.settings.settings as settings
-from wsrc.utils import timezones, email_utils
+from wsrc.utils import timezones, email_utils, url_utils
 
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import PasswordChangeForm
@@ -389,23 +389,8 @@ def admin_mailshot_view(request):
                             "treasurer",
                             "webmaster"]
     def get_comp_entrants(*group_types):
-        clause = None
-        for group_type in group_types:
-            q = Q(comp_type=group_type)
-            if clause is None:
-                clause = q
-            else:
-                clause |= q
-        groups = CompetitionGroup.objects.filter(clause).filter(active=True)\
-                 .prefetch_related("competition_set__entrant_set__player1", "competition_set__entrant_set__player2")
-        player_ids = set()
-        for group in groups:
-            for comp in group.competition_set.all():
-                for entrants in comp.entrant_set.all():
-                    player_ids.add(entrants.player1.id)
-                    if entrants.player2 is not None:
-                        player_ids.add(entrants.player2.id)
-        return player_ids
+        players = CompetitionGroup.get_comp_entrants(*group_types)
+        return [player.id for player in players]
     def player_data(p):
         sub = p.get_current_subscription()
         
@@ -769,3 +754,22 @@ class ClubEventList(rest_generics.ListAPIView):
     def get_queryset(self):
         queryset = ClubEvent.objects.order_by("last_updated")
         return queryset.filter(Q(display_date__isnull=True) | Q(display_date__gte=datetime.date.today()))
+
+class OAuthExchangeTokenView(APIView):
+    parser_classes = (JSONParser,)
+    def put(self, request, record_id):
+        # continue only if the user is some kind of membership editor
+        if not request.user.has_perm("usermodel.change_player"):
+            raise PermissionDenied()
+        oauth_record = OAuthAccess.objects.get(pk=record_id)
+        temp_access_code = request.data["temporary_access_code"]
+        print temp_access_code
+        token_uri = oauth_record.auth_server_uri + oauth_record.token_endpoint
+        token = url_utils.get_access_token(token_uri,
+                                          grant_type="authorization_code",
+                                          client_id=oauth_record.client_id,
+                                          client_secret= oauth_record.client_secret,
+                                          redirect_uri=oauth_record.redirect_uri,
+                                          temp_access_code=temp_access_code)
+        return HttpResponse(json.dumps({"access_token": token}), status=201)
+        

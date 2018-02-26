@@ -35,9 +35,10 @@ class BookingSystemSession:
     "Manages login and common queries from the booking system"
 
     LOGIN_PAGE   = "/admin.php"
-    BOOKING_PAGE = "/edit_entry_handler_fixed.php"
+    BOOKING_PAGE = "/edit_entry_handler_admin.php"
     USERS_API    = "/api/users.php"
     ENTRIES_API  = '/api/entries.php'
+    DELETE_PAGE  = "/del_entry.php"
 
     def __init__(self, username=None, password=None):
         self.base_url = url = settings.BOOKING_SYSTEM_ORIGIN
@@ -140,6 +141,56 @@ class BookingSystemSession:
         if status != httplib.OK:
             raise Exception("failed to create user, status: {0}, body: {1}".format(status, body))
         return json.loads(body)
+
+    def make_admin_booking(self, date, time, duration_mins, court, name, description, booking_type):
+        "Make the given booking using the admin interface - requires admin user credentials"
+        url = BookingSystemSession.BOOKING_PAGE
+        params = {
+            "day": date.day,
+            "month": date.month,
+            "year": date.year,
+            "hour": time.hour,
+            "minute": time.minute,
+            "duration": duration_mins,
+            "dur_units": "minutes",
+            "edit_type": "series",
+            "type": booking_type,            
+            "rooms[]": court,
+            "name": name,
+            "description": description,
+            "create_by": self.username,
+            "rep_type": 0,
+        }
+        self.client.redirect_recorder.clear()
+        response = self.client.request(url, params)
+        redirections = self.client.redirect_recorder.redirections
+        if len(redirections) > 0 and redirections[0][0] == httplib.FOUND:
+            LOGGER.info("booked court {court}@{date:%Y-%m-%d} {time:%H:%M}".format(court=court, date=date, time=time))
+            return
+
+        status = response.getcode()
+        body = response.read()
+        if body.find("The new booking will conflict") > -1:
+            raise Exception("conflict! failed to book court {court}@{date:%Y-%m-%d} {time:%H:%M}".format(court=court, date=date, time=time))
+        raise Exception("unexpected status returned for booking request: %(status)d, response body: %(body)s" % locals())
+
+    def delete_booking(self, booking_id):
+        booking_id = int(booking_id)
+        params = {
+            "id": booking_id,
+            "method": "DELETE"
+        }
+        response = self.client.get(BookingSystemSession.DELETE_PAGE, params)
+        redirections = self.client.redirect_recorder.redirections
+        if len(redirections) > 0 and redirections[0][0] == httplib.FOUND:
+            LOGGER.info("deleted booking id %(booking_id)d" % locals())
+            return
+
+        status = response.getcode()
+        body = response.read()
+        if body.find("The new booking will conflict") > -1:
+            raise Exception("conflict! failed to book court %(court)d@%(timestring)s" % locals())
+        raise Exception("unexpected status returned for booking request: %(status)d, response body: %(body)s" % locals())
 
 @transaction.atomic
 def sync_db_booking_events(events, start_date, end_date):

@@ -21,7 +21,7 @@ from django.db import models
 from django.contrib import admin
 from wsrc.site.models import PageContent, EmailContent, MaintenanceIssue,\
     Suggestion, ClubEvent, CommitteeMeetingMinutes, GenericPDFDocument, Image,\
-    NavigationLink, NavigationNode
+    NavigationLink, NavigationNode, OAuthAccess
 
 from wsrc.utils.form_utils import CachingModelChoiceField, \
     get_related_field_limited_queryset, PrefetchRelatedQuerysetMixin
@@ -59,6 +59,7 @@ class EmailContentAdmin(admin.ModelAdmin):
     }
 
 class ClubEventAdmin(admin.ModelAdmin):
+    list_display = ("title", "display_date", "display_time")
     formfield_overrides = {
         models.TextField: {'widget': txt_widget(20)},
     }
@@ -102,6 +103,23 @@ class SuggestionAdmin(admin.ModelAdmin):
     }
     list_select_related = ('suggester__user',)
 
+class OAuthForm(forms.ModelForm):
+    "Override parent node in form for more efficient DB interaction"
+    temporary_access_code = forms.CharField(required=False)
+
+class OAuthAdmin(admin.ModelAdmin):
+    list_display = ("name", "grant_type", "client_id", "get_login_link", "access_token")
+    list_editable = ("access_token", )
+    form = OAuthForm
+    def get_login_link(self, obj):
+        url = obj.login_link
+        if url is not None:
+            link_text = "(click to get temp. access code)"
+            return "<a href='{url}'>{text}</a>".format(url=url, text=link_text)
+        return None
+    get_login_link.short_description = "Temp. Access Code Link"
+    get_login_link.allow_tags = True
+
 admin.site.register(PageContent, PageContentAdmin)
 admin.site.register(NavigationNode, NavigationNodeAdmin)
 admin.site.register(NavigationLink, NavigationLinkAdmin)
@@ -112,3 +130,4 @@ admin.site.register(ClubEvent, ClubEventAdmin)
 admin.site.register(CommitteeMeetingMinutes, PDFFileAdmin)
 admin.site.register(GenericPDFDocument, PDFFileAdmin)
 admin.site.register(Image, ImageAdmin)
+admin.site.register(OAuthAccess, OAuthAdmin)

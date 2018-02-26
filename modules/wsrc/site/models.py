@@ -15,11 +15,12 @@
 
 "General site models"
 
+import urllib
+from django.db import models
+
 import wsrc.site.usermodel.models as user_models
 import wsrc.utils.text as text_utils
-
-from django.db import models
-from django.contrib.auth.models import User
+import wsrc.utils.url_utils as url_utils
 
 class PageContent(models.Model):
     page = models.CharField(max_length=32)
@@ -208,3 +209,47 @@ class Suggestion(models.Model):
     comment = models.TextField(blank=True, null=True)
     class Meta:
         verbose_name = "Feedback - Suggestion"
+
+class OAuthAccess(models.Model):
+    GRANT_TYPE_CHOICES = (
+        ("client_credentials", "client_credentials"),
+        ("authorization_code", "authorization_code")
+    )
+    name = models.CharField(max_length=16, primary_key=True)
+    grant_type = models.CharField(max_length=32, choices=GRANT_TYPE_CHOICES)
+    auth_server_uri = models.CharField(max_length=255)
+    token_endpoint = models.CharField(max_length=255)
+    login_endpoint = models.CharField(max_length=255, blank=True, null=True)
+    metadata_endpoint = models.CharField(max_length=255, blank=True, null=True)
+    redirect_uri = models.CharField(max_length=255, blank=True, null=True)
+    client_id = models.CharField(max_length=255)
+    client_secret = models.CharField(max_length=255)
+    access_token = models.CharField(max_length=255, blank=True, null=True)
+
+    @property
+    def login_link(self):
+        if self.login_endpoint is None:
+            return None
+        params = {
+            "response_type": "code",
+            "client_id": self.client_id,
+            "redirect_uri": self.redirect_uri
+        }
+        return self.auth_server_uri + self.login_endpoint + "?" + urllib.urlencode(params)
+
+    def refresh_access_token(self):
+        auth_code = None
+        if self.grant_type == "authorization_code":
+            # Administrator will need to login to the remote site and enter the
+            # temp auth code prior to this:
+            auth_code = self.access_token
+        url = self.auth_server_uri + self.token_endpoint
+        self.access_token = url_utils.get_access_token(url, self.grant_type, self.client_id, \
+                                                       self.client_secret, self.redirect_uri, \
+                                                       auth_code)
+        self.save()
+
+    class Meta:
+        unique_together = ("auth_server_uri", "client_id")
+        verbose_name = "OAuth Credentials"
+        verbose_name_plural = "OAuth Credentials"

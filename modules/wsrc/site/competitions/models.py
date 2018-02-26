@@ -61,6 +61,28 @@ class CompetitionGroup(models.Model):
     active = models.BooleanField(default=False)
     def __unicode__(self):
         return u"%s" % (self.name)
+
+    @staticmethod
+    def get_comp_entrants(*group_types):
+        "Return a set of Player objects who are entrants in the given competition groups"
+        clause = None
+        for group_type in group_types:
+            q = models.Q(comp_type=group_type)
+            if clause is None:
+                clause = q
+            else:
+                clause |= q
+        groups = CompetitionGroup.objects.filter(clause).filter(active=True)\
+                 .prefetch_related("competition_set__entrant_set__player1", "competition_set__entrant_set__player2")
+        players = set()
+        for group in groups:
+            for comp in group.competition_set.all():
+                for entrants in comp.entrant_set.all():
+                    players.add(entrants.player1)
+                    if entrants.player2 is not None:
+                        players.add(entrants.player2)
+        return players
+    
     class Meta:
         ordering = ["comp_type", "-end_date"]
         verbose_name = "Competition Group"
