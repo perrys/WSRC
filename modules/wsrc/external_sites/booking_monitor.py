@@ -38,12 +38,10 @@ from wsrc.utils import email_utils
 
 POINTS_SYSTEM = [
   {"cancel_period_max": 0,  "points": [(0, 6)]},
-  {"cancel_period_max": 1,  "points": [(12, 4), (8, 3), (5, 2), (3, 1)]},
-  {"cancel_period_max": 2,  "points": [(12, 3), (7, 2), (4, 1)]},
-  {"cancel_period_max": 3,  "points": [(12, 2), (5, 1)]},
-  {"cancel_period_max": 4,  "points": [(12, 2), (6, 1)]},
-  {"cancel_period_max": 5,  "points": [(7, 1)]},
-  {"cancel_period_max": 12, "points": [(10, 1)]},
+  {"cancel_period_max": 1,  "points": [(18, 4)]},
+  {"cancel_period_max": 2,  "points": [(18, 3)]},
+  {"cancel_period_max": 4,  "points": [(18, 2)]},
+  {"cancel_period_max": 8,  "points": [(18, 1)]},
 ]
 
 ANNUAL_POINT_LIMIT = 11
