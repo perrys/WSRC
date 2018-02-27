@@ -36,28 +36,9 @@ from wsrc.utils.timezones import naive_utc_to_local, as_iso_date
 from wsrc.utils.timezones import UK_TZINFO
 from wsrc.utils import email_utils
 
-POINTS_SYSTEM = [
-  {"cancel_period_max": 0,  "points": [(0, 6)]},
-  {"cancel_period_max": 1,  "points": [(12, 4), (8, 3), (5, 2), (3, 1)]},
-  {"cancel_period_max": 2,  "points": [(12, 3), (7, 2), (4, 1)]},
-  {"cancel_period_max": 3,  "points": [(12, 2), (5, 1)]},
-  {"cancel_period_max": 4,  "points": [(12, 2), (6, 1)]},
-  {"cancel_period_max": 5,  "points": [(7, 1)]},
-  {"cancel_period_max": 12, "points": [(10, 1)]},
-]
-
 ANNUAL_POINT_LIMIT = 11
 ANNUAL_CUTOFF_DAYS = 183
 ADMIN_USERIDS = [3, 5, 400]
-
-def get_points(dt_hours, prebook_hours):
-    for p in POINTS_SYSTEM:
-        if dt_hours <= p["cancel_period_max"]:
-            for (pbh, points) in p["points"]:
-                if prebook_hours > pbh:
-                    return points
-                return 0
-    return 0
 
 def datetime_parser(dct):
     def parse_date(s, fmt):
@@ -175,7 +156,7 @@ def process_audit_table(data, offence_code, player_offence_map, error_list, filt
             continue
         if 'rebooked' not in item:
             item['rebooked'] = court_rebooked(data, item)
-        points = get_points(delta_t_hours, prebook_hours)
+        points = court_models.BookingOffence.get_points(delta_t_hours, prebook_hours)
         if points == 0:
             continue
         offence = court_models.BookingOffence(
