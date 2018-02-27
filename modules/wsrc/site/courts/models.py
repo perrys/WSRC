@@ -112,6 +112,26 @@ class BookingOffence(models.Model):
             msg += " ({time:%H:%M:%S})".format(time=self.cancellation_time)
         msg += ". Penalty points: {points}".format(points=self.penalty_points)
         return msg
+
+    @staticmethod
+    def get_points(dt_hours, prebook_hours):
+        POINTS_SYSTEM = [
+            {"cancel_period_max": 0, "points": [(0, 6)]},
+            {"cancel_period_max": 1, "points": [(12, 4), (8, 3), (5, 2), (3, 1)]},
+            {"cancel_period_max": 2, "points": [(12, 3), (7, 2), (4, 1)]},
+            {"cancel_period_max": 3, "points": [(12, 2), (5, 1)]},
+            {"cancel_period_max": 4, "points": [(12, 2), (6, 1)]},
+            {"cancel_period_max": 5, "points": [(7, 1)]},
+            {"cancel_period_max": 12, "points": [(10, 1)]},
+        ]
+        for pts in POINTS_SYSTEM:
+            if dt_hours <= pts["cancel_period_max"]:
+                for (pbh, points) in pts["points"]:
+                    if prebook_hours > pbh:
+                        return points
+                    return 0
+        return 0
+
     class Meta:
         verbose_name = "Booking Offence"
         verbose_name_plural = "Booking Offences"
