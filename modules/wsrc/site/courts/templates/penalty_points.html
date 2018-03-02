@@ -1,0 +1,56 @@
+{% extends "06_wsrc_navigation.html" %}
+
+{% block html_header_extra %}
+{{ block.super }}
+<meta name="robots" content="noindex" />
+<style>
+</style>
+{% endblock %}
+
+{% block titleprefix %}Penalty Points - {% endblock %}
+
+{% block centered_page_content %}
+
+<div class="well">
+  <p>
+    When members do not show up to use courts they have booked, or cancel at short notice, that deprives other members of the chance to play. The club's bye-laws state that persistent offenders will be penalised for this.
+  </p>
+  <p>
+    The court booking system will award penalty points when bookings are cancelled at short notice. No-shows will be reported by bar staff, and may also be reported by other members, from 15 minutes after the start of the court session. If a member exceeds 11 points in a 6 month period, their booking rights will be rescinded for 1 month.
+  </p>
+  <p>
+    The penalty system is: <strong>six</strong> points for a <strong>no-show</strong>, and a sliding scale for late cancellations&mdash;<strong>four</strong> points for courts cancelled with <strong>less than an hour's notice</strong>, down to one point for under 8 hours notice. There is no penalty for cancelling courts booked on the same day, and there is no penalty for "moving" court slots</span> (i.e. cancelling one slot and booking another on the same day).
+  </p>
+  {% if total_points > 0 %}
+  <p>You have <span class="badge">{{ total_points }}</span> point{{ total_points|pluralize }} on record from the last 6 months&mdash;please see details below.</p>
+  {% else %}
+  <p>You do not have any penalty points from the past 6 months</p>
+  {% endif %}
+</div>
+
+<table class="table table-striped">
+  <thead>
+    <tr>
+      <th>Date</th>
+      <th class="center">Court</th>
+      <th>Time</th>
+      <th>Name</th>
+      <th>Description</th>
+      <th class="center">Points</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for offence in total_offences %}
+    <tr>
+      <td>{{ offence.start_time|date:"D d F" }}</td>
+      <td class="center">{{ offence.court }}</td>
+      <td>{{ offence.start_time|date:"H:i" }}</td>
+      <td>{{ offence.name }}</td>
+      <td>{{ offence.get_offence_display }}{% if offence.cancellation_time %} ({{ offence.cancellation_time|date:"H:i" }}){% endif %}&mdash;booked {{ offence.get_prebook_period|safe }} before</td>
+      <td class="center">{{ offence.penalty_points }}</td>
+    </tr>
+{% endfor %}
+  </tbody>
+</table>
+
+{% endblock %}

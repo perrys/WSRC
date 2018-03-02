@@ -56,6 +56,7 @@ urlpatterns = patterns('',
     url(r'^courts/cal_invite/(\d+)/?$', wsrc.site.courts.views.calendar_invite_view),
     url(r'^courts/agenda/?$', wsrc.site.courts.views.agenda_view, name="agenda"),
     url(r'^courts/notifications/?$', wsrc.site.courts.views.notifier_view, name="notifier"),
+    url(r'^courts/penalty_points/?$', wsrc.site.courts.views.penalty_points_view, name="penalty_points"),
                        
     url(r'^court_booking/proxy/?$', wsrc.site.views.booking_proxy_view),
     url(r'^court_booking/cal_invite/send', wsrc.site.views.SendCalendarEmail.as_view()),

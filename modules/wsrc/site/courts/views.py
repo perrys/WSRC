@@ -29,7 +29,7 @@ from django.core.exceptions import SuspiciousOperation, PermissionDenied
 from django.core.mail import SafeMIMEMultipart, SafeMIMEText
 from django.core.urlresolvers import reverse as reverse_url
 from django.db import transaction
-from django.http import HttpResponse, HttpResponsePermanentRedirect
+from django.http import HttpResponse, HttpResponsePermanentRedirect, HttpResponseNotFound
 from django.db.models import Q
 from django.shortcuts import redirect
 from django.template.response import TemplateResponse
@@ -42,7 +42,7 @@ from .forms import START_TIME, END_TIME, RESOLUTION, COURTS,\
     BookingForm, CalendarInviteForm
 import wsrc.site.settings.settings as settings
 from wsrc.utils.form_utils import LabeledSelect, make_readonly_widget, add_formfield_attrs
-from wsrc.site.courts.models import BookingSystemEvent, EventFilter
+from wsrc.site.courts.models import BookingSystemEvent, EventFilter, BookingOffence
 from wsrc.site.usermodel.models import Player
 from wsrc.utils.html_table import Table, Cell, SpanningCell
 from wsrc.utils import timezones, email_utils
@@ -638,3 +638,17 @@ def notifier_view(request):
         'form_saved':      success,
     }
     return TemplateResponse(request, 'notifier.html', context)
+
+@login_required
+def penalty_points_view(request):
+    player = Player.get_player_for_user(request.user)
+    if player is None:
+        return HttpResponseNotFound()
+    total_offences = BookingOffence.get_offences_for_player(player)
+    context = {
+        "player": player,
+        "total_offences": total_offences,
+        "total_points": BookingOffence.get_total_points_for_player(player, None, total_offences),
+        "point_limit": BookingOffence.POINT_LIMIT
+    }
+    return TemplateResponse(request, 'penalty_points.html', context)
