@@ -14,6 +14,7 @@
 # along with WSRC.  If not, see <http://www.gnu.org/licenses/>.
 
 import hmac
+import datetime
 
 from django.core.exceptions import ValidationError
 from django.db import models
@@ -22,6 +23,7 @@ from django.utils import timezone
 import wsrc.site.settings
 import wsrc.site.usermodel.models as user_models
 from wsrc.utils.text import obfuscate
+from wsrc.utils.timezones import UK_TZINFO
 
 class BookingSystemEvent(models.Model):
     EVENT_TYPES = (
@@ -76,6 +78,18 @@ class BookingSystemEvent(models.Model):
 
 
 class BookingOffence(models.Model):
+    POINT_LIMIT = 11
+    POINTS_SYSTEM = [
+        {"cancel_period_max": 0, "points": [(0, 6)]},
+        {"cancel_period_max": 1, "points": [(12, 4), (8, 3), (5, 2), (3, 1)]},
+        {"cancel_period_max": 2, "points": [(12, 3), (7, 2), (4, 1)]},
+        {"cancel_period_max": 3, "points": [(12, 2), (5, 1)]},
+        {"cancel_period_max": 4, "points": [(12, 2), (6, 1)]},
+        {"cancel_period_max": 5, "points": [(7, 1)]},
+        {"cancel_period_max": 12, "points": [(10, 1)]},
+    ]
+    CUTOFF_DAYS = 183
+    
     player = models.ForeignKey(user_models.Player)
     OFFENCE_VALUES = (
         ("lc", "Late Cancelation"),
@@ -113,24 +127,30 @@ class BookingOffence(models.Model):
         msg += ". Penalty points: {points}".format(points=self.penalty_points)
         return msg
 
-    @staticmethod
-    def get_points(dt_hours, prebook_hours):
-        POINTS_SYSTEM = [
-            {"cancel_period_max": 0, "points": [(0, 6)]},
-            {"cancel_period_max": 1, "points": [(12, 4), (8, 3), (5, 2), (3, 1)]},
-            {"cancel_period_max": 2, "points": [(12, 3), (7, 2), (4, 1)]},
-            {"cancel_period_max": 3, "points": [(12, 2), (5, 1)]},
-            {"cancel_period_max": 4, "points": [(12, 2), (6, 1)]},
-            {"cancel_period_max": 5, "points": [(7, 1)]},
-            {"cancel_period_max": 12, "points": [(10, 1)]},
-        ]
-        for pts in POINTS_SYSTEM:
+    @classmethod
+    def get_points(clazz, dt_hours, prebook_hours):
+        for pts in clazz.POINTS_SYSTEM:
             if dt_hours <= pts["cancel_period_max"]:
                 for (pbh, points) in pts["points"]:
                     if prebook_hours > pbh:
                         return points
                     return 0
         return 0
+
+    @classmethod
+    def get_offences_for_player(clazz, player, date=None):
+        if date is None:
+            date = datetime.date.today() - datetime.timedelta(days=1)
+        midnight_today = datetime.datetime.combine(date, datetime.time(0, 0, tzinfo=UK_TZINFO))
+        start_date = midnight_today - datetime.timedelta(days=clazz.CUTOFF_DAYS)
+        end_date = midnight_today + datetime.timedelta(days=1)
+        return clazz.objects.filter(player=player, start_time__gte=start_date, start_time__lt=end_date, is_active=True)
+
+    @classmethod
+    def get_total_points_for_player(clazz, player, date=None, total_offences=None):
+        if total_offences is None:
+            total_offences = clazz.get_offences_for_player(player, date)
+        return total_offences.aggregate(models.Sum('penalty_points')).get('penalty_points__sum')
 
     class Meta:
         verbose_name = "Booking Offence"

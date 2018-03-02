@@ -36,8 +36,6 @@ from wsrc.utils.timezones import naive_utc_to_local, as_iso_date
 from wsrc.utils.timezones import UK_TZINFO
 from wsrc.utils import email_utils
 
-ANNUAL_POINT_LIMIT = 11
-ANNUAL_CUTOFF_DAYS = 183
 ADMIN_USERIDS = [3, 5, 400]
 
 def datetime_parser(dct):
@@ -233,7 +231,7 @@ def report_errors(date, errors):
     email_utils.send_email(subject, None, None, from_address, [to_address], extra_attachments=attachments)
 
 def report_offences(date, player, offences, total_offences):
-    from django.db.models import Sum
+    from wsrc.site.courts.models import BookingOffence
     subject = "Cancelled/Unused Courts - {name} - {date:%Y-%m-%d}".format(name=player.user.get_full_name(), date=date)
     from_address = "booking.monitor@wokingsquashclub.org"
     daily_total = reduce(lambda x,y: x + y.penalty_points, offences, 0)
@@ -244,8 +242,8 @@ def report_offences(date, player, offences, total_offences):
       "player": player,
       "offences": offences,
       "total_offences": total_offences,
-      "total_points": total_offences.aggregate(Sum('penalty_points')).get('penalty_points__sum'),
-      "point_limit": ANNUAL_POINT_LIMIT
+      "total_points": BookingOffence.get_total_points_for_player(player, date, total_offences),
+      "point_limit": BookingOffence.POINT_LIMIT
     }
     text_body, html_body = email_utils.get_email_bodies("BookingOffenceNotification", context)
     email_utils.send_email(subject, text_body, html_body, from_address, to_list, cc_list=[cc_address])
@@ -275,11 +273,10 @@ def process_date(date):
 
     process_audit_table(audit_table, "lc", player_offence_map, errors, filter)
     process_audit_table(noshows, "ns", player_offence_map, errors)
-    cutoff = midnight_today - datetime.timedelta(days=ANNUAL_CUTOFF_DAYS)
     if len(errors) > 0:
         report_errors(date, errors)
     for player, offences in player_offence_map.items():
-        total_offences = BookingOffence.objects.filter(player=player, start_time__gte=cutoff, start_time__lt=midnight_tomorrow, is_active=True)
+        total_offences = BookingOffence.get_offences_for_player(player, date)
         report_offences(date, player, offences, total_offences)
 
 class Tester(unittest.TestCase):
