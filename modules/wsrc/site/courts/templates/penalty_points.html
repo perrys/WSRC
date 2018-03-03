@@ -28,6 +28,7 @@
   {% endif %}
 </div>
 
+{% if total_points > 0 %}
 <table class="table table-striped">
   <thead>
     <tr>
@@ -52,5 +53,6 @@
 {% endfor %}
   </tbody>
 </table>
+{% endif %}
 
 {% endblock %}
