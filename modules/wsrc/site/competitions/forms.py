@@ -49,6 +49,7 @@ class MatchScoresForm(forms.ModelForm):
         if self.comp_id is None:
             raise Exception("no competition ID supplied for match scores form")
         self.comp_id = int(self.comp_id)
+        is_handicap = kwargs.pop('is_handicap', False)
         
         mode = kwargs.pop('mode', None)
         with_teams = kwargs.pop('with_teams', False)
@@ -94,7 +95,7 @@ class MatchScoresForm(forms.ModelForm):
 
         self.fields['walkover'].widget = forms.RadioSelect(choices=[('', '(None)')] + walkover_choices)
         score_choices = [("", "")] + [(idx, idx) for idx in range(0, 51, 1)]
-        if False: # TODO: choose handicap competitions
+        if is_handicap:
             score_choices = [(idx, idx) for idx in range(-50, 0, 1)] + score_choices# prefix this for handicaps
 
         for aset in range(1, 6):

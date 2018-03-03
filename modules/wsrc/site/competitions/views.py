@@ -703,6 +703,7 @@ class MatchEntryViewBase(PermissionedView):
         result = super(MatchEntryViewBase, self).get_form_kwargs()
         comp_id = self.kwargs.get("comp_id")
         result['comp_id'] = comp_id
+        result['is_handicap'] = "handicap" in self.competition.name.lower()
         return result
 
     def get_success_url(self):
