@@ -152,20 +152,29 @@ vkeyboard_widget =
     zero:  "0"
     minus:  "-"
 
-  _tab_next: () ->
+  _tab_set: () ->
     parent = @element.parents("form")
     set = parent.find(":tabbable")
-    idx = set.index(@element)
+    set = $.makeArray(set)
+    get_tab_index = (elt) ->
+      idx = elt.getAttribute("tabindex") or -1
+      return parseInt(idx, 10)
+    set.sort (lhs,rhs) ->
+      return get_tab_index(lhs) - get_tab_index(rhs)
+    return set
+
+  _tab_next: () ->
+    set = @_tab_set()
+    idx = set.indexOf(@element[0])
     if idx+1 < set.length
-      set.eq(idx+1).focus()
+      $(set[idx+1]).focus()
     return false
 
   _tab_prev: () ->
-    parent = @element.parents("form")
-    set = parent.find(":tabbable")
-    idx = set.index(@element)
+    set = @_tab_set()
+    idx = set.indexOf(@element[0])
     if idx-1 >= 0
-      set.eq(idx-1).focus()
+      $(set[idx-1]).focus()
     return false
 
   _layouts:
