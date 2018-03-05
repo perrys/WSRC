@@ -6,6 +6,7 @@ resources/js/*.min.js
 resources/js/all*.js
 resources/js/_*.js
 resources/js/wsrc*.js
+resources/js/jquery*.js
 
 resources/css/*.min.css
 resources/css/all*.css

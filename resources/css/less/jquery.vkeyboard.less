@@ -1,0 +1,49 @@
+/* -*- mode: css;-*- */
+
+#vkeyboard_container {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    display: flex;
+    justify-content: center;
+    z-index: 1100; /* greater than jqm panel dismiss overlay */
+    div#vkeyboard {
+        background-color: rgba(1,1,1,0.1);
+        .keyboard-row {
+            width: initial;
+            button {
+            	font-size: 1.5em;
+	        line-height: 1.3;
+                display: inline;
+                width: initial;
+                margin: 4px;
+                padding: 6px;
+                width: 3em;
+                &.key {
+                }
+                &.bksp {
+                    width: 4.1em;
+                }
+                &.tab {
+                    width: 4.1em;
+                }
+                &.enter, &.caps {
+                    width: 5.22em;
+                }
+                &.zero {
+                    width: 6.3em;
+                }
+                &.shift {
+                    width: 6.88em;
+                }
+                &.prev, &.next, &.clear, &.done {
+                    width: 4.91em;
+                }
+                &.space {
+                    width: 26.42em;
+                }
+            }
+        }
+    }
+}

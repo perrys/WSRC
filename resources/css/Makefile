@@ -3,7 +3,8 @@
 LESSC = lessc --no-color --strict-math=on
 MINIFY = minify 
 
-CSS_TARGETS = _jquery.mobile.datepicker.css wsrc_common.css wsrc_courts.css wsrc_tournaments.css wsrc_reflow_table.css wsrc_scores.css
+CSS_TARGETS = _jquery.mobile.datepicker.css wsrc_common.css wsrc_courts.css wsrc_tournaments.css wsrc_reflow_table.css wsrc_scores.css \
+              wsrc_jquery.vkeyboard.css
 
 .SECONDARY: _jquery.mobile.datepicker.css _jquery.dataTables.css _jquery-ui.css
 .PHONY: all
