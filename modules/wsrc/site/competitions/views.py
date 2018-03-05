@@ -704,6 +704,7 @@ class MatchEntryViewBase(PermissionedView):
         comp_id = self.kwargs.get("comp_id")
         result['comp_id'] = comp_id
         result['is_handicap'] = "handicap" in self.competition.name.lower()
+        result['is_kiosk'] = "no_navigation" in self.request.GET
         return result
 
     def get_success_url(self):

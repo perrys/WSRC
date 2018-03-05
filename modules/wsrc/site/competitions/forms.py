@@ -50,6 +50,7 @@ class MatchScoresForm(forms.ModelForm):
             raise Exception("no competition ID supplied for match scores form")
         self.comp_id = int(self.comp_id)
         is_handicap = kwargs.pop('is_handicap', False)
+        is_kiosk = kwargs.pop('is_kiosk', False)
         
         mode = kwargs.pop('mode', None)
         with_teams = kwargs.pop('with_teams', False)
@@ -94,6 +95,7 @@ class MatchScoresForm(forms.ModelForm):
             self.fields['team2'].queryset = entrant_queryset
 
         self.fields['walkover'].widget = forms.RadioSelect(choices=[('', '(None)')] + walkover_choices)
+
         score_choices = [("", "")] + [(idx, idx) for idx in range(0, 51, 1)]
         if is_handicap:
             score_choices = [(idx, idx) for idx in range(-50, 0, 1)] + score_choices# prefix this for handicaps
@@ -101,7 +103,9 @@ class MatchScoresForm(forms.ModelForm):
         for aset in range(1, 6):
             for team in (1, 2):
                 field = self.fields["team{team}_score{aset}".format(**locals())]
-                field.widget = forms.widgets.Select(choices=score_choices)
+                if not is_kiosk:
+                    field.widget = forms.widgets.Select(choices=score_choices)
+                field.widget.attrs["class"] = "score-input"
                 set_tab_index(field, False)
         add_formfield_attrs(self)
 

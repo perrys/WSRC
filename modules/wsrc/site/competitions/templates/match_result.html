@@ -13,6 +13,17 @@
 {% endblock %}
 
 {% block body_script_extra %}
+{% if "no_navigation" in request.GET %}
+{% if debug %}
+<script src="/static/js/jquery-ui.js"></script>
+{% else %}
+<script
+  src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js"
+  integrity="sha256-VazP97ZCwtekAsvgPBSUwPFKdrwD3unUfSGVYrahUqU="
+   crossorigin="anonymous"></script>
+{% endif %}
+<script src="/static/js/jquery.vkeyboard.js"></script>
+{% endif %}
 <script>
  var competition_data = {{ competition_data|safe }};
  var entrants_map_data = {{ entrants_map_data|safe }};
@@ -21,6 +32,13 @@
  var base_url = "{% url 'match_create' comp_id=competition.id %}";
  var base_path_suffix = "{% if options.no_navigation %}?no_navigation{% endif %}"
  var result_form_controller = new wsrc.result_form(form, competition_data, entrants_map_data, match_id, base_url, base_path_suffix);
- 
+ {% if "no_navigation" in request.GET %}
+ if ($.fn.vkeyboard) {
+     var inputs = $(":input[type='number']");
+     if (! inputs.vkeyboard("instance")) 
+         inputs.vkeyboard({layout: 'numeric'});
+     inputs.vkeyboard("option", "disabled", false);
+ }
+ {% endif %}
 </script>
 {% endblock %}
