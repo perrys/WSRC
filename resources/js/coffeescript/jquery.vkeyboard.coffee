@@ -38,6 +38,10 @@ vkeyboard_widget =
       @_vkeyboard_container = $("<div id='vkeyboard_container'></div>").appendTo("body")
       @_vkeyboard_container.hide()
       @_vkeyboard = $("<div id='vkeyboard'></div>").appendTo(@_vkeyboard_container)
+      parent = @element.parents("form")
+      tabbable_set = parent.find(":tabbable")
+      tabbable_set = $.makeArray(tabbable_set)
+      @_vkeyboard.data("tabbable_set", tabbable_set)
 
   _show_vkeyboard: () ->
     unless @options.disabled
@@ -153,9 +157,7 @@ vkeyboard_widget =
     minus:  "-"
 
   _tab_set: () ->
-    parent = @element.parents("form")
-    set = parent.find(":tabbable")
-    set = $.makeArray(set)
+    set = @_vkeyboard.data("tabbable_set")
     get_tab_index = (elt) ->
       idx = elt.getAttribute("tabindex") or -1
       return parseInt(idx, 10)
@@ -167,7 +169,7 @@ vkeyboard_widget =
     set = @_tab_set()
     idx = set.indexOf(@element[0])
     if idx+1 < set.length
-      $(set[idx+1]).focus()
+      set[idx+1].focus()
     return false
 
   _tab_prev: () ->
