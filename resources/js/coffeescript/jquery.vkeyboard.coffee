@@ -1,74 +1,30 @@
-vkeyboard_widget =
+class WSRC_vkeyboard_controller
+  constructor: (@_vkeyboard_container, @layout, parent) ->
+    @_vkeyboard = $("<div class='vkeyboard'></div>").appendTo(@_vkeyboard_container)
+    tabbable_set = parent.find(":input")
+    @tabbable_set = $.makeArray(tabbable_set)
+    get_tab_index = (elt) ->
+      idx = elt.getAttribute("tabindex") or -1
+      return parseInt(idx, 10)
+    @tabbable_set.sort (lhs,rhs) ->
+      return get_tab_index(lhs) - get_tab_index(rhs)
+    @setup_vkeyboard()
 
-  options:
-    layout: "qwerty"
+  set_input: (@element) ->
     
-  _create: () ->
-    @_initialize_vkeyboard()
-    @element.on("focus", (evt, forced) =>
-      unless forced
-        @_show_vkeyboard()
-    )
-
-    # if this is a popup append to the popup container to avoid
-    # problems with the screen mask
-    get_parent_popup = (elt) ->
-      role = elt.data("role")
-      if role == "popup"
-        return elt
-      parent = elt.parent()
-      if parent.length
-        return get_parent_popup(parent)
-      return parent
-      
-    @_popup_parent = get_parent_popup(@element)
-
-    # hide when parent form is submitted. Note: there is no way to
-    # detect when the popup closes from an injected script.
-    form = @element.parents("form")
-    form.on "submit", () =>
-      console.log("form submit")
-      @_hide_vkeyboard()
-
-  _initialize_vkeyboard: () ->
-    @_vkeyboard_container = $('#vkeyboard_container')
-    if @_vkeyboard_container.length
-      @_vkeyboard = $('#vkeyboard')
-    else
-      @_vkeyboard_container = $("<div id='vkeyboard_container'></div>").appendTo("body")
-      @_vkeyboard_container.hide()
-      @_vkeyboard = $("<div id='vkeyboard'></div>").appendTo(@_vkeyboard_container)
-      parent = @element.parents("form")
-      tabbable_set = parent.find(":tabbable")
-      tabbable_set = $.makeArray(tabbable_set)
-      @_vkeyboard.data("tabbable_set", tabbable_set)
-
-  _show_vkeyboard: () ->
-    unless @options.disabled
-      @_setup_vkeyboard()
-      @_vkeyboard_container.show()
-
-  _hide_vkeyboard: () ->
+  show: () ->
+    @_vkeyboard_container.show()
+    
+  hide: () ->
     @_vkeyboard_container.hide()
 
-  _setup_vkeyboard: () ->
-    target = if @_popup_parent.length then @_popup_parent.eq(0) else $("body")
-    @_vkeyboard_container.detach()
-    target.append(@_vkeyboard_container)
-    
-    layout = @options.layout
+  setup_vkeyboard: () ->
     keyset = if @_is_shift or @_is_caps then 'shift' else 'normal'
-    require_layout = true
-    if @_vkeyboard.data("layout") == layout
-      if @_vkeyboard.data("keyset") == keyset
-        require_layout = false
-    else
-      @_is_shift = @_is_caps = false # reset on layout switch
-    if require_layout
-      @_layout_keyboard(layout, keyset)
-    this._vkeyboard.find("button").off("click").on("click", (evt) =>
-      @_handle_vkeypress(evt)
-    )
+    if @_vkeyboard.data("keyset") != keyset
+      @_layout_keyboard(@layout, keyset)
+      @_vkeyboard.find("button").off("click").on("click", (evt) =>
+        @_handle_vkeypress(evt)
+      )
 
   _layout_keyboard: (layout, keyset) ->
 
@@ -80,15 +36,15 @@ vkeyboard_widget =
         cls = action = key_spec
         key_face = if @_key_name_map[key_spec] then @_key_name_map[key_spec] else key_spec
       else
-        key_face = key_spec      
-      jq_key = $("<button class='#{ cls }' data-action='#{ action }'>#{ key_face }</button>")
+        key_face = key_spec
+      cls += " btn btn-default"
+      jq_key = $("<button type='button' class='#{ cls }' data-action='#{ action }'>#{ key_face }</button>")
       jq_row.append(jq_key)
       
     setup_row = (jq_row, row_spec) =>
       for key in row_spec.split(" ")
         setup_key(jq_row, key)
 
-    @_vkeyboard.data("layout", layout)
     @_vkeyboard.data("keyset", keyset)
 
     @_vkeyboard.children().remove()    
@@ -100,7 +56,7 @@ vkeyboard_widget =
 
   _handle_vkeypress: (evt) ->
     key = $(evt.target)
-    action = $(key).data("action")
+    action = key.data("action")
     if action
       action_fn = @["_action_#{ action }"]
       char = action_fn.call(this, key)
@@ -112,8 +68,9 @@ vkeyboard_widget =
       this.element.val(this.element.val() + char)
       if @_is_shift
         @_is_shift = false
-        @_setup_vkeyboard()
-    this.element.trigger("focus", true)      
+        @setup_vkeyboard()
+    @element[0].focus()
+    return undefined
 
   _action_tab: () -> return "	"
   _action_space: () -> return " "
@@ -135,11 +92,11 @@ vkeyboard_widget =
     return null
   _action_shift: () ->
     @_is_shift = not @_is_shift
-    @_setup_vkeyboard()
+    @setup_vkeyboard()
     return null
   _action_caps: () ->
     @_is_caps = not @_is_caps
-    @_setup_vkeyboard()
+    @setup_vkeyboard()
     return null
   _action_next: () ->
     @_tab_next()
@@ -148,7 +105,7 @@ vkeyboard_widget =
     @_tab_prev()
     return false  
   _action_done: () ->
-    @_hide_vkeyboard()
+    @hide()
     return false
     
   _key_name_map:
@@ -156,27 +113,22 @@ vkeyboard_widget =
     zero:  "0"
     minus:  "-"
 
-  _tab_set: () ->
-    set = @_vkeyboard.data("tabbable_set")
-    get_tab_index = (elt) ->
-      idx = elt.getAttribute("tabindex") or -1
-      return parseInt(idx, 10)
-    set.sort (lhs,rhs) ->
-      return get_tab_index(lhs) - get_tab_index(rhs)
-    return set
-
   _tab_next: () ->
-    set = @_tab_set()
+    set = @tabbable_set
     idx = set.indexOf(@element[0])
     if idx+1 < set.length
       set[idx+1].focus()
+    else
+      @element[0].focus()
     return false
 
   _tab_prev: () ->
-    set = @_tab_set()
+    set = @tabbable_set
     idx = set.indexOf(@element[0])
     if idx-1 >= 0
       $(set[idx-1]).focus()
+    else
+      @element[0].focus()
     return false
 
   _layouts:
@@ -202,5 +154,46 @@ vkeyboard_widget =
         '1 2 3 {prev}'
         '{zero} {minus} {done}'
       ]
+
+  @get_instance: (layout, parent) ->
+    container = $("#vkeyboard_container_#{ layout }")
+    if container.length
+      return container.data("vkeyboard_instance")
+    container = $("<div class='vkeyboard_container' id='vkeyboard_container_#{ layout }'></div>")
+    container.appendTo(parent)
+    container.hide()
+    instance = new WSRC_vkeyboard_controller(container, layout, parent)
+    container.data("vkeyboard_instance", instance)
+    return instance
+    
+    
+vkeyboard_widget =
+
+  options:
+    layout: "qwerty"
+    parent: $("body")
+    
+  _create: () ->
+    @_instance = WSRC_vkeyboard_controller.get_instance(@options.layout, @options.parent)
+    @element.on("focus", (evt, forced) =>
+      @_instance.set_input(@element)
+      unless forced
+        @_show_vkeyboard()
+    )
+
+    # hide when parent form is submitted. Note: there is no way to
+    # detect when the popup closes from an injected script.
+    form = @element.parents("form")
+    form.on "submit", () =>
+      @_hide_vkeyboard()
+
+  _show_vkeyboard: () ->
+    unless @options.disabled
+      @_instance.setup_vkeyboard()
+      @_instance.show()
+
+  _hide_vkeyboard: () ->
+      @_instance.hide()
+
 
 $.widget("wsrc.vkeyboard", vkeyboard_widget)
