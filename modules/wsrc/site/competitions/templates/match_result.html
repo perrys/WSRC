@@ -36,7 +36,7 @@
  if ($.fn.vkeyboard) {
      var inputs = $(":input[type='number']");
      if (! inputs.vkeyboard("instance")) 
-         inputs.vkeyboard({layout: 'numeric'});
+         inputs.vkeyboard({layout: 'numeric', parent: $("table.score-entry")});
      inputs.vkeyboard("option", "disabled", false);
  }
  {% endif %}
