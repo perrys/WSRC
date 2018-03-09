@@ -66,6 +66,7 @@ class WSRC_vkeyboard_controller
       char = key.text()
     if char
       this.element.val(this.element.val() + char)
+      this.element.change()
       if @_is_shift
         @_is_shift = false
         @setup_vkeyboard()
@@ -86,9 +87,11 @@ class WSRC_vkeyboard_controller
     if val
       val = val.substr(0, val.length-1)
       this.element.val(val)
+      this.element.change()
     return null
   _action_clear: () ->
     this.element.val("")
+    this.element.change()
     return null
   _action_shift: () ->
     @_is_shift = not @_is_shift
