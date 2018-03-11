@@ -105,6 +105,7 @@ def get_pagecontent_ctx(page, title=None):
     result = {
         "pagedata": {
             "title": title is not None and title or data.page,
+            "raw_content": data.markup,
             "content": markdown.markdown(data.markup, extensions=["markdown.extensions.toc"]),
             "last_updated": data.last_updated,
             },
@@ -150,6 +151,12 @@ def generic_nav_view(request, page, template):
             item.append(pending)
     ctx["pagedata"]["navtree"] = str(navtree.ul)
     return TemplateResponse(request, template, ctx)
+
+@require_safe
+def generic_txt_view(request, page):
+    "Simple text format view"
+    ctx = get_pagecontent_ctx(page)
+    return TemplateResponse(request, 'generic_page.txt', ctx, content_type="text/plain")
 
 @require_safe
 @login_required
