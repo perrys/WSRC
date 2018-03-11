@@ -223,6 +223,10 @@ class MailChimpSession:
                                             .format(member.player.user.get_full_name(), member.player.user.email,
                                                     self.list_info["subscribe_url_long"])))
                 continue # no further processing on unsubscribed records
+            elif mailchimp_record["status"] == "cleaned":
+                errors.append(Exception("Mailchimp cleaned \"{0} <{1}>\", probably due to hard bounce"\
+                                        .format(member.player.user.get_full_name(), member.player.user.email)))
+                continue # no further processing on cleaned records
 
             assert mailchimp_record["status"] == "subscribed"
             if member.player.prefs_receive_email is False:
