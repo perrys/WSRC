@@ -125,6 +125,7 @@ urlpatterns = patterns('',
     url(r'^club_management/?$', wsrc.site.views.committee_view),
     url(r'^committee/?$', wsrc.site.views.committee_view),
     url(r'^about/?$', wsrc.site.views.generic_nav_view, kwargs={"page": "about", "template": "about.html"}),
+    url(r'^robots.txt$', wsrc.site.views.generic_txt_view, kwargs={"page": "robots.txt"}),
     url(r'^(?P<page>[a-z_]+)$', wsrc.site.views.generic_view),
 )
 
