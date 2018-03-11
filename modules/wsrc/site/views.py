@@ -104,7 +104,7 @@ def get_pagecontent_ctx(page, title=None):
     data = get_object_or_404(PageContent, page__iexact=page)
     result = {
         "pagedata": {
-            "title": title is not None and title or data.page,
+            "title": title is not None and title or data.page.replace("_", " "),
             "raw_content": data.markup,
             "content": markdown.markdown(data.markup, extensions=["markdown.extensions.toc"]),
             "last_updated": data.last_updated,
