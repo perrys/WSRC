@@ -129,6 +129,7 @@ class RESTClient(object):
         if response.getcode() != httplib.OK:
             raise Exception("Unable to obtain CSRF token: " + response.read())
         data = json.load(response)
+        LOGGER.debug("Auth data: %s", str(data))        
         self.csrf_token = data["csrf_token"]
         if data["username"] is None:
             LOGGER.info("Logging in to upload service..")
@@ -154,8 +155,10 @@ class RESTClient(object):
             url = self.base_url + selector
             if params is not None:
                 params = urllib.urlencode(params)
-            LOGGER.debug("opening url %s, params: %s, headers: %s", url, params, headers)
-            request = urllib2.Request(url, headers=headers)
+            myheaders = {"Referer": self.base_url + self.auth_endpoint}
+            myheaders.update(headers)
+            LOGGER.debug("opening url %s, params: %s, headers: %s", url, params, myheaders)
+            request = urllib2.Request(url, headers=myheaders)
             response = self.opener.open(request, params)
             return response
         except urllib2.HTTPError, exc:
@@ -371,9 +374,9 @@ def main():
     threading.current_thread().name = "main"
     program = os.path.basename(sys.argv[0])
     def usage():
-        sys.stderr.write("USAGE: {0} --config <file>\n".format(program))
+        sys.stderr.write("USAGE: {0} --config <file> [--testfile <file>]\n".format(program))
     try:
-        optlist, args = getopt.getopt(sys.argv[1:], "c:", ["config="])
+        optlist, args = getopt.getopt(sys.argv[1:], "c:t:", ["config=", "testfile="])
     except getopt.GetoptError as err:
         sys.stderr.write(str(err) + "\n")
         usage()
@@ -382,7 +385,7 @@ def main():
         usage()
         sys.exit(2)
 
-    configfile = None
+    configfile = testfile = None
     config_cls = collections.namedtuple("Config", [
         "base_url",
         "event_endpoint",
@@ -395,6 +398,8 @@ def main():
     for opt, val in optlist:
         if opt in ["-c", "--config"]:
             configfile = val
+        if opt in ["-t", "--testfile"]:
+            testfile = val
     if configfile is None:
         usage()
         sys.exit(2)
@@ -404,9 +409,11 @@ def main():
     parser = DoorEntryDataParser(config.event_endpoint, config.dump_endpoint,\
                                  config.email_address)
     uploader = RESTClient(config.base_url, config.auth_endpoint, config.credentials)
-    serial_inst = serial.Serial(**config.serial_parameters)
-#    serial_inst = StringIO.StringIO(open("docs/doorcard_capture").read())
-#    serial_inst.in_waiting = 0
+    if testfile is not None:
+        serial_inst = StringIO.StringIO(open(os.path.expanduser(testfile)).read())
+        serial_inst.in_waiting = 0
+    else:
+        serial_inst = serial.Serial(**config.serial_parameters)
     reader = EntryReader(serial_inst)
     looper = REPL(reader, parser, uploader)
     looper.loop()
