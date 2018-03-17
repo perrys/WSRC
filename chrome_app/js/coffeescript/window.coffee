@@ -324,7 +324,7 @@ class WSRC_kiosk
   setup_webview_vkeyboard: (wv) ->
     method = if @settings?.kiosk_settings.virtual_keyboard == "on" then "enable_vkeyboard" else "disable_vkeyboard"
     if wv?.contentWindow
-      wv.contentWindow.postMessage([method], "http://#{ @settings.wsrc_credentials.server }")
+      wv.contentWindow.postMessage([method], "#{ @settings.wsrc_credentials.server }")
 
   handle_message_show_panels: (event) ->
     @view.show_panels()
@@ -350,15 +350,15 @@ class WSRC_kiosk
     login_webview = $("webview#login_webview")[0]
     rule = 
       name: 'listener_rule'
-      matches: ["http://#{ credentials.server }/*"]
+      matches: ["#{ credentials.server }/*"]
       js:
         files: ["js/jq_jquery.js", "js/client_functions.js"]
       run_at: 'document_end'
     login_webview.addContentScripts([rule])
-    src = "http://#{ credentials.server }/login/"
+    src = "#{ credentials.server }/login/"
     @view.log("loading login webview: #{ src }, username: #{ credentials.username }")
     $(login_webview).one('contentload', (event) =>
-      login_webview.contentWindow.postMessage(["login", credentials?.username, credentials.password], "http://#{ credentials.server }")
+      login_webview.contentWindow.postMessage(["login", credentials?.username, credentials.password], "#{ credentials.server }")
       return null
     )
     login_webview.src = src
@@ -405,10 +405,10 @@ class WSRC_kiosk
   load_webview: (webview) ->
     src = $(webview).data("src")
     server = @settings.wsrc_credentials.server
-    src = "http://#{ server }/#{ src }?no_navigation"    
+    src = "#{ server }/#{ src }?no_navigation"    
     rule = 
       name: 'vkeyboard'
-      matches: ["http://#{ server }/*"]
+      matches: ["#{ server }/*"]
       js:
         files: ["js/jq_jquery.js", "js/jq_jquery-ui.js", "js/jquery.vkeyboard.js", "js/client_functions.js"]
       css:
