@@ -49,7 +49,9 @@ setup(name='WSRC',
                       },
       scripts = ['scripts/wsrc'],
       data_files = [('www/css', glob.glob(os.path.join('resources', 'css', 'all*.css'))),
-                    ('www/js', [os.path.join('resources', 'js', 'jquery.vkeyboard.js')] + glob.glob(os.path.join('resources', 'js', 'all*.js'))),
+                    ('www/js', [os.path.join('resources', 'js', 'jquery.vkeyboard.js'), \
+                                os.path.join('resources', 'js', 'legacy_shims.js')] +\
+                     glob.glob(os.path.join('resources', 'js', 'all*.js'))),
                     ('www/images', get_images(['resources', 'images'])),
                     ('www/css/images', get_images(['resources', 'css', 'images'])),
                     ('www/css/images/icons-png', glob.glob(os.path.join('resources', 'images', 'icons-png', '*.png'))),
