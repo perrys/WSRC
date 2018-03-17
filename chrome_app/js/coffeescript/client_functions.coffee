@@ -24,7 +24,6 @@ dispatch = (event) ->
           username: username
           password: password
         complete: (jqXHR) =>          
-          console.log(jqXHR)
           if jqXHR.status == 200
             credentials = jqXHR.responseJSON
             post_log_message "login successful, username: #{ credentials.username }"
