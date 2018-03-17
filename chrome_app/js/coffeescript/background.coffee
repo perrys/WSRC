@@ -81,7 +81,7 @@ class WSRC_kiosk_background
       kiosk_settings = stored_data.kiosk_settings
       today = wsrc.utils.js_to_iso_date_str(new Date())
       settings =
-        url: "http://#{ credentials.server }/data/bookings?date=#{ today }"
+        url: "#{ credentials.server }/data/bookings?date=#{ today }"
         type: "GET"
         complete: (jqXHR, status_txt) =>
           if jqXHR.status == 200
@@ -95,7 +95,7 @@ class WSRC_kiosk_background
       credentials = stored_data.wsrc_credentials
       kiosk_settings = stored_data.kiosk_settings
       settings =
-        url: "http://#{ credentials.server }/data/club_events"
+        url: "#{ credentials.server }/data/club_events"
         type: "GET"
         complete: (jqXHR, status_txt) =>
           if jqXHR.status == 200
@@ -152,56 +152,17 @@ class WSRC_kiosk_background
     chrome.storage.local.get (settings) =>
       merged = {}
       $.extend(true, merged, @settings_defaults, settings)
+      unless merged.wsrc_credentials.server.startsWith("http://") or merged.wsrc_credentials.server.startsWith("https://")
+        merged.wsrc_credentials.server = "https://" + merged.wsrc_credentials.server 
       callback.call(_this, merged)
     
 
-  attempt_login: () ->
-    @get_settings (stored_data) =>
-      credentials = stored_data.wsrc_credentials
-      unless credentials?.username and credentials?.password
-        @message_to_app("log", "[bg] unable to login, please provide login credentials")
-        @message_to_app("show_panels")
-        return
-      @message_to_app("log", "[bg] attempting login with username: #{ credentials.username }")
-      settings =
-        url: "http://#{ credentials.server }/data/auth/"
-        type: "POST"
-        headers:
-          "X-CSRFToken": @csrf_token 
-        data: credentials
-        complete: (jqXHR) =>
-          data = jqXHR.responseJSON
-          if jqXHR.status == 200
-            @csrf_token = data.csrf_token
-            @message_to_app("log", "[bg] login successful, username: #{ data.username }")
-            @message_to_app("login_webviews", credentials)
-          else
-            @message_to_app("log", "[bg] login failed (#{ jqXHR.status } #{ jqXHR.statusText }), response: #{ jqXHR.responseText }, please check credentials")
-      $.ajax(settings)
-      
   check_auth: () ->
     @get_settings (stored_data) =>
       @message_to_app("settings_update", stored_data)
       credentials = stored_data.wsrc_credentials
-      settings =
-        url: "http://#{ credentials.server }/data/auth/"
-        type: "GET"
-        contentType: "application/json"
-        success: (data) =>
-          @csrf_token = data.csrf_token
-          if data.username
-            if data.username == credentials.username
-              @message_to_app("log", "[bg] logged in, username: #{ data.username }")
-              @message_to_app("login_webviews", credentials)
-            else
-              @message_to_app("log", "[bg] incorrect username: #{ data.username }")
-              @attempt_login()
-          else
-            @attempt_login()
-        error: (jqXHR, status_txt, error) =>
-          console.log(jqXHR)
-          console.log(error)
-      $.ajax(settings)
+      @message_to_app("log", "[bg] attempting login with username: #{ credentials.username }")
+      @message_to_app("login_webviews", credentials)
   
   handle_message_received: (event) ->
     if event.data[0] == "handshake"
