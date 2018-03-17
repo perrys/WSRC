@@ -3,7 +3,7 @@
   "description": "Woking Squash Club Kiosk App.",
   "version": "{version}",
   "manifest_version": 2,
-  "permissions": ["webview", "http://localhost:8000/", "http://www.wokingsquashclub.org/", "storage", "alarms", "system.cpu", "system.network", "nativeMessaging"],
+  "permissions": ["webview", "http://localhost:8000/", "http://www.wokingsquashclub.org/", "https://www.wokingsquashclub.org/", "storage", "alarms", "system.cpu", "system.network", "nativeMessaging"],
   "app": {
     "background": {
       "scripts": ["js/jq_jquery.js", "js/wsrc_utils.js", "js/background.js"]
