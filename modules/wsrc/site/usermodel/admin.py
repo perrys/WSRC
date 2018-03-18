@@ -16,6 +16,7 @@
 "Admin for the membership models"
 
 import csv
+import datetime
 import StringIO
 
 from django import forms
@@ -30,7 +31,7 @@ from django.core import urlresolvers
 from django.http import HttpResponse
 
 from .models import Player, Season, Subscription, SubscriptionPayment,\
-    SubscriptionCost, SubscriptionType, DoorEntryCard, DoorCardEvent
+    SubscriptionCost, SubscriptionType, DoorEntryCard, DoorCardEvent, DoorCardLease
 from wsrc.utils.form_utils import SelectRelatedQuerysetMixin, CachingModelChoiceField, \
     get_related_field_limited_queryset, PrefetchRelatedQuerysetMixin
 
@@ -219,13 +220,21 @@ class SubscriptionInline(admin.StackedInline):
     formfield_overrides = {
         models.TextField: {'widget': forms.TextInput(attrs={'size': 40})},
     }
-class DoorCardInline(admin.TabularInline):
-    model = DoorEntryCard
-    extra = 0
 
 class PlayerListUploadForm(forms.Form):
     es_csv_file = forms.FileField(required=False, label="Click to select England Squash csv file. ",
                                   widget=forms.widgets.ClearableFileInput(attrs={'accept':'.csv'}))
+
+class DoorCardLeaseForm(forms.ModelForm):
+    "Override form for more efficient DB interaction"
+    queryset = get_related_field_limited_queryset(DoorCardLease.player.field)
+    player = forms.ModelChoiceField(queryset=queryset.select_related("user"), required=False)
+    player.label = "Owner"
+
+
+class DoorCardLeaseInline(admin.TabularInline):
+    model = DoorCardLease
+    form = DoorCardLeaseForm
 
 class PlayerAdmin(SelectRelatedQuerysetMixin, PrefetchRelatedQuerysetMixin, admin.ModelAdmin):
     "Admin for Player (i.e. club member) model"
@@ -238,7 +247,7 @@ class PlayerAdmin(SelectRelatedQuerysetMixin, PrefetchRelatedQuerysetMixin, admi
     prefetch_related_fields = ('subscription_set__season','subscription_set__subscription_type')
     list_per_page = 400
     actions = (update_subscriptions,)
-    inlines = (SubscriptionInline, DoorCardInline)
+    inlines = (SubscriptionInline,DoorCardLeaseInline)
     readonly_fields = ("user_link", "date_joined_date", "doorcard_numbers")
     exclude = ("user",)
 
@@ -371,57 +380,89 @@ class SubscriptionCostAdmin(SelectRelatedQuerysetMixin, admin.ModelAdmin):
 class SubscriptionTypeAdmin(admin.ModelAdmin):
     list_display = ('name',)
 
-class DoorEntryCardForm(forms.ModelForm):
-    "Override form for more efficient DB interaction"
-    queryset = get_related_field_limited_queryset(DoorEntryCard.player.field)
-    player = forms.ModelChoiceField(queryset=queryset.select_related("user"), required=False)
-
 
 class HasPlayerListFilter(admin.SimpleListFilter):
     "Simple filtering on Player not null"
-    title = "Assigned"
+    title = "Currently Assigned"
     parameter_name = "assigned"
     def lookups(self, request, model_admin):
         return [('y', 'Yes'), ('n', 'No')]
     def queryset(self, request, queryset):
         if self.value():
-            flag = self.value() == 'n'
-            queryset = queryset.filter(player__isnull=flag)
+            today = datetime.date.today()
+            ids = [card.pk for card in queryset if card.get_current_ownership_data(today) is not None]
+            if self.value() == 'y':
+                queryset = queryset.filter(pk__in=ids)
+            else:
+                queryset = queryset.exclude(pk__in=ids)
         return queryset
 
 class DoorEntryCardAdmin(admin.ModelAdmin):
-    search_fields = ('player__user__first_name', 'player__user__last_name', 'cardnumber')
+    search_fields = ('cardnumber',)
     list_select_related = True
-    list_display = ('cardnumber', 'is_registered', 'linked_player', 'active', 'date_issued')
-    list_filter = ("is_registered", HasPlayerListFilter, "player__user__is_active")
+    list_display = ('cardnumber', 'is_registered', 'linked_current_owner')
+    list_filter = ("is_registered", HasPlayerListFilter)
     list_per_page = 500
-    form = DoorEntryCardForm
+    inlines = (DoorCardLeaseInline,)
     def get_queryset(self, request):
         queryset = super(DoorEntryCardAdmin, self).get_queryset(request)
         queryset = queryset.select_related('player__user', 'season')
+        queryset = queryset.prefetch_related('doorcardlease_set__player__user')
         return queryset
-    def linked_player(self, obj):
-        if obj.player is None:
+    def linked_current_owner(self, obj):
+        owner = obj.get_current_ownership_data()
+        if owner is None:
             return "(None)"
+        link = urlresolvers.reverse("admin:usermodel_player_change", args=[owner.player.id])
+        return u'<a href="%s">%s</a>' % (link, owner.player.get_ordered_name())
+    linked_current_owner.allow_tags = True
+    linked_current_owner.short_description = "Currently Assigned To"
+
+class IsCurrentListFilter(admin.SimpleListFilter):
+    "Simple filtering on current ownership"
+    title = "Returned"
+    parameter_name = "returned"
+    def lookups(self, request, model_admin):
+        return [('y', 'Yes'), ('n', 'No')]
+    def queryset(self, request, queryset):
+        if self.value() == 'y':
+            queryset = queryset.filter(date_returned__isnull=False)
+        elif self.value() == 'n':
+            queryset = queryset.filter(date_returned__isnull=True)
+        return queryset
+
+class DoorCardLeaseAdmin(admin.ModelAdmin):
+    search_fields = ('player__user__first_name', 'player__user__last_name', 'card__cardnumber')
+    list_display = ('card', 'linked_player', 'current_owner_active', 'date_issued', 'date_returned')
+    list_filter = ("card__is_registered", "player__user__is_active", IsCurrentListFilter)
+    list_select_related = ('player__user', 'card')
+    form = DoorCardLeaseForm
+    
+    def linked_player(self, obj):
         link = urlresolvers.reverse("admin:usermodel_player_change", args=[obj.player.id])
         return u'<a href="%s">%s</a>' % (link, obj.player.get_ordered_name())
     linked_player.allow_tags = True
     linked_player.short_description = "Assigned To"
     linked_player.admin_order_field = "user__last_name"
-    def active(self, obj):
-        player = obj.player
-        if player is None:
-            return None
-        return player.user.is_active
-    active.admin_order_field = "player__user__is_active"
-    active.boolean = True
-
+    def current_owner_active(self, obj):
+        return obj.player.user.is_active
+    current_owner_active.boolean = True
+    current_owner_active.short_description = "Member Active?"    
+    
 class EventHasPlayerListFilter(HasPlayerListFilter):
     "Simple filtering on card__player not null"
+    title = "Was Assigned"
     def queryset(self, request, queryset):
         if self.value():
-            flag = self.value() == 'n'
-            queryset = queryset.filter(card__player__isnull=flag)
+            def search(event):
+                if event.card is None:
+                    return False
+                return event.card.get_current_ownership_data(event.received_time.date()) is not None
+            ids = [event.pk for event in queryset if search(event)]
+            if self.value() == 'y':
+                queryset = queryset.filter(pk__in=ids)
+            else:
+                queryset = queryset.exclude(pk__in=ids)
         return queryset
 
 class DoorEventForm(forms.ModelForm):
@@ -430,12 +471,33 @@ class DoorEventForm(forms.ModelForm):
     card = forms.ModelChoiceField(queryset=queryset.select_related("player__user"), required=False)
 
 class DoorCardEventAdmin(admin.ModelAdmin):
-    search_fields = ('card__player__user__first_name', 'card__player__user__last_name', 'card__cardnumber')
-    list_select_related = ('card__player__user',)
+    search_fields = ('card__cardnumber',)
     list_display = ('event', 'linked_cardnumber', 'linked_player', 'timestamp', 'received_time')
-    list_filter = ("event", "card__player__user__is_active", EventHasPlayerListFilter)
+    list_filter = ("event", EventHasPlayerListFilter)
     form = DoorEventForm
 
+    def get_queryset(self, request):
+        queryset = super(DoorCardEventAdmin, self).get_queryset(request)
+        queryset = queryset.select_related('card')
+        queryset = queryset.prefetch_related('card__doorcardlease_set__player__user')
+        return queryset
+
+    def get_search_results(self, request, queryset, search_term):
+        search_term_lower = search_term.lower().strip()
+        ids = None
+        if len(search_term_lower) > 0:
+            today = datetime.date.today()
+            def search(event):
+                if event.card is None:
+                    return False
+                owner = event.card.get_current_ownership_data(today)
+                return owner is not None and search_term_lower in owner.player.user.get_full_name().lower()
+            ids = [event.pk for event in queryset.all() if search(event)]
+        queryset, use_distinct = super(DoorCardEventAdmin, self).get_search_results(request, queryset, search_term)
+        if ids is not None:
+            queryset |= self.model.objects.filter(pk__in=ids)
+        return queryset, use_distinct
+    
     def linked_cardnumber(self, obj):
         if obj.card is None:
             return "(None)"
@@ -447,13 +509,16 @@ class DoorCardEventAdmin(admin.ModelAdmin):
     linked_cardnumber.admin_order_field = "card__cardnumber"
 
     def linked_player(self, obj):
-        if obj.card is None or obj.card.player is None:
+        lease = None
+        if obj.card is not None:
+            lease = obj.card.get_current_ownership_data(obj.received_time.date())
+        if lease is None:
             return "(None)"
-        link = urlresolvers.reverse("admin:usermodel_player_change", args=[obj.card.player.id])
-        return u'<a href="%s">%s</a>' % (link, obj.card.player.get_ordered_name())
+        link = urlresolvers.reverse("admin:usermodel_player_change", args=[lease.player.id])
+        return u'<a href="%s">%s</a>' % (link, lease.player.get_ordered_name())
     linked_player.allow_tags = True
     linked_player.short_description = "Assigned To"
-    linked_player.admin_order_field = "card__player__user__last_name"
+    linked_player.admin_order_field = "card__doorcardlease__player__user__last_name"
     
 admin.site.register(Season, SeasonAdmin)
 admin.site.register(Subscription, SubscriptionAdmin)
@@ -462,3 +527,4 @@ admin.site.register(SubscriptionCost, SubscriptionCostAdmin)
 admin.site.register(SubscriptionType, SubscriptionTypeAdmin)
 admin.site.register(DoorEntryCard, DoorEntryCardAdmin)
 admin.site.register(DoorCardEvent, DoorCardEventAdmin)
+admin.site.register(DoorCardLease, DoorCardLeaseAdmin)

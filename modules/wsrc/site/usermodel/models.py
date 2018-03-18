@@ -17,6 +17,7 @@
 
 from django.db import models
 from django.contrib.auth.models import User
+from django.core.exceptions import ValidationError, NON_FIELD_ERRORS
 from django.core.mail import send_mail
 from django.core import validators
 from django.db.models import Q
@@ -294,27 +295,80 @@ class SubscriptionPayment(models.Model):
         return u"\xa3{0:.2f} {1}".format(self.transaction.amount, self.subscription)
 
 class DoorEntryCard(models.Model):
-    "Many-to-one model for a player's door cards"
+    "Unique record for a door card"
     card_validator = validators.RegexValidator(r'^\d{8}$',
                                                'Enter an eight-digit card number.', 'invalid_id')
-    player = models.ForeignKey(Player, db_index=True, blank=True, null=True, related_name="doorcards")
     cardnumber = models.CharField("Card #", max_length=8, primary_key=True, validators=[card_validator])
-    is_registered = models.BooleanField("Valid",
-                                        help_text="Whether card is registred with the card reader",
+    is_registered = models.BooleanField("Card Valid",
+                                        help_text="Whether card is currently registred with the card reader",
                                         default=True)
+    player = models.ForeignKey(Player, db_index=True, blank=True, null=True, related_name="doorcards")
     date_issued = models.DateField("Issue Date", default=datetime.date.today, blank=True, null=True)
+
+    def get_current_ownership_data(self, today=None):
+        if today is None:
+            today = datetime.date.today()
+        objects = [obj for obj in self.doorcardlease_set.all() \
+                   if obj.date_issued<=today and (obj.date_returned is None or obj.date_returned>=today)]
+        nowners = len(objects)
+        if nowners == 0:
+            return None
+        if nowners > 1:
+            raise Exception("card {0} has more than one current owner".format(self.cardnumber))
+        return objects[0]
+
     class Meta:
         verbose_name = "Door Entry Card"
     def __unicode__(self):
         result = self.cardnumber
-        if self.player is not None:
-            result += u" [{0}]".format(self.player.get_ordered_name())
         return result
 
+class DoorCardLease(models.Model):
+    "Records non-permanent ownership of a doorcard over a period of time"
+    card = models.ForeignKey(DoorEntryCard)
+    player = models.ForeignKey(Player, db_index=True)
+    date_issued = models.DateField("Issue Date", db_index=True, default=datetime.date.today)
+    date_returned = models.DateField("Return Date", db_index=True, blank=True, null=True)
+    def clean_fields(self, exclude):
+        if self.date_returned is not None and self.date_returned < self.date_issued:
+            raise ValidationError("Return date must be greater than or equal to issue date")
+    def validate_unique(self, exclude):
+        super(DoorCardLease, self).validate_unique(exclude)
+        this_card_owners = self.__class__.objects.filter(card_id=self.card_id)
+        if self.id:
+            this_card_owners = this_card_owners.exclude(id=self.id)
+        if self.date_returned is None: # indicates current ownership extending to infinite furure time
+            if this_card_owners.filter(date_returned__isnull=True).exists():
+                err = "Previous owner has not returned this card"
+                raise ValidationError({NON_FIELD_ERRORS: ValidationError(err)})
+            if this_card_owners.filter(date_issued__gte=self.date_issued).exists():
+                err = "Entry would overwrite an existing ownership period"
+                raise ValidationError({NON_FIELD_ERRORS: ValidationError(err)})
+        else:
+            # check our return date does not overlap timespan of any other entries:
+            if this_card_owners.filter(date_issued__lte=self.date_returned).filter(
+                    models.Q(date_returned__gte=self.date_returned) |\
+                    models.Q(date_returned__isnull=True)).exists():
+                err = "Return date cannot overlap any other ownership period"
+                raise ValidationError({NON_FIELD_ERRORS: ValidationError(err)})
+        # check our start date does not overlap any other entries
+        if this_card_owners.filter(date_issued__lte=self.date_issued).filter(
+                models.Q(date_returned__gte=self.date_issued) |\
+                models.Q(date_returned__isnull=True)).exists():
+            err = "Issue date cannot overlap any other ownership period"
+            raise ValidationError({NON_FIELD_ERRORS: ValidationError(err)})
+    
+    class Meta:
+        verbose_name = "Door Card Lease Period"
+        
+    def __unicode__(self):
+        result = self.card_id
+        return result
+    
 class DoorCardEvent(models.Model):
     "Events recorded on the cardreader"
     card = models.ForeignKey(DoorEntryCard, blank=True, null=True)
-    event = models.CharField(max_length=128, blank=True, db_index=True)
+    event = models.CharField("Event Type", max_length=128, blank=True, db_index=True)
     timestamp = models.DateTimeField(help_text="Timestamp from the cardreader", db_index=True)
     received_time = models.DateTimeField(help_text="Server timestamp", auto_now_add=True)
     class Meta:
