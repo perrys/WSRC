@@ -692,10 +692,9 @@ def auth_view(request):
     if request.method == 'GET':
         data = {
             "username": request.user and request.user.username or None,
-
-      "csrf_token": get_token(request)
+            "csrf_token": get_token(request)
         }
-        return HttpResponse(json.dumps(data), content_type="application/json")
+        response = HttpResponse(json.dumps(data), content_type="application/json")
     elif request.method == 'POST':
         from django.contrib.auth import authenticate, login
         username = request.POST['username']
@@ -709,15 +708,22 @@ def auth_view(request):
                     "csrf_token": get_token(request)
                 }
                 json_data = json.dumps(data)
-                return HttpResponse(json.dumps(data), content_type="application/json", status=httplib.OK)
+                response = HttpResponse(json.dumps(data), content_type="application/json", status=httplib.OK)
             else:
-                return HttpResponse("inactive login", content_type="text/plain", status=httplib.FORBIDDEN)
+                response = HttpResponse("inactive login", content_type="text/plain", status=httplib.FORBIDDEN)
         else:
-            return HttpResponse("invalid login", content_type="text/plain", status=httplib.FORBIDDEN)
+            response = HttpResponse("invalid login", content_type="text/plain", status=httplib.FORBIDDEN)
     elif request.method == 'DELETE':
         logout(request)
-        return HttpResponse(None, content_type="application/json", status=httplib.OK)
+        response = HttpResponse(None, content_type="application/json", status=httplib.OK)
+    elif request.method == 'OPTIONS':
+        response = HttpResponse(None, content_type="application/json", status=httplib.OK)
+    else:
+        response = HttpResponse("unrecognised method", status=httplib.FORBIDDEN)
 
+    response['Access-Control-Allow-Methods'] = 'GET, POST, DELETE, OPTIONS'
+    response['Access-Control-Allow-Headers'] = 'Content-Type, X-CSRFToken'
+    return response
 
 class MarkdownField(serializers.Field):
     def to_representation(self, value):
