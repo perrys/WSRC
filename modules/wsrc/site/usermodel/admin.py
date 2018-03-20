@@ -17,6 +17,7 @@
 
 import csv
 import datetime
+import re
 import StringIO
 
 from django import forms
@@ -29,11 +30,13 @@ from django.contrib.auth.models import User
 
 from django.core import urlresolvers
 from django.http import HttpResponse
+from django.shortcuts import redirect
 
 from .models import Player, Season, Subscription, SubscriptionPayment,\
     SubscriptionCost, SubscriptionType, DoorEntryCard, DoorCardEvent, DoorCardLease
 from wsrc.utils.form_utils import SelectRelatedQuerysetMixin, CachingModelChoiceField, \
     get_related_field_limited_queryset, PrefetchRelatedQuerysetMixin
+from wsrc.utils.upload_utils import upload_generator
 
 class UserProfileInline(admin.StackedInline):
     "Simple inline for player in User admin"
@@ -329,7 +332,6 @@ class PlayerAdmin(SelectRelatedQuerysetMixin, PrefetchRelatedQuerysetMixin, admi
                                   and len(mem.england_squash_id) > 0])
                 db_id_map = dict([(mem.pk, mem) for mem in members])
                 name_map = dict([(mem.get_ordered_name(), mem) for mem in members])
-                from wsrc.utils.upload_utils import upload_generator
                 reader = csv.DictReader(upload_generator(request.FILES['es_csv_file']))
                 output = StringIO.StringIO()
                 fields = ["ES ID", "Name", "WSRC Name", "WSRC ID", "Email", "Subscription", "Status"]
@@ -397,6 +399,10 @@ class HasPlayerListFilter(admin.SimpleListFilter):
                 queryset = queryset.exclude(pk__in=ids)
         return queryset
 
+class DoorCardUploadForm(forms.Form):
+    upload_file = forms.FileField(required=False, label="Click to upload data from cardreader: ",
+                                  widget=forms.widgets.ClearableFileInput(attrs={'accept':'.dat'}))
+    
 class DoorEntryCardAdmin(admin.ModelAdmin):
     search_fields = ('cardnumber',)
     list_select_related = True
@@ -417,6 +423,36 @@ class DoorEntryCardAdmin(admin.ModelAdmin):
         return u'<a href="%s">%s</a>' % (link, owner.player.get_ordered_name())
     linked_current_owner.allow_tags = True
     linked_current_owner.short_description = "Currently Assigned To"
+
+    def get_urls(self):
+        from django.conf.urls import patterns, url
+        urls = super(DoorEntryCardAdmin, self).get_urls()
+        my_urls = patterns("", url(r"^upload_doorcard_data/$", self.admin_site.admin_view(self.upload_view),
+                                   name='upload_doorcard_data'))
+        return my_urls + urls
+    urls = property(get_urls)
+
+    def changelist_view(self, *args, **kwargs):
+        view = super(DoorEntryCardAdmin, self).changelist_view(*args, **kwargs)
+        if hasattr(view, "context_data"):
+            view.context_data['upload_form'] = DoorCardUploadForm
+        return view
+
+    def upload_view(self, request):
+        if request.method == 'POST':
+            import pprint
+            pprint.pprint(request.FILES)
+            form = DoorCardUploadForm(request.POST, request.FILES)
+            if form.is_valid():
+                dc_regex = re.compile("(?P<cardnumber>^\d{8})   [\d-]{4}")
+                cardnumbers = []
+                for line in upload_generator(request.FILES['upload_file']):
+                    match = dc_regex.match(line)
+                    if match is not None:
+                        cardnumbers.append(match.groupdict()["cardnumber"])
+                DoorEntryCard.sync_cardnumbers(cardnumbers)
+            return redirect("admin:usermodel_doorentrycard_changelist")
+
 
 class IsCurrentListFilter(admin.SimpleListFilter):
     "Simple filtering on current ownership"

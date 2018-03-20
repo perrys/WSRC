@@ -1,0 +1,49 @@
+{% extends "admin/change_list.html" %}
+{% load i18n admin_urls admin_static admin_list %}
+
+{% block extrastyle %}
+{{ block.super }}
+<style>
+#id_doorcard_file {
+  width: 0.1px;
+  height: 0.1px;
+  opacity: 0;
+  overflow: hidden;
+  position: absolute;
+  z-index: -1;
+}
+#upload-form {
+  display: inline-block;
+  float: right;
+  font-size: 0.8em;
+  margin-right: 20em;
+}
+</style>
+{% endblock %}
+
+{% block search %}
+{% if has_add_permission %}
+<form id="upload-form" action="{% url 'admin:upload_doorcard_data' %}" method="post" enctype="multipart/form-data">
+  {% csrf_token %}
+  {% if upload_form.non_field_errors %}{{ form.non_field_errors }}{% endif %}
+  {{ upload_form.upload_file }}
+  {% if upload_form.upload_file.errors %}{{ upload_form.upload_file.errors }}{% endif %}
+  <label id="upload_file_label" for="id_upload_file">{{ upload_form.upload_file.label }}</label>
+  <input type="submit" value="Upload"/>
+</form>
+<div style="clear: left;"></div>
+<script>
+(function() {
+const $ = django.jQuery
+const label = $('#upload_file_label')
+$('#id_upload_file').on('change', function(evt) {
+  var fileName
+  filename = evt.target.value.split( '\\' ).pop()
+  if (filename)
+    label.text("Doorcard datafile: " + filename)
+})
+})()
+</script>
+{{ block.super }}
+{% endif %}
+{% endblock %}
