@@ -428,7 +428,7 @@ class DoorEntryCardAdmin(admin.ModelAdmin):
     list_display = ('cardnumber', 'is_registered', 'linked_current_owner', 'comment')
     list_editable = ('comment',)
     list_filter = ("is_registered", HasPlayerListFilter, HasActivePlayerListFilter)
-    list_per_page = 500
+    list_per_page = 1000
     inlines = (DoorCardLeaseInline,)
     formfield_overrides = {
         models.TextField: {'widget': forms.Textarea(attrs={'cols': 50, 'rows': 1})},
@@ -503,7 +503,7 @@ class DoorCardLeaseAdmin(admin.ModelAdmin):
         return u'<a href="%s">%s</a>' % (link, obj.player.get_ordered_name())
     linked_player.allow_tags = True
     linked_player.short_description = "Assigned To"
-    linked_player.admin_order_field = "user__last_name"
+    linked_player.admin_order_field = "player__user__last_name"
     def current_owner_active(self, obj):
         return obj.player.user.is_active
     current_owner_active.boolean = True
