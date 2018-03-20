@@ -399,6 +399,25 @@ class HasPlayerListFilter(admin.SimpleListFilter):
                 queryset = queryset.exclude(pk__in=ids)
         return queryset
 
+class HasActivePlayerListFilter(admin.SimpleListFilter):
+    "Filtering on Player active/inactive"
+    title = "Assigned Member Active"
+    parameter_name = "member_active"
+    def lookups(self, request, model_admin):
+        return [('y', 'Yes'), ('n', 'No')]
+    def queryset(self, request, queryset):
+        if self.value():
+            today = datetime.date.today()
+            def filt(card):
+                owner = card.get_current_ownership_data(today)
+                if owner is None:
+                    return False
+                return owner.player.user.is_active == (self.value() == 'y')
+            ids = [card.pk for card in queryset if filt(card)]
+            queryset = queryset.filter(pk__in=ids)
+        return queryset
+
+    
 class DoorCardUploadForm(forms.Form):
     upload_file = forms.FileField(required=False, label="Click to upload data from cardreader: ",
                                   widget=forms.widgets.ClearableFileInput(attrs={'accept':'.dat'}))
@@ -408,7 +427,7 @@ class DoorEntryCardAdmin(admin.ModelAdmin):
     list_select_related = True
     list_display = ('cardnumber', 'is_registered', 'linked_current_owner', 'comment')
     list_editable = ('comment',)
-    list_filter = ("is_registered", HasPlayerListFilter)
+    list_filter = ("is_registered", HasPlayerListFilter, HasActivePlayerListFilter)
     list_per_page = 500
     inlines = (DoorCardLeaseInline,)
     formfield_overrides = {
@@ -424,7 +443,8 @@ class DoorEntryCardAdmin(admin.ModelAdmin):
         if owner is None:
             return "(None)"
         link = urlresolvers.reverse("admin:usermodel_player_change", args=[owner.player.id])
-        return u'<a href="%s">%s</a>' % (link, owner.player.get_ordered_name())
+        activestr = "" if owner.player.user.is_active else " [inactive]"
+        return u'<a href="{0}">{1}{2}</a>'.format(link, owner.player.get_ordered_name(), activestr)
     linked_current_owner.allow_tags = True
     linked_current_owner.short_description = "Currently Assigned To"
 
