@@ -304,6 +304,7 @@ class DoorEntryCard(models.Model):
                                         default=True)
 #    player = models.ForeignKey(Player, db_index=True, blank=True, null=True, related_name="doorcards")
 #    date_issued = models.DateField("Issue Date", default=datetime.date.today, blank=True, null=True)
+    comment = models.TextField(blank=True, null=True)
 
     def get_current_ownership_data(self, today=None):
         if today is None:
