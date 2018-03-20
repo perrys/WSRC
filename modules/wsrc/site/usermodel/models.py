@@ -302,8 +302,8 @@ class DoorEntryCard(models.Model):
     is_registered = models.BooleanField("Card Valid",
                                         help_text="Whether card is currently registred with the card reader",
                                         default=True)
-    player = models.ForeignKey(Player, db_index=True, blank=True, null=True, related_name="doorcards")
-    date_issued = models.DateField("Issue Date", default=datetime.date.today, blank=True, null=True)
+#    player = models.ForeignKey(Player, db_index=True, blank=True, null=True, related_name="doorcards")
+#    date_issued = models.DateField("Issue Date", default=datetime.date.today, blank=True, null=True)
 
     def get_current_ownership_data(self, today=None):
         if today is None:
@@ -316,6 +316,29 @@ class DoorEntryCard(models.Model):
         if nowners > 1:
             raise Exception("card {0} has more than one current owner".format(self.cardnumber))
         return objects[0]
+
+    @classmethod
+    def sync_cardnumbers(class_, reader_cardnumbers):
+        "Update the database using the list of valid numbers from the cardreader"
+        reader_cardnumbers = set(reader_cardnumbers)
+        recorded_cards = dict([(card.pk, card) for card in class_.objects.all()])
+        my_cardnumbers = set(recorded_cards.keys())
+        for cardnumber in my_cardnumbers.intersection(reader_cardnumbers):
+            # for records we have, ensure is_registered is True
+            card = recorded_cards[cardnumber]
+            if not card.is_registered:
+                card.is_registered = True
+                card.save()
+        for cardnumber in my_cardnumbers - reader_cardnumbers:
+            # records which have no corresponding id on the cardreader - unset is_registered
+            card = recorded_cards[cardnumber]
+            if card.is_registered:
+                card.is_registered = False
+                card.save()
+        for cardnumber in reader_cardnumbers - my_cardnumbers:
+            # cardreader ids which do not have a record in the DB - so create one
+            card = class_(cardnumber, is_registered=True)
+            card.save()
 
     class Meta:
         verbose_name = "Door Entry Card"
