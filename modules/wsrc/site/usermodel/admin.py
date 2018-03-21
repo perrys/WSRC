@@ -491,12 +491,39 @@ class IsCurrentListFilter(admin.SimpleListFilter):
             queryset = queryset.filter(date_returned__isnull=True)
         return queryset
 
+class CurrentSeasonListFilter(admin.SimpleListFilter):
+    "Simple filtering on current ownership"
+    title = "Subscription Season"
+    parameter_name = "season"
+    def lookups(self, request, model_admin):
+        seasons = Season.objects.all()
+        return [(season.pk, unicode(season)) for season in seasons]
+    def queryset(self, request, queryset):
+        if self.value():
+            ids = []
+            for lease in queryset:
+                if lease.player is None:
+                    continue
+                sub = lease.player.get_current_subscription()
+                if sub is None:
+                    continue
+                if sub.season.pk == int(self.value()):
+                    ids.append(lease.pk)
+            queryset = queryset.filter(pk__in=ids)
+        return queryset
+
 class DoorCardLeaseAdmin(admin.ModelAdmin):
     search_fields = ('player__user__first_name', 'player__user__last_name', 'card__cardnumber')
-    list_display = ('card', 'linked_player', 'current_owner_active', 'date_issued', 'date_returned')
-    list_filter = ("card__is_registered", "player__user__is_active", IsCurrentListFilter)
-    list_select_related = ('player__user', 'card')
+    list_display = ('card', "card_is_registered", 'linked_player', 'current_owner_active', 'subscription', 'date_issued', 'date_returned')
+    list_filter = ("card__is_registered", "player__user__is_active", IsCurrentListFilter, CurrentSeasonListFilter)
     form = DoorCardLeaseForm
+    list_per_page = 1000
+
+    def get_queryset(self, request):
+        queryset = super(DoorCardLeaseAdmin, self).get_queryset(request)
+        queryset = queryset.select_related('player__user', 'card')
+        queryset = queryset.prefetch_related('player__subscription_set__season', 'player__subscription_set__subscription_type')
+        return queryset
     
     def linked_player(self, obj):
         link = urlresolvers.reverse("admin:usermodel_player_change", args=[obj.player.id])
@@ -504,11 +531,26 @@ class DoorCardLeaseAdmin(admin.ModelAdmin):
     linked_player.allow_tags = True
     linked_player.short_description = "Assigned To"
     linked_player.admin_order_field = "player__user__last_name"
+
     def current_owner_active(self, obj):
         return obj.player.user.is_active
     current_owner_active.boolean = True
     current_owner_active.short_description = "Member Active?"    
-    
+
+    def subscription(self, obj):
+        if obj.player is None:
+            return None
+        sub = obj.player.get_current_subscription()
+        if sub is None:
+            return None
+        return sub.to_short_string()
+    subscription.short_description = "Subscription"
+
+    def card_is_registered(self, obj):
+        return obj.card.is_registered
+    card_is_registered.boolean = True
+    card_is_registered.short_description = "Card Valid?"
+
 class EventHasPlayerListFilter(HasPlayerListFilter):
     "Simple filtering on card__player not null"
     title = "Was Assigned"
