@@ -426,12 +426,11 @@ class DoorEntryCardAdmin(admin.ModelAdmin):
     search_fields = ('cardnumber',)
     list_select_related = True
     list_display = ('cardnumber', 'is_registered', 'linked_current_owner', 'comment')
-    list_editable = ('comment',)
     list_filter = ("is_registered", HasPlayerListFilter, HasActivePlayerListFilter)
     list_per_page = 1000
     inlines = (DoorCardLeaseInline,)
     formfield_overrides = {
-        models.TextField: {'widget': forms.Textarea(attrs={'cols': 50, 'rows': 1})},
+        models.TextField: {'widget': forms.Textarea(attrs={'cols': 80, 'rows': 1})},
     }
     def get_queryset(self, request):
         queryset = super(DoorEntryCardAdmin, self).get_queryset(request)
