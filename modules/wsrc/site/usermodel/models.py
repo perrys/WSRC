@@ -343,6 +343,8 @@ class DoorEntryCard(models.Model):
 
     class Meta:
         verbose_name = "Door Entry Card"
+        ordering=["cardnumber"]
+        
     def __unicode__(self):
         result = self.cardnumber
         return result
@@ -384,6 +386,7 @@ class DoorCardLease(models.Model):
     
     class Meta:
         verbose_name = "Door Card Lease Period"
+        ordering=["player__user__last_name", "player__user__first_name"]
         
     def __unicode__(self):
         result = self.card_id
