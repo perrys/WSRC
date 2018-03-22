@@ -52,12 +52,12 @@ class WSRC_boxes_view
         continue
       comp_id = comp.data("id")
       new_box_table = comp.find("table.boxtable")
-      new_league_table = comp.find("table.leaguetable")
+      new_league_table = comp.find("table.leagues")
       new_script = comp.find("script")
       target = targets.filter (idx, elt) -> $(elt).data("id") == comp_id
       assert(target.length == 1)
-      target.find("table.boxtable").replaceWith(new_box_table)
-      target.find("table.leaguetable").replaceWith(new_league_table)
+      target.find("table.boxes").replaceWith(new_box_table)
+      target.find("table.leagues").replaceWith(new_league_table)
       target.find("script").replaceWith(new_script)
 
   show_results_dialog: (box) ->
@@ -108,11 +108,11 @@ class WSRC_boxes_view
 
   set_view_type: (view_type) ->
     if view_type == "tables"
-      $("table.boxtable").hide()
-      $("table.leaguetable").show()
+      $("table.boxes").hide()
+      $("table.leagues").show()
     else
-      $("table.leaguetable").hide()
-      $("table.boxtable").show()
+      $("table.leagues").hide()
+      $("table.boxes").show()
 
   make_player_id_filter: (id) ->
     return (idx, elt) ->
@@ -392,7 +392,7 @@ class WSRC_boxes_admin extends WSRC_boxes
     )
 
   auto_populate_new_box: (source_box) ->
-    jtable = source_box.parents(".table-wrapper").find(".leaguetable")
+    jtable = source_box.parents(".table-wrapper").find("table.leagues")
     source_name = @view.get_table_name(source_box)
     other = (suffix) -> if suffix == "A" then "B" else "A"
     if source_name == "Premier"
@@ -680,7 +680,7 @@ class WSRC_boxes_admin extends WSRC_boxes
 
   handle_bulk_action_auto_populate: () ->
     for name, container of @view.source_container_map
-      @auto_populate_new_box(container.find("table.leaguetable")) 
+      @auto_populate_new_box(container.find("table.leagues")) 
       @mark_save_required()
 
   handle_bulk_action_make_live: () ->
