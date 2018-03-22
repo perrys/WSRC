@@ -80,7 +80,7 @@ class Player(models.Model):
         """
         Returns a comma-separated list of doorcard numbers.
         """
-        return ", ".join([str(d.cardnumber) for d in self.doorcards.all()])
+        return ", ".join([str(d.card_id) for d in self.doorcardlease_set.all()])
 
     def get_short_name(self):
         "Returns the short name for the user."
