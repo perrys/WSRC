@@ -13,6 +13,9 @@
 # You should have received a copy of the GNU General Public License
 # along with WSRC.  If not, see <http://www.gnu.org/licenses/>.
 
+import csv
+from django.db.models import Q
+
 from .forms import MatchScoresForm
 from wsrc.site.models import EmailContent
 from wsrc.site.usermodel.models import Player
@@ -21,6 +24,7 @@ from wsrc.site.competitions.serializers import CompetitionSerializer, Competitio
 from wsrc.utils.html_table import Table, Cell, SpanningCell, merge_classes
 from wsrc.utils.text import obfuscate
 from wsrc.utils.timezones import parse_iso_date_to_naive
+from wsrc.utils.sync_utils import dotted_lookup
 from wsrc.utils import email_utils
 
 from django.contrib.auth.decorators import login_required
@@ -624,14 +628,57 @@ def bracket_view(request, year, name, template_name="tournaments.html"):
     return TemplateResponse(request, template_name, ctx)
 
 def squashlevels_upload_view(request):
-    cutoff_date = datetime.date.today() - datetime.timedelta(days=30*3)
-    groups = CompetitionGroup.objects.filter(comp_type='wsrc_boxes').filter(end_date__gt=cutoff_date)
-    matches = []
-    for group in groups.all():
-        for competition in group.competition_set.all():
-            for match in competition.match_set.all():
-                matches.append(match)
-    return TemplateResponse(request, context={"matches": matches}, template="squashlevels_upload.csv", content_type='text/csv')
+    clause = Q(name__istartswith="Premier") |\
+             Q(name__istartswith="League 1") |\
+             Q(name__istartswith="League 2")
+    comps = Competition.objects.filter(group__comp_type='wsrc_boxes', state='active').filter(clause)
+    matches = Match.objects.filter(competition__in=comps, \
+                                   team1__player1__squashlevels_id__isnull=False, \
+                                   team2__player1__squashlevels_id__isnull=False)
+    matches = matches.select_related("team1__player1__user", "team2__player1__user", \
+                                     "team1__player2__user", "team2__player2__user", \
+                                     "competition__group")
+    fields = [("Date", "last_updated", "{0:%Y-%m-%d}"),
+              ("Time", "last_updated", "{0:%H:%M}"),
+              ("Player1", "team1.player1.user.get_full_name"),
+              ("ID1", "team1.player1.id"),
+              ("ESM1", "team1.player1.england_squash_id"),
+              ("SquashLevelsID1", "team1.player1.squashlevels_id"),
+              ("Club1", "#Woking"),
+              ("County1", "#Surrey"),
+              ("Country1", "#ENG"),
+              ("Category1", "team1.player1.junior_or_senior"),
+              ("Player2", "team2.player1.user.get_full_name"),
+              ("ID2", "team2.player1.id"),
+              ("ESM2", "team2.player1.england_squash_id"),
+              ("SquashLevelsID2", "team2.player1.squashlevels_id"),
+              ("Club2", "#Woking"),
+              ("County2", "#Surrey"),
+              ("Country2", "#ENG"),
+              ("Category2", "team2.player1.junior_or_senior"),
+              ("Results", "get_scores_display"),
+              ("Matchtype", "competition.group", "WSRC {0}"),
+              ("MatchtypeID", "competition.group.id"),
+              ("FixtureID", "id"),
+    ]
+    def resolve_field(match, field):
+        if field[1][0] == '#':
+            val = field[1][1:]
+        else:
+            val = dotted_lookup(match, field[1])
+            if len(field) > 2:
+                val = field[2].format(val)
+        return val
+    buf = StringIO.StringIO()
+    writer = csv.writer(buf)
+    writer.writerow([field[0] for field in fields])
+    def writerow(match):
+        writer.writerow([resolve_field(match, field) for field in fields])            
+    for match in matches:
+        writerow(match)
+    buf.flush()
+    return HttpResponse(buf.getvalue(), content_type='text/csv')
+#    return TemplateResponse(request, "squashlevels_upload.html", {"data": buf.getvalue()})
 
 class PermissionedView(View):
     "Borrowed from the Django Rest Framework - check permissions before dispatch"
