@@ -678,7 +678,6 @@ def squashlevels_upload_view(request):
         writerow(match)
     buf.flush()
     return HttpResponse(buf.getvalue(), content_type='text/csv')
-#    return TemplateResponse(request, "squashlevels_upload.html", {"data": buf.getvalue()})
 
 class PermissionedView(View):
     "Borrowed from the Django Rest Framework - check permissions before dispatch"
