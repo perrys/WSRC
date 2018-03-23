@@ -251,7 +251,7 @@ class PlayerAdmin(SelectRelatedQuerysetMixin, PrefetchRelatedQuerysetMixin, admi
     list_per_page = 400
     actions = (update_subscriptions,)
     inlines = (SubscriptionInline,DoorCardLeaseInline)
-    readonly_fields = ("user_link", "date_joined_date", "doorcard_numbers")
+    readonly_fields = ("user_link", "date_joined_date")
     exclude = ("user",)
 
     def ordered_name(self, obj):
@@ -300,12 +300,6 @@ class PlayerAdmin(SelectRelatedQuerysetMixin, PrefetchRelatedQuerysetMixin, admi
         return obj.user.date_joined.date()
     date_joined_date.short_description = "Joined"
     date_joined_date.admin_order_field = 'user__date_joined'
-
-    def doorcard_numbers(self, obj):
-        numbers = [str(o.cardnumber) for o in obj.doorcards.all()]
-        return '<span id="door_cards">{0}</span>'.format(", ".join(numbers))
-    doorcard_numbers.short_description = "Door Cards"
-    doorcard_numbers.allow_tags = True
 
     def get_urls(self):
         from django.conf.urls import patterns, url
