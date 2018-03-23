@@ -110,6 +110,7 @@ class Competition(models.Model):
     def __unicode__(self):
         group_name = self.group is not None and self.group.name or "null"
         return u"%s - %s [%s]" % (group_name, self.name, self.end_date)
+
     class Meta:
         unique_together = (("group", "ordering"),)
         ordering = ["-group__end_date", "ordering", "name"]
