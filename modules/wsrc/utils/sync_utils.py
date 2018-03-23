@@ -5,18 +5,21 @@ import unittest
 
 from operator import itemgetter
 
+
+def dotted_lookup(record, name):
+    for tok in name.split("."):
+        item = record = getattr(record, tok)
+        if hasattr(item, "__call__"):
+            item = record = item()
+    return item
+
 class ModelRecordWrapper(object):
     """Wrap a DB record for dictionary access. Supports joins via dotted syntax - e.g. 'player.user'"""
     def __init__(self, record):
         self.record = record
 
     def __getitem__(self, name):
-        record = self.record
-        for tok in name.split("."):
-            item = record = getattr(record, tok)
-            if hasattr(item, "__call__"):
-                item = item()
-        return item
+        return dotted_lookup(self.record, name)
 
     @classmethod
     def wrap_records(cls, records):
