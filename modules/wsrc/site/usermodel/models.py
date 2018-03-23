@@ -99,8 +99,13 @@ class Player(models.Model):
         return years
     get_age.short_description = "Age"
     get_age.admin_order_field = 'date_of_birth'
-    
-    
+
+    def junior_or_senior(self):
+        age = self.get_age()
+        if age is not None and age < 19:
+            return "Junior"
+        return "Senior"
+
     def email_user(self, subject, message, from_email=None):
         """
         Sends an email to this User.
