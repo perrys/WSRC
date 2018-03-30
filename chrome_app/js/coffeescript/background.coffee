@@ -83,6 +83,9 @@ class WSRC_kiosk_background
       settings =
         url: "#{ credentials.server }/data/bookings?date=#{ today }"
         type: "GET"
+        headers:
+          "X-username": credentials.username 
+          "X-password": credentials.password 
         complete: (jqXHR, status_txt) =>
           if jqXHR.status == 200
             @message_to_app("court_bookings_update", jqXHR.responseJSON, kiosk_settings)
