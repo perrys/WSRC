@@ -26,7 +26,7 @@ from wsrc.utils import timezones, email_utils, url_utils
 
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import PasswordChangeForm
-from django.contrib.auth import views as auth_views
+from django.contrib.auth import views as auth_views, authenticate
 from django.forms.fields import CharField, IntegerField
 from django.forms.widgets import Textarea, HiddenInput
 from django.middleware.csrf import get_token
@@ -666,7 +666,12 @@ class BookingSerializer(serializers.ModelSerializer):
         model = BookingSystemEvent
     @classmethod
     def many_init(cls, *args, **kwargs):
-        kwargs['child'] = cls() if kwargs["context"]["request"].user.is_authenticated()\
+        request = kwargs["context"]["request"]
+        authenticated = request.user.is_authenticated()
+        if not authenticated:
+            authenticated = authenticate(username=request.META.get("HTTP_X_USERNAME"),
+                                         password=request.META.get("HTTP_X_PASSWORD"))
+        kwargs['child'] = cls() if authenticated\
                           else ObfuscatedBookingSerializer()
         return CustomBookingListSerializer(*args, **kwargs)
 
