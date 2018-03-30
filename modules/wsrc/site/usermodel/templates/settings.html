@@ -5,29 +5,12 @@
 <meta name="robots" content="noindex" />
 {{ block.super }}
 <style>
- form {
-     max-width: 768px;
-     padding: 15px;
-     margin: 0 auto 15px auto;
- }
- form legend {
-     border-bottom: 0;
- }
- form fieldset {
-     padding-bottom: 15px;
- }
- .underline {
-     text-decoration: underline;
- }
- .buttonset {
-     text-align: center;
- }
 </style>
 {% endblock %}
 
 {% block centered_page_content %}
 
-<form id="settings_form" method="post" class="form-horizontal">
+<form id="settings_form" method="post" class="form-horizontal user">
 {% csrf_token %}
 
 {% if form_saved %}
@@ -67,7 +50,7 @@
 <fieldset name="contact_details">
   <legend>Permission to Use Personal Data<sup style="color: black;">*</sup></legend>
   {% include "form_field_snippet.html" with field=player_form.prefs_receive_email %}
-  {% include "form_field_snippet.html" with field=player_form.prefs_esra_member label="ES Membership<sup>&dagger;</sup>" %}
+  {% include "form_field_snippet.html" with field=player_form.prefs_esra_member label="England Squash Enrolment<sup>&dagger;</sup>" %}
   {% include "form_field_snippet.html" with field=player_form.prefs_display_contact_details %}
 </fieldset>
 
@@ -90,7 +73,7 @@
     <sup>*</sup> From May 2018 you must explicitly consent for your personal data to be used by the club. If any of these questions have not been answered, we will assume the answer is "No".
   </p>
   <p>
-    <sup>&dagger;</sup> For more information, visit the <a class="underline" href="http://www.englandsquash.com/membership/players">England Squash website</a>. Note that you will not be able to play in Surrey league competitions or national competitions if you are not an ES member.
+    <sup>&dagger;</sup> For more information, visit the <a class="underline" href="http://www.englandsquash.com/membership/players">England Squash website</a>. Note that you will not be able to play in Surrey league competitions or national competitions if you are not an ES member. If you do not want us to pass on your email address at the time you join us, you always have the option of contacting England Squash independently at a later time to activate your membership.
   </p>
 </footer>
 
