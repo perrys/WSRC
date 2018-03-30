@@ -668,7 +668,7 @@ class BookingSerializer(serializers.ModelSerializer):
     def many_init(cls, *args, **kwargs):
         request = kwargs["context"]["request"]
         authenticated = request.user.is_authenticated()
-        if not authenticated:
+        if not authenticated and hasattr(request, "META"):
             authenticated = authenticate(username=request.META.get("HTTP_X_USERNAME"),
                                          password=request.META.get("HTTP_X_PASSWORD"))
         kwargs['child'] = cls() if authenticated\
