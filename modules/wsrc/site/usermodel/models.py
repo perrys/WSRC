@@ -141,7 +141,6 @@ class Player(AbstractPlayer):
         ordering=["user__last_name", "user__first_name"]
         verbose_name = "Member"
 
-
 class Season(models.Model):
     start_date = models.DateField(db_index=True, unique=True)
     end_date = models.DateField(db_index=True, unique=True)
@@ -150,14 +149,19 @@ class Season(models.Model):
     unique_together = ("start_date", "end_date")
     def __unicode__(self):
         return "{start_date:%Y}-{end_date:%y}".format(**self.__dict__)
-    @staticmethod
-    def latest():
-        qs = Season.objects.filter(has_ended=False).order_by("-start_date")
+
+    @classmethod
+    def latest(claz):
+        qs = claz.objects.filter(has_ended=False).order_by("-start_date")
         if qs.count() > 0:
             return qs[0]
         return None
+
     class Meta:
         ordering = ["start_date"]
+
+def latest_season():
+    return Season.latest()
 
 class SubscriptionType(models.Model):
     short_code = models.CharField(max_length=16)
@@ -197,7 +201,7 @@ class AbstractSubscription(models.Model):
     not_ended = Q(has_ended=False)
     # pylint: disable=bad-whitespace
     subscription_type = models.ForeignKey(SubscriptionType)
-    season            = models.ForeignKey(Season, db_index=True, limit_choices_to=not_ended, default=Season.latest)
+    season            = models.ForeignKey(Season, db_index=True, limit_choices_to=not_ended, default=latest_season)
     pro_rata_date     = models.DateField("Pro Rata Date", blank=True, null=True)
     payment_frequency = models.CharField("Payment Freq", max_length=16, choices=PAY_TYPE_CHOICES, default="annual")
     comment           = models.TextField(blank=True, null=True)
