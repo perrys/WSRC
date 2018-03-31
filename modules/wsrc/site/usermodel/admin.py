@@ -33,7 +33,8 @@ from django.http import HttpResponse
 from django.shortcuts import redirect
 
 from .models import Player, Season, Subscription, SubscriptionPayment,\
-    SubscriptionCost, SubscriptionType, DoorEntryCard, DoorCardEvent, DoorCardLease
+    SubscriptionCost, SubscriptionType, DoorEntryCard, DoorCardEvent, DoorCardLease, \
+    MembershipApplication
 from wsrc.utils.form_utils import SelectRelatedQuerysetMixin, CachingModelChoiceField, \
     get_related_field_limited_queryset, PrefetchRelatedQuerysetMixin
 from wsrc.utils.upload_utils import upload_generator
@@ -614,7 +615,42 @@ class DoorCardEventAdmin(admin.ModelAdmin):
     linked_player.allow_tags = True
     linked_player.short_description = "Assigned To"
     linked_player.admin_order_field = "card__doorcardlease__player__user__last_name"
-    
+
+class MembershipApplicationForm(forms.ModelForm):
+    password = forms.CharField(required=False, help_text="Must be set when saving a signed-off form.")
+    def __init__(self, *args, **kwargs):
+        initial = kwargs.setdefault("initial", dict())
+        obj = kwargs.get("instance")
+        if obj is not None:
+            if not obj.username:
+                initial.setdefault("username", "{0}_{1}".format(obj.first_name.lower(), obj.last_name.lower()))
+        super(MembershipApplicationForm, self).__init__(*args, **kwargs)
+
+    class Meta:
+        fields = ["first_name", "last_name", "email", "date_of_birth", "cell_phone", "other_phone",
+                  "subscription_type", "season", "pro_rata_date", "payment_frequency",
+                  "prefs_receive_email", "prefs_esra_member", "prefs_display_contact_details",
+                  "player_link", "username", "password", "guid", "email_verified", "comment", "signed_off"]
+
+class MembershipApplicationAdmin(admin.ModelAdmin):
+    list_display = ('last_name', 'first_name', 'username', 'email', 'email_verified', 'subscription_type',
+                    'cell_phone', 'other_phone',
+                    'prefs_receive_email', 'prefs_esra_member', 'prefs_display_contact_details')
+    readonly_fields = ("player_link",)    
+    form = MembershipApplicationForm
+
+    def player_link(self, obj):
+        if obj.player_id is None:
+            return "(None)"
+        link = urlresolvers.reverse("admin:usermodel_player_change", args=[obj.player_id])
+        link = u'<a id="player_link" href="{0}" style="font-weight: bold">{1}</a>'\
+               .format(link, obj.player.get_ordered_name())
+        return link
+    player_link.short_description = "Member"
+    player_link.help_text = "(set after saved and signed-off - once member has been created)"
+    player_link.allow_tags = True
+
+
 admin.site.register(Season, SeasonAdmin)
 admin.site.register(Subscription, SubscriptionAdmin)
 admin.site.register(Player, PlayerAdmin)
@@ -623,3 +659,4 @@ admin.site.register(SubscriptionType, SubscriptionTypeAdmin)
 admin.site.register(DoorEntryCard, DoorEntryCardAdmin)
 admin.site.register(DoorCardEvent, DoorCardEventAdmin)
 admin.site.register(DoorCardLease, DoorCardLeaseAdmin)
+admin.site.register(MembershipApplication, MembershipApplicationAdmin)
