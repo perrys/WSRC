@@ -480,6 +480,11 @@ class MembershipApplication(AbstractPlayer, AbstractSubscription):
             err = "This username already exists."
             raise ValidationError({"username": ValidationError(err)})
 
+    def save(self, *args, **kwargs):
+        if not self.guid:
+            self.guid = self._meta.get_field("guid").default()
+        super(MembershipApplication, self).save(*args, **kwargs)
+
     def process_application(self, password):
         user = User.objects.create_user(self.username, self.email, password,
                                         first_name=self.first_name, last_name=self.last_name)
