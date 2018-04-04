@@ -114,9 +114,12 @@ class MailChimpSession:
         for mailchimp_record in mailchimp_list["members"]:
             db_id = mailchimp_record["merge_fields"].get("DB_ID")
             if db_id is not None:
-                db_id = int(db_id)
-                if db_id > 0: # ignore negative ids, which are acknowleged skipped emails
-                    mailchimp_map[db_id] = mailchimp_record
+                try:
+                    db_id = int(db_id)
+                    if db_id > 0: # ignore negative ids, which are acknowleged skipped emails
+                        mailchimp_map[db_id] = mailchimp_record
+                except ValueError:
+                    LOGGER.warning("invalid db_id: \"%s\"", db_id)
             else:
                 to_remove.append(mailchimp_record)
         if len(to_remove) > 0:
