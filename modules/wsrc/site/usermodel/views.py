@@ -437,7 +437,6 @@ class MembershipApplicationCreateView(CreateView):
         subject = "Woking Squash Club Membership Application"
         from_address = "membership@wokingsquashclub.org"
         to_list = [self.object.email]
-        to_list = ["some bulshit"]
         email_utils.send_email(subject, text_body, html_body, from_address, to_list)
 
 class MembershipApplicationVerifiedEmailView(DetailView):
