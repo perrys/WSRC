@@ -15,19 +15,27 @@
 
 "Views for users app, including a basic admin view"
 
-import tempfile
+import json
+import logging
 import operator
+import tempfile
+import urllib
+import urllib2
+
 
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
-from django.core.exceptions import PermissionDenied
+from django.core.exceptions import PermissionDenied, ValidationError
+from django.core.urlresolvers import reverse, reverse_lazy
 from django.db import transaction
 from django.db.models import Q
-from django.http import HttpResponse, HttpResponseBadRequest
+from django.http import HttpResponse, HttpResponseBadRequest, HttpResponseRedirect
 from django import forms
 from django.template.response import TemplateResponse
 from django.shortcuts import render
+from django.views.generic import DetailView
 from django.views.generic.list import ListView
+from django.views.generic.edit import CreateView
 from django.utils.decorators import method_decorator
 
 import rest_framework.generics    as rest_generics
@@ -39,17 +47,20 @@ from rest_framework.renderers import JSONRenderer
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from wsrc.site.models import OAuthAccess
 from wsrc.site.settings import settings
 from wsrc.external_sites.booking_manager import BookingSystemSession
-from wsrc.site.usermodel.models import Player, DoorCardEvent
-from wsrc.utils import xls_utils, sync_utils
+from wsrc.site.usermodel.models import Player, DoorCardEvent, MembershipApplication
+from wsrc.utils import xls_utils, sync_utils, email_utils
 from wsrc.utils.timezones import parse_iso_date_to_naive
 from wsrc.utils.form_utils import add_formfield_attrs
 
 from .activity_report import ActivityReport
-from .forms import SettingsUserForm, SettingsPlayerForm, SettingsYoungPlayerForm, SettingsInfoForm
+from .forms import SettingsUserForm, SettingsPlayerForm, SettingsYoungPlayerForm, SettingsInfoForm, MembershipApplicationForm
 
 JSON_RENDERER = JSONRenderer()
+LOGGER = logging.getLogger(__name__)
+LOGGER.setLevel(logging.INFO)
 
 
 class SearchForm(forms.Form):
@@ -386,3 +397,59 @@ def settings_view(request):
         'form_saved':      success,
     }
     return TemplateResponse(request, 'settings.html', ctx)
+
+class MembershipApplicationCreateView(CreateView):
+    model = MembershipApplication
+    template_name = "membership_application.html"
+    success_url = reverse_lazy("membership_application_submitted")
+    form_class = MembershipApplicationForm
+    def __init__(self, *args, **kwargs):
+        super(MembershipApplicationCreateView, self).__init__(*args, **kwargs)
+        self.oauth_record = OAuthAccess.objects.get(name="reCAPTCHA")
+    def get_form_kwargs(self):
+        kwargs = super(MembershipApplicationCreateView, self).get_form_kwargs()
+        kwargs["recaptcha_verifier"] = self.recaptcha_verifier
+        return kwargs
+    def get_context_data(self, **kwargs):
+        context = super(MembershipApplicationCreateView, self).get_context_data(**kwargs)
+        context["recaptcha_client_token"] = self.oauth_record.client_id
+        return context
+    def form_valid(self, form):
+        response = super(MembershipApplicationCreateView, self).form_valid(form)
+        self.send_verification_email()
+        return response
+    def recaptcha_verifier(self, token):
+        LOGGER.debug("recaptcha token: %s", token)
+        params = {
+            "secret": self.oauth_record.client_secret,
+            "response": token
+        }
+        url = self.oauth_record.auth_server_uri + self.oauth_record.token_endpoint
+        request = urllib2.Request(url, urllib.urlencode(params))
+        response = urllib2.urlopen(request)
+        response = json.load(response)
+        if not response.get("success"):
+            LOGGER.warning("reCAPTCHA test failed, errors: %s", response.get("error-codes"))
+            raise ValidationError("reCAPTCHA test failed. Please try again.", code='invalid')
+    def send_verification_email(self):
+        params = {"application": self.object}
+        (text_body, html_body) = email_utils.get_email_bodies("Membership App. Verify Email", params)
+        subject = "Woking Squash Club Membership Application"
+        from_address = "membership@wokingsquashclub.org"
+        to_list = [self.object.email]
+        to_list = ["some bulshit"]
+        email_utils.send_email(subject, text_body, html_body, from_address, to_list)
+
+class MembershipApplicationVerifiedEmailView(DetailView):
+    model = MembershipApplication
+    template_name = "membership_email_verified.html"
+    
+    def get(self, request, *args, **kwargs):
+        self.object = self.get_object()
+        context = self.get_context_data(object=self.object)
+        token = request.GET.get("token")
+        if self.object.guid != token:
+            return HttpResponseRedirect(reverse("membership_application_verify_email_failed"))
+        self.object.email_verified = True
+        self.object.save()
+        return self.render_to_response(context)

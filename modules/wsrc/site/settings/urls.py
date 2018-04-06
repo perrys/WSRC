@@ -87,6 +87,15 @@ urlpatterns = patterns('',
                        
     url(r'^settings/?$', wsrc.site.usermodel.views.settings_view, name="settings"),
 
+    url(r'^membership_application/?$', wsrc.site.usermodel.views.MembershipApplicationCreateView.as_view(),\
+        name="membership_application"),
+    url(r'^membership_application/submitted/?$', wsrc.site.views.generic_view, kwargs={"page": "MembershipApp_Submitted"},\
+        name="membership_application_submitted"),
+    url(r'^membership_application/(?P<pk>\d+)/verify_email/?$', wsrc.site.usermodel.views.MembershipApplicationVerifiedEmailView.as_view(),\
+        name="membership_application_verify_email"),                       
+    url(r'^membership_application/verify_email_failed/?$', wsrc.site.views.generic_view, kwargs={"page": "MembershipApp_VerifyFailed"},\
+        name="membership_application_verify_email_failed"),
+
     url(r'^kiosk/?$', wsrc.site.views.kiosk_view, name="kiosk"),
                        
 
