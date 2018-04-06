@@ -468,9 +468,10 @@ class MembershipApplication(AbstractPlayer, AbstractSubscription):
 
     def clean(self, *args, **kwargs):
         super(MembershipApplication, self).clean(*args, **kwargs)
-        if self.subscription_type.is_age_sensitive and self.date_of_birth is None:
-            err = "Date of birth is required for this subscription type."
-            raise ValidationError({"date_of_birth": ValidationError(err)})
+        if self.subscription_type_id is not None:
+            if self.subscription_type.is_age_sensitive and self.date_of_birth is None:
+                err = "Date of birth is required for this subscription type."
+                raise ValidationError({"date_of_birth": ValidationError(err)})
             
                 
     def validate_unique(self, exclude):
