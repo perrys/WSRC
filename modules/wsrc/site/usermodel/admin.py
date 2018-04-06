@@ -508,7 +508,7 @@ class CurrentSeasonListFilter(admin.SimpleListFilter):
 
 class DoorCardLeaseAdmin(admin.ModelAdmin):
     search_fields = ('player__user__first_name', 'player__user__last_name', 'card__cardnumber')
-    list_display = ('card', "card_is_registered", 'linked_player', 'current_owner_active', 'subscription', 'date_issued', 'date_returned')
+    list_display = ('card', "card_is_registered", 'linked_player', 'current_owner_active', 'subscription', 'date_issued', 'date_returned', 'comment')
     list_filter = ("card__is_registered", "player__user__is_active", IsCurrentListFilter, CurrentSeasonListFilter)
     form = DoorCardLeaseForm
     list_per_page = 1000

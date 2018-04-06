@@ -161,7 +161,7 @@ class Season(models.Model):
         ordering = ["start_date"]
 
 def latest_season():
-    return Season.latest()
+    return Season.latest().pk
 
 class SubscriptionType(models.Model):
     short_code = models.CharField(max_length=16)
@@ -385,6 +385,7 @@ class DoorCardLease(models.Model):
     player = models.ForeignKey(Player, db_index=True)
     date_issued = models.DateField("Issue Date", db_index=True, default=datetime.date.today)
     date_returned = models.DateField("Return Date", db_index=True, blank=True, null=True)
+    comment = models.TextField(blank=True, null=True)
     def clean_fields(self, exclude):
         if self.date_returned is not None and self.date_returned < self.date_issued:
             raise ValidationError("Return date must be greater than or equal to issue date")
