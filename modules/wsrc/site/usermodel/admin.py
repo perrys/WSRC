@@ -240,6 +240,9 @@ class DoorCardLeaseForm(forms.ModelForm):
 class DoorCardLeaseInline(admin.TabularInline):
     model = DoorCardLease
     form = DoorCardLeaseForm
+    formfield_overrides = {
+        models.TextField: {'widget': forms.TextInput(attrs={'size': 80})},
+    }
 
 class PlayerAdmin(SelectRelatedQuerysetMixin, PrefetchRelatedQuerysetMixin, admin.ModelAdmin):
     "Admin for Player (i.e. club member) model"
