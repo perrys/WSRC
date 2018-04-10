@@ -17,7 +17,7 @@ from django.contrib.auth.models import User
 from django.contrib.auth.forms import AuthenticationForm
 from django.forms.fields import CharField, DateField
 from django.forms import Form, ModelForm
-from django.forms.models import modelformset_factory, ModelMultipleChoiceField
+from django.forms.models import modelformset_factory, ModelMultipleChoiceField, ModelChoiceField
 from django.forms.widgets import Select, CheckboxSelectMultiple, HiddenInput, Textarea
 
 from wsrc.site.courts.models import DayOfWeek, EventFilter
@@ -129,6 +129,7 @@ class SettingsInfoForm(Form):
 
 class MembershipApplicationForm(ModelForm):
     recaptcha_token = CharField(widget=HiddenInput)
+    subscription_type = ModelChoiceField(queryset=SubscriptionType.objects.exclude(name__icontains="*"))
 
     def __init__(self, *args, **kwargs):
         self.recaptcha_verifier = kwargs.pop("recaptcha_verifier")
