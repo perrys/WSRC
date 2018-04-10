@@ -35,18 +35,20 @@ class AbstractPlayer(models.Model):
 
     phone_validator = validators.RegexValidator(re.compile('^\+?[\d ]+$'), ('Enter a valid phone number.'), 'invalid')
 
+    PREFS_CHOICES = ((None, 'Not Specified'), (True, "Allow"), (False, "Do Not Allow"))
+    PREFS_CHOICES_VIS = ((None, 'Not Specified'), (True, "Visible"), (False, "Not Visible"))
+
     cell_phone  = models.CharField('Mobile Phone', max_length=30, validators=[phone_validator], blank=True)
     other_phone = models.CharField('Other Phone', max_length=30, validators=[phone_validator], blank=True)
 
-    prefs_receive_email = models.NullBooleanField("General Email", default=None, null=True, blank=True,
-                                                  help_text="Receive general emails from the club - news, social events, competition reminders etc.")
-    prefs_esra_member = models.NullBooleanField("England Squash Enrolment", default=None, null=True, blank=True,
+    prefs_receive_email = models.NullBooleanField("Receive General Emails", default=None, null=True, blank=True, choices=PREFS_CHOICES,
+                                                  help_text="Allow the club to send you general emails - news, social events, competition reminders etc.")
+    prefs_esra_member = models.NullBooleanField("England Squash Enrolment", default=None, null=True, blank=True, choices=PREFS_CHOICES,
                                                 help_text="Allow the club to pass on your email address to England Squash, so they can contact you with details of how to activate your membership, which is free as part of your subscription to Woking Squash Rackets Club.")
-    prefs_display_contact_details = models.NullBooleanField("Details Visible", default=None, null=True, blank=True,
-                                                            help_text="Whether your contact details appear in the membership list on this website, " +
+    prefs_display_contact_details = models.NullBooleanField("Member List Visibility", default=None, null=True, blank=True, choices=PREFS_CHOICES_VIS,
+                                                            help_text="Display your contact details in the club's membership list, " +
                                                             "enabling other members to contact you regarding league games etc.")
-
-    date_of_birth = models.DateField("DoB", null=True, blank=True, help_text="Date of birth (only required for age-restricted subscriptions)")
+    date_of_birth = models.DateField("Date of Birth", null=True, blank=True, help_text="Only required for age-restricted subscriptions.")
 
     class Meta:
         abstract = True
