@@ -29,6 +29,7 @@ from django.contrib.auth.admin import UserAdmin as AuthUserAdmin
 from django.contrib.auth.models import User
 
 from django.core import urlresolvers
+from django.core.exceptions import ValidationError, NON_FIELD_ERRORS
 from django.http import HttpResponse
 from django.shortcuts import redirect
 
@@ -626,6 +627,11 @@ class MembershipApplicationForm(forms.ModelForm):
                 initial.setdefault("username", "{0}_{1}".format(obj.first_name.lower(), obj.last_name.lower()))
         super(MembershipApplicationForm, self).__init__(*args, **kwargs)
 
+    def clean(self):
+        if self.cleaned_data["signed_off"] and not self.instance.player:
+            if not self.cleaned_data["password"]:
+                raise ValidationError("Cannot sign off unless a password is provided.")
+
     class Meta:
         fields = ["first_name", "last_name", "email", "date_of_birth", "cell_phone", "other_phone",
                   "subscription_type", "season", "pro_rata_date", "payment_frequency",
@@ -638,6 +644,12 @@ class MembershipApplicationAdmin(admin.ModelAdmin):
                     'prefs_receive_email', 'prefs_esra_member', 'prefs_display_contact_details')
     readonly_fields = ("player_link",)    
     form = MembershipApplicationForm
+    
+    def save_model(self, request, obj, form, change):
+        if form.cleaned_data["signed_off"] and not obj.player:
+            password = form.cleaned_data["password"]
+            obj.process_application(password)
+        super(MembershipApplicationAdmin, self).save_model(request, obj, form, change)
 
     def player_link(self, obj):
         if obj.player_id is None:
