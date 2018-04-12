@@ -664,6 +664,7 @@ class BookingSerializer(serializers.ModelSerializer):
     end_time   = DateTimeTzAwareField()
     class Meta:
         model = BookingSystemEvent
+        fields = ('start_time', 'end_time', 'court', 'name', 'event_type', 'event_id', 'description', 'created_by', 'created_time', 'no_show')
     @classmethod
     def many_init(cls, *args, **kwargs):
         request = kwargs["context"]["request"]
