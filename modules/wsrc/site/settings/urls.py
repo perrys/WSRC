@@ -1,4 +1,4 @@
-from django.conf.urls import patterns, include, url
+from django.conf.urls import include, url
 
 from django.contrib import admin
 admin.autodiscover()
@@ -22,7 +22,7 @@ def perm_redirect(view, permanent=True):
     return redirect(view, permanent=permanent)
   return func 
 
-urlpatterns = patterns('',
+urlpatterns = [
 
 
     url(r'^$',       wsrc.site.views.index_view),
@@ -136,7 +136,7 @@ urlpatterns = patterns('',
     url(r'^about/?$', wsrc.site.views.generic_nav_view, kwargs={"page": "about", "template": "about.html"}),
     url(r'^robots.txt$', wsrc.site.views.generic_txt_view, kwargs={"page": "robots.txt"}),
     url(r'^(?P<page>[a-z_]+)$', wsrc.site.views.generic_view),
-)
+]
 
 from django.conf import settings
 from django.conf.urls import include, url

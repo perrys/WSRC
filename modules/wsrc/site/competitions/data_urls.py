@@ -13,12 +13,12 @@
 # You should have received a copy of the GNU General Public License
 # along with WSRC.  If not, see <http://www.gnu.org/licenses/>.
 
-from django.conf.urls import patterns, url
+from django.conf.urls import url
 from rest_framework.urlpatterns import format_suffix_patterns
 
 import wsrc.site.competitions.views as views
 
-urlpatterns = patterns('',
+urlpatterns = [
     url(r'^match/$', views.CreateMatch.as_view()),
     url(r'^match/(?P<pk>[0-9]*)$', views.UpdateMatch.as_view()),
     url(r'^competition/$', views.CompetitionList.as_view()),
@@ -27,6 +27,6 @@ urlpatterns = patterns('',
     url(r'^competitiongroup/(?P<pk>[0-9]+)$', views.CompetitionGroupDetail.as_view()),
     url(r'^competition/tournament/(?P<pk>[0-9]*)$', views.UpdateTournament.as_view()),
     url(r'^squashlevels_upload.csv/?$', views.squashlevels_upload_view),
-)
+]
 
 urlpatterns = format_suffix_patterns(urlpatterns)
