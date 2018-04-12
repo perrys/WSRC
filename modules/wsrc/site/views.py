@@ -363,10 +363,6 @@ def login(request, *args, **kwargs):
     return response
 
 @login_required
-def logout_dialog_view(request):
-    return TemplateResponse(request, 'logout.html')
-
-@login_required
 def admin_mailshot_view(request):
     if not request.user.is_staff:
         raise PermissionDenied()
