@@ -15,12 +15,15 @@
 
 "Models for membership and subscriptions"
 
+import uuid
+
 from django.db import models
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError, NON_FIELD_ERRORS
 from django.core.mail import send_mail
 from django.core import validators
 from django.db.models import Q
+from django.contrib.auth.models import AbstractUser
 
 import datetime
 import re
@@ -28,14 +31,33 @@ import re
 import wsrc.site.accounts.models as account_models
 from wsrc.utils.text import obfuscate
 
-class Player(models.Model):
-
-    user = models.OneToOneField(User)
+class AbstractPlayer(models.Model):
 
     phone_validator = validators.RegexValidator(re.compile('^\+?[\d ]+$'), ('Enter a valid phone number.'), 'invalid')
 
-    cell_phone  = models.CharField(('Mobile Phone'), max_length=30, validators = [phone_validator], blank=True)
-    other_phone = models.CharField(('Other Phone'), max_length=30, validators = [phone_validator], blank=True)
+    PREFS_CHOICES = ((None, 'Not Specified'), (True, "Allow"), (False, "Do Not Allow"))
+    PREFS_CHOICES_VIS = ((None, 'Not Specified'), (True, "Visible"), (False, "Not Visible"))
+
+    cell_phone  = models.CharField('Mobile Phone', max_length=30, validators=[phone_validator], blank=True)
+    other_phone = models.CharField('Other Phone', max_length=30, validators=[phone_validator], blank=True)
+
+    prefs_receive_email = models.NullBooleanField("Receive General Emails", default=None, null=True, blank=True, choices=PREFS_CHOICES,
+                                                  help_text="Allow the club to send you general emails - news, social events, competition reminders etc.")
+    prefs_esra_member = models.NullBooleanField("England Squash Enrolment", default=None, null=True, blank=True, choices=PREFS_CHOICES,
+                                                help_text="Allow the club to pass on your email address to England Squash, so they can contact you with details of how to activate your membership, which is free as part of your subscription to Woking Squash Rackets Club.")
+    prefs_display_contact_details = models.NullBooleanField("Member List Visibility", default=None, null=True, blank=True, choices=PREFS_CHOICES_VIS,
+                                                            help_text="Display your contact details in the club's membership list, " +
+                                                            "enabling other members to contact you regarding league games etc.")
+    date_of_birth = models.DateField("Date of Birth", null=True, blank=True, help_text="Only required for age-restricted subscriptions.")
+
+    class Meta:
+        abstract = True
+
+
+class Player(AbstractPlayer):
+
+    user = models.OneToOneField(User)
+
     short_name  = models.CharField(("Short Name"), max_length=32, blank=True)
 
     wsrc_id  = models.IntegerField(("WSRC ID"), db_index=True, blank=True, null=True,
@@ -46,15 +68,7 @@ class Player(models.Model):
                                            help_text="ID on the SquashLevels website")
     england_squash_id  = models.CharField(("ES Membership #"), blank=True, null=True, max_length=16,
                                              help_text="England Squash Membership Number")
-    prefs_receive_email  = models.NullBooleanField(("General Email"), default=True, null=True, blank=True,
-                                                   help_text="Receive general emails from the club - news, social events, competition reminders etc.")
-    prefs_esra_member  = models.NullBooleanField(("ES Membership"), default=True, null=True, blank=True,
-                                                 help_text="Automatically enroll for England Squash membership, which is free as part of your subscription. In answering \"Yes\" you are giving the club permission to pass on your email address to England Squash.")
-    prefs_display_contact_details  = models.NullBooleanField(("Details Visible"), default=True, null=True, blank=True,
-                                                             help_text="Whether your contact details appear in the membership list on this website, enabling other members to contact you regarding league games etc.")
-
     subscription_regex  = models.CharField(('Regexp for subscription transactions'), max_length=256, null=True, blank=True)
-    date_of_birth = models.DateField("DoB", null=True, blank=True)
 
     def get_current_subscription(self):
         subscriptions = self.subscription_set.all()
@@ -129,7 +143,6 @@ class Player(models.Model):
         ordering=["user__last_name", "user__first_name"]
         verbose_name = "Member"
 
-
 class Season(models.Model):
     start_date = models.DateField(db_index=True, unique=True)
     end_date = models.DateField(db_index=True, unique=True)
@@ -138,14 +151,19 @@ class Season(models.Model):
     unique_together = ("start_date", "end_date")
     def __unicode__(self):
         return "{start_date:%Y}-{end_date:%y}".format(**self.__dict__)
-    @staticmethod
-    def latest():
-        qs = Season.objects.filter(has_ended=False).order_by("-start_date")
+
+    @classmethod
+    def latest(claz):
+        qs = claz.objects.filter(has_ended=False).order_by("-start_date")
         if qs.count() > 0:
             return qs[0]
         return None
+
     class Meta:
         ordering = ["start_date"]
+
+def latest_season():
+    return Season.latest().pk
 
 class SubscriptionType(models.Model):
     short_code = models.CharField(max_length=16)
@@ -153,6 +171,11 @@ class SubscriptionType(models.Model):
     is_default = models.BooleanField(default=False, help_text="Please ensure only one " +
                                      "subscription type is set as default")
     max_age_years = models.IntegerField(blank=True, null=True)
+
+    @property
+    def is_age_sensitive(self):
+        return self.max_age_years is not None
+
     def __unicode__(self):
         return self.name
     class Meta:
@@ -169,7 +192,7 @@ class SubscriptionCost(models.Model):
         verbose_name = "Subscription Cost"
         ordering = ["-season", "-amount"]
 
-class Subscription(models.Model):
+class AbstractSubscription(models.Model):
     PAYMENT_TYPES = (
         ("annual", "Annually", 1),
         ("triannual", "Tri-annually", 3),
@@ -177,16 +200,20 @@ class Subscription(models.Model):
         ("monthly", "Monthly", 12),
     )
     PAY_TYPE_CHOICES = [(ptype[0], ptype[1]) for ptype in PAYMENT_TYPES]
-    is_active = Q(user__is_active=True)
     not_ended = Q(has_ended=False)
     # pylint: disable=bad-whitespace
-    player            = models.ForeignKey(Player, db_index=True, limit_choices_to=is_active)
     subscription_type = models.ForeignKey(SubscriptionType)
-    season            = models.ForeignKey(Season, db_index=True, limit_choices_to=not_ended)
+    season            = models.ForeignKey(Season, db_index=True, limit_choices_to=not_ended, default=latest_season)
     pro_rata_date     = models.DateField("Pro Rata Date", blank=True, null=True)
-    payment_frequency = models.CharField("Payment Freq", max_length=16, choices=PAY_TYPE_CHOICES)
-    signed_off        = models.BooleanField("Signoff", default=False)
+    payment_frequency = models.CharField("Payment Freq", max_length=16, choices=PAY_TYPE_CHOICES, default="annual")
     comment           = models.TextField(blank=True, null=True)
+    class Meta:
+        abstract = True
+        
+class Subscription(AbstractSubscription):
+    is_active = Q(user__is_active=True)
+    player = models.ForeignKey(Player, db_index=True, limit_choices_to=is_active)
+    signed_off = models.BooleanField("Signoff", default=False)
 
     unique_together = ("player", "season")
 
@@ -360,6 +387,7 @@ class DoorCardLease(models.Model):
     player = models.ForeignKey(Player, db_index=True)
     date_issued = models.DateField("Issue Date", db_index=True, default=datetime.date.today)
     date_returned = models.DateField("Return Date", db_index=True, blank=True, null=True)
+    comment = models.TextField(blank=True, null=True)
     def clean_fields(self, exclude):
         if self.date_returned is not None and self.date_returned < self.date_issued:
             raise ValidationError("Return date must be greater than or equal to issue date")
@@ -406,4 +434,75 @@ class DoorCardEvent(models.Model):
     class Meta:
         verbose_name = "Door Card Event"
 
+class MembershipApplication(AbstractPlayer, AbstractSubscription):
+    "Details captured as part of a membership application"
 
+    # from django.contrib.auth.models.AbstractUser:
+    username = models.CharField('username', max_length=30, 
+                                help_text='Required. 30 characters or fewer. Letters, digits and @/./+/-/_ only.',
+                                validators=[
+                                    validators.RegexValidator(r'^[\w.@+-]+$', 'Enter a valid username.', 'invalid')
+                                ],
+                                blank=True, null=True) # user not required to enter this
+    first_name = models.CharField('first name', max_length=30)
+    last_name = models.CharField('last name', max_length=30)
+    email = models.EmailField('email address')
+
+    player = models.ForeignKey(Player, blank=True, null=True)
+
+    guid = models.CharField("GUID", max_length=36, default=uuid.uuid1)
+    email_verified = models.BooleanField(default=False)
+    signed_off = models.BooleanField(default=False, help_text="Signed off by the membership secretary" +\
+                                     " - after which the next save will create this member in the database.")
+
+    def clean_fields(self, *args, **kwargs):
+        super(MembershipApplication, self).clean_fields(*args, **kwargs)
+        result = {}
+        for field in ["prefs_display_contact_details", "prefs_receive_email", "prefs_esra_member"]:
+            if getattr(self, field) is None:
+                result[field] = ValidationError("You must choose Yes or No.")
+        if self.signed_off:
+            if not self.email_verified:
+                result["email_verified"] = ValidationError("Cannot sign off unless email is verified.")
+            if not self.username:
+                result["username"] = ValidationError("Cannot sign off without a username.")
+        if result:
+            raise ValidationError(result)
+
+    def clean(self, *args, **kwargs):
+        super(MembershipApplication, self).clean(*args, **kwargs)
+        if self.subscription_type_id is not None:
+            if self.subscription_type.is_age_sensitive and self.date_of_birth is None:
+                err = "Date of birth is required for this subscription type."
+                raise ValidationError({"date_of_birth": ValidationError(err)})
+            
+                
+    def validate_unique(self, exclude):
+        super(MembershipApplication, self).validate_unique(exclude)
+        usernames = [user.username for user in User.objects.all()]
+        if self.username in usernames:
+            err = "This username already exists."
+            raise ValidationError({"username": ValidationError(err)})
+
+    def save(self, *args, **kwargs):
+        if not self.guid:
+            self.guid = self._meta.get_field("guid").default()
+        super(MembershipApplication, self).save(*args, **kwargs)
+
+    def process_application(self, password):
+        user = User.objects.create_user(self.username, self.email, password,
+                                        first_name=self.first_name, last_name=self.last_name)
+        kwargs = dict([(field.name, getattr(self, field.name)) for field in AbstractPlayer._meta.fields])
+        member = Player(user=user, **kwargs)
+        member.save()
+        self.player = member
+        self.save()
+        kwargs = dict([(field.name, getattr(self, field.name)) for field in AbstractSubscription._meta.fields])
+        kwargs["player"] = member
+        subscription = Subscription(**kwargs)
+        subscription.save()
+        
+        
+    class Meta:
+        verbose_name = "Membership Application"
+    

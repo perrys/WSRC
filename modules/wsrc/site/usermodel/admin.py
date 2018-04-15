@@ -29,11 +29,13 @@ from django.contrib.auth.admin import UserAdmin as AuthUserAdmin
 from django.contrib.auth.models import User
 
 from django.core import urlresolvers
+from django.core.exceptions import ValidationError, NON_FIELD_ERRORS
 from django.http import HttpResponse
 from django.shortcuts import redirect
 
 from .models import Player, Season, Subscription, SubscriptionPayment,\
-    SubscriptionCost, SubscriptionType, DoorEntryCard, DoorCardEvent, DoorCardLease
+    SubscriptionCost, SubscriptionType, DoorEntryCard, DoorCardEvent, DoorCardLease, \
+    MembershipApplication
 from wsrc.utils.form_utils import SelectRelatedQuerysetMixin, CachingModelChoiceField, \
     get_related_field_limited_queryset, PrefetchRelatedQuerysetMixin
 from wsrc.utils.upload_utils import upload_generator
@@ -238,6 +240,9 @@ class DoorCardLeaseForm(forms.ModelForm):
 class DoorCardLeaseInline(admin.TabularInline):
     model = DoorCardLease
     form = DoorCardLeaseForm
+    formfield_overrides = {
+        models.TextField: {'widget': forms.TextInput(attrs={'size': 80})},
+    }
 
 class PlayerAdmin(SelectRelatedQuerysetMixin, PrefetchRelatedQuerysetMixin, admin.ModelAdmin):
     "Admin for Player (i.e. club member) model"
@@ -507,7 +512,7 @@ class CurrentSeasonListFilter(admin.SimpleListFilter):
 
 class DoorCardLeaseAdmin(admin.ModelAdmin):
     search_fields = ('player__user__first_name', 'player__user__last_name', 'card__cardnumber')
-    list_display = ('card', "card_is_registered", 'linked_player', 'current_owner_active', 'subscription', 'date_issued', 'date_returned')
+    list_display = ('card', "card_is_registered", 'linked_player', 'current_owner_active', 'subscription', 'date_issued', 'date_returned', 'comment')
     list_filter = ("card__is_registered", "player__user__is_active", IsCurrentListFilter, CurrentSeasonListFilter)
     form = DoorCardLeaseForm
     list_per_page = 1000
@@ -614,7 +619,53 @@ class DoorCardEventAdmin(admin.ModelAdmin):
     linked_player.allow_tags = True
     linked_player.short_description = "Assigned To"
     linked_player.admin_order_field = "card__doorcardlease__player__user__last_name"
+
+class MembershipApplicationForm(forms.ModelForm):
+    password = forms.CharField(required=False, help_text="Must be set when saving a signed-off form.")
+    def __init__(self, *args, **kwargs):
+        initial = kwargs.setdefault("initial", dict())
+        obj = kwargs.get("instance")
+        if obj is not None:
+            if not obj.username:
+                initial.setdefault("username", "{0}_{1}".format(obj.first_name.lower(), obj.last_name.lower()))
+        super(MembershipApplicationForm, self).__init__(*args, **kwargs)
+
+    def clean(self):
+        if self.cleaned_data["signed_off"] and not self.instance.player:
+            if not self.cleaned_data["password"]:
+                raise ValidationError("Cannot sign off unless a password is provided.")
+
+    class Meta:
+        fields = ["first_name", "last_name", "email", "date_of_birth", "cell_phone", "other_phone",
+                  "subscription_type", "season", "pro_rata_date", "payment_frequency",
+                  "prefs_receive_email", "prefs_esra_member", "prefs_display_contact_details",
+                  "player_link", "username", "password", "guid", "email_verified", "comment", "signed_off"]
+
+class MembershipApplicationAdmin(admin.ModelAdmin):
+    list_display = ('last_name', 'first_name', 'username', 'email', 'email_verified', 'subscription_type',
+                    'cell_phone', 'other_phone',
+                    'prefs_receive_email', 'prefs_esra_member', 'prefs_display_contact_details')
+    readonly_fields = ("player_link",)    
+    form = MembershipApplicationForm
     
+    def save_model(self, request, obj, form, change):
+        if form.cleaned_data["signed_off"] and not obj.player:
+            password = form.cleaned_data["password"]
+            obj.process_application(password)
+        super(MembershipApplicationAdmin, self).save_model(request, obj, form, change)
+
+    def player_link(self, obj):
+        if obj.player_id is None:
+            return "(None)"
+        link = urlresolvers.reverse("admin:usermodel_player_change", args=[obj.player_id])
+        link = u'<a id="player_link" href="{0}" style="font-weight: bold">{1}</a>'\
+               .format(link, obj.player.get_ordered_name())
+        return link
+    player_link.short_description = "Member"
+    player_link.help_text = "(set after saved and signed-off - once member has been created)"
+    player_link.allow_tags = True
+
+
 admin.site.register(Season, SeasonAdmin)
 admin.site.register(Subscription, SubscriptionAdmin)
 admin.site.register(Player, PlayerAdmin)
@@ -623,3 +674,4 @@ admin.site.register(SubscriptionType, SubscriptionTypeAdmin)
 admin.site.register(DoorEntryCard, DoorEntryCardAdmin)
 admin.site.register(DoorCardEvent, DoorCardEventAdmin)
 admin.site.register(DoorCardLease, DoorCardLeaseAdmin)
+admin.site.register(MembershipApplication, MembershipApplicationAdmin)

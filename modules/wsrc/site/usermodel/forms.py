@@ -13,22 +13,21 @@
 # You should have received a copy of the GNU General Public License
 # along with WSRC.  If not, see <http://www.gnu.org/licenses/>.
 
-
 from django.contrib.auth.models import User
 from django.contrib.auth.forms import AuthenticationForm
 from django.forms.fields import CharField, DateField
 from django.forms import Form, ModelForm
-from django.forms.models import modelformset_factory, ModelMultipleChoiceField
+from django.forms.models import modelformset_factory, ModelMultipleChoiceField, ModelChoiceField
 from django.forms.widgets import Select, CheckboxSelectMultiple, HiddenInput, Textarea
 
 from wsrc.site.courts.models import DayOfWeek, EventFilter
-from wsrc.site.usermodel.models import Player, SubscriptionType
-from wsrc.utils.form_utils import make_readonly_widget
+from wsrc.site.usermodel.models import Player, SubscriptionType, MembershipApplication
+from wsrc.utils.form_utils import make_readonly_widget, add_formfield_attrs
 
 class SpaceTranslatingCharField(CharField):
     def to_python(self, value):
         value = super(SpaceTranslatingCharField, self).to_python(value)
-        value = value.replace(" ", "_")
+        value = value.replace(" ", "_").strip()
         return value
 
 class SpaceTranslatingAuthenticationForm(AuthenticationForm):
@@ -60,7 +59,7 @@ class SettingsYoungPlayerForm(SettingsPlayerForm):
         exclude = ('user',)
 
 class NotifierForm(ModelForm):
-    days =  ModelMultipleChoiceField(DayOfWeek.objects.all(), cache_choices=True, widget=CheckboxSelectMultiple())
+    days =  ModelMultipleChoiceField(DayOfWeek.objects.all(), widget=CheckboxSelectMultiple())
     class Meta:
         model = EventFilter
         fields = ["earliest", "latest", "notice_period_minutes", "days", "player"]
@@ -127,3 +126,24 @@ class SettingsInfoForm(Form):
                 "subscription": "{sub.subscription_type.name} [{sub.season}]".format(sub=player.get_current_subscription())
                 }
         return cls(data)
+
+class MembershipApplicationForm(ModelForm):
+    recaptcha_token = CharField(widget=HiddenInput)
+    subscription_type = ModelChoiceField(queryset=SubscriptionType.objects.exclude(name__icontains="*"))
+
+    def __init__(self, *args, **kwargs):
+        self.recaptcha_verifier = kwargs.pop("recaptcha_verifier")
+        super(MembershipApplicationForm, self).__init__(*args, **kwargs)
+        add_formfield_attrs(self)
+        
+    def clean(self):
+        super(MembershipApplicationForm, self).clean()
+        token = self.cleaned_data["recaptcha_token"]
+        self.recaptcha_verifier(token)
+
+    class Meta:
+        model = MembershipApplication
+        fields = ["first_name", "last_name", "email", "date_of_birth", "cell_phone", "other_phone",
+                  "subscription_type", "season",
+                  "prefs_receive_email", "prefs_esra_member", "prefs_display_contact_details", "recaptcha_token"]
+        

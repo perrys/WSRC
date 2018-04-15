@@ -22,6 +22,7 @@ from wsrc.utils.html_table import formatTable as format_html_table
 
 COMMITTEE_EMAIL_ADDRESS = "committee@wokingsquashclub.org"
 TOURNAMENTS_EMAIL_ADDRESS = "tournaments@wokingsquashclub.org"
+MEMBERSHIP_EMAIL_ADDRESS = "membership@wokingsquashclub.org"
 
 def manage_tournament_bookings(username, password):
 
@@ -259,6 +260,55 @@ def email_tournament_match_reminders(usernames):
         if len(failed_players) > 0:
             sys.stderr.write("ERROR: failed to send email to the following:\n" + "\n".join([p.get_full_name() + " " + p.user.email for p in failed_players]) + "\n")
 
+def email_subscription_reminders(user_list):
+    import wsrc.site.usermodel.models as user_models;
+    import wsrc.site.models as site_models;
+    seasons = user_models.Season.objects.exclude(has_ended=True)
+    last_season = seasons.first()
+    this_season = seasons.last()
+    subs = user_models.Subscription.objects.filter(season=last_season).exclude(subscription_type__name__icontains="*")\
+                                                                      .select_related("player__user", "subscription_type")
+    costs = user_models.SubscriptionCost.objects.filter(season=this_season).exclude(subscription_type__name__icontains="*")\
+                                                                           .select_related("subscription_type")
+    emails = dict()
+    for sub in subs:
+        if user_list and sub.player.user.email not in user_list:
+            continue
+        email = sub.player.user.email
+        cost = [cost for cost in costs if cost.subscription_type == sub.subscription_type][0]
+        if cost.amount > 0 and email and email.find('@') > 0:
+            subs_for_email = emails.setdefault(email, [])
+            subs_for_email.append(sub)
+    LOGGER.info("found %d unique email addresses with current subscriptions", len(emails))
+    email_template = site_models.EmailContent.objects.get(name="Subscription Reminder")
+    email_template = Template(email_template.markup)
+    email_keys = emails.keys()
+    email_keys.sort()
+    failed_players = list()
+    for email in email_keys:
+        player = emails[email][0].player
+        context = Context({
+            "subscriptions": emails[email],
+            "player": player,
+            "costs": costs,
+            "content_type": "text/html"
+        })
+        subject = "{this_season} Subscriptions".format(**locals())
+        from_address = MEMBERSHIP_EMAIL_ADDRESS
+        html_body = markdown.markdown(email_template.render(context), extensions=['markdown.extensions.extra'])
+        context["content_type"] = "text/plain"
+        text_body = email_template.render(context)
+        to_list = [email]
+        try:
+            email_utils.send_email(subject, text_body, html_body, from_address, to_list)
+        except:
+            failed_players.append(player)
+            import traceback
+            traceback.print_exc()
+        email_utils.pause_between_emails()
+    LOGGER.info("emails sent")
+    if len(failed_players) > 0:
+        LOGGER.error("failed to send email to the following:\n\n%s", "\n".join([p.get_full_name() + " " + p.user.email for p in failed_players]) + "\n")
 
 if __name__ == "__main__":
     prog = os.path.basename(sys.argv[0])
@@ -349,6 +399,27 @@ if __name__ == "__main__":
 
     elif command in ("send-outstanding-league-match-reminders"):
         email_outstanding_box_matches()
+
+    elif command in ("send-subscription-reminders"):
+        try:
+            optlist, args = getopt.getopt(sys.argv[2:], "au:", ["all", "username="])
+        except getopt.GetoptError as err:
+            sys.stderr.write(str(err) + "\n")
+            usage()
+            sys.exit(2)
+
+        user_list = None
+        for opt,val in optlist:
+            if opt in ["-a", "--all"]:
+                user_list = []
+            elif opt in ["-u", "--username"]:
+                user_list = [val]
+
+        if user_list is None:
+            usage()
+            sys.exit(2)
+
+        email_subscription_reminders(user_list)
 
     elif command in ("add-old-league"):
         wsrc.external_sites.main.cmdline_add_old_league(args)

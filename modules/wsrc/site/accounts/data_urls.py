@@ -13,18 +13,18 @@
 # You should have received a copy of the GNU General Public License
 # along with WSRC.  If not, see <http://www.gnu.org/licenses/>.
 
-from django.conf.urls import patterns, url
+from django.conf.urls import url
 from rest_framework.urlpatterns import format_suffix_patterns
 
 import wsrc.site.accounts.views as views
 
-urlpatterns = patterns('',
+urlpatterns = [
     url(r'^account/$', views.AccountListView.as_view()),
     url(r'^account/(?P<pk>[0-9]*)$', views.AccountView.as_view()),
     url(r'^account/(?P<account_id>[0-9]*)/transactions/?$', views.TransactionView.as_view()),
     url(r'^account/(?P<account_name>\w*)/transactions/?$', views.TransactionView.as_view()),
     url(r'^category/$', views.CategoryListView.as_view()),
     url(r'^category/(?P<pk>[0-9]*)$', views.CategoryDetailView.as_view()),
-)
+]
 
 urlpatterns = format_suffix_patterns(urlpatterns)

@@ -1,0 +1,97 @@
+{% extends "06_wsrc_navigation.html" %}
+{% block titleprefix %}Membership Application - {% endblock %}
+
+{% block html_header_extra %}
+<style>
+  .g-recaptcha {
+      display: inline-block;
+      margin-bottom: 20px;
+  }
+</style>
+{% endblock %}
+
+{% block centered_page_content %}
+
+
+<form id="application_form" method="post" class="form-horizontal user">
+  {% csrf_token %}
+  <h2>Membership Application</h2>
+
+  <div class="well">
+    <p>Please fill in the form below to apply for membership. After submitting the form you will be sent an email to confirm your email address, and once this is done the membership secretary will be in touch to complete the process.</p>
+    <p><strong>We will not share this data with any third party for marketing or commercial purposes.</strong> When your application is complete, provided you give your consent below, we will (a) include your contact details in the membership list on our website, which will be available only to other members; and (b) provide your email address to England Squash, the governing body, solely so they can email you with details of how you can activate your England Squash membership.</p>
+    <p>Please see our <a href="/data_protection" class="underline">data protection policy</a> for full details of the steps we take to protect your privacy.</p>
+  </div>
+
+{% if form_saved %}
+<div class="alert alert-success">Application saved.</div>
+{% endif %}
+
+{% if form.errors %} <!-- {{ form.errors }} -->
+  <div class="alert alert-danger">
+    Validation Error. Please correct the problem(s) below and resubmit.
+  </div>
+
+{% for err in form.non_field_errors %}
+  <div class="alert alert-danger">{{ err }}</div>
+{% endfor %}
+
+{% endif %}
+
+<fieldset name="personal_details">
+<legend>Personal Details</legend>
+{% include "form_field_snippet.html" with field=form.first_name label="First Name" %}
+{% include "form_field_snippet.html" with field=form.last_name label="Last Name" %}
+{% include "form_field_snippet.html" with field=form.email label="Email Address" %}
+{% include "form_field_snippet.html" with field=form.cell_phone label="<span style='font-weight: normal'>Mobile Phone</span>" %}
+{% include "form_field_snippet.html" with field=form.other_phone label="<span style='font-weight: normal'>Other Phone</span>" %}
+{% if form.date_of_birth %}
+{% include "form_field_snippet.html" with field=form.date_of_birth label="<span style='font-weight: normal'>Date of Birth</span>" %}
+{% endif %}
+</fieldset>
+
+<fieldset name="subscription">
+  <legend>Subscription</legend>
+  {% include "form_field_snippet.html" with field=form.subscription_type label="Membership Type" %}
+  {% include "form_field_snippet.html" with field=form.season %}
+</fieldset>
+
+<fieldset name="data_protection">
+  <legend>Data Protection</legend>
+  {% include "form_field_snippet.html" with field=form.prefs_receive_email %}
+  {% include "form_field_snippet.html" with field=form.prefs_esra_member label="England Squash Enrolment<sup>&dagger;</sup>" %}
+  {% include "form_field_snippet.html" with field=form.prefs_display_contact_details %}
+</fieldset>
+
+
+<div class="buttonset">
+  <input type="hidden" name="recaptcha_token" value="" />
+  <div class="g-recaptcha" data-sitekey="{{ recaptcha_client_token }}" data-callback="recaptcha_callback" data-expired-callback="recaptcha_expired_callback"></div>
+  <br>
+  <button class="btn btn-primary" type="submit" value="Update" disabled="disabled"><span class="glyphicon glyphicon-ok"></span>&nbsp;Submit</button>
+</div>
+
+<hr />
+<footer class="small">
+  <p>
+    <sup>&dagger;</sup> For more information, visit the <a class="underline" href="http://www.englandsquash.com/membership/players">England Squash website</a>. If you do not want us to pass on your email address, you can always apply to England Squash directly at a later time. Note that you will not be able to play in Surrey league competitions or national competitions if you are not an England Squash member.
+  </p>
+</footer>
+
+</form>
+
+{% endblock %}
+
+{% block body_script_extra %}
+<script>
+ function recaptcha_callback(token) {
+     $("form input[name='recaptcha_token']").val(token);
+     $("form button[type='submit']").removeProp("disabled");
+ }
+ function recaptcha_expired_callback() {
+     $("form input[name='recaptcha_token']").val("");
+     $("form button[type='submit']").prop("disabled");
+ }
+</script>
+<script src='https://www.google.com/recaptcha/api.js'></script>
+{% endblock %}

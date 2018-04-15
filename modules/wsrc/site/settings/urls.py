@@ -1,4 +1,4 @@
-from django.conf.urls import patterns, include, url
+from django.conf.urls import include, url
 
 from django.contrib import admin
 admin.autodiscover()
@@ -22,7 +22,7 @@ def perm_redirect(view, permanent=True):
     return redirect(view, permanent=permanent)
   return func 
 
-urlpatterns = patterns('',
+urlpatterns = [
 
 
     url(r'^$',       wsrc.site.views.index_view),
@@ -30,7 +30,6 @@ urlpatterns = patterns('',
 
     url(r'^login/?$',  wsrc.site.views.login, {'template_name': 'login.html', 'authentication_form': SpaceTranslatingAuthenticationForm}, name='login'),
     url(r'^logout/?$', auth_views.logout, name='logout'),
-    url(r'^logout_dialog/?$', wsrc.site.views.logout_dialog_view, name='logout_dialog'),
 
     url(r'^password/reset/$',auth_views.password_reset,name='password_reset'),
     url(r'^password/reset/done/$',auth_views.password_reset_done,name='password_reset_done'),
@@ -87,6 +86,15 @@ urlpatterns = patterns('',
                        
     url(r'^settings/?$', wsrc.site.usermodel.views.settings_view, name="settings"),
 
+    url(r'^membership_application/?$', wsrc.site.usermodel.views.MembershipApplicationCreateView.as_view(),\
+        name="membership_application"),
+    url(r'^membership_application/submitted/?$', wsrc.site.views.generic_view, kwargs={"page": "MembershipApp_Submitted"},\
+        name="membership_application_submitted"),
+    url(r'^membership_application/(?P<pk>\d+)/verify_email/?$', wsrc.site.usermodel.views.MembershipApplicationVerifiedEmailView.as_view(),\
+        name="membership_application_verify_email"),                       
+    url(r'^membership_application/verify_email_failed/?$', wsrc.site.views.generic_view, kwargs={"page": "MembershipApp_VerifyFailed"},\
+        name="membership_application_verify_email_failed"),
+
     url(r'^kiosk/?$', wsrc.site.views.kiosk_view, name="kiosk"),
                        
 
@@ -127,7 +135,7 @@ urlpatterns = patterns('',
     url(r'^about/?$', wsrc.site.views.generic_nav_view, kwargs={"page": "about", "template": "about.html"}),
     url(r'^robots.txt$', wsrc.site.views.generic_txt_view, kwargs={"page": "robots.txt"}),
     url(r'^(?P<page>[a-z_]+)$', wsrc.site.views.generic_view),
-)
+]
 
 from django.conf import settings
 from django.conf.urls import include, url

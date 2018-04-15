@@ -363,10 +363,6 @@ def login(request, *args, **kwargs):
     return response
 
 @login_required
-def logout_dialog_view(request):
-    return TemplateResponse(request, 'logout.html')
-
-@login_required
 def admin_mailshot_view(request):
     if not request.user.is_staff:
         raise PermissionDenied()
@@ -664,6 +660,7 @@ class BookingSerializer(serializers.ModelSerializer):
     end_time   = DateTimeTzAwareField()
     class Meta:
         model = BookingSystemEvent
+        fields = ('start_time', 'end_time', 'court', 'name', 'event_type', 'event_id', 'description', 'created_by', 'created_time', 'no_show')
     @classmethod
     def many_init(cls, *args, **kwargs):
         request = kwargs["context"]["request"]
