@@ -3,10 +3,8 @@
 {% block title %}{{ title }} | {{ site_title|default:_('Django site admin') }}{% endblock %}
 
 {% block branding %}
-<img src="/static/images/logo_98x50_alpha.png" style="float: left; padding-left: 10px; padding-right: 1em;" />
-<div style="display: inline-block;">
-  <h1 id="site-name" style="display: table-cell; height: 50px; margin: 0; vertical-align: middle;"><a href="{% url 'admin:index' %}">WSRC&nbsp;administration</a></h1>
-</div>
+<a href="/"><img src="/static/images/logo_98x50_alpha.png" style="float: left; padding-left: 10px; padding-right: 1em; margin-top:-5px;" /></a>
+{{ block.super }}
 {% endblock %}
 
 {% block nav-global %}{% endblock %}
