@@ -27,7 +27,7 @@ from wsrc.utils.form_utils import make_readonly_widget, add_formfield_attrs
 class SpaceTranslatingCharField(CharField):
     def to_python(self, value):
         value = super(SpaceTranslatingCharField, self).to_python(value)
-        value = value.replace(" ", "_")
+        value = value.replace(" ", "_").strip()
         return value
 
 class SpaceTranslatingAuthenticationForm(AuthenticationForm):
