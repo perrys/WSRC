@@ -287,14 +287,14 @@ def edit_entry_view(request, id=None):
     server_time = datetime.datetime.now()
 
     if method == "POST":
-        action = request.REQUEST.get("action") or ""
+        action = request.POST.get("action") or ""
         if action.upper() == "DELETE":
             method = "DELETE"
         elif action.upper() in ("UPDATE", "REPORT_NOSHOW", "REMOVE_NOSHOW"):
             method = "PATCH"
 
     if method == "POST":
-        booking_form = BookingForm(request.REQUEST)
+        booking_form = BookingForm(request.POST)
         if booking_user_id is None:
             raise SuspiciousOperation()
         if booking_form.is_valid():
@@ -310,7 +310,7 @@ def edit_entry_view(request, id=None):
                 booking_form.add_error(None, str(e))
 
     elif method == "DELETE":
-        booking_form = BookingForm(request.REQUEST)
+        booking_form = BookingForm(request.POST)
         if id is None or booking_user_id is None:
             raise SuspiciousOperation()
         try:
@@ -331,7 +331,7 @@ def edit_entry_view(request, id=None):
             booking_form.add_error(None, str(e))
 
     elif method == "PATCH":
-        booking_form = BookingForm(dict(request.REQUEST))
+        booking_form = BookingForm(dict(request.POST))
         if id is None or booking_user_id is None:
             raise SuspiciousOperation()
         try:
@@ -435,7 +435,7 @@ def edit_entry_view(request, id=None):
         booking_form.fields[field].widget = forms.HiddenInput()
     add_formfield_attrs(booking_form)
 
-    back = request.REQUEST.get("next")
+    back = request.POST.get("next", request.GET.get("next"))
     if back is None:
         if booking_form.is_valid():
             back = reverse_url(day_view)
@@ -537,7 +537,7 @@ def create_icalendar(request, cal_data, recipients, method):
 @login_required
 def calendar_invite_view(request, id):
     if request.method == "POST":
-        data = dict(request.REQUEST)
+        data = dict(request.POST)
         data["invitee_1"] = request.user.id
         form = CalendarInviteForm(data)
         if form.is_valid():

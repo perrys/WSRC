@@ -80,8 +80,8 @@ class MemberListView(ListView):
                                  .filter(user__is_active=True) \
                                  .exclude(prefs_display_contact_details=False) \
                                  .order_by('user__first_name', 'user__last_name')
-        filter_text = self.request.REQUEST.get("search")
-        filter_ids = self.request.REQUEST.get("filter-ids")
+        filter_text = self.request.GET.get("search")
+        filter_ids = self.request.GET.get("filter-ids")
         if filter_text is not None:
             queryset = queryset.filter(Q(user__first_name__icontains=filter_text) |\
                                        Q(user__last_name__icontains=filter_text) |\
@@ -104,7 +104,7 @@ class MemberListView(ListView):
 
     def get_context_data(self, **kwargs):
         ctx = super(MemberListView, self).get_context_data(**kwargs)
-        form = SearchForm(data=self.request.REQUEST)
+        form = SearchForm(data=self.request.GET)
         ctx["form"] = form
         return ctx
 
