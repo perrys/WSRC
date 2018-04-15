@@ -164,7 +164,7 @@ class CalendarInviteForm(forms.Form):
 
 
 class NotifierForm(forms.ModelForm):
-    days = CachingModelMultipleChoiceField(DayOfWeek.objects.all(), cache_choices=True, widget=forms.CheckboxSelectMultiple())
+    days = CachingModelMultipleChoiceField(DayOfWeek.objects.all(), widget=forms.CheckboxSelectMultiple())
     class Meta:
         model = EventFilter
         fields = ["earliest", "latest", "notice_period_minutes", "days", "player"]

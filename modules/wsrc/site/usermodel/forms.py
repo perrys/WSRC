@@ -59,7 +59,7 @@ class SettingsYoungPlayerForm(SettingsPlayerForm):
         exclude = ('user',)
 
 class NotifierForm(ModelForm):
-    days =  ModelMultipleChoiceField(DayOfWeek.objects.all(), cache_choices=True, widget=CheckboxSelectMultiple())
+    days =  ModelMultipleChoiceField(DayOfWeek.objects.all(), widget=CheckboxSelectMultiple())
     class Meta:
         model = EventFilter
         fields = ["earliest", "latest", "notice_period_minutes", "days", "player"]
