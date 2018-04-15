@@ -11,7 +11,7 @@ from django.core.mail import EmailMessage, EmailMultiAlternatives
 from django.template import Template, Context
 
 LOGGER = logging.getLogger(__name__)
-LOGGER.setLevel(logging.DEBUG)
+LOGGER.setLevel(logging.INFO)
 
 EMAIL_DELAY_PERIOD = 2
 
@@ -32,7 +32,7 @@ def send_email(subject, text_body, html_body, from_address, to_list, bcc_list=No
     if extra_attachments is not None:
       for data in extra_attachments:
         msg.attach(data)        
-  LOGGER.debug("sending mail, subject=\"{subject}\", from={from_address}, to_list={to_list}, cc_list={cc_list}, bcc_list={bcc_list}, headers={headers}".format(**locals()))
+  LOGGER.info("sending mail, subject=\"{subject}\", from={from_address}, to_list={to_list}, cc_list={cc_list}, bcc_list={bcc_list}, headers={headers}".format(**locals()))
   msg.send(fail_silently=False)
 
 def send_markdown_email(subject, markdown_body, from_address, to_list, bcc_list=None, reply_to_address=None):
