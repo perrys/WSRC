@@ -118,6 +118,7 @@ class SubscriptionAdmin(admin.ModelAdmin):
     list_per_page = 400
     search_fields = ('player__user__first_name', 'player__user__last_name')
     actions = (remove_and_inactivate,)
+    save_as = True
 
     def email(self, obj):
         return obj.player.user.email
@@ -377,6 +378,8 @@ class PlayerAdmin(SelectRelatedQuerysetMixin, PrefetchRelatedQuerysetMixin, admi
 
 class SubscriptionCostAdmin(SelectRelatedQuerysetMixin, admin.ModelAdmin):
     list_display = ('subscription_type', 'season', 'joining_fee', 'amount')
+    list_filter = ('season',)
+    save_as = True
 
 class SubscriptionTypeAdmin(admin.ModelAdmin):
     list_display = ('name',)
