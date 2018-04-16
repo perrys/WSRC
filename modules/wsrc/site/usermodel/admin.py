@@ -307,10 +307,10 @@ class PlayerAdmin(SelectRelatedQuerysetMixin, PrefetchRelatedQuerysetMixin, admi
     date_joined_date.admin_order_field = 'user__date_joined'
 
     def get_urls(self):
-        from django.conf.urls import patterns, url
+        from django.conf.urls import url
         urls = super(PlayerAdmin, self).get_urls()
-        my_urls = patterns("", url(r"^upload_es_csv/$", self.admin_site.admin_view(self.upload_csv_view),
-                                   name='upload_es_csv'))
+        my_urls = [url(r"^upload_es_csv/$", self.admin_site.admin_view(self.upload_csv_view),
+                       name='upload_es_csv')]
         return my_urls + urls
     urls = property(get_urls)
 
@@ -447,10 +447,10 @@ class DoorEntryCardAdmin(admin.ModelAdmin):
     linked_current_owner.short_description = "Currently Assigned To"
 
     def get_urls(self):
-        from django.conf.urls import patterns, url
+        from django.conf.urls import url
         urls = super(DoorEntryCardAdmin, self).get_urls()
-        my_urls = patterns("", url(r"^upload_doorcard_data/$", self.admin_site.admin_view(self.upload_view),
-                                   name='upload_doorcard_data'))
+        my_urls = [url(r"^upload_doorcard_data/$", self.admin_site.admin_view(self.upload_view),
+                       name='upload_doorcard_data')]
         return my_urls + urls
     urls = property(get_urls)
 
