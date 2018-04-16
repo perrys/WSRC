@@ -13,7 +13,7 @@ from django.template import Template, Context
 LOGGER = logging.getLogger(__name__)
 LOGGER.setLevel(logging.INFO)
 
-EMAIL_DELAY_PERIOD = 2
+EMAIL_DELAY_PERIOD = 1
 
 def send_email(subject, text_body, html_body, from_address, to_list, bcc_list=None, reply_to_address=None, cc_list=None, extra_attachments=None):
   headers = {}
