@@ -268,10 +268,20 @@ def email_subscription_reminders(user_list):
     this_season = seasons.last()
     subs = user_models.Subscription.objects.filter(season=last_season).exclude(subscription_type__name__icontains="*")\
                                                                       .select_related("player__user", "subscription_type")
+    new_subs = user_models.Subscription.objects.filter(season=this_season).exclude(subscription_type__name__icontains="*")\
+                                                                      .select_related("player__user", "subscription_type")
+    already_subscribed = set()
+    for sub in new_subs:
+        already_subscribed.add(sub.player)
+
     costs = user_models.SubscriptionCost.objects.filter(season=this_season).exclude(subscription_type__name__icontains="*")\
                                                                            .select_related("subscription_type")
     emails = dict()
     for sub in subs:
+        if not sub.player.is_active:
+            continue
+        if sub.player in already_subscribed:
+            continue
         if user_list and sub.player.user.email not in user_list:
             continue
         email = sub.player.user.email
@@ -280,6 +290,7 @@ def email_subscription_reminders(user_list):
             subs_for_email = emails.setdefault(email, [])
             subs_for_email.append(sub)
     LOGGER.info("found %d unique email addresses with current subscriptions", len(emails))
+    # todo - sort email lists in order of seniority
     email_template = site_models.EmailContent.objects.get(name="Subscription Reminder")
     email_template = Template(email_template.markup)
     email_keys = emails.keys()
