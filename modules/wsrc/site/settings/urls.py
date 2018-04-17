@@ -38,7 +38,6 @@ urlpatterns = [
     url(r'^password/change/$', auth_views.password_change, name='password_change'),
     url(r'^password/change/done/$', auth_views.password_change_done, name='password_change_done'),
 
-    url(r'^memberlist/admin/?', wsrc.site.usermodel.views.admin_memberlist_view),
     url(r'^memberlist/?$', wsrc.site.usermodel.views.MemberListView.as_view(), name="member_list"),
     url(r'^maintenance/?$', wsrc.site.views.maintenance_view, name="maintenance"),
     url(r'^maintenance_issue/?$', wsrc.site.views.MaintenanceIssueCreateView.as_view(), name="create_maintenance_issue"),

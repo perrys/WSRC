@@ -6,7 +6,7 @@ MINIFY = minify
 
 .SECONDARY: _jquery.js _jquery-ui.js _jquery.dataTables.js
 
-all: all.min.js all_admin.js all_admin_mailshot.js all_admin_accounts.js all_admin_memberlist.js all_admin_boxes.js
+all: all.min.js all_admin.js all_admin_mailshot.js all_admin_accounts.js all_admin_boxes.js
 
 %.js: coffeescript/%.coffee
 	coffee -c -p $< > $@
@@ -27,9 +27,6 @@ all_admin_mailshot.js: _jquery.js _jquery-ui.js jquery.loadmask.js wsrc_utils.js
 
 all_admin_accounts.js: _jquery.js _jquery-ui.js jquery.loadmask.js wsrc_utils.js wsrc_ajax.js wsrc_admin_accounts.js
 	cat _jquery.js _jquery-ui.js jquery.loadmask.js wsrc_utils.js wsrc_ajax.js wsrc_admin_accounts.js > $@
-
-all_admin_memberlist.js: _jquery.js _jquery-ui.js _jquery.dataTables.js jquery.loadmask.js wsrc_utils.js wsrc_ajax.js wsrc_admin_memberlist.js
-	cat _jquery.js _jquery-ui.js _jquery.dataTables.js jquery.loadmask.js wsrc_utils.js wsrc_ajax.js wsrc_admin_memberlist.js > $@
 
 all_admin_boxes.js: _jquery.js _jquery-ui.js jquery.loadmask.js wsrc_utils.js wsrc_ajax.js wsrc_boxes.js
 	cat _jquery.js _jquery-ui.js jquery.loadmask.js wsrc_utils.js wsrc_ajax.js wsrc_boxes.js > $@

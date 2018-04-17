@@ -135,45 +135,11 @@ class MyNullBooleanSelect(forms.widgets.Select):
                 'False': False,
                 False: False}.get(value, None)
 
-class UserSerializer(serializers.ModelSerializer):
-    "Simple REST serializer"
-    date_joined = serializers.DateTimeField(format="%Y-%m-%d", input_formats=["%Y-%m-%d"])
-    class Meta:
-        model = User
-        fields = ('id', 'username', 'first_name', 'last_name', 'email', 'is_active', 'date_joined')
-
-
-class PlayerSerializer(serializers.ModelSerializer):
-    "Simple REST serializer, includes foreignkey User"
-    user = UserSerializer()
-    ordered_name = serializers.CharField(source="get_ordered_name")
-    cardnumber = serializers.CharField(source="get_cardnumbers")
-    class Meta:
-        "Class meta information"
-        model = Player
-        fields = ('id', 'ordered_name', 'user', 'cell_phone', 'other_phone', 'wsrc_id', 'booking_system_id',\
-                  'cardnumber', 'squashlevels_id', 'prefs_receive_email', 'date_of_birth')
-        depth = 1
-
 class DoorCardEventSerializer(serializers.ModelSerializer):
     "Simple REST serializer"
     class Meta:
         model = DoorCardEvent
         fields = ('id', 'card', 'event', 'timestamp')
-
-class PlayerView(rest_generics.RetrieveUpdateDestroyAPIView):
-    "REST view"
-    authentication_classes = (SessionAuthentication,)
-    permission_classes = (IsAuthenticated, DjangoModelPermissions,)
-    queryset = Player.objects.all().select_related("user")
-    serializer_class = PlayerSerializer
-
-class UserView(rest_generics.RetrieveUpdateDestroyAPIView):
-    "REST view"
-    authentication_classes = (SessionAuthentication,)
-    permission_classes = (IsAuthenticated, DjangoModelPermissions,)
-    queryset = User.objects.all()
-    serializer_class = UserSerializer
 
 class DoorCardEventCreateView(rest_generics.CreateAPIView):
     "REST view for entereing door card events"
@@ -182,55 +148,6 @@ class DoorCardEventCreateView(rest_generics.CreateAPIView):
     serializer_class = DoorCardEventSerializer
     model = DoorCardEvent
     queryset = DoorCardEvent.objects.all()
-
-class PlayerListView(rest_generics.ListCreateAPIView):
-    "REST view of all players"
-    authentication_classes = (SessionAuthentication,)
-    permission_classes = (IsAuthenticated, DjangoModelPermissions,)
-    queryset = Player.objects.all().select_related("user").prefetch_related("doorcards")
-    serializer_class = PlayerSerializer
-    def post(self, request, format="json"):
-        player = request.data
-        with transaction.atomic():
-            user = player["user"]
-            def get_and_remove(f):
-                val = user[f]; del user[f]; return val
-            username =  get_and_remove("username")
-            password =  get_and_remove("password")
-            email =     get_and_remove("email")
-            is_active = get_and_remove("is_active")
-            user_instance = User.objects.create_user(username, email, password, **user)
-            user_instance.is_active = is_active
-            user_instance.save()
-            player["user"] = user_instance
-            player_instance = Player.objects.create(**player)
-            player_instance.save()
-        return Response(status=status.HTTP_201_CREATED)
-
-class UploadFileForm(forms.Form):
-    "Form accepting spreadsheet uploads"
-    file = forms.FileField(widget=forms.widgets.ClearableFileInput(attrs={'accept':'.csv,.xls'}))
-    sheetname = forms.CharField(initial="masterfile")
-
-class BookingSystemCredentialsForm(forms.Form):
-    "Form for obtaining creditials to access the booking system"
-    username = forms.CharField()
-    password = forms.CharField(widget=forms.widgets.PasswordInput)
-
-class UserForm(forms.ModelForm):
-    "Form for details stored on the User object"
-    is_active = forms.fields.BooleanField(widget=MyNullBooleanSelect)
-    class Meta:
-        model = User
-        fields = ('id', 'username', 'password', 'first_name', 'last_name', 'email', 'is_active', 'date_joined')
-
-class PlayerForm(forms.ModelForm):
-    "Form for player details - contact details and other preferences"
-    prefs_receive_email = forms.fields.NullBooleanField(widget=MyNullBooleanSelect)
-    class Meta:
-        model = Player
-        fields = ('id', 'user', 'cell_phone', 'other_phone', 'wsrc_id', 'date_of_birth',\
-                  'booking_system_id', 'squashlevels_id', 'prefs_receive_email')
 
 class BookingSystemMemberView(APIView):
     "REST methods for an individual user of the booking system"
@@ -287,52 +204,6 @@ class BookingSystemMembersView(APIView):
         bs_vs_db_diffs = sync_utils.get_differences_bs_vs_db(bs_contacts, Player.objects.filter(user__is_active=True).select_related())
         return Response({"contacts": bs_contacts, "diffs": bs_vs_db_diffs})
 
-def admin_memberlist_view(request):
-    if not request.user.is_authenticated() \
-       or (request.user.groups.filter(name="Membership Editor").count() == 0
-           and not request.user.is_superuser):
-        raise PermissionDenied()
-
-    db_rows = Player.objects.order_by('user__last_name', 'user__first_name').select_related("user").prefetch_related("doorcards")
-    ss_memberlist_rows = []
-    upload_form = UploadFileForm()
-    ss_vs_db_diffs = {}
-
-    if request.method == 'POST':
-        upload_form = UploadFileForm(request.POST, request.FILES)
-        if upload_form.is_valid():
-            upload = request.FILES['file']
-            sheetname = request.POST['sheetname']
-            if upload.name.endswith(".xls"):
-                with tempfile.NamedTemporaryFile(suffix="xls") as temp_fh:
-                    for chunk in upload.chunks():
-                        temp_fh.write(chunk)
-                    temp_fh.flush()
-                    ss_memberlist_rows = xls_utils.sheet_to_dict(temp_fh.name, sheetname)
-#            elif upload.name.endswith(".csv"):
-#                reader = csv.DictReader(upload_generator(upload))
-#                ss_memberlist_rows = [row for row in reader]
-            else:
-                return HttpResponseBadRequest("<h1>Unknown file type</h1>")
-            upload_form = None
-            ss_vs_db_diffs = sync_utils.get_differences_ss_vs_db(ss_memberlist_rows, db_rows)
-
-
-    db_rows_serialiser = PlayerSerializer(db_rows, many=True)
-    db_rows_data = JSON_RENDERER.render(db_rows_serialiser.data)
-    kwargs = {
-        "upload_form":         upload_form,
-        "db_members_data":     db_rows_data,
-        "ss_members_data":     JSON_RENDERER.render(ss_memberlist_rows),
-        "ss_vs_db_diffs":      JSON_RENDERER.render(ss_vs_db_diffs),
-        "new_user_form":       UserForm(auto_id='id_newuser_'),
-        "new_member_form":     PlayerForm(auto_id='id_newmember_'),
-        "change_user_form":    UserForm(auto_id='id_changeuser_'),
-        "change_member_form":  PlayerForm(auto_id='id_changemember_'),
-        "booking_credentials_form":  BookingSystemCredentialsForm(),
-    }
-    return render(request, "memberlist_admin.html", kwargs)
-
 @login_required
 def member_activity_view(request):
     if not request.user.is_staff:
@@ -359,7 +230,6 @@ def member_activity_view(request):
         response['Content-Disposition'] = 'attachment; filename="activity_{start_date:%Y-%m-%d}_{end_date:%Y-%m-%d}.xlsx"'\
                                           .format(**locals())
     return response
-
 
 @login_required
 def settings_view(request):

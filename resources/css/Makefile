@@ -26,9 +26,6 @@ all_mailshot.css: _jquery-ui.css jquery.loadmask.css wsrc_mailshot.css
 all_accounts.css: _jquery-ui.css jquery.loadmask.css _wsrc_accounts.css
 	cat _jquery-ui.css jquery.loadmask.css _wsrc_accounts.css > $@
 
-all_admin_memberlist.css: _jquery-ui.css _jquery.dataTables.css jquery.loadmask.css _wsrc_admin_memberlist.css
-	cat _jquery-ui.css _jquery.dataTables.css jquery.loadmask.css _wsrc_admin_memberlist.css > $@
-
 all_admin_boxes.css: _jquery-ui.css jquery.loadmask.css _wsrc_admin_boxes.css
 	cat _jquery-ui.css jquery.loadmask.css _wsrc_admin_boxes.css > $@
 
@@ -45,9 +42,6 @@ wsrc_%.css: less/%.less
 	$(LESSC)  $< > $@
 
 _wsrc_accounts.css: wsrc_accounts.less
-	$(LESSC) $< > $@
-
-_wsrc_admin_memberlist.css: wsrc_admin_memberlist.less
 	$(LESSC) $< > $@
 
 _wsrc_admin_boxes.css: wsrc_admin_boxes.less
