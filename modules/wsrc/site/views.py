@@ -524,22 +524,6 @@ class SendCalendarEmail(APIView):
             err += e.message
             return HttpResponse(err, status=503)
 
-class MaintenanceForm(ModelForm):
-    class Meta:
-        model = MaintenanceIssue
-        fields = ["description"]
-        widgets = {
-            "description": Textarea(attrs={"rows": "3"})
-        }
-
-class SuggestionForm(ModelForm):
-    class Meta:
-        model = Suggestion
-        fields = ["description"]
-        widgets = {
-            "description": Textarea(attrs={"rows": "6"})
-        }
-
 def notify(template_name, kwargs, subject, to_list, cc_list, from_address, attachments=None):
     text_body, html_body = email_utils.get_email_bodies(template_name, kwargs)
     email_utils.send_email(subject, text_body, html_body, from_address, to_list, cc_list=cc_list, extra_attachments=attachments)
@@ -571,7 +555,6 @@ class SuggestionCreateView(CreateView):
     template_name = 'suggestion_form.html'
     success_url = reverse_lazy("suggestions")
     form_class = SuggestionForm
-    fields = ["description"]
     def form_valid(self, form):
         form.instance.suggester = self.request.user.player
         result = super(SuggestionCreateView, self).form_valid(form)
