@@ -6,9 +6,6 @@
   <link rel="stylesheet" href="/static/css/all_admin.css">
   <script src="/static/js/all_admin.js"></script>
 
-{% load kwacros %}
-{% loadkwacros 'form_macros.html' %}
-
   <title>Tournament Admin - Woking Squash Rackets Club</title>
 
   <script type="text/javascript">
@@ -23,8 +20,6 @@ jQuery(document).ready(function(){WSRC_admin.onReady(players, competition_data)}
   <div id="tabs" class="initiallyHidden">
     <ul>
       <li><a href="#manage_tournament">Manage Tournament</a></li>
-      <li><a href="#new_tournament">Create Tournament</a></li>
-      <li><a href="#new_comp_group">Create Tournament Group</a></li>
     </ul>
 
     <div id="manage_tournament">
@@ -44,10 +39,11 @@ jQuery(document).ready(function(){WSRC_admin.onReady(players, competition_data)}
           <div class="ui-field-contain">
             <label for="tournament">Tournament:</label>
             <select name="tournament" onchange="document.location='/tournaments/admin/' + this.options[this.selectedIndex].value">
+              <option value=""></option>
               {% for yearly_tournaments in tournaments|dictsortreversed:'year' %}
               <optgroup label="{{ yearly_tournaments.year }}">
                 {% for tournament in yearly_tournaments.competitions %}
-                 <option value="{{ yearly_tournaments.year }}/{{ tournament.name }}" {% if tournament == edit_tournament_form.instance %}selected="selected"{% endif %}>{{ tournament.name }} {{ yearly_tournaments.year }}</option>
+                 <option value="{{ yearly_tournaments.year }}/{{ tournament.name }}" {% if tournament == selected_competition %}selected="selected"{% endif %}>{{ tournament.name }} {{ yearly_tournaments.year }}</option>
                  {% endfor %}
               </optgroup>
               {% endfor %}
@@ -77,62 +73,6 @@ jQuery(document).ready(function(){WSRC_admin.onReady(players, competition_data)}
           </form>
         </fieldset>
     </div>
-
-    <div id="new_tournament">
-      {% if new_tournament_form.errors %}
-      <p class="form_error_message ui-btn-icon ui-btn-icon-left ui-icon-alert">Validation Error. 
-        Please try again.
-      </p>
-      {% endif %}
-      {% if new_tournament_form.success_message %}
-      <p class="form_success_message">
-        {{ new_tournament_form.success_message }}
-      </p>
-      {% endif %}
-
-      <form method="post" action="#new_tournament">{% csrf_token %}
-        <input type="hidden" name="action" value="new_tournament">
-        <input type="hidden" name="state" value="not_started">
-        <fieldset name="tournament_details" class="ui-corner-all">
-          <legend>New Tournament</legend>
-          {% usekwacro createfield new_tournament_form.group %}
-          {% usekwacro createfield new_tournament_form.name %}
-          {% usekwacro createfield new_tournament_form.end_date %}
-          <div class="ui-field-contain">
-            <label>&nbsp;</label>
-            <input type="submit" value="Create" style="float: left;" ></input>
-          </div>
-        </fieldset>
-      </form>
-    </div>
-
-    <div id="new_comp_group">
-      {% if new_group_form.errors %}
-      <p class="form_error_message ui-btn-icon ui-btn-icon-left ui-icon-alert">Validation Error. 
-        Please try again.
-      </p>
-      {% endif %}
-      {% if new_group_form.success_message %}
-      <p class="form_success_message">
-        {{ new_group_form.success_message }}
-      </p>
-      {% endif %}
-
-      <form method="post" action="#new_comp_group">{% csrf_token %}
-        <input type="hidden" name="action" value="new_comp_group">
-        <input type="hidden" name="comp_type" value="wsrc_tournaments">
-        <fieldset name="tournamentgroup_details" class="ui-corner-all">
-          <legend>New Tournament Group</legend>
-          {% usekwacro createfield new_group_form.name %}
-          {% usekwacro createfield new_group_form.end_date %}
-          <div class="ui-field-contain">
-            <label>&nbsp;</label>
-            <input type="submit" value="Create" style="float: left;" ></input>
-          </div>
-        </fieldset>
-      </form>
-    </div>
-
   </div>
 
 </body>

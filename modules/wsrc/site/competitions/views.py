@@ -27,6 +27,7 @@ from wsrc.utils.timezones import parse_iso_date_to_naive
 from wsrc.utils.sync_utils import dotted_lookup
 from wsrc.utils import email_utils
 
+
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied, SuspiciousOperation
 from django.core.urlresolvers import reverse
@@ -36,6 +37,7 @@ from django.template import Template, Context
 from django.template.response import TemplateResponse
 from django.forms import ModelForm, ModelChoiceField
 from django.http import HttpResponse, HttpResponseBadRequest
+from django.views.decorators.http import require_GET
 from django.views.generic import TemplateView, View
 from django.views.generic.edit import UpdateView, CreateView
 from django.utils.decorators import method_decorator
@@ -816,73 +818,31 @@ class MatchCreateView(MatchEntryViewBase, CreateView):
         self.object = None
         return super(MatchCreateView, self).dispatch(request, *args, **kwargs)
 
-class NewCompetitionGroupForm(ModelForm):
-    class Meta:
-        model = CompetitionGroup
-        fields = ["name", "comp_type", "end_date"]
-
-class NewTournamentForm(ModelForm):
-    group = ModelChoiceField(queryset=CompetitionGroup.objects.filter(comp_type = "wsrc_tournaments"),
-                             initial=CompetitionGroup.objects.filter(comp_type = "wsrc_tournaments").order_by('-end_date')[0])
-    class Meta:
-        model = Competition
-        fields = ["name", "end_date", "group", "state"]
-
-class EditTournamentForm(ModelForm):
-    class Meta:
-        model = Competition
-        fields = ["name"]
-
+@require_GET
 def bracket_admin_view(request, year=None, name=None):
     if not request.user.is_authenticated():
         raise PermissionDenied()
 
     competition = None
     comp_data = '{}'
+    comps = Competition.objects.filter(group__comp_type="wsrc_tournaments").select_related("group")\
+                                                                           .prefetch_related("entrant_set__player1__user", \
+                                                                           "entrant_set__player2__user")
     if name is not None:
-        group = get_object_or_404(CompetitionGroup.objects, end_date__year=year, comp_type='wsrc_tournaments')
         name = name.replace("_", " ")
-        competition = get_object_or_404(group.competition_set, name__iexact=name)
+        competition = get_object_or_404(comps, name__iexact=name, group__end_date__year=year)
         comp_data = JSON_RENDERER.render(CompetitionSerializer(competition, context={"request": FAKE_REQUEST_CONTEXT}).data)
 
-    new_group_form        = None
-    new_tournament_form   = None
-    edit_tournament_form  = None
-    success_message = None
-
-    if request.method == 'POST':
-
-        queryDict = request.POST
-        action = request.POST.get("action", None)
-        if action == "new_comp_group":
-            new_group_form = NewCompetitionGroupForm(request.POST, auto_id='id_groupform_%s')
-            if new_group_form.is_valid():
-                new_group_form.save()
-                new_group_form.success_message = "created group " + str(new_group_form.instance)
-        elif action == "new_tournament":
-            new_tournament_form = NewTournamentForm(request.POST, auto_id='id_compform_%s')
-            if new_tournament_form.is_valid():
-                new_tournament_form.save()
-                new_tournament_form.success_message = "created tournament " + str(new_tournament_form.instance)
-        else:
-            return HttpResponseBadRequest("<h1>invalid form data</h1>")
-
-    if new_tournament_form is None:
-        new_tournament_form   = NewTournamentForm(auto_id='id_compform_%s')
-    if new_group_form is None:
-        new_group_form        = NewCompetitionGroupForm(auto_id='id_groupform_%s')
-    if edit_tournament_form is None:
-        edit_tournament_form  = EditTournamentForm(auto_id='id_editform_%s', instance=competition)
-
-    tournaments = []
-    for group in CompetitionGroup.objects.filter(comp_type="wsrc_tournaments"):
-        tournaments.append({"year": group.end_date.year, "competitions": group.competition_set.all()})
+    
+    tournaments = dict()
+    for comp in comps:
+        comp_list_for_year = tournaments.setdefault(comp.group.end_date.year, [])
+        comp_list_for_year.append(comp)
+    tournaments = [{"year": key, "competitions": value} for (key, value) in tournaments.items()]
 
     return render(request, 'tournaments_admin.html', {
-        'edit_tournament_form': edit_tournament_form,
-        'new_tournament_form':  new_tournament_form,
-        'new_group_form':       new_group_form,
-        'players':              Player.objects.filter(user__is_active=True),
+        'selected_competition': competition,
+        'players':              Player.objects.filter(user__is_active=True).select_related("user"),
         'competition_data':     comp_data,
         'tournaments':          tournaments,
     })
