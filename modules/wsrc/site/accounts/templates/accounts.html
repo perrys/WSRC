@@ -20,9 +20,7 @@ jQuery(document).ready(function(){
   </script>
 
 </head>
-{% load kwacros %}
 {% load wsrc_utils %}
-{% loadkwacros 'form_macros.html' %}
 
 <body>
   <div id="tabs" class="initiallyHidden">
@@ -80,8 +78,8 @@ jQuery(document).ready(function(){
 {% endfor %}
             </select>
           </div>
-          {% usekwacro createfield_adhoc "Start Date" "start_date" "transactions_start_date_input" "datepicker datepicker-three-months" "wsrc.admin.accounts.on('update_transaction_and_summary_tables')" %}
-          {% usekwacro createfield_adhoc "End Date"   "end_date"   "transactions_end_date_input"   "datepicker datepicker-today" "wsrc.admin.accounts.on('update_transaction_and_summary_tables')" %}
+          {% include "form_field_snippet_jq_ui.html" with label="Start Date" name="start_date" id="transactions_start_date_input" class="datepicker datepicker-three-months" onchange="wsrc.admin.accounts.on('update_transaction_and_summary_tables')" %}
+          {% include "form_field_snippet_jq_ui.html" with label="End Date"   name="end_date"   id="transactions_end_date_input"   class="datepicker datepicker-today" onchange="wsrc.admin.accounts.on('update_transaction_and_summary_tables')" %}
           <div class="ui-field-contain">
             <label>Date Type:</label>
             <div class="radio-buttonset">
@@ -238,13 +236,13 @@ jQuery(document).ready(function(){
         <fieldset name="file_upload" class="ui-corner-all">
           <legend>Transaction Upload</legend>
           <div class="information-set">
-            {% usekwacro createfield_adhoc "# Transactions"   "transaction_count"   "upload_transaction_count_input" "readonly"%}
-            {% usekwacro createfield_adhoc "# Uncategorized"   "uncategorized_count"   "upload_uncategorized_count_input" "errorfield readonly"%}
-            {% usekwacro createfield_adhoc "Incoming"   "incoming"   "upload_incoming_input" "readonly"%}
-            {% usekwacro createfield_adhoc "Outgoing"   "outgoing"   "upload_outgoing_input" "readonly"%}
+            {% include "form_field_snippet_jq_ui.html" with label="# Transactions"   name="transaction_count"   id="upload_transaction_count_input" class="readonly"%}
+            {% include "form_field_snippet_jq_ui.html" with label="# Uncategorized"   name="uncategorized_count"   id="upload_uncategorized_count_input" class="errorfield readonly"%}
+            {% include "form_field_snippet_jq_ui.html" with label="Incoming"   name="incoming"   id="upload_incoming_input" class="readonly"%}
+            {% include "form_field_snippet_jq_ui.html" with label="Outgoing"   name="outgoing"   id="upload_outgoing_input" class="readonly"%}
           </div>
-          {% usekwacro createfield_adhoc "Start Date" "start_date" "upload_start_date_input" "datepicker" "wsrc.admin.accounts.on('handle_upload_data_changed')" %}
-          {% usekwacro createfield_adhoc "End Date"   "end_date"   "upload_end_date_input"   "datepicker" "wsrc.admin.accounts.on('handle_upload_data_changed')" %}
+          {% include "form_field_snippet_jq_ui.html" with label="Start Date" name="start_date" id="upload_start_date_input" class="datepicker" onchange="wsrc.admin.accounts.on('handle_upload_data_changed')" %}
+          {% include "form_field_snippet_jq_ui.html" with label="End Date"   name="end_date"   id="upload_end_date_input"   class="datepicker" onchange="wsrc.admin.accounts.on('handle_upload_data_changed')" %}
           <div class="ui-field-contain">
             <label for="upload_account_selector">Account:</label>
             <select name="account" id="upload_account_selector" disabled="disabled">
@@ -258,10 +256,10 @@ jQuery(document).ready(function(){
         </fieldset>
       </form>
 {% else %}
-      <form action="{% url 'wsrc.site.accounts.views.accounts_view' %}/#upload_tab" enctype="multipart/form-data" method="post">{% csrf_token %}
+      <form action="#upload_tab" enctype="multipart/form-data" method="post">{% csrf_token %}
         <fieldset name="file_upload" class="ui-corner-all">
           <legend>File Upload</legend>
-{% usekwacro createfield form.file True %}
+{% include "form_field_snippet_jq_ui.html" with field=form.file add_submit_button=True %}
         </fieldset>
       </form>
 {% endif %}

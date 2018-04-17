@@ -1,0 +1,16 @@
+{% if field %}
+<div class="{{ class_wrapper }} {% if field.errors %}field-error{% endif %}"
+{% if field.help_text %}title="{{ field.help_text|safe }}"{% endif %}
+     >{{ field.label_tag }}{{ field }}
+{% if field.errors %}<div class="clear-all"></div><label>&nbsp;</label><span class="field-error">{% for err in field.errors %}{{ err }}. {% endfor %}</span>{% endif %}
+{% if add_submit_button %}
+<input type="submit" value="{% if submit_button_value %}{{ submit_button_value }}{% else %}Submit{% endif %}" />
+{% endif %}
+</div>
+{% else %}
+<div class="ui-field-contain">
+  <label for="{{ id }}" class="{{ class }}">{{ label }}:</label><input name="{{ name  }}" id="{{ id }}" class="{{ class }}" onchange="{{ onchange }}">
+</div>
+{% endif %}
+
+
