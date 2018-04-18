@@ -31,6 +31,26 @@ class WSRC_court_booking
     $("a.refresh").on("click", (evt) => @load_day_table(evt))
     $("a.next").on("click", (evt) => @load_day_table(evt, 1))
 
+    @still_moving = false
+    @start = null
+    $("div#booking-day").on("touchstart", (evt) =>
+      evt = evt.originalEvent
+      if evt.touches.length == 1
+          @start = evt.touches[0].pageX;
+          @still_moving = true;
+    )
+    $("div#booking-day").on("touchmove", (evt) =>
+      evt = evt.originalEvent
+      if @still_moving
+        delta_x = @start - evt.touches[0].pageX
+        if delta_x > 50
+          @still_moving = false
+          @load_day_table(evt, 1)
+        else if delta_x < -50
+          @still_moving = false
+          @load_day_table(evt, -1)
+    )
+
     $(document).keydown( (e) =>
       if e.altKey and e.which == 82 # 'r' key 
         e.preventDefault()
