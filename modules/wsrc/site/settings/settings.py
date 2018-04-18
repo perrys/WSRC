@@ -16,13 +16,19 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
 # Import sensitive settings not stored in this file
 execfile(os.path.expanduser("~/etc/.wsrc-settings"))
 
-from django.conf.global_settings import TEMPLATE_CONTEXT_PROCESSORS as TCP
-
-TEMPLATE_CONTEXT_PROCESSORS = TCP + (
-    'django.core.context_processors.request',
-)
-
-DEBUG_TOOLBAR_PATCH_SETTINGS = False
+TEMPLATES = [
+    {
+        'BACKEND': 'django.template.backends.django.DjangoTemplates',
+        'APP_DIRS': True,
+        'OPTIONS': {
+            'context_processors': [
+                'django.template.context_processors.debug',
+                'django.template.context_processors.request',
+                'django.contrib.auth.context_processors.auth',
+            ]
+        },
+    }
+]
 
 # Application definition
 
@@ -92,10 +98,6 @@ STATIC_URL = '/static/'
 STATICFILES_DIRS = (
     os.path.join(BASE_DIR, "../../resources"),
     '/var/www/static',
-)
-
-TEMPLATE_DIRS = (
-    os.path.join(BASE_DIR, "site/templates"),
 )
 
 INTERNAL_IPS = "127.0.0.1"

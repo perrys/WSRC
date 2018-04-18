@@ -29,14 +29,14 @@ pip install mysqlclient
 
 ```sh
 pip install setuptools
-pip install Django==1.6
-pip install djangorestframework==3.0.2
+pip install Django==1.11
+pip install djangorestframework==3.8.2
 pip install markdown              # Markdown support for the browsable API.
 pip install beautifulsoup4
 pip install xlrd
 pip install xlsxwriter
 pip install iCalendar
-pip install django-debug-toolbar==1.4
+pip install django-debug-toolbar==1.9.1
 
 # old modules, no longer required:
 pip install django-coverage 
