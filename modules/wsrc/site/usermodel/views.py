@@ -62,6 +62,7 @@ JSON_RENDERER = JSONRenderer()
 LOGGER = logging.getLogger(__name__)
 LOGGER.setLevel(logging.INFO)
 
+MEMBERSHIP_SEC_EMAIL_ADDRESS     = "membership@wokingsquashclub.org"
 
 class SearchForm(forms.Form):
     search = forms.CharField()
@@ -305,7 +306,7 @@ class MembershipApplicationCreateView(CreateView):
         params = {"application": self.object}
         (text_body, html_body) = email_utils.get_email_bodies("Membership App. Verify Email", params)
         subject = "Woking Squash Club Membership Application"
-        from_address = "membership@wokingsquashclub.org"
+        from_address = MEMBERSHIP_SEC_EMAIL_ADDRESS
         to_list = [self.object.email]
         email_utils.send_email(subject, text_body, html_body, from_address, to_list)
 
@@ -321,4 +322,14 @@ class MembershipApplicationVerifiedEmailView(DetailView):
             return HttpResponseRedirect(reverse("membership_application_verify_email_failed"))
         self.object.email_verified = True
         self.object.save()
+        self.send_verification_complete_email()
         return self.render_to_response(context)
+
+    def send_verification_complete_email(self):
+        params = {"application": self.object}
+        (text_body, html_body) = email_utils.get_email_bodies("Membership App. Email Verified", params)
+        subject = "New Membership Application - {last_name}, {first_name}".format(**self.object.__dict__)
+        from_address = MEMBERSHIP_SEC_EMAIL_ADDRESS
+        to_list = [MEMBERSHIP_SEC_EMAIL_ADDRESS]
+        email_utils.send_email(subject, text_body, html_body, from_address, to_list)
+    
