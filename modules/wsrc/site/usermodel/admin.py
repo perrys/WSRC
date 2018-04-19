@@ -637,6 +637,7 @@ class MembershipApplicationForm(forms.ModelForm):
         if self.cleaned_data["signed_off"] and not self.instance.player:
             if not self.cleaned_data["password"]:
                 raise ValidationError("Cannot sign off unless a password is provided.")
+        return super(MembershipApplicationForm, self).clean()
 
     class Meta:
         fields = ["first_name", "last_name", "email", "date_of_birth", "cell_phone", "other_phone",
@@ -655,7 +656,7 @@ class MembershipApplicationAdmin(admin.ModelAdmin):
         if form.cleaned_data["signed_off"] and not obj.player:
             password = form.cleaned_data["password"]
             obj.process_application(password)
-        super(MembershipApplicationAdmin, self).save_model(request, obj, form, change)
+        return super(MembershipApplicationAdmin, self).save_model(request, obj, form, change)
 
     def player_link(self, obj):
         if obj.player_id is None:
