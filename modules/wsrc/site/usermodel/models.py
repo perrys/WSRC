@@ -502,6 +502,9 @@ class MembershipApplication(AbstractPlayer, AbstractSubscription):
         subscription = Subscription(**kwargs)
         subscription.save()
         
+    def __unicode__(self):
+        result = "{last_name}, {first_name}".format(**self.__dict__)
+        return result
         
     class Meta:
         verbose_name = "Membership Application"
