@@ -18,6 +18,7 @@ import datetime
 import httplib
 import httplib2
 import json
+import logging
 import operator
 import sys
 import urllib
@@ -47,6 +48,8 @@ from wsrc.site.usermodel.models import Player
 from wsrc.utils.html_table import Table, Cell, SpanningCell
 from wsrc.utils import timezones, email_utils
 
+LOGGER = logging.getLogger(__name__)
+LOGGER.setLevel(logging.WARNING)
 
 BOOKING_SYSTEM_EMAIL_ADRESS = "court_booking@wokingsquashclub.org"
 
@@ -331,7 +334,7 @@ def edit_entry_view(request, id=None):
             booking_form.add_error(None, str(e))
 
     elif method == "PATCH":
-        booking_form = BookingForm(dict(request.POST))
+        booking_form = BookingForm(request.POST)
         if id is None or booking_user_id is None:
             raise SuspiciousOperation()
         try:
@@ -360,7 +363,7 @@ def edit_entry_view(request, id=None):
             else:
                 booking_form.add_error(None, str(e))
         except EmailingException, e:
-            booking_form.add_error(None, error)
+            booking_form.add_error(None, e)
 
     elif method == "GET":
         if id is None:
@@ -471,11 +474,12 @@ def send_calendar_invite(request, slot, recipients, event_type):
     to_list = [user.email for user in recipients]
     subject="WSRC Court Booking - {date:%Y-%m-%d} {start_time:%H:%M} Court {court}".format(**slot)
     try:
-        email_utils.send_email(subject, None, None,
+        email_utils.send_email(subject, "", None,
                                from_address=BOOKING_SYSTEM_EMAIL_ADRESS,
                                to_list=to_list, cc_list=None,
                                extra_attachments=[msg_bodies, msg_cal])
     except Exception, e:
+        LOGGER.exception("unable to send email")
         err = ""
         if hasattr(e, "smtp_code"):
             err += "EMAIL SERVER ERROR [{smtp_code:d}] {smtp_error:s} ".format(**e.__dict__)
@@ -537,7 +541,7 @@ def create_icalendar(request, cal_data, recipients, method):
 @login_required
 def calendar_invite_view(request, id):
     if request.method == "POST":
-        data = dict(request.POST)
+        data = dict(request.POST.items())
         data["invitee_1"] = request.user.id
         form = CalendarInviteForm(data)
         if form.is_valid():
