@@ -39,13 +39,13 @@ def send_markdown_email(subject, markdown_body, from_address, to_list, bcc_list=
   html_content = markdown.markdown(markdown_body)
   send_email(subject, markdown_body, html_content, from_address, to_list, bcc_list, reply_to_address)
 
-def get_email_bodies(template_name, params):
+def get_email_bodies(template_name, params, extensions=['markdown.extensions.extra']):
   from wsrc.site.models import EmailContent
   template_obj = EmailContent.objects.get(name=template_name)
   email_template = Template(template_obj.markup)
   context = Context(params)
   context["content_type"] = "text/html"
-  html_body = markdown.markdown(email_template.render(context), extensions=['markdown.extensions.extra'])
+  html_body = markdown.markdown(email_template.render(context), extensions=extensions)
   context["content_type"] = "text/plain"
   text_body = email_template.render(context)
   return text_body, html_body
