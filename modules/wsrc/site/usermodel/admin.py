@@ -39,6 +39,10 @@ from .models import Player, Season, Subscription, SubscriptionPayment,\
 from wsrc.utils.form_utils import SelectRelatedQuerysetMixin, CachingModelChoiceField, \
     get_related_field_limited_queryset, PrefetchRelatedQuerysetMixin
 from wsrc.utils.upload_utils import upload_generator
+from wsrc.site.settings import settings
+from wsrc.utils import email_utils
+
+MEMBERSHIP_SEC_EMAIL_ADDRESS     = "membership@wokingsquashclub.org"
 
 class UserProfileInline(admin.StackedInline):
     "Simple inline for player in User admin"
@@ -317,7 +321,8 @@ class PlayerAdmin(SelectRelatedQuerysetMixin, PrefetchRelatedQuerysetMixin, admi
 
     def changelist_view(self, *args, **kwargs):
         view = super(PlayerAdmin, self).changelist_view(*args, **kwargs)
-        view.context_data['upload_csv_form'] = PlayerListUploadForm
+        if hasattr(view, "context_data"):
+            view.context_data['upload_csv_form'] = PlayerListUploadForm
         return view
 
     def upload_csv_view(self, request):
@@ -656,6 +661,7 @@ class MembershipApplicationAdmin(admin.ModelAdmin):
         if form.cleaned_data["signed_off"] and not obj.player:
             password = form.cleaned_data["password"]
             obj.process_application(password)
+            self.send_application_complete_email(obj, password)
         return super(MembershipApplicationAdmin, self).save_model(request, obj, form, change)
 
     def player_link(self, obj):
@@ -669,6 +675,15 @@ class MembershipApplicationAdmin(admin.ModelAdmin):
     player_link.help_text = "(set after saved and signed-off - once member has been created)"
     player_link.allow_tags = True
 
+    def send_application_complete_email(self, application_object, password):
+        params = {"application": application_object, "password": password, "base_url": settings.BASE_URL}
+        extensions = ['markdown.extensions.extra', 'markdown.extensions.smarty']
+        (text_body, html_body) = email_utils.get_email_bodies("Membership App. Complete", params, extensions=extensions)
+        subject = "Welcome to Woking Squash Club"
+        from_address = MEMBERSHIP_SEC_EMAIL_ADDRESS
+        to_list = [MEMBERSHIP_SEC_EMAIL_ADDRESS]
+        email_utils.send_email(subject, text_body, html_body, from_address, to_list)
+    
 
 admin.site.register(Season, SeasonAdmin)
 admin.site.register(Subscription, SubscriptionAdmin)
