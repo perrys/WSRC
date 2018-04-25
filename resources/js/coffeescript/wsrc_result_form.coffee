@@ -51,7 +51,7 @@ class WSRC_result_form
     name = selector.attr("name")
     op_1_or_2 = name.slice(-1)
     @set_opponent_name(text, op_1_or_2)
-    blank_scores = true
+    invalid_opponents = true
     if team_id
       other_idx = if op_1_or_2 == "1" then "2" else "1"
       other_selector = @form.find("select[name='team#{ other_idx }']")
@@ -70,9 +70,10 @@ class WSRC_result_form
           @load_scores_for_opponents(team_id, other_team_id)
         else
           @load_scores_for_opponents(other_team_id, team_id)
-        blank_scores = false
-    if blank_scores
+        invalid_opponents = false
+    if invalid_opponents
       @blank_scores()
+      @set_action()
     @do_validation()
 
   handle_result_type_changed: (evt) ->
@@ -165,6 +166,9 @@ class WSRC_result_form
 
   blank_scores: () ->
     @form.find("table.score-entry :input").val("")
+    radio = @form.find("input[name='walkover'][value='']")
+    radio.prop("checked", true)
+
 
   load_scores_for_opponents: (team1_id, team2_id) ->
     [existing_match, isreversed] = WSRC_result_form.find_match_for_ids(@competition_data.matches, team1_id, team2_id)
@@ -172,8 +176,15 @@ class WSRC_result_form
     action = ""
     if existing_match
       action = @base_path + "/#{ existing_match.id }"  + @base_path_suffix
+    @set_action(action)
+
+  set_action: (action) ->
+    if action
+      history_url = action
+    else
+      action = history_url = @base_path + @base_path_suffix
     if history
-      history.pushState({}, "", action)
+      history.pushState({}, "", history_url)
     @form[0].action = action
 
   load_scores_for_match: (existing_match, isreversed) ->
