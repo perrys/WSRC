@@ -106,7 +106,18 @@ def remove_and_inactivate(modeladmin, request, queryset):
         user.save()
         subscription.delete()
 remove_and_inactivate.short_description = "Remove Subscripiton & Set Inactive"
-    
+
+def create_new_season_subscription(modeladmin, request, queryset):
+    latest_season = Season.latest()
+    for subscription in queryset:
+        if subscription.season_id != latest_season.pk:
+            new_sub = Subscription(subscription_type=subscription.subscription_type,
+                                   season=latest_season,
+                                   pro_rata_date=None,
+                                   payment_frequency=subscription.payment_frequency,
+                                   player=subscription.player)
+            new_sub.save()
+
 class SubscriptionAdmin(admin.ModelAdmin):
     "Subscription admin - heavilly used for subs management"
     inlines = (SubscriptionPaymentInline,)
@@ -121,7 +132,7 @@ class SubscriptionAdmin(admin.ModelAdmin):
     form = SubscriptionForm
     list_per_page = 400
     search_fields = ('player__user__first_name', 'player__user__last_name')
-    actions = (remove_and_inactivate,)
+    actions = (remove_and_inactivate, create_new_season_subscription)
     save_as = True
 
     def email(self, obj):
