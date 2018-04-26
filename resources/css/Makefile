@@ -9,7 +9,7 @@ CSS_TARGETS = _jquery.mobile.datepicker.css wsrc_common.css wsrc_courts.css wsrc
 .SECONDARY: _jquery.mobile.datepicker.css _jquery.dataTables.css _jquery-ui.css
 .PHONY: all
 
-all: all.css all.min.css all_admin.css all_mailshot.css all_accounts.css
+all: all.css all.min.css all_admin.css all_admin_boxes.css all_mailshot.css all_accounts.css
 
 %.min.css: %.css
 	$(MINIFY) $< > $@
@@ -26,8 +26,8 @@ all_mailshot.css: _jquery-ui.css jquery.loadmask.css wsrc_mailshot.css
 all_accounts.css: _jquery-ui.css jquery.loadmask.css _wsrc_accounts.css
 	cat _jquery-ui.css jquery.loadmask.css _wsrc_accounts.css > $@
 
-all_admin_boxes.css: _jquery-ui.css jquery.loadmask.css _wsrc_admin_boxes.css
-	cat _jquery-ui.css jquery.loadmask.css _wsrc_admin_boxes.css > $@
+all_admin_boxes.css: _jquery-ui.css jquery.loadmask.css wsrc_admin_boxes.css
+	cat _jquery-ui.css jquery.loadmask.css wsrc_admin_boxes.css > $@
 
 _jquery-ui.css:
 	wget http://ajax.googleapis.com/ajax/libs/jqueryui/1.11.2/themes/smoothness/jquery-ui.css -O $@
@@ -42,9 +42,6 @@ wsrc_%.css: less/%.less
 	$(LESSC)  $< > $@
 
 _wsrc_accounts.css: wsrc_accounts.less
-	$(LESSC) $< > $@
-
-_wsrc_admin_boxes.css: wsrc_admin_boxes.less
 	$(LESSC) $< > $@
 
 
