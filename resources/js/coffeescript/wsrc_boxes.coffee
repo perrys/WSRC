@@ -532,7 +532,7 @@ class WSRC_boxes_admin extends WSRC_boxes
         jqmask.css("z-index", "-1")
         alert("ERROR #{ xhr.status }: #{ xhr.statusText }\nResponse: #{ xhr.responseText }\n\nEmail for '#{ competition.name }' may not have been sent.")
     jqmask.mask("Sending start-of-league emails for \'#{ competition.name }\'...")
-    wsrc.ajax.ajax_bare_helper("/boxes/admin/email", data, opts, "PUT")
+    wsrc.ajax.ajax_bare_helper("/boxes/admin/email/", data, opts, "PUT")
 
 
   send_league_start_emails: (comp_group) ->
