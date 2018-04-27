@@ -14,6 +14,8 @@
 # along with WSRC.  If not, see <http://www.gnu.org/licenses/>.
 
 import csv
+import re
+
 from django.db.models import Q
 
 from .forms import MatchScoresForm
@@ -890,9 +892,19 @@ class SendCompetitionEmail(CompetitionEditorPermissionedAPIView):
         email_template = EmailContent.objects.get(name=template_name)
         email_template = Template(email_template.markup)
 
+        def format_url(label, base_url, end_url):
+            mobile_pattern = r"\+44\s*7[\d\s]+|07[\d\s]+"
+            telephone_pattern = r"\+?[\d\s]"
+            if re.match(mobile_pattern, label):
+                return "sms:" + label
+            elif re.match(telephone_pattern, label):
+                return "tel:" + label
+            return "http:" + base_url + label + end_url
         context = Context({"competition": competition})
         context["content_type"] = "text/html"
-        html_body = markdown.markdown(email_template.render(context))
+        extensions = ['markdown.extensions.extra', 'markdown.extensions.smarty', 'markdown.extensions.wikilinks']
+        configs = {'markdown.extensions.wikilinks': {'build_url': format_url}}
+        html_body = markdown.markdown(email_template.render(context), extensions=extensions, extension_configs=configs)
         context["content_type"] = "text/plain"
         text_body = email_template.render(context)
 
