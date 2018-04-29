@@ -114,6 +114,20 @@ class Player(AbstractPlayer):
     get_age.short_description = "Age"
     get_age.admin_order_field = 'date_of_birth'
 
+    def get_email_maybe_redacted(self, redacted_value=None):
+        return self._redact(self.user.email, redacted_value)
+
+    def get_other_phone_maybe_redacted(self, redacted_value=None):
+        return self._redact(self.other_phone, redacted_value)
+    
+    def get_cell_phone_maybe_redacted(self, redacted_value=None):
+        return self._redact(self.cell_phone, redacted_value)
+    
+    def _redact(self, value, redacted_value=None):            
+        if self.prefs_display_contact_details:
+            return value
+        return redacted_value or "[--redacted--]"
+        
     def junior_or_senior(self):
         age = self.get_age()
         if age is not None and age < 19:
