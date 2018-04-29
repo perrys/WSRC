@@ -31,24 +31,32 @@ class WSRC_court_booking
     $("a.refresh").on("click", (evt) => @load_day_table(evt))
     $("a.next").on("click", (evt) => @load_day_table(evt, 1))
 
+    duration_threshold = 1000
+    distance_threshold = 50
     @still_moving = false
     @start = null
+    @start_time = null
     $("div#booking-day").on("touchstart", (evt) =>
       evt = evt.originalEvent
       if evt.touches.length == 1
           @start = evt.touches[0].pageX;
+          @start_time = (new Date()).getTime()
           @still_moving = true;
     )
     $("div#booking-day").on("touchmove", (evt) =>
       evt = evt.originalEvent
       if @still_moving
         delta_x = @start - evt.touches[0].pageX
-        if delta_x > 50
+        duration = (new Date()).getTime() - @start_time
+        if duration < duration_threshold
+          if delta_x > distance_threshold
+            @still_moving = false
+            @load_day_table(evt, 1)
+          else if delta_x < (-1.0 * distance_threshold)
+            @still_moving = false
+            @load_day_table(evt, -1)
+        else
           @still_moving = false
-          @load_day_table(evt, 1)
-        else if delta_x < -50
-          @still_moving = false
-          @load_day_table(evt, -1)
     )
 
     $(document).keydown( (e) =>
