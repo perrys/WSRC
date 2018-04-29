@@ -692,8 +692,9 @@ class MembershipApplicationAdmin(admin.ModelAdmin):
         (text_body, html_body) = email_utils.get_email_bodies("Membership App. Complete", params, extensions=extensions)
         subject = "Welcome to Woking Squash Club"
         from_address = MEMBERSHIP_SEC_EMAIL_ADDRESS
-        to_list = [MEMBERSHIP_SEC_EMAIL_ADDRESS]
-        email_utils.send_email(subject, text_body, html_body, from_address, to_list)
+        cc_list = [MEMBERSHIP_SEC_EMAIL_ADDRESS]
+        to_list = [application_object.email]
+        email_utils.send_email(subject, text_body, html_body, from_address, to_list, cc_list=cc_list)
     
 
 admin.site.register(Season, SeasonAdmin)
