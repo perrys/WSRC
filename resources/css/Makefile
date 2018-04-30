@@ -23,8 +23,8 @@ all_admin.css: _jquery-ui.css jquery.loadmask.css wsrc_admin.css
 all_mailshot.css: _jquery-ui.css jquery.loadmask.css wsrc_mailshot.css
 	cat _jquery-ui.css jquery.loadmask.css wsrc_mailshot.css > $@
 
-all_accounts.css: _jquery-ui.css jquery.loadmask.css _wsrc_accounts.css
-	cat _jquery-ui.css jquery.loadmask.css _wsrc_accounts.css > $@
+all_accounts.css: _jquery-ui.css jquery.loadmask.css wsrc_admin_accounts.css
+	cat _jquery-ui.css jquery.loadmask.css wsrc_admin_accounts.css > $@
 
 all_admin_boxes.css: _jquery-ui.css jquery.loadmask.css wsrc_admin_boxes.css
 	cat _jquery-ui.css jquery.loadmask.css wsrc_admin_boxes.css > $@
@@ -41,8 +41,6 @@ _jquery.mobile.datepicker.css:
 wsrc_%.css: less/%.less
 	$(LESSC)  $< > $@
 
-_wsrc_accounts.css: wsrc_accounts.less
-	$(LESSC) $< > $@
 
 
 
