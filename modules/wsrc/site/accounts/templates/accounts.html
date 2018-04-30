@@ -259,7 +259,7 @@ jQuery(document).ready(function(){
       <form action="#upload_tab" enctype="multipart/form-data" method="post">{% csrf_token %}
         <fieldset name="file_upload" class="ui-corner-all">
           <legend>File Upload</legend>
-{% include "form_field_snippet_jq_ui.html" with field=form.file add_submit_button=True %}
+          {% include "form_field_snippet_jq_ui.html" with field=form.file add_submit_button=True class_wrapper="ui-field-contain" %}
         </fieldset>
       </form>
 {% endif %}
