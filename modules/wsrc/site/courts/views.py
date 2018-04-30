@@ -329,7 +329,7 @@ def edit_entry_view(request, id=None):
                 booking_form = BookingForm.empty_form(error)
             else:
                 error = str(e)
-                booking_form = add_error(error)
+                booking_form.add_error(error)
         except EmailingException, e:
             booking_form.add_error(None, str(e))
 
