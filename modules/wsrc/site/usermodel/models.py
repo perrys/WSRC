@@ -321,6 +321,19 @@ class Subscription(AbstractSubscription):
     def is_age_sensitive(self):
         return self.subscription_type.max_age_years is not None
 
+    def clone_to_latest_season(self, latest_season=None):
+        if latest_season is None:
+            latest_season = Season.latest()
+        if self.season_id != latest_season.pk:
+            new_sub = Subscription(subscription_type=self.subscription_type,
+                                   season=latest_season,
+                                   pro_rata_date=None,
+                                   payment_frequency=self.payment_frequency,
+                                   player=self.player)
+            new_sub.save()
+            return new_sub
+        return self
+    
     def to_short_string(self):
         return u"{0} ({1})".format(self.subscription_type.name, self.season)
 

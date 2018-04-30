@@ -110,13 +110,7 @@ remove_and_inactivate.short_description = "Remove Subscripiton & Set Inactive"
 def create_new_season_subscription(modeladmin, request, queryset):
     latest_season = Season.latest()
     for subscription in queryset:
-        if subscription.season_id != latest_season.pk:
-            new_sub = Subscription(subscription_type=subscription.subscription_type,
-                                   season=latest_season,
-                                   pro_rata_date=None,
-                                   payment_frequency=subscription.payment_frequency,
-                                   player=subscription.player)
-            new_sub.save()
+        subscription.clone_to_latest_season(latest_season)
 
 class SubscriptionAdmin(admin.ModelAdmin):
     "Subscription admin - heavilly used for subs management"
