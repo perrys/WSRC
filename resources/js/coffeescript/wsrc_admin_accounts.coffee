@@ -396,6 +396,8 @@ class WSRC_admin_accounts_view
       jq_elt.find('input').val()
     select_value = (jq_elt) ->
       jq_elt.find('select').val()
+    checked_value = (jq_elt) ->
+      jq_elt.find("input[type='checkbox']:checked").length == 1
     mapping = [
       ['date_issued',  toISO]
       ['date_cleared', toISO]
@@ -405,6 +407,7 @@ class WSRC_admin_accounts_view
       ['comment',      input_value]
       ['category',     select_value]
       ['subscription', select_value]
+      ['sub_update',   checked_value]
     ]
     transaction = {}
     for m in mapping

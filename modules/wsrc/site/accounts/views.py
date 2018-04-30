@@ -3,7 +3,7 @@ from functools import partial
 
 from .models import Category, Transaction, Account
 from .admin import SUBS_CATEGORY_NAME
-from wsrc.site.usermodel.models import Subscription, SubscriptionPayment
+from wsrc.site.usermodel.models import Subscription, SubscriptionPayment, Season
 from wsrc.utils.rest_framework_utils import LastUpdaterModelSerializer
 from wsrc.utils.upload_utils import UploadFileForm, upload_generator
 
@@ -74,6 +74,7 @@ class TransactionView(rest_generics.ListAPIView):
         transaction_data = request.data['transactions']
         categories = dict([(cat.id, cat) for cat in Category.objects.all()])
         subscriptions = dict([(sub.id, sub) for sub in Subscription.objects.exclude(season__has_ended=True)])
+        latest_season = Season.latest()
         models = []
         for tran in transaction_data:
             tran['account'] = account
@@ -81,12 +82,15 @@ class TransactionView(rest_generics.ListAPIView):
             tran['last_updated_by'] = request.user
             if 'date_cleared' in tran and len(tran['date_cleared']) < 10:
                 tran['date_cleared'] = None
-            sub_id = tran.pop('subscription') if 'subscription' in tran else None
+            sub_id = tran.pop('subscription', None)
+            sub_update = tran.pop('sub_update', False)
             trans_model = Transaction(**tran)
             models.append(partial(Transaction.save, trans_model))
             if sub_id is not None:
                 sub_model = subscriptions.get(int(sub_id))
                 if sub_model is not None:
+                    if sub_update:
+                        sub_model = sub_model.clone_to_latest_season(latest_season)
                     def create_and_save(fsubs, ftrans):
                         # need to defer creating this until after the
                         # transaction is saved and hence has an ID
@@ -217,7 +221,7 @@ def accounts_view(request, account_name=None):
                 tran = Transaction(row, cat_id)
                 for sub in subscriptions:
                     if sub.match_transaction(tran, subs_category, persist=False):
-                        return sub.id
+                        return sub
                 return None
                 
             for row in data:
@@ -228,8 +232,7 @@ def accounts_view(request, account_name=None):
                 else:
                     cat_id = get_category(row)
                     row["category_id"] = cat_id or ''
-                row["subscription_id"] = get_subscription(row, cat_id)
-
+                row["subscription"] = get_subscription(row, cat_id)
 
     else:
         form = UploadFileForm()
@@ -250,7 +253,8 @@ def accounts_view(request, account_name=None):
         'account_data': account_data,
         'uploaded_acc': uploaded_account,
         'subscriptions': subscriptions,
-        'subs_category': subs_category
+        'subs_category': subs_category,
+        'latest_season': Season.latest()
     })        
 
 from django.views.decorators.http import require_http_methods
