@@ -95,7 +95,6 @@ class TransactionView(rest_generics.ListAPIView):
                     models.append(partial(create_and_save, sub_model, trans_model))
         with transaction.atomic():
             for model in models:
-                print model
                 model()
         return Response(status=status.HTTP_201_CREATED)
 
