@@ -275,8 +275,8 @@ def email_subscription_reminders(user_list):
         if user_list and sub.player.user.email not in user_list:
             continue
         email = sub.player.user.email
-        cost = [cost for cost in costs if cost.subscription_type == sub.subscription_type][0]
-        if cost.amount > 0 and email and email.find('@') > 0:
+        costs = [cost for cost in costs if cost.subscription_type == sub.subscription_type]
+        if len(costs) > 0 and cost.amount > 0 and email and email.find('@') > 0:
             subs_for_email = emails.setdefault(email, [])
             subs_for_email.append(sub)
     LOGGER.info("found %d unique email addresses with current subscriptions", len(emails))
