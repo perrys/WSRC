@@ -570,7 +570,6 @@ class MaintenanceIssueCreateView(CreateView):
     template_name = 'suggestion_form.html'
     form_class = MaintenanceForm
     success_url = reverse_lazy("maintenance")
-    fields = ["description"]
     def get_context_data(self, **kwargs):
         result = super(MaintenanceIssueCreateView, self).get_context_data(**kwargs)
         result["mode"] = "maintenance"
