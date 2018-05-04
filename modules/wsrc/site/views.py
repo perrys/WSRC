@@ -106,7 +106,7 @@ def get_pagecontent_ctx(page, title=None):
         "pagedata": {
             "title": title is not None and title or data.page.replace("_", " "),
             "raw_content": data.markup,
-            "content": markdown.markdown(data.markup, extensions=["markdown.extensions.toc", "markdown.extensions.attr_list"]),
+            "content": markdown.markdown(data.markup, extensions=["markdown.extensions.toc", "markdown.extensions.attr_list", "markdown.extensions.smarty"]),
             "last_updated": data.last_updated,
             },
         }
