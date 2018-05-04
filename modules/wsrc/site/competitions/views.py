@@ -24,6 +24,7 @@ from wsrc.site.usermodel.models import Player
 from wsrc.site.competitions.models import Competition, CompetitionGroup, Match, Entrant
 from wsrc.site.competitions.serializers import CompetitionSerializer, CompetitionGroupSerializer, MatchSerializer, EntrantSerializer
 from wsrc.utils.html_table import Table, Cell, SpanningCell, merge_classes
+from wsrc.utils.markdown_utils import RedactedLinkExtension
 from wsrc.utils.text import obfuscate
 from wsrc.utils.timezones import parse_iso_date_to_naive
 from wsrc.utils.sync_utils import dotted_lookup
@@ -888,27 +889,25 @@ class SendCompetitionEmail(CompetitionEditorPermissionedAPIView):
         from_address   = request.data.pop('from_address')
 
         competition = Competition.objects.get(pk=competition_id)
-        to_list = [entrant.player1.user.email for entrant in competition.entrant_set.all()]
+        to_list = []
+        bcc_list = []
+        for entrant in competition.entrant_set.all():
+            email = entrant.player1.user.email
+            if entrant.player1.prefs_display_contact_details:
+                to_list.append(email)
+            else:
+                bcc_list.append(email)
         email_template = EmailContent.objects.get(name=template_name)
         email_template = Template(email_template.markup)
 
-        def format_url(label, base_url, end_url):
-            mobile_pattern = r"\+44\s*7[\d\s]+|07[\d\s]+"
-            telephone_pattern = r"\+?[\d\s]"
-            if re.match(mobile_pattern, label):
-                return "sms:" + label
-            elif re.match(telephone_pattern, label):
-                return "tel:" + label
-            return "http:" + base_url + label + end_url
-        context = Context({"competition": competition})
+        context = Context({"competition": competition, "has_redacted": len(bcc_list) > 0})
         context["content_type"] = "text/html"
-        extensions = ['markdown.extensions.extra', 'markdown.extensions.smarty', 'markdown.extensions.wikilinks']
-        configs = {'markdown.extensions.wikilinks': {'build_url': format_url}}
-        html_body = markdown.markdown(email_template.render(context), extensions=extensions, extension_configs=configs)
+        extensions = ['markdown.extensions.extra', 'markdown.extensions.smarty', RedactedLinkExtension()]
+        html_body = markdown.markdown(email_template.render(context), extensions=extensions)
         context["content_type"] = "text/plain"
         text_body = email_template.render(context)
 
-        email_utils.send_email(subject, text_body, html_body, from_address, to_list)
+        email_utils.send_email(subject, text_body, html_body, from_address, to_list, bcc_list=bcc_list)
         return HttpResponse(status=204)
 
 class UpdateTournament(CompetitionEditorPermissionedAPIView):
