@@ -10,6 +10,29 @@ utils =
       result += "#{ mins } minute#{ wsrc.utils.plural(mins) } "
     return result
 
+  getLocation: ( event ) ->
+    winPageX = window.pageXOffset
+    winPageY = window.pageYOffset
+    x = event.clientX
+    y = event.clientY
+
+    if (event.pageY == 0 and Math.floor(y) > Math.floor(event.pageY) or
+        event.pageX == 0 and Math.floor(x) > Math.floor(event.pageX))
+      # iOS4 clientX/clientY have the value that should have been
+      # in pageX/pageY. While pageX/page/ have the value 0
+      x = x - winPageX
+      y = y - winPageY
+    else if (y < (event.pageY - winPageY) || x < (event.pageX - winPageX)) 
+      # Some Android browsers have totally bogus values for clientX/Y
+      # when scrolling/zooming a page. Detectable since clientX/clientY
+      # should never be smaller than pageX/pageY minus page scroll
+      x = event.pageX - winPageX;
+      y = event.pageY - winPageY;
+
+    return
+      x: x
+      y: y
+
 class WSRC_court_booking
 
   constructor: (@base_path) ->
@@ -31,32 +54,36 @@ class WSRC_court_booking
     $("a.refresh").on("click", (evt) => @load_day_table(evt))
     $("a.next").on("click", (evt) => @load_day_table(evt, 1))
 
-    duration_threshold = 1000
+    # swipe function
+    duration_threshold = 1000    
+    # Swipe vertical displacement must be less than this.
+    v_distance_threshold = 30
     distance_threshold = 50
     @still_moving = false
     @start = null
     @start_time = null
     $("div#booking-day").on("touchstart", (evt) =>
-      evt = evt.originalEvent
-      if evt.touches.length == 1
-          @start = evt.touches[0].pageX;
-          @start_time = (new Date()).getTime()
-          @still_moving = true;
+      data = if evt.originalEvent.touches then evt.originalEvent.touches[0] else evt
+      @start = utils.getLocation(data)
+      @start_time = (new Date()).getTime()
+      @still_moving = true;
     )
     $("div#booking-day").on("touchmove", (evt) =>
-      evt = evt.originalEvent
       if @still_moving
-        delta_x = @start - evt.touches[0].pageX
+        data = if evt.originalEvent.touches then evt.originalEvent.touches[0] else evt
+        location = utils.getLocation(data)
+        delta_x = @start.x - location.x
+        delta_y = Math.abs(@start.y - location.y)
         duration = (new Date()).getTime() - @start_time
-        if duration < duration_threshold
+        if duration > duration_threshold or delta_y > v_distance_threshold
+          @still_moving = false
+        else
           if delta_x > distance_threshold
             @still_moving = false
             @load_day_table(evt, 1)
           else if delta_x < (-1.0 * distance_threshold)
             @still_moving = false
             @load_day_table(evt, -1)
-        else
-          @still_moving = false
     )
 
     $(document).keydown( (e) =>
