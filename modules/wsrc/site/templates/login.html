@@ -49,7 +49,11 @@
  .form-signin > .well {
      margin-top: 15px;
  }
- 
+ form.login-settings {
+     position: absolute;
+     bottom: 10px;
+     left: 10px;
+ }
 </style>  
 {% endblock %}
 
@@ -74,12 +78,55 @@
   <input name="{{ form.password.name }}" type="password" id="{{ form.password.id_for_label }}" class="form-control" placeholder="Password" required="" {% if last_username %}autofocus=""{% endif %}>
   <input type="hidden" name="next" value="{% if next %}{{ next }}{% else %}{% url 'homepage' %}{% endif %}" />
   <input type="hidden" name="current_username" value="{{ user.username }}" />
+{% if not disable_remember_username %}
   <div class="checkbox">
     <label>
       <input type="checkbox" name="remember_username" {% if remember_username %}checked="checked"{% endif %}> Remember my username
     </label>
   </div>
+  {% endif %}
   <button class="btn btn-lg btn-primary btn-block" type="submit">Sign in</button>
   <div class="well">Forgotten your username or password?<br /><a href="/password/reset/">Click here to reset</a>.</div>
 </form>
+
+{% if show_auto_logout_settings %}
+<form method="post" onsubmit="return false;" class="login-settings">
+  <fieldset>
+    <legend>Login Settings</legend>
+    <div class="form-group" >
+      <label class="" for="session_timeout">Session Timeout (seconds):</label>
+      <div class="">
+        <input class="form-control" name="session_timeout" id="session_timeout" value="{{ session_timeout|default_if_none:'' }}" onchange="update_cookie(this, 'session_timeout');">
+      </div>
+    </div>
+    <div class="form-group">   
+      <label for="disable_remember_username">Remember Username:</label>
+      <div class="">
+      <select class="form-control" name="disable_remember_username" id="disable_remember_username" onchange="update_cookie(this, 'disable_remember_username');">
+        <option value="">Enabled</option>
+        <option value="1" {% if disable_remember_username %}selected="selected"{% endif %}>Disabled</option>
+      </select>
+      </div>
+    </div>
+  </fieldset>
+</form>
+{% endif %}
+{% endblock %}
+
+
+
+{% block body_script_extra %}
+{% if show_auto_logout_settings %}
+<script>
+ function update_cookie(elt, name) {
+     var value = parseInt($(elt).val())
+     if (isNaN(value) || value == 0) {
+         $(elt).val("")
+         document.cookie = name + "=\"\";expires=-1"
+     } else {
+         document.cookie = name + "=" + value
+     }
+ }
+</script>
+{% endif %}
 {% endblock %}

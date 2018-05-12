@@ -348,6 +348,8 @@ def kiosk_view(request):
 
 def login(request, *args, **kwargs):
     last_username = request.COOKIES.get("last_username")
+    session_timeout = request.COOKIES.get("session_timeout")
+    disable_remember_username = request.COOKIES.get("disable_remember_username")
     response = auth_views.login(request, *args, **kwargs)
     if request.method == "POST":
         if request.POST.get("remember_username"):
@@ -357,9 +359,14 @@ def login(request, *args, **kwargs):
         else:
             response.delete_cookie("last_username")
             last_username = None
-    if last_username is not None and hasattr(response, "context_data"):
-        response.context_data["last_username"] = last_username
-        response.context_data["remember_username"] = True
+    if hasattr(response, "context_data"):
+        if not disable_remember_username and last_username is not None:
+            response.context_data["last_username"] = last_username
+            response.context_data["remember_username"] = True
+        if "show_login_settings" in request.GET:
+            response.context_data["show_auto_logout_settings"] = True
+            response.context_data["session_timeout"] = session_timeout
+            response.context_data["disable_remember_username"] = disable_remember_username
     return response
 
 @login_required
