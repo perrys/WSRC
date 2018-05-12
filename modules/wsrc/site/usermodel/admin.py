@@ -446,7 +446,6 @@ class DoorEntryCardAdmin(admin.ModelAdmin):
     }
     def get_queryset(self, request):
         queryset = super(DoorEntryCardAdmin, self).get_queryset(request)
-        queryset = queryset.select_related('player__user', 'season')
         queryset = queryset.prefetch_related('doorcardlease_set__player__user')
         return queryset
     def linked_current_owner(self, obj):
