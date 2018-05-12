@@ -3,6 +3,7 @@
 <html lang="en">
   <head>
 {% block html_header %}{% endblock %}
+<!-- session expiry: {{ request.session.get_expiry_date|date:'c' }} -->
   </head>
   <body>
 {% block html_body %}{% endblock %}
