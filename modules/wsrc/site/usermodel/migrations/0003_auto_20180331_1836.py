@@ -31,7 +31,7 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='membershipapplication',
             name='season',
-            field=models.ForeignKey(to='usermodel.Season'),
+            field=models.ForeignKey(to='usermodel.Season', on_delete=models.CASCADE),
         ),
         migrations.AlterField(
             model_name='player',
@@ -46,6 +46,6 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='subscription',
             name='season',
-            field=models.ForeignKey(to='usermodel.Season'),
+            field=models.ForeignKey(to='usermodel.Season', on_delete=models.CASCADE),
         ),
     ]

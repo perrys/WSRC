@@ -198,8 +198,8 @@ class SubscriptionType(models.Model):
 
 class SubscriptionCost(models.Model):
     not_ended = Q(has_ended=False)
-    season = models.ForeignKey(Season, limit_choices_to=not_ended, related_name="costs")
-    subscription_type = models.ForeignKey(SubscriptionType)
+    season = models.ForeignKey(Season, limit_choices_to=not_ended, related_name="costs", on_delete=models.PROTECT)
+    subscription_type = models.ForeignKey(SubscriptionType, on_delete=models.PROTECT)
     amount = models.FloatField(u"Cost (\xa3)")
     joining_fee = models.FloatField(u"Joining Fee (\xa3)", default=0)
     class Meta:
@@ -216,8 +216,8 @@ class AbstractSubscription(models.Model):
     PAY_TYPE_CHOICES = [(ptype[0], ptype[1]) for ptype in PAYMENT_TYPES]
     not_ended = Q(has_ended=False)
     # pylint: disable=bad-whitespace
-    subscription_type = models.ForeignKey(SubscriptionType)
-    season            = models.ForeignKey(Season, db_index=True, limit_choices_to=not_ended, default=latest_season)
+    subscription_type = models.ForeignKey(SubscriptionType, on_delete=models.PROTECT)
+    season            = models.ForeignKey(Season, db_index=True, limit_choices_to=not_ended, default=latest_season, on_delete=models.PROTECT)
     pro_rata_date     = models.DateField("Pro Rata Date", blank=True, null=True)
     payment_frequency = models.CharField("Payment Freq", max_length=16, choices=PAY_TYPE_CHOICES, default="annual")
     comment           = models.TextField(blank=True, null=True)
@@ -226,7 +226,7 @@ class AbstractSubscription(models.Model):
         
 class Subscription(AbstractSubscription):
     is_active = Q(user__is_active=True)
-    player = models.ForeignKey(Player, db_index=True, limit_choices_to=is_active)
+    player = models.ForeignKey(Player, db_index=True, limit_choices_to=is_active, on_delete=models.PROTECT)
     signed_off = models.BooleanField("Signoff", default=False)
 
     unique_together = ("player", "season")
@@ -346,10 +346,10 @@ class Subscription(AbstractSubscription):
 class SubscriptionPayment(models.Model):
     subs_transactions_clause = Q(category__name='subscriptions', date_issued__gt='2017-01-01')
     subscription = models.ForeignKey(Subscription, db_index=True, related_name="payments",
-                                     limit_choices_to=Q(season__has_ended=False))
+                                     limit_choices_to=Q(season__has_ended=False), on_delete=models.PROTECT)
     transaction = models.ForeignKey(account_models.Transaction, unique=True,
                                     related_name="subs_payments",
-                                    limit_choices_to=subs_transactions_clause)
+                                    limit_choices_to=subs_transactions_clause, on_delete=models.PROTECT)
     def __unicode__(self):
         return u"\xa3{0:.2f} {1}".format(self.transaction.amount, self.subscription)
 
@@ -410,8 +410,8 @@ class DoorEntryCard(models.Model):
 
 class DoorCardLease(models.Model):
     "Records non-permanent ownership of a doorcard over a period of time"
-    card = models.ForeignKey(DoorEntryCard)
-    player = models.ForeignKey(Player, db_index=True)
+    card = models.ForeignKey(DoorEntryCard, on_delete=models.PROTECT)
+    player = models.ForeignKey(Player, db_index=True, on_delete=models.PROTECT)
     date_issued = models.DateField("Issue Date", db_index=True, default=datetime.date.today)
     date_returned = models.DateField("Return Date", db_index=True, blank=True, null=True)
     comment = models.TextField(blank=True, null=True)
@@ -454,7 +454,7 @@ class DoorCardLease(models.Model):
     
 class DoorCardEvent(models.Model):
     "Events recorded on the cardreader"
-    card = models.ForeignKey(DoorEntryCard, blank=True, null=True)
+    card = models.ForeignKey(DoorEntryCard, blank=True, null=True, on_delete=models.PROTECT)
     event = models.CharField("Event Type", max_length=128, blank=True, db_index=True)
     timestamp = models.DateTimeField(help_text="Timestamp from the cardreader", db_index=True)
     received_time = models.DateTimeField(help_text="Server timestamp", auto_now_add=True)

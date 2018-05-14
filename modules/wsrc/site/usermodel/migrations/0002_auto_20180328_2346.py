@@ -33,9 +33,9 @@ class Migration(migrations.Migration):
                 ('guid', models.CharField(max_length=36, verbose_name=b'GUID')),
                 ('email_verified', models.BooleanField(default=False)),
                 ('signed_off', models.BooleanField(default=False, help_text=b'Signed off by the membership secretary - after which the next save will create this member in the database.')),
-                ('player', models.ForeignKey(blank=True, to='usermodel.Player', null=True)),
-                ('season', models.ForeignKey(to='usermodel.Season')),
-                ('subscription_type', models.ForeignKey(to='usermodel.SubscriptionType')),
+                ('player', models.ForeignKey(blank=True, to='usermodel.Player', null=True, on_delete=models.CASCADE)),
+                ('season', models.ForeignKey(to='usermodel.Season', on_delete=models.CASCADE)),
+                ('subscription_type', models.ForeignKey(to='usermodel.SubscriptionType', on_delete=models.CASCADE)),
             ],
             options={
                 'verbose_name': 'Membership Application',

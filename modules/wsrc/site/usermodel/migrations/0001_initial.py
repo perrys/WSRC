@@ -100,8 +100,8 @@ class Migration(migrations.Migration):
                 ('payment_frequency', models.CharField(max_length=16, verbose_name=b'Payment Freq', choices=[(b'annual', b'Annually'), (b'triannual', b'Tri-annually'), (b'querterly', b'Quarterly'), (b'monthly', b'Monthly')])),
                 ('signed_off', models.BooleanField(default=False, verbose_name=b'Signoff')),
                 ('comment', models.TextField(null=True, blank=True)),
-                ('player', models.ForeignKey(to='usermodel.Player')),
-                ('season', models.ForeignKey(to='usermodel.Season')),
+                ('player', models.ForeignKey(to='usermodel.Player', on_delete=models.CASCADE)),
+                ('season', models.ForeignKey(to='usermodel.Season', on_delete=models.CASCADE)),
             ],
             options={
                 'ordering': ['-season__start_date', 'player__user__last_name', 'player__user__first_name'],
@@ -114,7 +114,7 @@ class Migration(migrations.Migration):
                 ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
                 ('amount', models.FloatField(verbose_name='Cost (\xa3)')),
                 ('joining_fee', models.FloatField(default=0, verbose_name='Joining Fee (\xa3)')),
-                ('season', models.ForeignKey(related_name=b'costs', to='usermodel.Season')),
+                ('season', models.ForeignKey(related_name=b'costs', to='usermodel.Season', on_delete=models.CASCADE)),
             ],
             options={
                 'ordering': ['-season', '-amount'],
@@ -126,8 +126,8 @@ class Migration(migrations.Migration):
             name='SubscriptionPayment',
             fields=[
                 ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
-                ('subscription', models.ForeignKey(related_name=b'payments', to='usermodel.Subscription')),
-                ('transaction', models.ForeignKey(related_name=b'subs_payments', to='accounts.Transaction', unique=True)),
+                ('subscription', models.ForeignKey(related_name=b'payments', to='usermodel.Subscription', on_delete=models.CASCADE)),
+                ('transaction', models.ForeignKey(related_name=b'subs_payments', to='accounts.Transaction', unique=True, on_delete=models.CASCADE)),
             ],
             options={
             },
@@ -151,31 +151,31 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='subscriptioncost',
             name='subscription_type',
-            field=models.ForeignKey(to='usermodel.SubscriptionType'),
+            field=models.ForeignKey(to='usermodel.SubscriptionType', on_delete=models.CASCADE),
             preserve_default=True,
         ),
         migrations.AddField(
             model_name='subscription',
             name='subscription_type',
-            field=models.ForeignKey(to='usermodel.SubscriptionType'),
+            field=models.ForeignKey(to='usermodel.SubscriptionType', on_delete=models.CASCADE),
             preserve_default=True,
         ),
         migrations.AddField(
             model_name='doorcardlease',
             name='card',
-            field=models.ForeignKey(to='usermodel.DoorEntryCard'),
+            field=models.ForeignKey(to='usermodel.DoorEntryCard', on_delete=models.CASCADE),
             preserve_default=True,
         ),
         migrations.AddField(
             model_name='doorcardlease',
             name='player',
-            field=models.ForeignKey(to='usermodel.Player'),
+            field=models.ForeignKey(to='usermodel.Player', on_delete=models.CASCADE),
             preserve_default=True,
         ),
         migrations.AddField(
             model_name='doorcardevent',
             name='card',
-            field=models.ForeignKey(blank=True, to='usermodel.DoorEntryCard', null=True),
+            field=models.ForeignKey(blank=True, to='usermodel.DoorEntryCard', null=True, on_delete=models.CASCADE),
             preserve_default=True,
         ),
     ]
