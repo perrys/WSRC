@@ -94,6 +94,7 @@ class NavigationNode(models.Model):
 class NavigationLink(NavigationNode):
     url = models.CharField(max_length=256)
     is_reverse_url = models.BooleanField(default=False)
+    objects = models.Manager()
     def __unicode__(self):
         return self.name
     class Meta:
