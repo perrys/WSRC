@@ -15,7 +15,7 @@
 
 "Middleware to insert navigation data into template context"
 
-from django.core.urlresolvers import reverse
+from django.urls import reverse
 
 from wsrc.site.models import NavigationLink, NavigationNode
 from collections import namedtuple

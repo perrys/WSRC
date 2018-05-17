@@ -32,7 +32,7 @@ from django.forms.widgets import Textarea, HiddenInput
 from django.middleware.csrf import get_token
 from django.core.mail import SafeMIMEMultipart, SafeMIMEText
 from django.core.exceptions import PermissionDenied, SuspiciousOperation
-from django.core.urlresolvers import reverse_lazy
+from django.urls import reverse_lazy
 from django.db import transaction
 from django.forms import ModelForm, TextInput
 from django.http import HttpResponse

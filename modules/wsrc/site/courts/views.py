@@ -28,7 +28,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.core.exceptions import SuspiciousOperation, PermissionDenied
 from django.core.mail import SafeMIMEMultipart, SafeMIMEText
-from django.core.urlresolvers import reverse as reverse_url
+from django.urls import reverse as reverse_url
 from django.db import transaction
 from django.http import HttpResponse, HttpResponsePermanentRedirect, HttpResponseNotFound
 from django.db.models import Q

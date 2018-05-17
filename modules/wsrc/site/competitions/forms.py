@@ -18,7 +18,7 @@
 
 from django.core.exceptions import ValidationError, NON_FIELD_ERRORS
 from django import forms
-from django.core.urlresolvers import reverse
+from django.urls import reverse
 from django.db.models import Q
 
 from wsrc.utils.form_utils import make_readonly_widget, LabeledSelect, CachingModelChoiceField, add_formfield_attrs
