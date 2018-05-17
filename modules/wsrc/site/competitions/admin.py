@@ -15,7 +15,7 @@
 
 from django import forms
 from django.contrib import admin
-from django.core import urlresolvers
+from django import urls
 
 # Register your models here.
 
@@ -142,7 +142,7 @@ class MatchAdmin(admin.ModelAdmin):
         qs = qs.select_related('competition__group', 'team1__player1__user', 'team1__player2__user', 'team2__player1__user', 'team2__player2__user')
         return qs
     def competition_link(self, obj):
-        link = urlresolvers.reverse("admin:competitions_competition_change", args=[obj.competition.id])
+        link = urls.reverse("admin:competitions_competition_change", args=[obj.competition.id])
         link = u'<a href="{0}">{1}</a>'\
                .format(link, obj.competition.name)
         return link
