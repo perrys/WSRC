@@ -71,7 +71,7 @@ class Migration(migrations.Migration):
                 ('prefs_display_contact_details', models.NullBooleanField(default=True, help_text=b'Whether your contact details appear in the membership list on this website, enabling other members to contact you regarding league games etc.', verbose_name=b'Details Visible')),
                 ('subscription_regex', models.CharField(max_length=256, null=True, verbose_name=b'Regexp for subscription transactions', blank=True)),
                 ('date_of_birth', models.DateField(null=True, verbose_name=b'DoB', blank=True)),
-                ('user', models.OneToOneField(to=settings.AUTH_USER_MODEL)),
+                ('user', models.OneToOneField(to=settings.AUTH_USER_MODEL, on_delete=models.CASCADE)),
             ],
             options={
                 'ordering': ['user__last_name', 'user__first_name'],
