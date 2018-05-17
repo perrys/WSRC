@@ -79,7 +79,7 @@ FROM `site_navigationlink`
 
 class NavigationNode(models.Model):
     name = models.CharField(max_length=32)
-    parent = models.ForeignKey('self', blank=True, null=True, related_name="children")
+    parent = models.ForeignKey('self', blank=True, null=True, related_name="children", on_delete=models.SET_NULL)
     ordering = models.IntegerField(help_text="higher numbers appear higher", blank=True, null=True)
     is_restricted = models.BooleanField(default=False, help_text="Login required to view")
     icon = models.CharField(max_length=32, blank=True, null=True)
@@ -160,7 +160,7 @@ class Image(models.Model):
         ordering = ["-date"]
 
 class SquashLevels(models.Model):
-    player = models.ForeignKey(user_models.Player, blank=True, null=True)
+    player = models.ForeignKey(user_models.Player, blank=True, null=True, on_delete=models.PROTECT)
     name = models.CharField(max_length=64)
     num_events = models.IntegerField()
     last_match_date = models.DateField()
@@ -189,7 +189,7 @@ class MaintenanceIssue(models.Model):
         ("c", "Complete"),
         ("ni", "Non-issue"),
     )
-    reporter = models.ForeignKey(user_models.Player, blank=True, null=True)
+    reporter = models.ForeignKey(user_models.Player, blank=True, null=True, on_delete=models.PROTECT)
     description = models.TextField()
     reported_date = models.DateField(auto_now_add=True)
     status = models.CharField(max_length=2, choices=STATUS_VALUES, default="ar")
@@ -202,7 +202,7 @@ class MaintenanceIssue(models.Model):
 
 
 class Suggestion(models.Model):
-    suggester = models.ForeignKey(user_models.Player, blank=True, null=True)
+    suggester = models.ForeignKey(user_models.Player, blank=True, null=True, on_delete=models.PROTECT)
     description = models.TextField()
     submitted_date = models.DateField(auto_now_add=True)
     reviewed_date = models.DateField(blank=True, null=True)

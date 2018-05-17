@@ -56,7 +56,7 @@ class AbstractPlayer(models.Model):
 
 class Player(AbstractPlayer):
 
-    user = models.OneToOneField(User)
+    user = models.OneToOneField(User, on_delete=models.PROTECT)
 
     short_name  = models.CharField(("Short Name"), max_length=32, blank=True)
 
@@ -347,7 +347,7 @@ class SubscriptionPayment(models.Model):
     subs_transactions_clause = Q(category__name='subscriptions', date_issued__gt='2017-01-01')
     subscription = models.ForeignKey(Subscription, db_index=True, related_name="payments",
                                      limit_choices_to=Q(season__has_ended=False), on_delete=models.PROTECT)
-    transaction = models.ForeignKey(account_models.Transaction, unique=True,
+    transaction = models.OneToOneField(account_models.Transaction,
                                     related_name="subs_payments",
                                     limit_choices_to=subs_transactions_clause, on_delete=models.PROTECT)
     def __unicode__(self):
@@ -475,7 +475,7 @@ class MembershipApplication(AbstractPlayer, AbstractSubscription):
     last_name = models.CharField('last name', max_length=30)
     email = models.EmailField('email address')
 
-    player = models.ForeignKey(Player, blank=True, null=True)
+    player = models.ForeignKey(Player, blank=True, null=True, on_delete=models.SET_NULL)
 
     guid = models.CharField("GUID", max_length=36, default=uuid.uuid1)
     email_verified = models.BooleanField(default=False)

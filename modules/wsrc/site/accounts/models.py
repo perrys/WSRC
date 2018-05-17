@@ -33,7 +33,7 @@ class Category(models.Model):
     ordering = models.IntegerField(unique=True)
     is_reconciling = models.BooleanField(default=False)
     last_updated = models.DateTimeField(auto_now=True)
-    last_updated_by = models.ForeignKey(User)
+    last_updated_by = models.ForeignKey(User, on_delete=models.PROTECT)
     def __unicode__(self):
         return self.name
     class Meta:
@@ -41,17 +41,17 @@ class Category(models.Model):
         ordering = ["ordering"]
 
 class Transaction(models.Model):
-    account = models.ForeignKey(Account)
+    account = models.ForeignKey(Account, on_delete=models.PROTECT)
     date_issued = models.DateField()
     date_cleared = models.DateField(blank=True, null=True)
     amount = models.FloatField()
-    category = models.ForeignKey(Category, db_index=True)
+    category = models.ForeignKey(Category, db_index=True, on_delete=models.PROTECT)
     bank_transaction_category = models.CharField(max_length=32, blank=True, null=True)
     bank_number = models.IntegerField(blank=True, null=True)
     bank_memo = models.CharField(max_length=256, blank=True, null=True)
     comment = models.CharField(max_length=256, blank=True, null=True)
     last_updated = models.DateTimeField(auto_now=True)
-    last_updated_by = models.ForeignKey(User)
+    last_updated_by = models.ForeignKey(User, on_delete=models.PROTECT)
     def __unicode__(self):
         return u"{0} \u2013 \xa3{1:.2f} \u2013 {2} {3}".format(self.date_issued, self.amount, self.bank_memo, self.comment or "")
 

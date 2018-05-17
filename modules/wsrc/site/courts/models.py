@@ -37,7 +37,7 @@ class BookingSystemEvent(models.Model):
     event_type = models.CharField(max_length=1, choices=EVENT_TYPES)
     event_id = models.IntegerField(blank=True, null=True)
     description = models.CharField(max_length=128, blank=True, null=True)
-    created_by = models.ForeignKey(user_models.Player, blank=True, null=True, limit_choices_to={"user__is_active": True})
+    created_by = models.ForeignKey(user_models.Player, blank=True, null=True, limit_choices_to={"user__is_active": True}, on_delete=models.SET_NULL)
     created_time = models.DateTimeField()
     no_show = models.BooleanField(default=False)
 
@@ -88,7 +88,7 @@ class BookingOffence(models.Model):
     ]
     CUTOFF_DAYS = 183
 
-    player = models.ForeignKey(user_models.Player)
+    player = models.ForeignKey(user_models.Player, on_delete=models.PROTECT)
     OFFENCE_VALUES = (
         ("lc", "Late Cancelation"),
         ("ns", "No Show"),
@@ -165,7 +165,7 @@ class DayOfWeek(models.Model):
         ordering = ["ordinal"]
 
 class EventFilter(models.Model):
-    player = models.ForeignKey(user_models.Player)
+    player = models.ForeignKey(user_models.Player, on_delete=models.PROTECT)
     earliest = models.TimeField()
     latest = models.TimeField()
     days = models.ManyToManyField(DayOfWeek, blank=True)

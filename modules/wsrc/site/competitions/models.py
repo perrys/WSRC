@@ -97,7 +97,7 @@ class Competition(models.Model):
     name = models.CharField(max_length=128)
     state = models.CharField(max_length=16, choices=STATES, default="not_started")
     end_date = models.DateField()
-    group = models.ForeignKey(CompetitionGroup, blank=True, null=True)
+    group = models.ForeignKey(CompetitionGroup, blank=True, null=True, on_delete=models.PROTECT)
     url = models.CharField(max_length=128, blank=True)
     ordering = models.IntegerField(blank=True, null=True)
 
@@ -120,10 +120,10 @@ class Entrant(models.Model):
     """Makes up the set of distinct competitors or teams in a competition
        - allows for two players per team (for doubles competitions)"""
     is_active = models.Q(user__is_active=True)
-    competition = models.ForeignKey(Competition)
-    player1 = models.ForeignKey(user_models.Player, limit_choices_to=is_active)
+    competition = models.ForeignKey(Competition, on_delete=models.CASCADE)
+    player1 = models.ForeignKey(user_models.Player, limit_choices_to=is_active, on_delete=models.PROTECT)
     player2 = models.ForeignKey(user_models.Player, limit_choices_to=is_active,\
-                                null=True, blank=True, related_name="player2")
+                                null=True, blank=True, related_name="player2", on_delete=models.PROTECT)
     ordering = models.IntegerField(help_text="Exact meaning depends on the competition type")
     handicap = models.IntegerField(null=True, blank=True)
     hcap_suffix = models.CharField(max_length=4, blank=True)
@@ -180,10 +180,10 @@ class Match(models.Model):
         (1, "Opponent 1"),
         (2, "Opponent 2"),
     ]
-    competition = models.ForeignKey(Competition)
+    competition = models.ForeignKey(Competition, on_delete=models.CASCADE)
     competition_match_id = models.IntegerField(help_text="Unique ID of this match within its competition", blank=True, null=True)
-    team1 = models.ForeignKey(Entrant, related_name="match_1+", blank=True, null=True)
-    team2 = models.ForeignKey(Entrant, related_name="match_2+", blank=True, null=True)
+    team1 = models.ForeignKey(Entrant, related_name="match_1+", blank=True, null=True, on_delete=models.PROTECT)
+    team2 = models.ForeignKey(Entrant, related_name="match_2+", blank=True, null=True, on_delete=models.PROTECT)
     team1_score1 = models.IntegerField(blank=True, null=True)
     team1_score2 = models.IntegerField(blank=True, null=True)
     team1_score3 = models.IntegerField(blank=True, null=True)
@@ -395,7 +395,7 @@ class Match(models.Model):
 
 class CompetitionRound(models.Model):
     """A "round" in a competition. This is used only for tournaments"""
-    competition = models.ForeignKey(Competition, related_name="rounds")
+    competition = models.ForeignKey(Competition, related_name="rounds", on_delete=models.CASCADE)
     round = models.IntegerField()
     end_date = models.DateField()
     def __unicode__(self):
