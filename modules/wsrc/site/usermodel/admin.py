@@ -28,7 +28,7 @@ from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as AuthUserAdmin
 from django.contrib.auth.models import User
 
-from django.core import urlresolvers
+from django import urls
 from django.core.exceptions import ValidationError, NON_FIELD_ERRORS
 from django.http import HttpResponse
 from django.shortcuts import redirect
@@ -140,7 +140,7 @@ class SubscriptionAdmin(admin.ModelAdmin):
     ordered_name.short_description = "Name"
 
     def linked_membership_type(self, obj):
-        link = urlresolvers.reverse("admin:usermodel_player_change", args=[obj.player.id])
+        link = urls.reverse("admin:usermodel_player_change", args=[obj.player.id])
         return u'<a href="%s">%s</a>' % (link, obj.subscription_type.name)
     linked_membership_type.allow_tags = True
     linked_membership_type.short_description = "Type"
@@ -304,7 +304,7 @@ class PlayerAdmin(SelectRelatedQuerysetMixin, PrefetchRelatedQuerysetMixin, admi
     signed_off.boolean = True
 
     def user_link(self, obj):
-        link = urlresolvers.reverse("admin:auth_user_change", args=[obj.user.id])
+        link = urls.reverse("admin:auth_user_change", args=[obj.user.id])
         link = u'<a id="user_link" href="{0}" style="font-weight: bold" data-name="{1}" data-email="{2}">{3}</a>'\
                .format(link, obj.user.get_full_name(), obj.user.email, obj.get_ordered_name())
         return link
@@ -452,7 +452,7 @@ class DoorEntryCardAdmin(admin.ModelAdmin):
         owner = obj.get_current_ownership_data()
         if owner is None:
             return "(None)"
-        link = urlresolvers.reverse("admin:usermodel_player_change", args=[owner.player.id])
+        link = urls.reverse("admin:usermodel_player_change", args=[owner.player.id])
         activestr = "" if owner.player.user.is_active else " [inactive]"
         return u'<a href="{0}">{1}{2}</a>'.format(link, owner.player.get_ordered_name(), activestr)
     linked_current_owner.allow_tags = True
@@ -536,7 +536,7 @@ class DoorCardLeaseAdmin(admin.ModelAdmin):
         return queryset
     
     def linked_player(self, obj):
-        link = urlresolvers.reverse("admin:usermodel_player_change", args=[obj.player.id])
+        link = urls.reverse("admin:usermodel_player_change", args=[obj.player.id])
         return u'<a href="%s">%s</a>' % (link, obj.player.get_ordered_name())
     linked_player.allow_tags = True
     linked_player.short_description = "Assigned To"
@@ -613,7 +613,7 @@ class DoorCardEventAdmin(admin.ModelAdmin):
     def linked_cardnumber(self, obj):
         if obj.card is None:
             return "(None)"
-        link = urlresolvers.reverse("admin:usermodel_doorentrycard_change", args=[obj.card.pk])
+        link = urls.reverse("admin:usermodel_doorentrycard_change", args=[obj.card.pk])
         return u'<a href="%s">%s</a>' % (link, obj.card.cardnumber)
         return obj.card.cardnumber
     linked_cardnumber.short_description = "Card Number"
@@ -626,7 +626,7 @@ class DoorCardEventAdmin(admin.ModelAdmin):
             lease = obj.card.get_current_ownership_data(obj.received_time.date())
         if lease is None:
             return "(None)"
-        link = urlresolvers.reverse("admin:usermodel_player_change", args=[lease.player.id])
+        link = urls.reverse("admin:usermodel_player_change", args=[lease.player.id])
         return u'<a href="%s">%s</a>' % (link, lease.player.get_ordered_name())
     linked_player.allow_tags = True
     linked_player.short_description = "Assigned To"
@@ -671,7 +671,7 @@ class MembershipApplicationAdmin(admin.ModelAdmin):
     def player_link(self, obj):
         if obj.player_id is None:
             return "(None)"
-        link = urlresolvers.reverse("admin:usermodel_player_change", args=[obj.player_id])
+        link = urls.reverse("admin:usermodel_player_change", args=[obj.player_id])
         link = u'<a id="player_link" href="{0}" style="font-weight: bold">{1}</a>'\
                .format(link, obj.player.get_ordered_name())
         return link

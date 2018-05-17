@@ -1,3 +1,4 @@
+#!/usr/bin/python  -Wd
 #!/usr/bin/env python
 import os
 import sys
