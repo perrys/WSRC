@@ -114,7 +114,7 @@ urlpatterns = [
 
     url(r'^admin/mailshot/send', wsrc.site.views.SendEmail.as_view()),
     url(r'^admin/mailshot/?', wsrc.site.views.admin_mailshot_view),
-    url(r'^admin/', include(admin.site.urls)),
+    url(r'^admin/', admin.site.urls),
 
     url(r'^html/club_history.html',   perm_redirect('/about')),
     url(r'^html/membership.html',     perm_redirect('/membership')),
