@@ -24,6 +24,12 @@ node_t = namedtuple("Node", ["pk", "name", "children", "is_expanded"])
 link_t = namedtuple("Link", ["pk", "name", "url", "is_active"])
 
 class NavigationMiddleWare:
+    def __init__(self, get_response):
+        self.get_response = get_response
+
+    def __call__(self, request):
+        return self.get_response(request)
+
     def process_template_response(self, request, response):
         tree_nodes = NavigationNode.objects.tree(request.user.is_authenticated())
         nodes = [node_t(node.pk, node.name, [], False) for node in tree_nodes]
