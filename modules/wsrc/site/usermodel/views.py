@@ -79,7 +79,7 @@ class MemberListView(ListView):
     def get_queryset(self):
         queryset = Player.objects.select_related("user")\
                                  .filter(user__is_active=True) \
-                                 .exclude(prefs_display_contact_details=False) \
+                                 .filter(prefs_display_contact_details=True) \
                                  .order_by('user__first_name', 'user__last_name')
         filter_text = self.request.GET.get("search")
         filter_ids = self.request.GET.get("filter-ids")
