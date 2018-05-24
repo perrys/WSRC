@@ -198,7 +198,7 @@ def booking_view(request, date=None):
         "starts": range(420, 1380, 15),
         "durations": [30, 45, 60, 75, 90, 120, 180, 240]
     }
-    if request.user.is_authenticated():
+    if request.user.is_authenticated:
         player = Player.get_player_for_user(request.user)
         if player is not None:
             booking_user_id = player.booking_system_id
@@ -415,7 +415,7 @@ class SendEmail(APIView):
         return self.put(request)
 
     def put(self, request, format="json"):
-        if not (request.user.is_authenticated() and\
+        if not (request.user.is_authenticated and\
                 (request.user.is_staff or\
                  request.user.groups.filter(name="Club Login").count() == 1)):
             raise PermissionDenied()
@@ -445,7 +445,7 @@ class SendEmail(APIView):
 class SendCalendarEmail(APIView):
     parser_classes = (JSONParser,)
     def put(self, request, format="json"):
-        if not request.user.is_authenticated():
+        if not request.user.is_authenticated:
             raise PermissionDenied()
         cal_data = request.data
         import pprint
@@ -653,7 +653,7 @@ class BookingSerializer(serializers.ModelSerializer):
     @classmethod
     def many_init(cls, *args, **kwargs):
         request = kwargs["context"]["request"]
-        authenticated = request.user.is_authenticated()
+        authenticated = request.user.is_authenticated
         if not authenticated and hasattr(request, "META"):
             authenticated = authenticate(username=request.META.get("HTTP_X_USERNAME"),
                                          password=request.META.get("HTTP_X_PASSWORD"))
