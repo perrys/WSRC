@@ -393,7 +393,7 @@ def admin_mailshot_view(request):
     def player_data(p):
         sub = p.get_current_subscription()
         
-        return (p.id, {"id": p.id, "full_name": p.user.get_full_name(), "email": p.user.email,
+        return (p.id, {"id": p.id, "full_name": p.user.get_full_name(), "ordered_name": p.get_ordered_name(), "email": p.user.email,
                        "prefs_receive_email": p.prefs_receive_email,
                        "subscription_type": {"name": sub.subscription_type.name if sub else None,
                                              "id": sub.subscription_type.id if sub else None}})
