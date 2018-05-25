@@ -26,25 +26,25 @@ class WSRC_admin_mailshot
     @selected_players_changed()
 
   show_selected_members_table: () ->
-    players = @get_selected_players()
+    selected_players = @get_selected_players()
+    results = WSRC_admin_mailshot.count_players(selected_players, @opt_outs_respected())
+    players = results.distinct_players
     jqdialog = $("#selected_member_table")
     jqtbody = jqdialog.find("table tbody")
     jqtbody.find("tr:not(.header-row)").remove()
-    wsrc.utils.lexical_sort(players, "full_name")
+    wsrc.utils.lexical_sort(players, "ordered_name")
     for p in players
-      optout =  if wsrc.admin.mailshot.opted_out(p) then "True" else ""
-      jqtbody.append("<tr><td>#{ p.full_name }</td><td>#{ p.email }</td><td>#{ p.subscription_type.name }</td><td>#{ optout }</td></tr>")
+      row = $("<tr><td>#{ p.ordered_name }</td><td>#{ p.email }</td><td>#{ p.subscription_type.name }</td><td>#{ p.prefs_receive_email }</td></tr>")
+      unless p.email in results.distinct_emails
+        row.addClass("ui-state-disabled")
+      jqtbody.append(row)
     jqdialog.dialog("open")
 
   send_email: () ->
-    players = @get_selected_players()
-    if @opt_outs_respected()
-      tester = (player, idx) ->
-        player.email.indexOf("@") <= 0 or wsrc.admin.mailshot.opted_out(player)
-      players = $.grep(players, tester, true) # filter out players who have opted out
-    wsrc.utils.lexical_sort(players, "full_name")
+    selected_players = @get_selected_players()
+    results = WSRC_admin_mailshot.count_players(selected_players, @opt_outs_respected())
     csrf_token = $("input[name='csrfmiddlewaretoken']").val()
-    email_addresses = wsrc.utils.unique_field_list(players, "email")
+    email_addresses = results.distinct_emails
     jqmask = $("body")
     batch_size = 40
     data =
