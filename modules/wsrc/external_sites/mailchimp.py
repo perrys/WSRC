@@ -19,6 +19,8 @@ import logging
 import json
 import httplib
 
+import wsrc.external_sites # call __init__.py
+
 from wsrc.site.models import OAuthAccess
 from wsrc.site.competitions.models import CompetitionGroup
 from wsrc.site.usermodel.models import Subscription
@@ -67,7 +69,7 @@ class MailChimpSession:
     @classmethod
     def is_subscribed(clz, player):
         pref = player.prefs_receive_email
-        return pref != False # TODO: change this for GDPR May 2018
+        return pref == True
 
     def sync(self):
         member_map = self.get_users()
@@ -372,3 +374,33 @@ def sync():
         raise_alert("No oauth access token - please log into the admin site and refresh")
         raise exc
 
+
+if __name__ == "__main__":
+    import unittest
+    from django.contrib.auth.models import User
+    from wsrc.site.usermodel.models import Player
+
+    class Tester(unittest.TestCase):
+
+        def setUp(self):
+            pass
+
+        def tearDown(self):
+            pass
+
+        def test_GIVEN_positive_email_preference_WHEN_assessing_whether_subscribed_THEN_is_true(self):
+            user = User.objects.first()
+            player = Player(user=user, prefs_receive_email=True)
+            self.assertTrue(MailChimpSession.is_subscribed(player))
+
+        def test_GIVEN_negative_email_preference_WHEN_assessing_whether_subscribed_THEN_is_false(self):
+            user = User.objects.first()
+            player = Player(user=user, prefs_receive_email=False)
+            self.assertFalse(MailChimpSession.is_subscribed(player))
+
+        def test_GIVEN_ambiguous_email_preference_WHEN_assessing_whether_subscribed_THEN_is_false(self):
+            user = User.objects.first()
+            player = Player(user=user, prefs_receive_email=None)
+            self.assertFalse(MailChimpSession.is_subscribed(player))
+
+    unittest.main()
