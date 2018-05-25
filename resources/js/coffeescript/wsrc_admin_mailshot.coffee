@@ -78,9 +78,10 @@ class WSRC_admin_mailshot
   add_individual: (form) ->
     add_member_input = $(form).find("input#add_member")
     id = add_member_input.data("playerid")
-    @individual_ids.push(id)
-    add_member_input.val('')
-    @selected_players_changed()
+    if id
+      @individual_ids.push(id)
+      add_member_input.val('')
+      @selected_players_changed()
 
   clear_individuals: (form) ->
     @individual_ids = []
