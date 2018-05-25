@@ -149,8 +149,9 @@ class WSRC_admin_mailshot
     @selected_players_changed()
 
   @opted_out: (player) ->
-    player.prefs_receive_email == false or player.prefs_receive_email == "False"
-    
+    opted_in = player.prefs_receive_email == true or player.prefs_receive_email == "True"
+    return not opted_in
+
   @count_players: (player_list, filter_optouts) ->
     players = {}
     players_with_email = 0
