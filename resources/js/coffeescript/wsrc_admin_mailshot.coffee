@@ -34,7 +34,8 @@ class WSRC_admin_mailshot
     jqtbody.find("tr:not(.header-row)").remove()
     wsrc.utils.lexical_sort(players, "ordered_name")
     for p in players
-      row = $("<tr><td>#{ p.ordered_name }</td><td>#{ p.email }</td><td>#{ p.subscription_type.name }</td><td>#{ p.prefs_receive_email }</td></tr>")
+      email_pref = if p.prefs_receive_email == null then "unspecified" else p.prefs_receive_email
+      row = $("<tr><td>#{ p.ordered_name }</td><td>#{ p.email }</td><td>#{ p.subscription_type.name }</td><td>#{ email_pref }</td></tr>")
       unless p.email in results.distinct_emails
         row.addClass("ui-state-disabled")
       jqtbody.append(row)
