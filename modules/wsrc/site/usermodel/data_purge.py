@@ -22,9 +22,13 @@ from wsrc.site.usermodel.models import Player, Season, Subscription
 LOGGER = logging.getLogger(__name__)
 LOGGER.setLevel(logging.INFO)
 
+def to_initial(name):
+    return name[:1] + "."
+
 # We don't remove player's names as they are still required for historical
-# competition records etc.
+# competition records etc, so just set first name to an initial
 PII_FIELDS_TO_PURGE = {"user.email": "",
+                       "user.first_name": to_initial,
                        "cell_phone": "",
                        "other_phone": "",
                        "date_of_birth": None,
@@ -40,7 +44,10 @@ def remove_PII(players):
             while len(toks) > 1:
                 tmp_model = getattr(tmp_model, toks[0])
                 toks = toks[1:]
-            if getattr(tmp_model, toks[0]) != null_value:
+            current_value = getattr(tmp_model, toks[0])
+            if hasattr(null_value, "__call__"):
+                null_value = null_value(current_value)
+            if current_value != null_value:
                 setattr(tmp_model, toks[0], null_value)
                 count += 1
             if tmp_model != model:
