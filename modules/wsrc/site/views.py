@@ -165,13 +165,9 @@ def committee_view(request):
     # need a two-pass render for the committee page
     page = 'Committee'
     ctx = get_pagecontent_ctx(page, "Management")
-    first_pass = TemplateResponse(request, 'generic_page.html', ctx)
-    NavigationMiddleWare().process_template_response(request, first_pass)
-    first_pass.render()
-    unexpanded_content = first_pass.content
-    template = Template(unexpanded_content)
-    response = template.render(Context({'meetings': CommitteeMeetingMinutes.objects.all()}))
-    return HttpResponse(response)
+    template = Template(ctx["pagedata"]["content"])
+    ctx["pagedata"]["content"] = template.render(Context({'meetings': CommitteeMeetingMinutes.objects.all()}))
+    return TemplateResponse(request, 'generic_page.html', ctx)
 
 @require_safe
 def booking_view(request, date=None):
