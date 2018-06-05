@@ -50,17 +50,18 @@
 {% endif %}
 </fieldset>
 
-<fieldset name="subscription">
-  <legend>Subscription</legend>
-  {% include "form_field_snippet.html" with field=form.subscription_type label="Membership Type" %}
-  {% include "form_field_snippet.html" with field=form.season %}
-</fieldset>
-
 <fieldset name="data_protection">
   <legend>Data Protection</legend>
   {% include "form_field_snippet.html" with field=form.prefs_receive_email %}
   {% include "form_field_snippet.html" with field=form.prefs_esra_member label="England Squash Enrolment<sup>&dagger;</sup>" %}
   {% include "form_field_snippet.html" with field=form.prefs_display_contact_details %}
+</fieldset>
+
+<fieldset name="subscription">
+  <legend>Subscription</legend>
+  {% include "form_field_snippet.html" with field=form.subscription_type label="Membership Type" %}
+  {% include "form_field_snippet.html" with field=form.season %}
+  {% include "form_field_snippet.html" with field=form.comment label="<span style='font-weight: normal'>Additional Comments for Membership Secretary (optional)</span>" %}
 </fieldset>
 
 

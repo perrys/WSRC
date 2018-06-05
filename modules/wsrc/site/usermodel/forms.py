@@ -144,6 +144,6 @@ class MembershipApplicationForm(ModelForm):
     class Meta:
         model = MembershipApplication
         fields = ["first_name", "last_name", "email", "date_of_birth", "cell_phone", "other_phone",
-                  "subscription_type", "season",
+                  "subscription_type", "season", "comment",
                   "prefs_receive_email", "prefs_esra_member", "prefs_display_contact_details", "recaptcha_token"]
         
