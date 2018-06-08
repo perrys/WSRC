@@ -60,46 +60,6 @@ class WSRC_boxes_view
       target.find("table.leagues").replaceWith(new_league_table)
       target.find("script").replaceWith(new_script)
 
-  show_results_dialog: (box) ->
-    container = $("#box_results_dialog")
-    container.find(".header h2").text("#{ box.name } Results")
-    jqbody = container.find("table tbody")
-    jqbody.children().remove()
-    id_map = {}
-    for e in box.entrants
-      id_map[e.id] = e
-      
-    for match in box.matches
-      if match.walkover
-        continue
-      unless match.points
-        continue
-      is_draw = false
-      [p1,p2] = [0,1]
-      if match.points[0] > match.points[1]
-        [entrant1, entrant2] = [match.team1, match.team2]
-      else if match.points[0] < match.points[1]
-        [entrant2, entrant1] = [match.team1, match.team2]
-        [p2,p1] = [0,1]
-      else
-        is_draw = true
-        [entrant1, entrant2] = [match.team1, match.team2]
-      [player1, player2] = (id_map[e].player1 for e in [entrant1, entrant2])
-      date = wsrc.utils.iso_to_js_date(match.last_updated)
-      date = wsrc.utils.js_to_readable_date_str(date)
-      listify = (l) ->
-        l1 = ("#{ e[p1] }&ndash;#{ e[p2] }" for e in l)
-        l1.join(", ")
-      tr = """
-      <tr>
-        <td>#{ date }</td>
-        <td><span class='#{ if is_draw then '' else 'winner'}'>#{ player1.full_name }</span> vs. #{ player2.full_name }</td>
-        <td>#{ listify(match.scores) }</td>
-        <td class='points'>#{ listify([match.points]) }</td>
-      </td>"""
-      jqbody.append(tr)
-    container.popup("open")
-
   clear_new_tables: () ->
     for id, container of @target_container_map
       container.data("id", null)
@@ -273,11 +233,6 @@ class WSRC_boxes
     view_radios = $("input[name='view_type']")
     view_type = view_radios.filter(":checked").val()
     @view.set_view_type(view_type)
-
-  handle_results_clicked: (comp_id) ->
-    entrants = @get_entrants(comp_id)
-    matches = wsrc_boxes_data.matches[comp_id]
-    @view.show_results_dialog({entrants: entrants, matches: matches})
 
   @on: (method) ->
     args = $.fn.toArray.call(arguments)
