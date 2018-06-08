@@ -187,48 +187,6 @@ class WSRC_boxes
     entrants = (factory($(p)) for p in players)
     return entrants
             
-  show_score_entry_dialog: (competition_data, permitted_matches, selected_match) ->
-    dialog = $('#score_entry_dialog')
-    form = dialog.find("form.match-result-form")
-    prefix = "Player"
-    submit_callback = (data) =>
-      dialog.popup("close")
-      @fetch_competition_group @get_competition_group_id()
-    form_controller = new wsrc.result_form(form, competition_data, permitted_matches, selected_match, prefix, submit_callback)
-    form.data("controller", form_controller)
-    dialog.popup('open')
-
-  handle_edit_clicked: (comp_id) ->
-    matches = wsrc_boxes_data.matches[comp_id]
-    entrants = @get_entrants(comp_id)
-    possible_matches = matches.slice()
-    mapping = {}
-    # need to calculate the set of possible matches. First get matches already played:
-    for m in matches
-      p1 = m.team1
-      p2 = m.team2
-      if p1 > p2
-        [p1, p2] = [p2, p1]
-      mapping[wsrc.utils.cantor_pair(p1, p2)] = m
-    last = entrants.length
-    # Now fill in blank matches for the opponent pairs not already played
-    for i in [0...last]
-      row_start = i+1
-      for j in [row_start...last]
-        p1 = entrants[i].id
-        p2 = entrants[j].id
-        if p1 > p2
-          [p1, p2] = [p2, p1]
-        unless mapping[wsrc.utils.cantor_pair(p1, p2)]
-          possible_matches.push
-            team1: p1
-            team2: p2
-            scores: []
-    competition =
-      entrants: entrants
-      id: comp_id
-    @show_score_entry_dialog(competition, possible_matches)
-
   handle_display_type_change: (evt) ->
     view_radios = $("input[name='view_type']")
     view_type = view_radios.filter(":checked").val()
