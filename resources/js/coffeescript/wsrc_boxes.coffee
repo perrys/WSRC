@@ -81,7 +81,7 @@ class WSRC_boxes_view
   relocate_player: (player, table_name, index) ->
     target_table = @target_container_map[table_name]
     target = target_table.find("input").eq(index)
-    if target.val() == ""
+    if target.val() == "" and player.user__is_active
       target.val(@get_player_name(player))
       draggables = @set_source_player_ghost(player.id)
       draggables.draggable("disable")
