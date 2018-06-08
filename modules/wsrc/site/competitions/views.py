@@ -238,7 +238,7 @@ class BoxesViewBase(object):
 
     @staticmethod
     def get_all_entrants(comp_group, show_names=False):
-        fields = ["id", "player1__id", "player1__user__id", "player1__user__first_name", "player1__user__last_name", "handicap", "ordering", "competition_id"]
+        fields = ["id", "player1__id", "player1__user__id", "player1__user__first_name", "player1__user__last_name", "player1__user__is_active", "handicap", "ordering", "competition_id"]
         entrants = [p for p in Entrant.objects.filter(competition__group=comp_group).order_by('ordering').values(*fields)]
         for e in entrants:
             if not show_names:
@@ -403,7 +403,8 @@ class BoxesTemplateViewBase(BoxesViewBase, TemplateView):
         return entrants
     
     def create_entrant_cell(self, entrant, auth_user_id):
-        content=u"<span>{full_name}</span>".format(**entrant)
+        cls = "" if entrant["player1__user__is_active"] else "inactive"
+        content=u"<span class='{cls}'>{full_name}</span>".format(full_name=entrant["full_name"], cls=cls)
         attrs={
             "class": "text player",
             "data-player_id":  str(entrant["player1__id"]),
@@ -569,7 +570,7 @@ class BoxesAdminView(BoxesTemplateViewBase):
 
     def get_context_data(self, **kwargs):
         context = super(BoxesAdminView, self).get_context_data(**kwargs)
-        player_data = Player.objects.all().values("id", "user__first_name", "user__last_name")
+        player_data = Player.objects.all().values("id", "user__first_name", "user__last_name", "user__is_active")
         for p in player_data:
             p["full_name"] = u"{user__first_name} {user__last_name}".format(**p)
         context['player_data'] = JSON_RENDERER.render(dict([(p["id"], p) for p in player_data]))
