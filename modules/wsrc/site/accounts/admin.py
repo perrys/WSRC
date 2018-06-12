@@ -71,8 +71,8 @@ class TransactionAdmin(PrefetchRelatedQuerysetMixin, admin.ModelAdmin):
     def subscription(self, obj):
         """Accessor for a possible subscription associated with this
         transaction, for use by the display list."""
-        subs_payments = obj.subs_payments
-        for subs_payment in subs_payments.all():
+        subs_payment = obj.subs_payments
+        if subs_payment:
             cache = getattr(self, 'subscription_cache', None)
             if cache is None:
                 cache = dict([(sub.pk, sub) for sub in Subscription.objects.all()])
