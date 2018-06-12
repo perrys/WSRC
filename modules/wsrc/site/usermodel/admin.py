@@ -256,11 +256,12 @@ class DoorCardLeaseInline(admin.TabularInline):
 
 class PlayerAdmin(SelectRelatedQuerysetMixin, PrefetchRelatedQuerysetMixin, admin.ModelAdmin):
     "Admin for Player (i.e. club member) model"
-    list_filter = ('user__is_active', 'subscription__subscription_type', HasESIDListFilter)
+    list_filter = ('user__is_active', 'subscription__subscription_type', 'gender', HasESIDListFilter)
     list_display = ('ordered_name', 'active', 'date_joined_date', \
-                    'get_age', 'subscription_type', 'current_season', 'signed_off',
+                    'get_age', 'gender', 'subscription_type', 'current_season', 'signed_off',
                     'cell_phone', 'other_phone', 'booking_system_id', 'england_squash_id',
                     'prefs_receive_email', 'prefs_esra_member', 'prefs_display_contact_details')
+#    list_editable = ('gender',)
     search_fields = ('user__first_name', 'user__last_name')
     prefetch_related_fields = ('subscription_set__season','subscription_set__subscription_type')
     list_per_page = 400
@@ -649,7 +650,7 @@ class MembershipApplicationForm(forms.ModelForm):
         return super(MembershipApplicationForm, self).clean()
 
     class Meta:
-        fields = ["first_name", "last_name", "email", "date_of_birth", "cell_phone", "other_phone",
+        fields = ["first_name", "last_name", "email", "cell_phone", "other_phone", "gender", "date_of_birth",
                   "subscription_type", "season", "pro_rata_date", "payment_frequency",
                   "prefs_receive_email", "prefs_esra_member", "prefs_display_contact_details",
                   "player_link", "username", "password", "guid", "email_verified", "comment", "signed_off"]
