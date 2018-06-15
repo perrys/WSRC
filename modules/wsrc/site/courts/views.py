@@ -35,6 +35,7 @@ from django.db.models import Q
 from django.shortcuts import redirect
 from django.template.response import TemplateResponse
 from django.views.decorators.http import require_safe
+from django.utils import timezone
 
 from icalendar import Calendar, Event, vCalAddress, vText
 
@@ -47,6 +48,8 @@ from wsrc.site.courts.models import BookingSystemEvent, EventFilter, BookingOffe
 from wsrc.site.usermodel.models import Player
 from wsrc.utils.html_table import Table, Cell, SpanningCell
 from wsrc.utils import timezones, email_utils
+
+from .court_slot_utils import add_free_slots
 
 LOGGER = logging.getLogger(__name__)
 LOGGER.setLevel(logging.WARNING)
@@ -92,6 +95,18 @@ def auth_query_booking_system(booking_user_id, data={}, query_params={}, method=
     return query_booking_system(query_params, json.dumps(data), method, path)
 
 def get_bookings(date):
+    if hasattr(settings, "BOOKING_SYSTEM_SETTINGS"):
+        tomorrow = date + datetime.timedelta(days=1)
+        booked_slots = BookingSystemEvent.objects.filter(start_time__gt=date, end_time__lt=tomorrow)
+        results = dict([(court, []) for court in COURTS])
+        for booked_slot in booked_slots:
+            results[booked_slot.court].append(booked_slot)
+        for court in COURTS:
+            booked_slots = results[court]
+            now = timezone.now()
+            add_free_slots(court, booked_slots, now)
+            results[court] = dict([(slot["start_mins"], slot) for slot in booked_slots])
+        return (now, results)
     today_str    = timezones.as_iso_date(date)
     tomorrow_str = timezones.as_iso_date(date + datetime.timedelta(days=1))
     params = {
@@ -160,12 +175,12 @@ def set_noshow(booking_user_id, id, is_noshow):
     method = "POST" if is_noshow else "DELETE"
     return auth_query_booking_system(booking_user_id, query_params=params, path=settings.BOOKING_SYSTEM_NOSHOW, method=method)
 
-def make_booking_link(slot):
+def make_booking_link(slot, court, date):
     params = {
         'start_time': slot['start_time'],
-        'date': timezones.as_iso_date(slot['date']),
+        'date': timezones.as_iso_date(date),
         'duration_mins': slot['duration_mins'],
-        'court': slot['court'],
+        'court': court,
         'token': slot['token']
     }
     return '{path}/?{params}'.format(path=reverse_url('booking'), params=urllib.urlencode(params))
@@ -181,7 +196,7 @@ def create_booking_cell_content (slot, court, date):
             result += '<div class="noshow label label-danger">NO SHOW</div>'
 
     elif "token" in slot:
-        result += "<span class='available'><a href='{href}'>(available)</a></span>".format(href=make_booking_link(slot))
+        result += "<span class='available'><a href='{href}'>(available)</a></span>".format(href=make_booking_link(slot, court, date))
     result += "</div>"
     return result
 
@@ -207,14 +222,13 @@ def render_day_table(court_slots, date, server_time, allow_booking_shortcut):
         table.addCell(Cell("", attrs={"class": "time-col"}, isHeader=True), 0, i)
         table.addCell(Cell("", attrs={"class": "time-col"}, isHeader=True), 4, i)
 
-
+    booking_path = reverse_url('booking')
     for court in COURTS:
         slots = court_slots[court]
         row_idx = 0
         slots = slots.values()
         slots.sort(key=operator.itemgetter("start_mins"))
         for slot in slots:
-            slot.update({"court": court, "date": date})
             if row_idx == 0:
                 blank_rows = (slot["start_mins"] - start) / RESOLUTION
                 row_idx += blank_rows
@@ -223,7 +237,7 @@ def render_day_table(court_slots, date, server_time, allow_booking_shortcut):
             attrs = {"data-court": str(court)}
             classes = ["slot"]
             if "id" in slot:
-                attrs['onclick'] = "document.location.href='{path}/{id}'".format(path=reverse_url('booking'), id=slot['id'])
+                attrs['onclick'] = "document.location.href='{path}/{id}'".format(path=booking_path, id=slot['id'])
                 classes.append("booking")
                 classes.append(slot["type"])
                 for k in ["id"]:
@@ -236,7 +250,7 @@ def render_day_table(court_slots, date, server_time, allow_booking_shortcut):
                 if allow_booking_shortcut:
                     attrs["onclick"] = "handle_booking_request(event, this)"
                 else:
-                    attrs["onclick"] = "document.location.href='{href}'".format(href=make_booking_link(slot))
+                    attrs["onclick"] = "document.location.href='{href}'".format(href=make_booking_link(slot, court, date))
                 classes.append("available")
                 for k in ["token", "start_time", "duration_mins"]:
                     attrs["data-" + k] = str(slot[k])
