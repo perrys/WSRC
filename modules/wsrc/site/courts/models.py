@@ -54,6 +54,12 @@ class BookingSystemEvent(models.Model):
         start_time = timezone.localtime(self.start_time)
         return BookingSystemEvent.generate_hmac_token(start_time, self.court)
 
+    @property
+    def start_minutes(self):
+        start_time = timezone.localtime(self.start_time)
+        return start_time.hour * 60 + start_time.minute
+        
+    @property
     def duration_minutes(self):
         dt = self.end_time - self.start_time
         return int(dt.total_seconds() / 60)
@@ -68,6 +74,36 @@ class BookingSystemEvent(models.Model):
         toks = [obfuscate(tok, to_initial=(len(toks)>1 and idx==0)) for idx,tok in enumerate(toks)]
         return " ".join(toks)
 
+    # emulate dictionary API used by JSON events returned from legacy booking system:
+    def get(self, key):
+        return self.__getitem__(key)
+    
+    def __contains__(self, key):
+        return self.__getitem__(key) is not None
+
+    def __getitem__(self, key):
+        "Dictionary access which maps properties from the legacy booking system"
+        if key == "start_mins":
+            return self.start_minutes
+        elif key == "duration_mins":
+            return self.duration_minutes
+        elif key == "type":
+            return self.event_type
+        elif key == "id":
+            # Return django ID not the booking system one - as this
+            # dictionary is intended for use when migrating to the new
+            # system:
+            return self.pk
+        elif key == "created_by":
+            player = self.created_by
+            if player is None:
+                return ""
+            return player.user.get_full_name()
+        elif key == "timestamp":
+            return self.created_time.strftime("%Y-%m-%d %H:%M:%s")
+        else:
+            return getattr(self, key)
+        
     def __unicode__(self):
         if self.start_time is None or self.end_time is None:
             return "Invalid event"
