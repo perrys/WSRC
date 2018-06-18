@@ -96,6 +96,9 @@ def auth_query_booking_system(booking_user_id, data={}, query_params={}, method=
 
 def get_bookings(date):
     if hasattr(settings, "BOOKING_SYSTEM_SETTINGS"):
+        MIDNIGHT_NAIVE = datetime.time()
+        date = timezone.make_aware(datetime.datetime.combine(date, MIDNIGHT_NAIVE))
+        now = timezone.localtime(timezone.now())
         tomorrow = date + datetime.timedelta(days=1)
         booked_slots = BookingSystemEvent.objects.filter(start_time__gt=date, end_time__lt=tomorrow)
         results = dict([(court, []) for court in COURTS])
@@ -103,8 +106,7 @@ def get_bookings(date):
             results[booked_slot.court].append(booked_slot)
         for court in COURTS:
             booked_slots = results[court]
-            now = timezone.now()
-            add_free_slots(court, booked_slots, now)
+            add_free_slots(court, booked_slots, date, now)
             results[court] = dict([(slot["start_mins"], slot) for slot in booked_slots])
         return (now, results)
     today_str    = timezones.as_iso_date(date)
