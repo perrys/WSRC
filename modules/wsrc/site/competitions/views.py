@@ -213,8 +213,6 @@ def get_tournament_links(options, selected_comp_or_group):
 
 class BoxesViewBase(object):
 
-    competition_type = "wsrc_boxes"
-
     @staticmethod
     def create_box_config(previous_cfg, competition, entrants, auth_user_id, is_editor):
         is_second = False
@@ -247,8 +245,8 @@ class BoxesViewBase(object):
             e["full_name"] = " ".join([e["player1__user__first_name"], e["player1__user__last_name"]])
         return entrants
 
-    def get_competition_group(self, end_date=None, group_id=None):
-        group_queryset = CompetitionGroup.objects.filter(comp_type=self.competition_type).exclude(competition__state="not_started").order_by('-end_date')
+    def get_competition_group(self, comp_type, end_date=None, group_id=None):
+        group_queryset = CompetitionGroup.objects.filter(comp_type=comp_type).exclude(competition__state="not_started").order_by('-end_date')
         if end_date is None:
             group = group_queryset[0]
         else:
@@ -539,9 +537,9 @@ class BoxesUserView(BoxesTemplateViewBase):
         return context
 
 class BoxesPreviewView(BoxesUserView):
-    def get_competition_group(self, group_id):
-        (group, possible_groups) = super(BoxesPreviewView, self).get_competition_group()
-        group = get_object_or_404(CompetitionGroup.objects.filter(comp_type=self.competition_type), pk=group_id)
+    def get_competition_group(self, comp_type, group_id):
+        (group, possible_groups) = super(BoxesPreviewView, self).get_competition_group(comp_type)
+        group = get_object_or_404(CompetitionGroup.objects.filter(comp_type=comp_type), pk=group_id)
         return (group, possible_groups)
 
 class BoxesDataView(BoxesUserView):
@@ -576,7 +574,7 @@ class BoxesAdminView(BoxesTemplateViewBase):
         context['player_data'] = JSON_RENDERER.render(dict([(p["id"], p) for p in player_data]))
 
         # add any unstarted competition
-        group_queryset = CompetitionGroup.objects.filter(comp_type=self.competition_type).filter(competition__state="not_started").order_by('-end_date')
+        group_queryset = CompetitionGroup.objects.filter(comp_type=kwargs["comp_type"], competition__state="not_started").order_by('-end_date')
         all_entrants = all_leagues = None
         if group_queryset.count() > 0:
             group = group_queryset[0]

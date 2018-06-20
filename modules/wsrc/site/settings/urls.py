@@ -61,16 +61,18 @@ urlpatterns = [
 
     url(r'^boxes/admin/activate/',              wsrc.site.competitions.views.SetCompetitionGroupLive.as_view()),
     url(r'^boxes/admin/email/',                 wsrc.site.competitions.views.SendCompetitionEmail.as_view()),
-    url(r'^boxes/admin/?$',                     wsrc.site.competitions.views.BoxesAdminView.as_view(), name=wsrc.site.competitions.views.BoxesAdminView.reverse_url_name),
-    url(r'^boxes/admin/(\d{4}-\d{2}-\d{2})/?$', wsrc.site.competitions.views.BoxesAdminView.as_view()),
-    url(r'^boxes/xl/?$',                        wsrc.site.competitions.views.BoxesExcelView.as_view()),
-    url(r'^boxes/xl/(\d{4}-\d{2}-\d{2})/?$',    wsrc.site.competitions.views.BoxesExcelView.as_view()),
-    url(r'^boxes/data/(?P<group_id>\d+)/?$',    wsrc.site.competitions.views.BoxesDataView.as_view()),
+    url(r'^boxes/admin/?$',                     wsrc.site.competitions.views.BoxesAdminView.as_view(), {'comp_type': 'wsrc_boxes'},\
+        name=wsrc.site.competitions.views.BoxesAdminView.reverse_url_name),
+    url(r'^boxes/admin/(?P<end_date>\d{4}-\d{2}-\d{2})/?$', wsrc.site.competitions.views.BoxesAdminView.as_view(), {'comp_type': 'wsrc_boxes'}),
+    url(r'^boxes/xl/?$',                        wsrc.site.competitions.views.BoxesExcelView.as_view(), {'comp_type': 'wsrc_boxes'}),
+    url(r'^boxes/xl/(?P<end_date>\d{4}-\d{2}-\d{2})/?$',    wsrc.site.competitions.views.BoxesExcelView.as_view(), {'comp_type': 'wsrc_boxes'}),
+    url(r'^boxes/data/(?P<group_id>\d+)/?$',    wsrc.site.competitions.views.BoxesDataView.as_view(), {'comp_type': 'wsrc_boxes'}),
 
-    url(r'^boxes/preview/(?P<group_id>\d+)/?$', wsrc.site.competitions.views.BoxesPreviewView.as_view()), # end-date based
+    url(r'^boxes/preview/(?P<group_id>\d+)/?$', wsrc.site.competitions.views.BoxesPreviewView.as_view(), {'comp_type': 'wsrc_boxes'}),
                        
-    url(r'^boxes/(\d{4}-\d{2}-\d{2})/?$', wsrc.site.competitions.views.BoxesUserView.as_view()), # end-date based
-    url(r'^boxes/?$',                     wsrc.site.competitions.views.BoxesUserView.as_view(), name=wsrc.site.competitions.views.BoxesUserView.reverse_url_name),
+    url(r'^boxes/(?P<end_date>\d{4}-\d{2}-\d{2})/?$', wsrc.site.competitions.views.BoxesUserView.as_view(), {'comp_type': 'wsrc_boxes'}), # end-date based
+    url(r'^boxes/?$',                     wsrc.site.competitions.views.BoxesUserView.as_view(), {'comp_type': 'wsrc_boxes'}, \
+        name=wsrc.site.competitions.views.BoxesUserView.reverse_url_name),
 
     url(r'^tournaments/admin/(\d{4})/([\w\s]+)/?',  wsrc.site.competitions.views.bracket_admin_view),
     url(r'^tournaments/admin/?',                    wsrc.site.competitions.views.bracket_admin_view),
