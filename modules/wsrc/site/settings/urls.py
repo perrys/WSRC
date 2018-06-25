@@ -66,7 +66,6 @@ urlpatterns = [
     url(r'^boxes/admin/(?P<end_date>\d{4}-\d{2}-\d{2})/?$', wsrc.site.competitions.views.BoxesAdminView.as_view(), {'comp_type': 'wsrc_boxes'}),
     url(r'^boxes/xl/?$',                        wsrc.site.competitions.views.BoxesExcelView.as_view(), {'comp_type': 'wsrc_boxes'}),
     url(r'^boxes/xl/(?P<end_date>\d{4}-\d{2}-\d{2})/?$',    wsrc.site.competitions.views.BoxesExcelView.as_view(), {'comp_type': 'wsrc_boxes'}),
-    url(r'^boxes/data/(?P<group_id>\d+)/?$',    wsrc.site.competitions.views.BoxesDataView.as_view(), {'comp_type': 'wsrc_boxes'}),
 
     url(r'^boxes/preview/(?P<group_id>\d+)/?$', wsrc.site.competitions.views.BoxesPreviewView.as_view(), {'comp_type': 'wsrc_boxes'}),
                        
