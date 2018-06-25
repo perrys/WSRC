@@ -542,10 +542,6 @@ class BoxesPreviewView(BoxesUserView):
         group = get_object_or_404(CompetitionGroup.objects.filter(comp_type=comp_type), pk=group_id)
         return (group, possible_groups)
 
-class BoxesDataView(BoxesUserView):
-    template_name = "boxes_data.html"
-    league_table_attrs = {}
-
 class BoxesAdminView(BoxesTemplateViewBase):
     template_name = "boxes_admin.html"
     box_table_attrs = {"class": " ui-helper-hidden"}
