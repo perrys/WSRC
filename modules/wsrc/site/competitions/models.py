@@ -46,10 +46,11 @@ class BoxLeaguePoints:
 class CompetitionType(models.Model):
     id = models.CharField(max_length=32, primary_key=True)
     name = models.CharField(max_length=64, unique=True)
-    legacy_name = models.CharField(max_length=16)
     is_knockout_comp = models.BooleanField()
     def __unicode__(self):
         return self.name
+    class Meta:
+        verbose_name = "Competition Type"
 
 class CompetitionGroup(models.Model):
     """A grouping of competitions, e.g. a set of league boxes"""
