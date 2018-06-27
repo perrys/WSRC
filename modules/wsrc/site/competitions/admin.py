@@ -30,10 +30,14 @@ class CompetitionInline(admin.TabularInline):
         return qs
 
 class CompetitionGroupAdmin(admin.ModelAdmin):
-    list_display = ("name", "comp_type", "end_date", "active",)
-    list_filter = ('comp_type',)
+    list_display = ("name", "competition_type", "end_date", "active",)
+    list_filter = ('competition_type',)
     inlines = (CompetitionInline,)
 admin.site.register(comp_models.CompetitionGroup, CompetitionGroupAdmin)
+
+class CompetitionTypeAdmin(admin.ModelAdmin):
+    list_display = ("id", "name", "is_knockout_comp")
+admin.site.register(comp_models.CompetitionType, CompetitionTypeAdmin)
 
 class EntrantForm(forms.ModelForm):
     "Override subscription form for more efficient DB interaction"
@@ -98,7 +102,7 @@ set_not_started.short_description="Un-start"
 
 class CompetitionAdmin(admin.ModelAdmin):
     list_display = ("name", "group", "number_of_entrants", "state", "end_date", "ordering", "url")
-    list_filter = ('group__comp_type', 'group', 'state')
+    list_filter = ('group__competition_type', 'group', 'state')
     inlines = (EntrantInline,MatchInLine,)
     actions=(set_not_started, set_in_progress, set_concluded)
     def get_queryset(self, request):

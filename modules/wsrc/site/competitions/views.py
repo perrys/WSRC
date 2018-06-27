@@ -151,7 +151,7 @@ class UpdateMatch(rest_generics.RetrieveUpdateAPIView):
 
     def perform_update(self, serializer):
         match = serializer.instance
-        if match.competition.group.comp_type == "wsrc_tournaments":
+        if match.competition.group.competition_type.is_knockout_comp:
             # we do some special validation, and create the next match
             # when this is a knockout competition. Validation should
             # really be done by the serializer, but we need the
@@ -186,7 +186,7 @@ def get_tournament_links(options, selected_comp_or_group):
     result = []
     no_navigation = "no_navigation" in options
     suffix = no_navigation and "?no_navigation" or ""
-    for group in qset.filter(comp_type="wsrc_tournaments").prefetch_related("competition_set"):
+    for group in qset.filter(competition_type__id__icontains="tournament").prefetch_related("competition_set"):
         year = group.end_date.year
         year_suffix = no_navigation and " {year}".format(**locals()) or ""
         comps = [comp for comp in group.competition_set.all() if comp.state != "not_started"]
@@ -199,7 +199,7 @@ def get_tournament_links(options, selected_comp_or_group):
                            "link": reverse(bracket_view) + "/{year}/{name}/{suffix}".format(**locals()),
                            "selected": no_navigation and comp == selected_comp_or_group
                        })
-    for group in qset.filter(comp_type="wsrc_qualifiers", active=True):
+    for group in qset.filter(competition_type="tournament_qualifiers", active=True):
         year = group.end_date.year
         year_suffix = no_navigation and " {year}".format(**locals()) or ""
         name = " ".join(group.name.split()[2:-1]) # remove front and rear sections
@@ -246,7 +246,7 @@ class BoxesViewBase(object):
         return entrants
 
     def get_competition_group(self, comp_type, end_date=None, group_id=None):
-        group_queryset = CompetitionGroup.objects.filter(comp_type=comp_type).exclude(competition__state="not_started").order_by('-end_date')
+        group_queryset = CompetitionGroup.objects.filter(competition_type=comp_type).exclude(competition__state="not_started").order_by('-end_date')
         if end_date is None:
             group = group_queryset[0]
         else:
@@ -481,7 +481,7 @@ class BoxesTemplateViewBase(BoxesViewBase, TemplateView):
                             "end_date": group.end_date,
                             "name": group.name,
                             "id": group.id,
-                            "link": reverse(self.reverse_url_name) + "/" + group.end_date.isoformat(),
+                            "link": reverse(self.reverse_url_name, kwargs={'comp_type': group.competition_type_id}) + "/" + group.end_date.isoformat(),
                             "selected": group == selected_group
                         })
         ctx["selector"] =  {"default_text": "Leagues Ending", "links": leagues}
@@ -489,7 +489,7 @@ class BoxesTemplateViewBase(BoxesViewBase, TemplateView):
     def get_context_data(self, **kwargs):
         (group, possible_groups) = self.get_competition_group(*self.args, **kwargs)
         context = {
-            "competition": {"name": group.name, "id": group.id}
+            "competition": {"name": group.name, "id": group.id, "type": group.competition_type_id}
         }
 
         is_editor = self.request.user.has_perm("competitions.change_match")
@@ -539,7 +539,7 @@ class BoxesUserView(BoxesTemplateViewBase):
 class BoxesPreviewView(BoxesUserView):
     def get_competition_group(self, comp_type, group_id):
         (group, possible_groups) = super(BoxesPreviewView, self).get_competition_group(comp_type)
-        group = get_object_or_404(CompetitionGroup.objects.filter(comp_type=comp_type), pk=group_id)
+        group = get_object_or_404(CompetitionGroup.objects.filter(competition_type=comp_type), pk=group_id)
         return (group, possible_groups)
 
 class BoxesAdminView(BoxesTemplateViewBase):
@@ -570,7 +570,7 @@ class BoxesAdminView(BoxesTemplateViewBase):
         context['player_data'] = JSON_RENDERER.render(dict([(p["id"], p) for p in player_data]))
 
         # add any unstarted competition
-        group_queryset = CompetitionGroup.objects.filter(comp_type=kwargs["comp_type"], competition__state="not_started").order_by('-end_date')
+        group_queryset = CompetitionGroup.objects.filter(competition_type=kwargs["comp_type"], competition__state="not_started").order_by('-end_date')
         all_entrants = all_leagues = None
         if group_queryset.count() > 0:
             group = group_queryset[0]
@@ -605,10 +605,10 @@ class BoxesAdminView(BoxesTemplateViewBase):
 @login_required
 def bracket_view(request, year, name, template_name="tournaments.html"):
     if year is None:
-        groups = CompetitionGroup.objects.filter(comp_type='wsrc_tournaments').filter(active=True).order_by("-end_date")
+        groups = CompetitionGroup.objects.filter(competition_type__is_knockout_comp=True).filter(active=True).order_by("-end_date")
         group = groups[0]
     else:
-        group = get_object_or_404(CompetitionGroup.objects, end_date__year=year, comp_type='wsrc_tournaments')
+        group = get_object_or_404(CompetitionGroup.objects, end_date__year=year, competition_type__is_knockout_comp=True)
 
     name = name.replace("_", " ")
     comp_set = Competition.objects.filter(group=group, name__iexact=name)\
@@ -631,7 +631,7 @@ def squashlevels_upload_view(request):
     clause = Q(name__istartswith="Premier") |\
              Q(name__istartswith="League 1") |\
              Q(name__istartswith="League 2")
-    comps = Competition.objects.filter(group__comp_type='wsrc_boxes', state='active').filter(clause)
+    comps = Competition.objects.filter(group__competition_type='squash_boxes', state='active').filter(clause)
     matches = Match.objects.filter(competition__in=comps, \
                                    team1__player1__squashlevels_id__isnull=False, \
                                    team2__player1__squashlevels_id__isnull=False)
@@ -758,9 +758,9 @@ class MatchEntryViewBase(PermissionedView):
         competition = Competition.objects.select_related("group").get(pk=comp_id)
         date = competition.group.end_date.isoformat()
         url = self.request.path
-        if competition.group.comp_type == "wsrc_boxes":
-            url = reverse(BoxesUserView.reverse_url_name) + "/" + date
-        elif competition.group.comp_type == "wsrc_tournaments":
+        if not competition.group.competition_type.is_knockout_comp:
+            url = reverse(BoxesUserView.reverse_url_name, kwargs={'comp_type':competition.group.competition_type_id}) + "/" + date
+        else:
             url = reverse("tournament", args=(competition.group.end_date.year, competition.name))
         if "no_navigation" in self.request.GET:
             url += "?no_navigation"
@@ -823,7 +823,7 @@ def bracket_admin_view(request, year=None, name=None):
 
     competition = None
     comp_data = '{}'
-    comps = Competition.objects.filter(group__comp_type="wsrc_tournaments").select_related("group")\
+    comps = Competition.objects.filter(group__competition_type.is_knockout_comp).select_related("group")\
                                                                            .prefetch_related("entrant_set__player1__user", \
                                                                            "entrant_set__player2__user")
     if name is not None:
@@ -860,7 +860,7 @@ class SetCompetitionGroupLive(CompetitionEditorPermissionedAPIView):
         competition_group_id = request.data.pop('competition_group_id')
         competition_type = request.data.pop('competition_type')
         new_group = CompetitionGroup.objects.get(pk = competition_group_id)
-        old_groups = CompetitionGroup.objects.filter(active = True).filter(comp_type = competition_type)
+        old_groups = CompetitionGroup.objects.filter(active = True).filter(competition_type_id = competition_type)
         for group in old_groups:
             for comp in group.competition_set.all():
                 comp.state = "complete"
