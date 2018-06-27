@@ -15,7 +15,7 @@
   {% if node.url %}
   {% if not user.is_authenticated or not node.name == "Join Us" %}{% comment %}TODO: implement this in the data model{% endcomment %}
   <li class="{% if node.is_active %}active{% endif %}">
-    <a href="{% if node.is_reverse_url %}{% url node.url %}{% else %}{{ node.url }}{% endif %}">{{ node.name }}</a>
+    <a href="{{ node.url }}">{{ node.name }}</a>
   </li>
   {% endif %}
   {% else %}
@@ -25,7 +25,7 @@
     {% for child in node.children %}
     {% if child.url != "null" %}
     <li class="{% if child.is_active %}active{% endif %} {% if child.url|slice:':4' == "http" %}external{% endif %}">
-      <a href="{% if child.is_reverse_url %}{% url child.url %}{% else %}{{ child.url }}{% endif %}">{{ child.name }}</a>
+      <a href="{{ child.url }}">{{ child.name }}</a>
     </li>
     {% else %}
     {% if child.name|lower == "separator" %}
