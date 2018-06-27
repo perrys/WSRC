@@ -114,33 +114,9 @@ class WSRC_boxes
     view_radios = $("input[name='view_type']")
     view_radios.on "change", (evt) =>
       @handle_display_type_change(evt)
-    $("#box-refresh-button").click (evt) =>
-      @fetch_competition_group @get_competition_group_id()
 
   get_competition_group_id: () ->
     $("#source_boxes").data("id")
-
-  fetch_competition_group: (group_id) ->
-    jQuery.mobile.loading("show", 
-      text: "Loading Competition"
-      textVisible: true
-      textonly: false
-      theme: "a"
-      html: ""
-    )
-    opts =
-      url: "/boxes/data/#{ group_id }"
-      type: 'GET'
-      success: (data, status, jq_xhr) =>
-        jQuery.mobile.loading("hide")
-        nodes = $.parseHTML($.trim(data), null, true)
-        @view.update_tables(nodes)
-        @handle_display_type_change()
-      failureCB: (xhr, status) -> 
-        alert("ERROR #{ xhr.status }: #{ xhr.statusText }\nResponse: #{ xhr.responseText }\n\nUnable to fetch data for comp group '#{ group_id }'.")
-        jQuery.mobile.loading("hide")
-    jQuery.ajax(opts)
-
 
   get_points_totals: (this_box_config) ->
     newTotals = (entrant_id) -> {id: entrant_id, p: 0, w: 0, d: 0, l: 0, f: 0, a: 0, pts: 0}
