@@ -87,7 +87,7 @@ class CompetitionGroup(models.Model):
         return players
     
     class Meta:
-        ordering = ["competition_type__name", "-end_date"]
+        ordering = ["-end_date", "competition_type"]
         verbose_name = "Competition Group"
 
 class Competition(models.Model):
