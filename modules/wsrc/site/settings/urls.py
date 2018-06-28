@@ -59,15 +59,15 @@ urlpatterns = [
     url(r'^court_booking/proxy/?$', wsrc.site.views.booking_proxy_view),
     url(r'^court_booking/cal_invite/send', wsrc.site.views.SendCalendarEmail.as_view()),
 
-    url(r'^competitions/leagues/(?P<comp_type>\w+)/admin/activate/',              wsrc.site.competitions.views.SetCompetitionGroupLive.as_view()),
-    url(r'^competitions/leagues/(?P<comp_type>\w+)/admin/email/',                 wsrc.site.competitions.views.SendCompetitionEmail.as_view()),
-    url(r'^competitions/leagues/(?P<comp_type>\w+)/admin/?$',                     wsrc.site.competitions.views.BoxesAdminView.as_view(),\
-        name=wsrc.site.competitions.views.BoxesAdminView.reverse_url_name),
+    url(r'^competitions/admin/activate/',              wsrc.site.competitions.views.SetCompetitionGroupLive.as_view(), name="comp_group_activate"),
+    url(r'^competitions/admin/email/',                 wsrc.site.competitions.views.SendCompetitionEmail.as_view()),
+
+    url(r'^competitions/leagues/(?P<comp_type>\w+)/admin/?$',  wsrc.site.competitions.views.BoxesAdminView.as_view(), name=wsrc.site.competitions.views.BoxesAdminView.reverse_url_name),
     url(r'^competitions/leagues/(?P<comp_type>\w+)/admin/(?P<end_date>\d{4}-\d{2}-\d{2})/?$', wsrc.site.competitions.views.BoxesAdminView.as_view()),
     url(r'^competitions/leagues/(?P<comp_type>\w+)/xl/?$',                        wsrc.site.competitions.views.BoxesExcelView.as_view()),
     url(r'^competitions/leagues/(?P<comp_type>\w+)/xl/(?P<end_date>\d{4}-\d{2}-\d{2})/?$',    wsrc.site.competitions.views.BoxesExcelView.as_view()),
 
-    url(r'^competitions/leagues/(?P<comp_type>\w+)/preview/(?P<group_id>\d+)/?$', wsrc.site.competitions.views.BoxesPreviewView.as_view()),
+    url(r'^competitions/leagues/(?P<comp_type>\w+)/preview/(?P<group_id>\d+)/?$', wsrc.site.competitions.views.BoxesPreviewView.as_view(), name='leagues_preview'),
                        
     url(r'^competitions/leagues/(?P<comp_type>\w+)/(?P<end_date>\d{4}-\d{2}-\d{2})/?$', wsrc.site.competitions.views.BoxesUserView.as_view()), # end-date based
     url(r'^competitions/leagues/(?P<comp_type>\w+)/?$',                     wsrc.site.competitions.views.BoxesUserView.as_view(), \
@@ -129,7 +129,7 @@ urlpatterns = [
     url(r'^html/links.html',          perm_redirect('/links')),
     url(r'^tournaments/index.html',   perm_redirect('/tournament')),
     url(r'^boxes/?$',                 perm_redirect('/competitions/leagues/squash_boxes/')),
-
+    url(r'^boxes/admin/?$',           perm_redirect('/competitions/leagues/squash_boxes/admin')),
 
     url(r'^club_management/?$', wsrc.site.views.committee_view),
     url(r'^committee/?$', wsrc.site.views.committee_view),

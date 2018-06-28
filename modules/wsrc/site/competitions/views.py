@@ -858,9 +858,8 @@ class SetCompetitionGroupLive(CompetitionEditorPermissionedAPIView):
     parser_classes = (JSONParser,)
     def put(self, request, format="json"):
         competition_group_id = request.data.pop('competition_group_id')
-        competition_type = request.data.pop('competition_type')
         new_group = CompetitionGroup.objects.get(pk = competition_group_id)
-        old_groups = CompetitionGroup.objects.filter(active = True).filter(competition_type_id = competition_type)
+        old_groups = CompetitionGroup.objects.filter(active = True).filter(competition_type = new_group.competition_type)
         for group in old_groups:
             for comp in group.competition_set.all():
                 comp.state = "complete"

@@ -28,8 +28,10 @@
   <title>Boxes Admin - Woking Squash Rackets Club</title>
 
   <script type="text/javascript">
-var players = {{ player_data|safe }};
-jQuery(document).ready(function(){wsrc.admin.boxes.onReady(players)});
+    var players = {{ player_data|safe }};
+    var comp_type = "{{ competition.type }}";
+    var preview_url = "{% url 'leagues_preview' competition.type 0 %}";
+jQuery(document).ready(function(){wsrc.admin.boxes.onReady(players, comp_type, preview_url)});
   </script>
 
 </head>
