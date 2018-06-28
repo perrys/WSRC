@@ -189,7 +189,7 @@ class CompetitionGroupSerializer(serializers.ModelSerializer):
     class Meta:
         model = CompetitionGroup
         depth = 0
-        fields = ('id', 'name', 'comp_type', 'end_date', 'active', 'competition_set', 'competitions_expanded', 'status')
+        fields = ('id', 'name', 'competition_type', 'end_date', 'active', 'competition_set', 'competitions_expanded', 'status')
 
     def __init__(self, *args, **kwargs):
         # Instantiate the superclass normally
