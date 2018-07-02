@@ -34,6 +34,11 @@ TEMPLATES = [
 # Application definition
 
 INSTALLED_APPS = (
+    'wsrc.site',
+    'wsrc.site.accounts',
+    'wsrc.site.usermodel',
+    'wsrc.site.courts',
+    'wsrc.site.competitions',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -42,11 +47,6 @@ INSTALLED_APPS = (
     'django.contrib.staticfiles',
     'django.contrib.humanize',
     'rest_framework',
-    'wsrc.site',
-    'wsrc.site.accounts',
-    'wsrc.site.usermodel',
-    'wsrc.site.courts',
-    'wsrc.site.competitions',
     'debug_toolbar',
 )
 
