@@ -445,7 +445,7 @@ class WSRC_boxes_admin extends WSRC_boxes
         else
           doit1()
       else
-        document.location = "/boxes/admin"
+        document.location.reload(true)
     doit()
 
   handle_league_changed: (selector) ->
