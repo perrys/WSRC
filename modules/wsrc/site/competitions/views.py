@@ -248,7 +248,7 @@ class BoxesViewBase(object):
     def get_competition_group(self, comp_type, end_date=None, group_id=None):
         group_queryset = CompetitionGroup.objects.filter(competition_type=comp_type).exclude(competition__state="not_started").order_by('-end_date')
         if end_date is None:
-            group = group_queryset[0]
+            group = group_queryset[0] if group_queryset.exists() else None
         else:
             end_date = parse_iso_date_to_naive(end_date)
             group = get_object_or_404(group_queryset, end_date=end_date)
@@ -487,20 +487,28 @@ class BoxesTemplateViewBase(BoxesViewBase, TemplateView):
         ctx["selector"] =  {"default_text": "Leagues Ending", "links": leagues}
 
     def get_context_data(self, **kwargs):
-        (group, possible_groups) = self.get_competition_group(*self.args, **kwargs)
-        context = {
-            "competition": {"name": group.name, "id": group.id, "type": group.competition_type_id}
-        }
+        (most_recent_group, possible_groups) = self.get_competition_group(*self.args, **kwargs)
+        if most_recent_group is not None:
+            context = {
+                "competition": {"name": most_recent_group.name, "id": most_recent_group.id, "type": most_recent_group.competition_type_id}
+            }
+        else:
+            context = {
+                "competition": {"type": kwargs["comp_type"]}
+            }
+            
 
         is_editor = self.request.user.has_perm("competitions.change_match")
         auth_user_id = self.request.user.id
         context["boxes"] = boxes = []
         max_players = 0
         previous_cfg = None
-        all_matches = Match.objects.filter(competition__group=group).select_related("team1__player1__user", "team2__player1__user")
+        all_matches = Match.objects.filter(competition__group=most_recent_group).select_related("team1__player1__user", "team2__player1__user")
         all_matches = [m.cache_scores() for m in all_matches]
-        all_entrants = self.get_all_entrants(group, self.request.user.is_authenticated())
-        all_leagues = [c for c in group.competition_set.all()]
+        all_entrants = self.get_all_entrants(most_recent_group, self.request.user.is_authenticated())
+        all_leagues = []
+        if most_recent_group is not None:
+            all_leagues = [c for c in most_recent_group.competition_set.all()] 
         for comp in all_leagues:
             matches = [m for m in all_matches if m.competition_id==comp.id]
             entrants = [e for e in all_entrants if e['competition_id']==comp.id]
@@ -520,7 +528,7 @@ class BoxesTemplateViewBase(BoxesViewBase, TemplateView):
             box["box_table"]    = self.create_box_table(box["competition"], max_players, box["entrants"], box["matches"], auth_user_id)
             box["league_table"] = self.create_league_table(box["competition"], box["sorted_entrants"], auth_user_id)
 
-        self.add_selector(context, possible_groups, group)
+        self.add_selector(context, possible_groups, most_recent_group)
         return context
 
 class BoxesUserView(BoxesTemplateViewBase):
