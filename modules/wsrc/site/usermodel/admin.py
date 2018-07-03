@@ -227,6 +227,22 @@ class HasESIDListFilter(admin.SimpleListFilter):
                                            | models.Q(england_squash_id=''))
         return queryset
 
+class CurrentSubscriptionListFilter(admin.SimpleListFilter):
+    title = "Has Current Subscription"
+    parameter_name = "has_sub"
+    def lookups(self, request, model_admin):
+        return [('y', 'Yes'), ('n', 'No')]
+    def queryset(self, request, queryset):
+        if self.value():
+            latest_season = Season.latest()
+            latest_subs = Subscription.objects.filter(season=latest_season)
+            player_ids = [s.player_id for s in latest_subs.all()]
+            yes_flag = self.value() == 'y'
+            if yes_flag:
+                queryset = queryset.filter(pk__in=player_ids)
+            else:
+                queryset = queryset.exclude(pk__in=player_ids)
+        return queryset
 
 class SubscriptionInline(admin.StackedInline):
     "Simple inline for player in User admin"
@@ -256,7 +272,7 @@ class DoorCardLeaseInline(admin.TabularInline):
 
 class PlayerAdmin(SelectRelatedQuerysetMixin, PrefetchRelatedQuerysetMixin, admin.ModelAdmin):
     "Admin for Player (i.e. club member) model"
-    list_filter = ('user__is_active', 'subscription__subscription_type', 'gender', HasESIDListFilter)
+    list_filter = ('user__is_active', 'subscription__subscription_type', 'gender', HasESIDListFilter, CurrentSubscriptionListFilter)
     list_display = ('ordered_name', 'active', 'date_joined_date', \
                     'get_age', 'gender', 'subscription_type', 'current_season', 'signed_off',
                     'cell_phone', 'other_phone', 'booking_system_id', 'england_squash_id',
