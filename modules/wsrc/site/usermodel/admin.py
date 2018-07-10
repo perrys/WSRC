@@ -210,6 +210,12 @@ def update_subscriptions(modeladmin, request, queryset):
             
 update_subscriptions.short_description = "Check/update subscriptions"
 
+def set_inactive(modeladmin, request, queryset):
+    for player in queryset:
+        player.user.is_active = False
+        player.user.save()
+set_inactive.short_description = "Set Inactive"
+
 class HasESIDListFilter(admin.SimpleListFilter):
     "Simple filtering on ES ID not null"
     title = "Has ES ID"
@@ -275,13 +281,13 @@ class PlayerAdmin(SelectRelatedQuerysetMixin, PrefetchRelatedQuerysetMixin, admi
     list_filter = ('user__is_active', 'subscription__subscription_type', 'gender', HasESIDListFilter, CurrentSubscriptionListFilter)
     list_display = ('ordered_name', 'active', 'date_joined_date', \
                     'get_age', 'gender', 'subscription_type', 'current_season', 'signed_off',
-                    'cell_phone', 'other_phone', 'booking_system_id', 'england_squash_id',
+                    'user_email', 'booking_system_id', 'england_squash_id',
                     'prefs_receive_email', 'prefs_esra_member', 'prefs_display_contact_details')
 #    list_editable = ('gender',)
     search_fields = ('user__first_name', 'user__last_name')
     prefetch_related_fields = ('subscription_set__season','subscription_set__subscription_type')
     list_per_page = 400
-    actions = (update_subscriptions,)
+    actions = (update_subscriptions,set_inactive)
     inlines = (SubscriptionInline,DoorCardLeaseInline)
     readonly_fields = ("user_link", "date_joined_date")
     exclude = ("user",)
@@ -290,6 +296,11 @@ class PlayerAdmin(SelectRelatedQuerysetMixin, PrefetchRelatedQuerysetMixin, admi
         return obj.get_ordered_name()
     ordered_name.admin_order_field = 'user__last_name'
     ordered_name.short_description = "Name"
+
+    def user_email(self, obj):
+        return obj.user.email
+    user_email.admin_order_field = 'user__email'
+    user_email.short_description = "Email"
 
     def active(self, obj):
         return obj.user.is_active
