@@ -49,7 +49,7 @@
  .form-signin > .well {
      margin-top: 15px;
  }
- form.login-settings {
+ .login-settings {
      position: absolute;
      bottom: 10px;
      left: 10px;
@@ -87,11 +87,9 @@
   {% endif %}
   <button class="btn btn-lg btn-primary btn-block" type="submit">Sign in</button>
   <div class="well">Forgotten your username or password?<br /><a href="/password/reset/">Click here to reset</a>.</div>
-</form>
 
 {% if show_auto_logout_settings %}
-<form method="post" onsubmit="return false;" class="login-settings">
-  <fieldset>
+  <fieldset class="login-settings">
     <legend>Login Settings</legend>
     <div class="form-group" >
       <label class="" for="session_timeout">Session Timeout (seconds):</label>
@@ -109,8 +107,9 @@
       </div>
     </div>
   </fieldset>
-</form>
 {% endif %}
+  
+</form>
 {% endblock %}
 
 
