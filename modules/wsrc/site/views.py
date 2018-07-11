@@ -355,6 +355,25 @@ def login(request, *args, **kwargs):
         else:
             response.delete_cookie("last_username")
             last_username = None
+        if "disable_remember_username" in request.POST:
+            disable_remember_username = request.POST.get("disable_remember_username") == 1
+            if disable_remember_username:
+                response.set_cookie("disable_remember_username", "1", expires=datetime.datetime(2038, 1, 1))
+            else:
+                response.delete_cookie("disable_remember_username")
+        if "session_timeout" in request.POST:
+            session_timeout = request.POST.get("session_timeout")
+            try:
+                session_timeout = int(session_timeout)
+                print "session_timeout={0}".format(session_timeout)
+                if session_timeout:
+                    response.set_cookie("session_timeout", str(session_timeout), expires=datetime.datetime(2038, 1, 1))
+                else:
+                    response.delete_cookie("session_timeout")                    
+            except ValueError:
+                LOGGER.exception("invalid session_timeout value")
+                session_timeout = None
+                
     if hasattr(response, "context_data"):
         if not disable_remember_username and last_username is not None:
             response.context_data["last_username"] = last_username
