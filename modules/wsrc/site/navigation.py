@@ -31,7 +31,7 @@ class NavigationMiddleWare:
         return self.get_response(request)
 
     def process_template_response(self, request, response):
-        navnode_model_records = NavigationNode.objects.tree(request.user.is_authenticated())
+        navnode_model_records = NavigationNode.objects.tree(request.user.is_authenticated)
         # create a map of proxy nodes - we will arrange this into a
         # tree structure with only the root nodes remaining in the map
         proxy_nodes = [node_t(node.pk, node.name, [], False) for node in navnode_model_records]
