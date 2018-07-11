@@ -356,7 +356,7 @@ def login(request, *args, **kwargs):
             response.delete_cookie("last_username")
             last_username = None
         if "disable_remember_username" in request.POST:
-            disable_remember_username = request.POST.get("disable_remember_username") == 1
+            disable_remember_username = request.POST.get("disable_remember_username") == "1"
             if disable_remember_username:
                 response.set_cookie("disable_remember_username", "1", expires=datetime.datetime(2038, 1, 1))
             else:
