@@ -365,7 +365,6 @@ def login(request, *args, **kwargs):
             session_timeout = request.POST.get("session_timeout")
             try:
                 session_timeout = int(session_timeout)
-                print "session_timeout={0}".format(session_timeout)
                 if session_timeout:
                     response.set_cookie("session_timeout", str(session_timeout), expires=datetime.datetime(2038, 1, 1))
                 else:
