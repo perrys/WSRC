@@ -250,6 +250,19 @@ class CurrentSubscriptionListFilter(admin.SimpleListFilter):
                 queryset = queryset.exclude(pk__in=player_ids)
         return queryset
 
+class CurrentSubscriptionTypeListFilter(admin.SimpleListFilter):
+    title = "Subscription Type"
+    parameter_name = "sub_type"
+    def lookups(self, request, model_admin):
+        return [(s.short_code, s.name) for s in SubscriptionType.objects.all()]
+    def queryset(self, request, queryset):
+        if self.value():
+            latest_season = Season.latest()
+            latest_subs = Subscription.objects.filter(season=latest_season, subscription_type__name=self.value())
+            player_ids = [s.player_id for s in latest_subs.all()]
+            queryset = queryset.filter(pk__in=player_ids)
+        return queryset
+
 class SubscriptionInline(admin.StackedInline):
     "Simple inline for player in User admin"
     model = Subscription
@@ -278,7 +291,7 @@ class DoorCardLeaseInline(admin.TabularInline):
 
 class PlayerAdmin(SelectRelatedQuerysetMixin, PrefetchRelatedQuerysetMixin, admin.ModelAdmin):
     "Admin for Player (i.e. club member) model"
-    list_filter = ('user__is_active', 'subscription__subscription_type', 'gender', HasESIDListFilter, CurrentSubscriptionListFilter)
+    list_filter = ('user__is_active', CurrentSubscriptionTypeListFilter, 'gender', HasESIDListFilter, CurrentSubscriptionListFilter)
     list_display = ('ordered_name', 'active', 'date_joined_date', \
                     'get_age', 'gender', 'subscription_type', 'current_season', 'signed_off',
                     'user_email', 'booking_system_id', 'england_squash_id',
@@ -313,7 +326,6 @@ class PlayerAdmin(SelectRelatedQuerysetMixin, PrefetchRelatedQuerysetMixin, admi
             return sub.season
         return None
     current_season.short_description = "Season"
-    current_season.admin_order_field = "subscription__season"
 
     def subscription_type(self, obj):
         sub = obj.get_current_subscription()
@@ -321,7 +333,6 @@ class PlayerAdmin(SelectRelatedQuerysetMixin, PrefetchRelatedQuerysetMixin, admi
             return sub.subscription_type.name
         return None
     subscription_type.short_description = "Subs Type"
-    subscription_type.admin_order_field = "subscription__subscription_type__name"
     
     def signed_off(self, obj):
         sub = obj.get_current_subscription()
