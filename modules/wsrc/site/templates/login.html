@@ -60,7 +60,9 @@
 {% block titleprefix %}Login - {% endblock %}
 
 {% block centered_page_content %}
-<img id="tr_logo" alt="WSRC ball logo" src="/static/images/ball_logo_180x180.png" class="hidden-xs hidden-sm" />
+<a href="{% url 'homepage' %}">
+  <img id="tr_logo" alt="WSRC ball logo" src="/static/images/ball_logo_180x180.png" class="hidden-xs hidden-sm" />
+</a>
 <form class="form-signin" method="post">{% csrf_token %}
   
   {% if form.errors %}
