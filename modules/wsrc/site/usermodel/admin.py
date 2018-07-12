@@ -17,6 +17,7 @@
 
 import csv
 import datetime
+import functools
 import re
 import StringIO
 
@@ -26,7 +27,7 @@ from django.db import models
 from django.contrib import admin
 
 from django.contrib.auth.admin import UserAdmin as AuthUserAdmin
-from django.contrib.auth.models import User
+from django.contrib.auth.models import User, Group
 
 from django import urls
 from django.core.exceptions import ValidationError, NON_FIELD_ERRORS
@@ -51,6 +52,23 @@ class UserProfileInline(admin.StackedInline):
     can_delete = False
 
 class UserAdmin(AuthUserAdmin):
+
+    def create_group_actions():
+        def toggle_fn(group, modeladmin, request, queryset):
+            group_users = group.user_set.all()
+            for user in queryset:
+                if user in group_users:
+                    user.groups.remove(group)
+                else:
+                    user.groups.add(group)
+                user.save()
+        def make_toggle_fn(group):
+            toggle = functools.partial(toggle_fn, group)
+            toggle.__name__ = "toggle_{0}".format(group.name)
+            toggle.short_description = "Toggle group membership: {0}".format(group.name)
+            return toggle
+        return [make_toggle_fn(group) for group in Group.objects.all()]
+        
     "Redefinition of user admin"
     inlines = AuthUserAdmin.inlines + [UserProfileInline,]
     list_display = ('username', 'last_name', 'first_name', 'email',\
@@ -58,7 +76,7 @@ class UserAdmin(AuthUserAdmin):
     list_filter = ('is_active', 'groups', 'is_staff', 'is_superuser')
     ordering = ('last_name', 'first_name', 'username')
     list_per_page = 400
-    list_select_related = ('player',)
+    actions = create_group_actions()
 
 # unregister old user admin
 admin.site.unregister(User)
