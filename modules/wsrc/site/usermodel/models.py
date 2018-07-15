@@ -79,14 +79,18 @@ class Player(AbstractPlayer):
         return None
     get_current_subscription.short_description = 'Subscription'
 
+    @classmethod
+    def make_ordered_name(cls, last_name, first_name, encoding=None):
+        full_name = '%s, %s' % (last_name, first_name)
+        if encoding is not None:
+            full_name = full_name.encode(encoding)
+        return full_name.strip()
+    
     def get_ordered_name(self, encoding=None):
         """
         Returns the last_name plus the first_name, with a comma in between.
         """
-        full_name = '%s, %s' % (self.user.last_name, self.user.first_name)
-        if encoding is not None:
-            full_name = full_name.encode(encoding)
-        return full_name.strip()
+        return self.make_ordered_name(self.user.last_name, self.user.first_name, encoding)
 
     def get_obfuscated_name(self):
         """Return an anonomized version of this player's name"""
