@@ -401,7 +401,7 @@ class PlayerAdmin(SelectRelatedQuerysetMixin, PrefetchRelatedQuerysetMixin, admi
                 name_map = dict([(mem.get_ordered_name(), mem) for mem in members])
                 reader = csv.DictReader(upload_generator(request.FILES['es_csv_file']))
                 output = StringIO.StringIO()
-                fields = ["ES ID", "Name", "WSRC Name", "WSRC ID", "Email", "Subscription", "Status"]
+                fields = ["SquashID", "LastName", "FirstName", "WSRC Name", "WSRC ID", "Email", "Subscription", "GDPR", "Status"]
                 writer = csv.DictWriter(output, fields, extrasaction='ignore')
                 writer.writer.writerow(fields)
                 def set_fields(row, player, status):
@@ -411,10 +411,11 @@ class PlayerAdmin(SelectRelatedQuerysetMixin, PrefetchRelatedQuerysetMixin, admi
                     row["WSRC ID"] = player.pk
                     row["Email"] = player.user.email
                     row["Subscription"] = sub_str
+                    row["GDPR"] = player.prefs_esra_member
                     row["Status"] = status
                     del db_id_map[player.pk]
                 for row in reader:
-                    es_id = row["ES ID"]
+                    es_id = row["SquashID"]
                     if es_id is None or len(es_id) == 0:
                         continue
                     existing = es_id_map.get(es_id)
@@ -427,7 +428,8 @@ class PlayerAdmin(SelectRelatedQuerysetMixin, PrefetchRelatedQuerysetMixin, admi
                         player.save()
                         set_fields(row, player, "Updated - In Sync")
                     else:
-                        match = name_map.get(row["Name"])
+                        match_name = Player.make_ordered_name(row["LastName"], row["FirstName"])
+                        match = name_map.get(match_name)
                         if match is not None:
                             set_fields(row, match, "Name Match - Update Reqd")
                         else:
