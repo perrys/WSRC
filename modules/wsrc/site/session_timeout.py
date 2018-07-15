@@ -27,11 +27,14 @@ class SessionTimeoutMiddleware:
     def get_session_timeout(cls, request):
         session_timeout = request.COOKIES.get("session_timeout")
         if session_timeout is not None:
-            try:
-                session_timeout = int(session_timeout)
-            except ValueError:
-                LOGGER.warning("invalid value for session timeout cookie: \"%s\"", session_timeout)        
+            if not session_timeout: # blank
                 session_timeout = None
+            else:
+                try:
+                    session_timeout = int(session_timeout)
+                except ValueError:
+                    LOGGER.warning("invalid value for session timeout cookie: \"%s\"", session_timeout)        
+                    session_timeout = None
         return session_timeout
     
     def __call__(self, request):
@@ -51,3 +54,4 @@ class SessionTimeoutMiddleware:
         
                 
         
+    
