@@ -33,8 +33,7 @@ PII_FIELDS_TO_PURGE = {"user.email": "",
                        "other_phone": "",
                        "gender": None,
                        "date_of_birth": None,
-                       "squashlevels_id": None,
-                       "england_squash_id": None}
+                       "squashlevels_id": None}
 
 def remove_PII(players):
     count = 0
