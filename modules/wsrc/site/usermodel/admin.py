@@ -420,7 +420,10 @@ class PlayerAdmin(SelectRelatedQuerysetMixin, PrefetchRelatedQuerysetMixin, admi
                         continue
                     existing = es_id_map.get(es_id)
                     if existing is not None:
-                        set_fields(row, existing, "In Sync")
+                        if existing.user.is_active:
+                            set_fields(row, existing, "In Sync")
+                        else:
+                            set_fields(row, existing, "Inactive - Remove from ES")
                     elif row.get("Status") == "Update":
                         db_id = int(row["WSRC ID"])
                         player = db_id_map[db_id]
