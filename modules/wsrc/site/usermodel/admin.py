@@ -276,7 +276,7 @@ class CurrentSubscriptionTypeListFilter(admin.SimpleListFilter):
     def queryset(self, request, queryset):
         if self.value():
             latest_season = Season.latest()
-            latest_subs = Subscription.objects.filter(season=latest_season, subscription_type__name=self.value())
+            latest_subs = Subscription.objects.filter(season=latest_season, subscription_type__short_code=self.value())
             player_ids = [s.player_id for s in latest_subs.all()]
             queryset = queryset.filter(pk__in=player_ids)
         return queryset
