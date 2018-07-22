@@ -321,6 +321,11 @@ def email_subscription_reminders(user_list):
     if len(failed_players) > 0:
         LOGGER.error("failed to send email to the following:\n\n%s", "\n".join([p.get_full_name() + " " + p.user.email for p in failed_players]) + "\n")
 
+def download_met_office_data():
+    from wsrc.external_sites.met_office import fetch_and_store_distance_weigted_average_observations
+    obs_locations = [l[0] for l in settings.MET_OFFICE_OBSERVATION_LOCATIONS]
+    fetch_and_store_distance_weigted_average_observations(settings.CLUB_LOCATION, *obs_locations)
+    
 if __name__ == "__main__":
     prog = os.path.basename(sys.argv[0])
 
@@ -464,6 +469,9 @@ if __name__ == "__main__":
     elif command in ("purge-personal-data"):
         from wsrc.site.usermodel.data_purge import policy_purge_data
         policy_purge_data()
+        
+    elif command in ("download-met-office-data"):
+        download_met_office_data()
         
     else:
         sys.stderr.write("ERROR: unrecognized command \"{0}\"\n".format(command))
