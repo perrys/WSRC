@@ -20,7 +20,7 @@ from django.db import models
 
 from django.contrib import admin
 from django.utils import timezone
-from wsrc.site.courts.models import BookingOffence, EventFilter, BookingSystemEvent
+from wsrc.site.courts.models import BookingOffence, EventFilter, BookingSystemEvent, HumidityMeasurement
 from wsrc.utils.form_utils import PrefetchRelatedQuerysetMixin
 
 class OffendersListFilter(admin.SimpleListFilter):
@@ -81,6 +81,10 @@ class BookingAdmin(admin.ModelAdmin):
     used.short_description = "Showed up"
     used.boolean = True
 
+class HumidityMeasurementAdmin(admin.ModelAdmin):
+    list_display = ("location", "time", "temperature_display", "dew_point_display", "relative_humidity_display", "pressure_display")
+    
 admin.site.register(BookingSystemEvent, BookingAdmin)
 admin.site.register(BookingOffence, BookingOffenceAdmin)
 admin.site.register(EventFilter, NotifierEventAdmin)
+admin.site.register(HumidityMeasurement, HumidityMeasurementAdmin)
