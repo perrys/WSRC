@@ -275,9 +275,11 @@ class CurrentSubscriptionTypeListFilter(admin.SimpleListFilter):
         return [(s.short_code, s.name) for s in SubscriptionType.objects.all()]
     def queryset(self, request, queryset):
         if self.value():
-            latest_season = Season.latest()
-            latest_subs = Subscription.objects.filter(season=latest_season, subscription_type__short_code=self.value())
-            player_ids = [s.player_id for s in latest_subs.all()]
+            player_ids = []
+            for player in queryset:
+                sub = player.get_current_subscription()
+                if sub and sub.subscription_type.short_code == self.value():
+                    player_ids.append(player.pk)
             queryset = queryset.filter(pk__in=player_ids)
         return queryset
 
