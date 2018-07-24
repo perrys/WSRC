@@ -182,7 +182,7 @@ class EventFilter(models.Model):
     class Meta:
         verbose_name = "Cancellation Notifier"
 
-class HumidityMeasurement(models.Model):
+class ClimateMeasurement(models.Model):
     location = models.CharField(max_length=64)
     time = models.DateTimeField()
     temperature = models.FloatField()
@@ -195,12 +195,12 @@ class HumidityMeasurement(models.Model):
     pressure_error = models.FloatField(blank=True, null=True)
 
     def temperature_display(self):
-        return u'{0:.0f} \u00B1 {1:.0f}'.format(self.temperature, self.temperature_error)
+        return u'{0:.1f} \u00B1 {1:.1f}'.format(self.temperature, self.temperature_error)
     temperature_display.short_description = u"Temperature (\u00B0C)"
     temperature_display.admin_order_field = "temperature"
     
     def dew_point_display(self):
-        return u'{0:.0f} \u00B1 {1:.0f}'.format(self.dew_point, self.dew_point_error)
+        return u'{0:.1f} \u00B1 {1:.1f}'.format(self.dew_point, self.dew_point_error)
     dew_point_display.short_description = u"Dew Point (\u00B0C)"
     dew_point_display.admin_order_field = "dew_point"
     
@@ -222,4 +222,32 @@ class HumidityMeasurement(models.Model):
     class Meta:
         unique_together = ("location", "time")
         ordering = ("-time", "location")
-        verbose_name = "Humidity Measurement"
+        verbose_name = "Climate Measurement"
+
+class CondensationLocation(models.Model):
+    name = models.CharField(primary_key=True, max_length=32)
+    def __str__(self):
+        return self.name
+    class Meta:
+        ordering = ("name",)
+        verbose_name = "Condensation Location"
+
+class CondensationReport(models.Model):
+    reporter = models.ForeignKey(user_models.Player, blank=True, null=True, on_delete=models.PROTECT)
+    time = models.DateTimeField(auto_now_add=True)
+    location = models.ManyToManyField(CondensationLocation)
+    comment = models.TextField(blank=True, null=True)
+
+    def get_locations_display(self):
+        result = ", ".join([location.pk for location in self.location.all()])
+        return result
+    get_locations_display.short_description = "Location(s)"
+
+    class Meta:
+        verbose_name = "Condensation Report"
+
+
+    
+    
+    
+        

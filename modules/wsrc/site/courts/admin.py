@@ -20,8 +20,9 @@ from django.db import models
 
 from django.contrib import admin
 from django.utils import timezone
-from wsrc.site.courts.models import BookingOffence, EventFilter, BookingSystemEvent, HumidityMeasurement
-from wsrc.utils.form_utils import PrefetchRelatedQuerysetMixin
+from wsrc.site.courts.models import BookingOffence, EventFilter, BookingSystemEvent, ClimateMeasurement, \
+    CondensationLocation, CondensationReport
+from wsrc.utils.form_utils import PrefetchRelatedQuerysetMixin, get_related_field_limited_queryset
 
 class OffendersListFilter(admin.SimpleListFilter):
     title = "offender"
@@ -81,10 +82,35 @@ class BookingAdmin(admin.ModelAdmin):
     used.short_description = "Showed up"
     used.boolean = True
 
-class HumidityMeasurementAdmin(admin.ModelAdmin):
+class ClimateMeasurementAdmin(admin.ModelAdmin):
     list_display = ("location", "time", "temperature_display", "dew_point_display", "relative_humidity_display", "pressure_display")
+
+class CondensationLocationAdmin(admin.ModelAdmin):
+    list_display = ("name",)
+
+class CondensationReportForm(forms.ModelForm):
+    def __init__(self, *args, **kwargs):
+        super(CondensationReportForm, self).__init__(*args, **kwargs)
+        member_queryset = get_related_field_limited_queryset(CondensationReport.reporter.field)\
+                      .filter(user__is_active=True).select_related("user")
+        self.fields['reporter'].queryset = member_queryset
+
+class CondensationReportAdmin(admin.ModelAdmin):
+    form = CondensationReportForm
+    list_display = ("time", "get_locations_display", "reporter", "comment")
+    formfield_overrides = {
+        models.TextField: {'widget': forms.Textarea(attrs={'cols': 100, 'rows': 5})},
+        models.ManyToManyField: {'widget': forms.CheckboxSelectMultiple},
+    }
+    list_select_related = ('reporter__user',)
+    def get_queryset(self, request):
+        queryset = super(CondensationReportAdmin, self).get_queryset(request)
+        queryset = queryset.select_related('reporter__user')
+        return queryset
     
 admin.site.register(BookingSystemEvent, BookingAdmin)
 admin.site.register(BookingOffence, BookingOffenceAdmin)
 admin.site.register(EventFilter, NotifierEventAdmin)
-admin.site.register(HumidityMeasurement, HumidityMeasurementAdmin)
+admin.site.register(ClimateMeasurement, ClimateMeasurementAdmin)
+admin.site.register(CondensationLocation, CondensationLocationAdmin)
+admin.site.register(CondensationReport, CondensationReportAdmin)
