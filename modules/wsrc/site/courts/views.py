@@ -28,19 +28,21 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.core.exceptions import SuspiciousOperation, PermissionDenied
 from django.core.mail import SafeMIMEMultipart, SafeMIMEText
-from django.urls import reverse as reverse_url
+from django.urls import reverse as reverse_url, reverse_lazy
 from django.db import transaction
 from django.http import HttpResponse, HttpResponsePermanentRedirect, HttpResponseNotFound
 from django.db.models import Q
 from django.shortcuts import redirect
 from django.template.response import TemplateResponse
+from django.utils.decorators import method_decorator
 from django.views.decorators.http import require_safe
+from django.views.generic.edit import CreateView
 
 from icalendar import Calendar, Event, vCalAddress, vText
 
 from .forms import START_TIME, END_TIME, RESOLUTION, COURTS,\
     format_date, make_date_formats, validate_quarter_hour, create_notifier_filter_formset_factory,\
-    BookingForm, CalendarInviteForm
+    BookingForm, CalendarInviteForm, CondensationReportForm
 import wsrc.site.settings.settings as settings
 from wsrc.utils.form_utils import LabeledSelect, make_readonly_widget, add_formfield_attrs
 from wsrc.site.courts.models import BookingSystemEvent, EventFilter, BookingOffence
@@ -656,3 +658,13 @@ def penalty_points_view(request):
         "point_limit": BookingOffence.POINT_LIMIT
     }
     return TemplateResponse(request, 'penalty_points.html', context)
+
+
+@method_decorator(login_required, name='dispatch')        
+class CondensationReportCreateView(CreateView):
+    template_name = 'condensation_report_form.html'
+    success_url = reverse_lazy("condensation_report")
+    form_class = CondensationReportForm
+    def form_valid(self, form):
+        form.instance.reporter = self.request.user.player
+        return super(CondensationReportCreateView, self).form_valid(form)
