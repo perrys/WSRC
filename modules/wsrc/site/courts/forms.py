@@ -22,11 +22,12 @@ from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
 from django.forms.fields import BaseTemporalField
 from django.forms.models import modelformset_factory
+from django.utils import timezone        
 from django import forms
 
 from wsrc.utils import timezones
 from wsrc.utils.form_utils import make_readonly_widget, LabeledSelect, CachingModelMultipleChoiceField, add_formfield_attrs
-from wsrc.site.courts.models import DayOfWeek, EventFilter
+from wsrc.site.courts.models import DayOfWeek, EventFilter, CondensationReport
 
 COURTS = [1, 2, 3]
 START_TIME =  8*60 + 30
@@ -34,6 +35,7 @@ END_TIME   = 22*60 + 15
 RESOLUTION = 15
 EMPTY_DUR  = 3 * RESOLUTION
 START_TIMES = [datetime.time(hour=t/60, minute=t%60) for t in range(START_TIME, END_TIME-RESOLUTION, RESOLUTION)]
+ALL_TIMES = [datetime.time(hour=t/60, minute=t%60) for t in range(0, 24*60, RESOLUTION)]
 DURATIONS = [datetime.timedelta(minutes=i) for i in range(15, END_TIME-START_TIME, 15)]
 
 def get_active_user_choices():
@@ -49,6 +51,10 @@ def validate_quarter_hour(value):
         raise ValidationError("{value} has less than minute resolution".format(**locals()))
     validate_15_minute_multiple(value.minute)
 
+def validate_not_future(value):
+    if value > timezone.now():
+        raise ValidationError("{value} is in the future!".format(**locals()))
+    
 def validate_quarter_hour_duration(value):
     value = value.total_seconds()
     if (value % 60) != 0:
@@ -215,3 +221,34 @@ def create_notifier_filter_formset_factory(max_number):
             "player": forms.HiddenInput(),
         }
     )
+
+class SplitDateTimeSelectorWidget(forms.SplitDateTimeWidget):
+    """
+    A Widget that splits datetime input into one <input type="text"> and one select dropdown.
+    """
+    def __init__(self, time_choices, attrs=None, date_format="%-d/%-m/%Y"):
+        if attrs is None:
+            attrs = {"class": "date-input"}
+        widgets = (
+            forms.DateInput(attrs=attrs, format=date_format),
+            forms.Select(attrs=attrs, choices=time_choices),
+        )
+        super(forms.SplitDateTimeWidget, self).__init__(widgets, attrs)
+
+class CondensationReportForm(forms.ModelForm):
+    time = forms.SplitDateTimeField(widget=SplitDateTimeSelectorWidget(time_choices=[(t.strftime("%H:%M:%S"), t.strftime("%-I:%M %P")) for t in ALL_TIMES]), \
+                                    validators=[validate_quarter_hour, validate_not_future], \
+                                    label="Observation Time")
+    def __init__(self, *args, **kwargs):
+        if "data" not in kwargs:
+            obj = CondensationReport()
+            kwargs["initial"]["time"] = obj.time
+        super(CondensationReportForm, self).__init__(*args, **kwargs)
+        add_formfield_attrs(self)
+    class Meta:
+        model = CondensationReport
+        fields = ["reporter", "time", "location", "comment"]
+        widgets = {
+            "reporter": forms.HiddenInput,
+            "location": forms.CheckboxSelectMultiple
+            }
