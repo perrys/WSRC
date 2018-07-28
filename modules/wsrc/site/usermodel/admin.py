@@ -644,7 +644,6 @@ class EventHasPlayerListFilter(HasPlayerListFilter):
 class DoorEventForm(forms.ModelForm):
     "Override form for more efficient DB interaction"
     queryset = get_related_field_limited_queryset(DoorCardEvent.card.field)
-    card = forms.ModelChoiceField(queryset=queryset.select_related("player__user"), required=False)
 
 class DoorCardEventAdmin(admin.ModelAdmin):
     search_fields = ('card__cardnumber',)
