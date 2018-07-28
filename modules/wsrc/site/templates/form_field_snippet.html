@@ -1,10 +1,10 @@
-<div class="form-group {% if field.errors %}has-error{% endif %}">
+<div class="form-group {% if field.errors %}has-error{% endif %} {{ group_container_class }}">
   {% if label %}
   <label class="col-sm-3 control-label" for="{{ field.id_for_label }}">{{ label }}:</label>
   {% else %}
   <span class="col-sm-3 control-label">{{ field.label_tag }}</span>
   {% endif %}
-  <div class="col-sm-9">
+  <div class="col-sm-9 {{ field_container_class }}">
     {{ field }}
     {% if help_text or field.help_text %}
     <span class="help-block small">{% if help_text %}{{ help_text|safe }}{% else %}{{ field.help_text|safe }}{% endif %}</span>
