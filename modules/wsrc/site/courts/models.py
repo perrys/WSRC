@@ -23,7 +23,7 @@ from django.utils import timezone
 import wsrc.site.settings
 import wsrc.site.usermodel.models as user_models
 from wsrc.utils.text import obfuscate
-from wsrc.utils.timezones import UK_TZINFO
+from wsrc.utils.timezones import UK_TZINFO, nearest_last_quarter_hour
 
 class BookingSystemEvent(models.Model):
     EVENT_TYPES = (
@@ -234,7 +234,7 @@ class CondensationLocation(models.Model):
 
 class CondensationReport(models.Model):
     reporter = models.ForeignKey(user_models.Player, blank=True, null=True, on_delete=models.PROTECT)
-    time = models.DateTimeField(auto_now_add=True)
+    time = models.DateTimeField("Observed Time", default=nearest_last_quarter_hour)
     location = models.ManyToManyField(CondensationLocation)
     comment = models.TextField(blank=True, null=True)
 
@@ -244,6 +244,7 @@ class CondensationReport(models.Model):
     get_locations_display.short_description = "Location(s)"
 
     class Meta:
+        ordering = ("-time",)
         verbose_name = "Condensation Report"
 
 
