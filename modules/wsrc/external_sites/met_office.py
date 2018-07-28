@@ -64,14 +64,15 @@ class MetOfficeObservations(object):
         point = (float(self.data["lat"]), float(self.data["lon"]))
         self.ref_point_distance = great_circle_distance(reference_point, point)
         self.time_to_observations_map = {}
-        for data_point in self.data["Period"]:
+        def force_list(val):
+            if isinstance(val, dict):
+                val = (val,)
+            return val
+        for data_point in force_list(self.data["Period"]):
             assert(data_point["type"] == "Day")
             date = datetime.datetime.strptime(data_point["value"], "%Y-%m-%dZ")
             date = date.replace(tzinfo=UTC_TZINFO)
-            obs_list = data_point["Rep"]
-            if isinstance(obs_list, dict):
-                obs_list = (obs_list,)
-            for obs in obs_list:
+            for obs in force_list(data_point["Rep"]):
                 mins = int(obs["$"])
                 obs_time = date + datetime.timedelta(minutes=mins)
                 observation = ObservationSet(*[obs[o[1]] for o in OBSERVATION_FIELDS])
@@ -151,10 +152,10 @@ def get_distance_weigted_average_observations(reference_point, *locations, **kwa
     return results
 
 def fetch_and_store_distance_weigted_average_observations(reference_point, *locations):
-    from wsrc.site.courts.models import HumidityMeasurement
+    from wsrc.site.courts.models import ClimateMeasurement
     now = timezone.now()
     location = "Outside"
-    recent_observations = HumidityMeasurement.objects.filter(location=location, time__gt=(now-datetime.timedelta(days=2)))
+    recent_observations = ClimateMeasurement.objects.filter(location=location, time__gt=(now-datetime.timedelta(days=2)))
     obs_times = [obs.time for obs in recent_observations]
     date_filter = lambda x: x not in obs_times
     new_observations = get_distance_weigted_average_observations(reference_point, *locations, date_filter=date_filter)
@@ -165,7 +166,7 @@ def fetch_and_store_distance_weigted_average_observations(reference_point, *loca
             weighted_avg = getattr(obs, field)
             kwargs[field] = float(weighted_avg)
             kwargs[field + "_error"] = weighted_avg.std_dev
-        model = HumidityMeasurement(location=location, time=time, **kwargs)
+        model = ClimateMeasurement(location=location, time=time, **kwargs)
         model.save()
     
 def great_circle_distance(point_a, point_b):
