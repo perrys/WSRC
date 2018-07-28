@@ -119,6 +119,15 @@ def nearest_last_monday(date=None):
         date = datetime.date.today()
     return date - datetime.timedelta(days=date.weekday())
 
+def nearest_last_quarter_hour(epoch=None):
+    """Return the time nearest to the given time (defaults to now) on a quarter-hour boundary.
+    DATE defaults to today if not supplied"""
+    if epoch is None:
+        from django.utils import timezone        
+        epoch = timezone.now()
+    delta_t = datetime.timedelta(minutes=(epoch.minute % 15), seconds=epoch.second, microseconds=epoch.microsecond)
+    return epoch - delta_t
+
 def duration_str(duration):
     mins = int(duration.seconds/60)
     hours = int(mins/60)
