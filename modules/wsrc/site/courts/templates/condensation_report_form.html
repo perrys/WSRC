@@ -79,7 +79,7 @@
   {% include "form_field_radio_snippet.html" with field=form.location %}
 
   <div class="form-group {% if field.errors %}has-error{% endif %} no-margins">
-    <textarea class="form-control" name="comment" rows="5" placeholder="Optional comment&hellip;">{{ form.comment.value }}</textarea>
+    <textarea class="form-control" name="comment" rows="5" placeholder="Optional comment&hellip;">{{ form.comment.value|default:"" }}</textarea>
   </div>
   
   <div class="buttonset">
