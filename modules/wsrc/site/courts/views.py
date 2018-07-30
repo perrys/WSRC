@@ -667,4 +667,7 @@ class CondensationReportCreateView(CreateView):
     form_class = CondensationReportForm
     def form_valid(self, form):
         form.instance.reporter = self.request.user.player
-        return super(CondensationReportCreateView, self).form_valid(form)
+        self.object = form.save()
+        context = self.get_context_data(form=self.get_form())
+        context["form_saved"] = True
+        return self.render_to_response(context)

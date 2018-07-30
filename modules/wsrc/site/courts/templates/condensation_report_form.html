@@ -37,12 +37,12 @@
 
   <div class="well">
     <p>
-      Occaisionally we have a problem with condensation appearing on the court walls (sometimes called &ldquo;sweating&rdquo; walls), particularly later in the evening when the club is busy. When this occurs it can render the court unusable for competitive matches.
-    </p>
-    <p>In general, condensation occurs when moist air comes into contact with a cool surface. The more humid the air, the less cold the surface needs to be for condensation to form on it. 
+      We sometimes have the problem of condensation appearing on the court walls, particularly later in the evening when the club has been busy.
     </p>
     <p>
-      We are gathering temperature and humidity data to try to understand the cause (or causes) of the problem, in order to decide how best to tackle it. We would be very grateful to members if they could report any occurences of condensation on the courts using the form below, so these can be compared to the temperature and humidity measurements when the problem occurs. 
+      Condensation occurs when humid air meets a cool surface&mdash;the more humid the air, the less cold the surface needs to be for condensation to form on it. We are gathering temperature and humidity data to try to understand the root cause(s) of the problem, to decide how best to tackle it.
+    </p>
+    <p>Members can help by reporting any occurences of condensation using the form below. </p>
   </div>
   
   {% csrf_token %}
@@ -50,6 +50,10 @@
   {{ hidden }}
   {% endfor %}
 
+  {% if form_saved %}
+  <div class="alert alert-success">Your report has been saved, many thanks.</div>
+  {% endif %}
+  
   {% if form.errors %}
   <div class="alert alert-danger">ERROR. Please correct the problem(s) below and resubmit.
     <ul>
@@ -75,7 +79,7 @@
   {% include "form_field_radio_snippet.html" with field=form.location %}
 
   <div class="form-group {% if field.errors %}has-error{% endif %} no-margins">
-    <textarea class="form-control" name="comment" rows="5" placeholder="Optional comment&hellip;"></textarea>
+    <textarea class="form-control" name="comment" rows="5" placeholder="Optional comment&hellip;">{{ form.comment.value }}</textarea>
   </div>
   
   <div class="buttonset">
