@@ -13,16 +13,22 @@
 # You should have received a copy of the GNU General Public License
 # along with WSRC.  If not, see <http://www.gnu.org/licenses/>.
 
+import csv
 import datetime
+from operator import itemgetter
 
 from django import forms
 from django.db import models
 
 from django.contrib import admin
 from django.utils import timezone
+from django.shortcuts import redirect
+
 from wsrc.site.courts.models import BookingOffence, EventFilter, BookingSystemEvent, ClimateMeasurement, \
     CondensationLocation, CondensationReport
 from wsrc.utils.form_utils import PrefetchRelatedQuerysetMixin, get_related_field_limited_queryset
+from wsrc.utils.upload_utils import upload_generator
+from wsrc.utils import timezones
 
 class OffendersListFilter(admin.SimpleListFilter):
     title = "offender"
@@ -82,8 +88,75 @@ class BookingAdmin(admin.ModelAdmin):
     used.short_description = "Showed up"
     used.boolean = True
 
+class ClimateMeasurementListUploadForm(forms.Form):
+    upload_file = forms.FileField(required=False, label="Click to select HT160 .txt file. ",
+                                  widget=forms.widgets.ClearableFileInput(attrs={'accept':'.txt'}))
+    
 class ClimateMeasurementAdmin(admin.ModelAdmin):
     list_display = ("location", "time", "temperature_display", "dew_point_display", "relative_humidity_display", "pressure_display")
+
+    def get_urls(self):
+        from django.conf.urls import url
+        urls = super(ClimateMeasurementAdmin, self).get_urls()
+        my_urls = [url(r"^upload_ht160_data/$", self.admin_site.admin_view(self.upload_view),
+                       name='upload_ht160_data')]
+        return my_urls + urls
+    urls = property(get_urls)
+
+    def changelist_view(self, *args, **kwargs):
+        view = super(ClimateMeasurementAdmin, self).changelist_view(*args, **kwargs)
+        if hasattr(view, "context_data"):
+            view.context_data['upload_form'] = ClimateMeasurementListUploadForm
+        return view
+
+    @classmethod
+    def parse_data(cls, fh):
+        reader = csv.reader(fh)
+        params = dict()
+        data = []
+        fieldnames = None
+        for line in reader:
+            if len(line) == 2:
+                params[line[0]] = line[1]
+            elif len(line) > 2:
+                if fieldnames is None:
+                    fieldnames  = line
+                else:
+                    data.append(dict(zip(fieldnames, line)))
+        return params, data
+
+    @classmethod
+    def save(cls, params, data):
+        print timezone.get_default_timezone()
+        def convert_time(record):
+            ts = record["Time"]
+            ts = datetime.datetime.strptime(ts, "%m-%d-%y %H:%M:%S")
+            ts = ts.replace(tzinfo=timezones.UK_TZINFO)
+            return ts
+        FIELD_MAPPING = {
+            "time": convert_time,
+            "temperature": itemgetter("TEMP()"),
+            "relative_humidity": itemgetter("HUMI(%RH)"),
+            "dew_point": itemgetter("DP"),
+            "temperature_error": lambda x: 1.0,
+            "relative_humidity_error": lambda x: 3.0,
+            "dew_point_error": lambda x: 1.0,           
+        }
+        for row in data:
+            kwargs = dict([(field, f(row)) for field, f in FIELD_MAPPING.items()])
+            model = ClimateMeasurement(location=params["Test Name"], **kwargs)
+            model.save()
+            
+    def upload_view(self, request):
+        if request.method == 'POST':
+            form = ClimateMeasurementListUploadForm(request.POST, request.FILES)
+            if form.is_valid():
+                codec = "utf-16le"
+                line_generator = upload_generator(request.FILES['upload_file'], codec, "ascii")
+                params, data = self.parse_data(line_generator)
+                self.save(params, data)
+            return redirect("admin:courts_climatemeasurement_changelist")
+            
 
 class CondensationLocationAdmin(admin.ModelAdmin):
     list_display = ("name",)
