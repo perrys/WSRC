@@ -94,6 +94,8 @@ class ClimateMeasurementListUploadForm(forms.Form):
     
 class ClimateMeasurementAdmin(admin.ModelAdmin):
     list_display = ("location", "time", "temperature_display", "dew_point_display", "relative_humidity_display", "pressure_display")
+    date_hierarchy = "time"
+    list_filter = ("location",)
 
     def get_urls(self):
         from django.conf.urls import url
