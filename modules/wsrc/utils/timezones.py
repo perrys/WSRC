@@ -161,3 +161,28 @@ def parse_duration(s):
             raise Exception("Unrecognised unit: \"{unit}\"".format(**locals()))
         tokens = tokens[2:]
     return datetime.timedelta(seconds=seconds)
+
+def create_icalendar_uk_timezone():
+    import icalendar
+    tzc = icalendar.Timezone()
+    tzc.add('tzid', 'Europe/London')
+    tzc.add('x-lic-location', 'Europe/London')
+    
+    tzs = icalendar.TimezoneStandard()
+    tzs.add('tzname', 'GMT')
+    tzs.add('TZOFFSETFROM', datetime.timedelta(hours=1))
+    tzs.add('TZOFFSETTO', datetime.timedelta(hours=0))
+    tzs.add('dtstart', datetime.datetime(1970, 10, 25, 2, 0, 0))
+    tzs.add('rrule', {'freq': 'yearly', 'bymonth': 10, 'byday': '-1su'})
+    
+    tzd = icalendar.TimezoneDaylight()
+    tzd.add('tzname', 'BST')
+    tzd.add('TZOFFSETFROM', datetime.timedelta(hours=0))
+    tzd.add('TZOFFSETTO', datetime.timedelta(hours=1))
+    tzd.add('dtstart', datetime.datetime(1970, 3, 29, 1, 0, 0))
+    tzd.add('rrule', {'freq': 'yearly', 'bymonth': 3, 'byday': '-1su'})
+    
+    tzc.add_component(tzs)
+    tzc.add_component(tzd)
+    return tzc
+
