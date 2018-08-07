@@ -97,6 +97,7 @@ class ClimateMeasurementAdmin(CSVModelAdmin):
     list_display = ("location", "time", "temperature_display", "dew_point_display", "relative_humidity_display", "pressure_display")
     date_hierarchy = "time"
     list_filter = ("location",)
+    list_per_page = 1000
 
     def get_urls(self):
         from django.conf.urls import url
