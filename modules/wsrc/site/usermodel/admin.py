@@ -42,6 +42,7 @@ from wsrc.utils.form_utils import SelectRelatedQuerysetMixin, CachingModelChoice
 from wsrc.utils.upload_utils import upload_generator
 from wsrc.site.settings import settings
 from wsrc.utils import email_utils
+from wsrc.utils.admin_utils import CSVModelAdmin
 
 MEMBERSHIP_SEC_EMAIL_ADDRESS     = "membership@wokingsquashclub.org"
 
@@ -83,7 +84,7 @@ admin.site.unregister(User)
 # register new user admin
 admin.site.register(User, UserAdmin)
 
-class SeasonAdmin(admin.ModelAdmin):
+class SeasonAdmin(CSVModelAdmin):
     "Simple admin for Seasons"
     list_display = ('__unicode__', "has_ended")
     list_editable = ("has_ended",)
@@ -130,7 +131,7 @@ def create_new_season_subscription(modeladmin, request, queryset):
     for subscription in queryset:
         subscription.clone_to_latest_season(latest_season)
 
-class SubscriptionAdmin(admin.ModelAdmin):
+class SubscriptionAdmin(CSVModelAdmin):
     "Subscription admin - heavilly used for subs management"
     inlines = (SubscriptionPaymentInline,)
     list_display = ('ordered_name', 'email', 'season', 'linked_membership_type', 'pro_rata_date',\
@@ -309,7 +310,7 @@ class DoorCardLeaseInline(admin.TabularInline):
         models.TextField: {'widget': forms.TextInput(attrs={'size': 80})},
     }
 
-class PlayerAdmin(SelectRelatedQuerysetMixin, PrefetchRelatedQuerysetMixin, admin.ModelAdmin):
+class PlayerAdmin(SelectRelatedQuerysetMixin, PrefetchRelatedQuerysetMixin, CSVModelAdmin):
     "Admin for Player (i.e. club member) model"
     list_filter = ('user__is_active', CurrentSubscriptionTypeListFilter, 'gender', HasESIDListFilter, CurrentSubscriptionListFilter)
     list_display = ('ordered_name', 'active', 'date_joined_date', \
@@ -450,12 +451,12 @@ class PlayerAdmin(SelectRelatedQuerysetMixin, PrefetchRelatedQuerysetMixin, admi
                 response['Content-Disposition'] = 'attachment; filename="es_data.csv"'
                 return response
 
-class SubscriptionCostAdmin(SelectRelatedQuerysetMixin, admin.ModelAdmin):
+class SubscriptionCostAdmin(SelectRelatedQuerysetMixin, CSVModelAdmin):
     list_display = ('subscription_type', 'season', 'joining_fee', 'amount')
     list_filter = ('season',)
     save_as = True
 
-class SubscriptionTypeAdmin(admin.ModelAdmin):
+class SubscriptionTypeAdmin(CSVModelAdmin):
     list_display = ('name',)
 
 
@@ -498,7 +499,7 @@ class DoorCardUploadForm(forms.Form):
     upload_file = forms.FileField(required=False, label="Click to upload data from cardreader: ",
                                   widget=forms.widgets.ClearableFileInput(attrs={'accept':'.dat'}))
     
-class DoorEntryCardAdmin(admin.ModelAdmin):
+class DoorEntryCardAdmin(CSVModelAdmin):
     search_fields = ('cardnumber',)
     list_select_related = True
     list_display = ('cardnumber', 'is_registered', 'linked_current_owner', 'comment')
@@ -586,7 +587,7 @@ class CurrentSeasonListFilter(admin.SimpleListFilter):
             queryset = queryset.filter(pk__in=ids)
         return queryset
 
-class DoorCardLeaseAdmin(admin.ModelAdmin):
+class DoorCardLeaseAdmin(CSVModelAdmin):
     search_fields = ('player__user__first_name', 'player__user__last_name', 'card__cardnumber')
     list_display = ('card', "card_is_registered", 'linked_player', 'current_owner_active', 'subscription', 'date_issued', 'date_returned', 'comment')
     list_filter = ("card__is_registered", "player__user__is_active", IsCurrentListFilter, CurrentSeasonListFilter)
@@ -645,7 +646,7 @@ class DoorEventForm(forms.ModelForm):
     "Override form for more efficient DB interaction"
     queryset = get_related_field_limited_queryset(DoorCardEvent.card.field)
 
-class DoorCardEventAdmin(admin.ModelAdmin):
+class DoorCardEventAdmin(CSVModelAdmin):
     search_fields = ('card__cardnumber',)
     list_display = ('event', 'linked_cardnumber', 'linked_player', 'timestamp', 'received_time')
     list_filter = ("event", EventHasPlayerListFilter)
@@ -717,7 +718,7 @@ class MembershipApplicationForm(forms.ModelForm):
                   "prefs_receive_email", "prefs_esra_member", "prefs_display_contact_details",
                   "player_link", "username", "password", "guid", "email_verified", "comment", "signed_off"]
 
-class MembershipApplicationAdmin(admin.ModelAdmin):
+class MembershipApplicationAdmin(CSVModelAdmin):
     list_display = ('last_name', 'first_name', 'username', 'email', 'email_verified', 'subscription_type',
                     'cell_phone', 'other_phone',
                     'prefs_receive_email', 'prefs_esra_member', 'prefs_display_contact_details')

@@ -26,6 +26,7 @@ from django.shortcuts import redirect
 
 from wsrc.site.courts.models import BookingOffence, EventFilter, BookingSystemEvent, ClimateMeasurement, \
     CondensationLocation, CondensationReport
+from wsrc.utils.admin_utils import CSVModelAdmin
 from wsrc.utils.form_utils import PrefetchRelatedQuerysetMixin, get_related_field_limited_queryset
 from wsrc.utils.upload_utils import upload_generator
 from wsrc.utils import timezones
@@ -51,7 +52,7 @@ def set_inactive(modeladmin, request, queryset):
 def set_active(modeladmin, request, queryset):
     queryset.update(is_active=True)
 
-class BookingOffenceAdmin(admin.ModelAdmin):
+class BookingOffenceAdmin(CSVModelAdmin):
     list_display = ("player", "entry_id", "offence", "start_time", "creation_time",\
                     "cancellation_time", "rebooked", "penalty_points", "is_active", "comment")
     list_editable = ("penalty_points", "is_active", "comment")
@@ -67,7 +68,7 @@ class BookingOffenceAdmin(admin.ModelAdmin):
         queryset = queryset.select_related('player__user')
         return queryset
 
-class NotifierEventAdmin(PrefetchRelatedQuerysetMixin, admin.ModelAdmin):
+class NotifierEventAdmin(PrefetchRelatedQuerysetMixin, CSVModelAdmin):
     list_display = ("player", "earliest", "latest", "get_day_list", "notice_period_minutes")
     list_select_related = ('player__user',)
     prefetch_related_fields = ('days',)
@@ -75,7 +76,7 @@ class NotifierEventAdmin(PrefetchRelatedQuerysetMixin, admin.ModelAdmin):
         return ",".join([str(d) for d in obj.days.all()])
     get_day_list.short_description = "Days"
 
-class BookingAdmin(admin.ModelAdmin):
+class BookingAdmin(CSVModelAdmin):
     search_fields = ('name', 'description')
     list_display = ("name", "start_time", "end_time", "court", "event_type", "description", "created_by", "created_time", "used")
     date_hierarchy = "start_time"
@@ -92,7 +93,7 @@ class ClimateMeasurementListUploadForm(forms.Form):
     upload_file = forms.FileField(required=False, label="Click to select HT160 .txt file. ",
                                   widget=forms.widgets.ClearableFileInput(attrs={'accept':'.txt'}))
     
-class ClimateMeasurementAdmin(admin.ModelAdmin):
+class ClimateMeasurementAdmin(CSVModelAdmin):
     list_display = ("location", "time", "temperature_display", "dew_point_display", "relative_humidity_display", "pressure_display")
     date_hierarchy = "time"
     list_filter = ("location",)
@@ -170,7 +171,7 @@ class CondensationReportForm(forms.ModelForm):
                       .filter(user__is_active=True).select_related("user")
         self.fields['reporter'].queryset = member_queryset
 
-class CondensationReportAdmin(admin.ModelAdmin):
+class CondensationReportAdmin(CSVModelAdmin):
     form = CondensationReportForm
     list_display = ("time", "get_locations_display", "reporter", "comment")
     formfield_overrides = {
@@ -182,6 +183,7 @@ class CondensationReportAdmin(admin.ModelAdmin):
         queryset = super(CondensationReportAdmin, self).get_queryset(request)
         queryset = queryset.select_related('reporter__user')
         return queryset
+
     
 admin.site.register(BookingSystemEvent, BookingAdmin)
 admin.site.register(BookingOffence, BookingOffenceAdmin)

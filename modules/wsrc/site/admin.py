@@ -26,6 +26,8 @@ from wsrc.site.models import PageContent, EmailContent, MaintenanceIssue,\
 from wsrc.utils.form_utils import CachingModelChoiceField, \
     get_related_field_limited_queryset, PrefetchRelatedQuerysetMixin
 
+from wsrc.utils.admin_utils import CSVModelAdmin
+
 def txt_widget(nrows):
     "Create a standard textarea widget"
     return forms.Textarea(attrs={'cols': 100, 'rows': nrows})
@@ -39,7 +41,7 @@ class NavigationForm(forms.ModelForm):
     "Override parent node in form for more efficient DB interaction"
     parent = CachingModelChoiceField(queryset=NavigationNode.objects.parent_nodes(), required=False)
 
-class NavigationLinkAdmin(PrefetchRelatedQuerysetMixin, admin.ModelAdmin):
+class NavigationLinkAdmin(PrefetchRelatedQuerysetMixin, CSVModelAdmin):
     list_display = ("name", "url", "is_reverse_url", "is_restricted", "icon", "parent", "ordering")
     list_editable = ("parent", "ordering",)
     prefetch_related_fields = ("parent",)
@@ -47,7 +49,7 @@ class NavigationLinkAdmin(PrefetchRelatedQuerysetMixin, admin.ModelAdmin):
         return NavigationForm
     form = NavigationForm
 
-class NavigationNodeAdmin(PrefetchRelatedQuerysetMixin, admin.ModelAdmin):
+class NavigationNodeAdmin(PrefetchRelatedQuerysetMixin, CSVModelAdmin):
     list_display = ("name", "is_restricted", "icon", "parent", "ordering")
     list_editable = ("ordering",)
     prefetch_related_fields = ("parent",)
@@ -58,13 +60,13 @@ class EmailContentAdmin(admin.ModelAdmin):
         models.TextField: {'widget': txt_widget(30)},
     }
 
-class ClubEventAdmin(admin.ModelAdmin):
+class ClubEventAdmin(CSVModelAdmin):
     list_display = ("title", "display_date", "display_time")
     formfield_overrides = {
         models.TextField: {'widget': txt_widget(20)},
     }
 
-class PDFFileAdmin(admin.ModelAdmin):
+class PDFFileAdmin(CSVModelAdmin):
     list_display = ("date", "get_link")
     formfield_overrides = {
         models.FileField: {'widget': forms.widgets.ClearableFileInput(attrs={'accept':'.pdf'})},
@@ -76,7 +78,7 @@ class PDFFileAdmin(admin.ModelAdmin):
     get_link.short_description = "Link"
     get_link.allow_tags = True
 
-class ImageAdmin(admin.ModelAdmin):
+class ImageAdmin(CSVModelAdmin):
     list_display = ("date", "get_link", "width", "height")
     formfield_overrides = {
         models.FileField: {'widget': forms.widgets.ClearableFileInput(attrs={'accept':'.jpg,.jpeg,.JPG,.gif,.GIF,.png'})},
@@ -88,7 +90,7 @@ class ImageAdmin(admin.ModelAdmin):
     get_link.short_description = "Link"
     get_link.allow_tags = True
 
-class MaintenanceIssueAdmin(admin.ModelAdmin):
+class MaintenanceIssueAdmin(CSVModelAdmin):
     list_display = ("description", "reporter", "reported_date", "status",)
     list_filter = ('status',)
     formfield_overrides = {
@@ -96,7 +98,7 @@ class MaintenanceIssueAdmin(admin.ModelAdmin):
     }
     list_select_related = ('reporter__user',)
 
-class SuggestionAdmin(admin.ModelAdmin):
+class SuggestionAdmin(CSVModelAdmin):
     list_display = ("description", "suggester", "submitted_date")
     formfield_overrides = {
         models.TextField: {'widget': forms.Textarea(attrs={'cols': 100, 'rows': 5})},
@@ -107,7 +109,7 @@ class OAuthForm(forms.ModelForm):
     "Override parent node in form for more efficient DB interaction"
     temporary_access_code = forms.CharField(required=False)
 
-class OAuthAdmin(admin.ModelAdmin):
+class OAuthAdmin(CSVModelAdmin):
     list_display = ("name", "grant_type", "client_id", "get_login_link", "access_token")
     list_editable = ("access_token", )
     form = OAuthForm
