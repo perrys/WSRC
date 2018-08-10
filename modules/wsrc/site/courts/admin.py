@@ -124,16 +124,15 @@ class ClimateMeasurementAdmin(CSVModelAdmin):
                 params[line[0]] = line[1]
             elif len(line) > 2:
                 if fieldnames is None:
-                    fieldnames  = line
+                    fieldnames  = [l.upper() for l in line]
                 else:
                     data.append(dict(zip(fieldnames, line)))
         return params, data
 
     @classmethod
     def save(cls, params, data):
-        print timezone.get_default_timezone()
         def convert_time(record):
-            ts = record["Time"]
+            ts = record["TIME"]
             ts = datetime.datetime.strptime(ts, "%m-%d-%y %H:%M:%S")
             ts = ts.replace(tzinfo=timezones.UK_TZINFO)
             return ts
@@ -141,7 +140,7 @@ class ClimateMeasurementAdmin(CSVModelAdmin):
             "time": convert_time,
             "temperature": itemgetter("TEMP()"),
             "relative_humidity": itemgetter("HUMI(%RH)"),
-            "dew_point": itemgetter("DP"),
+            "dew_point": itemgetter("DP()"),
             "temperature_error": lambda x: 1.0,
             "relative_humidity_error": lambda x: 3.0,
             "dew_point_error": lambda x: 1.0,           
