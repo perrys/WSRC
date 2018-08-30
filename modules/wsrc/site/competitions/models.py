@@ -294,7 +294,7 @@ class Match(models.Model):
 
     def get_box_league_points(self, scores=None):
         if self.walkover is not None:
-            points = (self.walkover == 1) and [7, 2] or [2, 7]
+            points = (self.walkover == 1) and [7, 0] or [0, 7]
         else:
             if scores is None:
                 scores = self.get_scores()
