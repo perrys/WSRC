@@ -18,7 +18,7 @@ import datetime
 from operator import itemgetter
 
 from django import forms
-from django.db import models
+from django.db import models, transaction
 
 from django.contrib import admin
 from django.utils import timezone
@@ -145,10 +145,11 @@ class ClimateMeasurementAdmin(CSVModelAdmin):
             "relative_humidity_error": lambda x: 3.0,
             "dew_point_error": lambda x: 1.0,           
         }
-        for row in data:
-            kwargs = dict([(field, f(row)) for field, f in FIELD_MAPPING.items()])
-            model = ClimateMeasurement(location=params["Test Name"], **kwargs)
-            model.save()
+        with transaction.atomic():
+            for row in data:
+                kwargs = dict([(field, f(row)) for field, f in FIELD_MAPPING.items()])
+                model = ClimateMeasurement(location=params["Test Name"], **kwargs)
+                model.save()
             
     def upload_view(self, request):
         if request.method == 'POST':
