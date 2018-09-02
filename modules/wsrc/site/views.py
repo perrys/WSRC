@@ -780,3 +780,7 @@ class OAuthExchangeTokenView(APIView):
                                            temp_access_code=temp_access_code)
         return HttpResponse(json.dumps({"access_token": token}), status=201)
 
+
+@require_safe
+def generic_get_template_view(request, template_name, **kwargs):
+    return TemplateResponse(request, template_name, kwargs)
