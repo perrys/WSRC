@@ -73,7 +73,7 @@ urlpatterns = [
     url(r'^competitions/leagues/(?P<comp_type>\w+)/(?P<end_date>\d{4}-\d{2}-\d{2})/?$', wsrc.site.competitions.views.BoxesUserView.as_view()), # end-date based
     url(r'^competitions/leagues/(?P<comp_type>\w+)/?$',                     wsrc.site.competitions.views.BoxesUserView.as_view(), \
         name=wsrc.site.competitions.views.BoxesUserView.reverse_url_name),
-
+  
     url(r'^tournaments/admin/(\d{4})/([\w\s]+)/?',  wsrc.site.competitions.views.bracket_admin_view),
     url(r'^tournaments/admin/?',                    wsrc.site.competitions.views.bracket_admin_view),
 #    url(r'^tournaments/qualifiers/(?P<year>\d{4})/(?P<name>[\w\s]+)?', wsrc.site.competitions.views.boxes_view, {'comp_type': 'qualifiers'}),
@@ -84,7 +84,9 @@ urlpatterns = [
     url(r'^competition/(?P<comp_id>\d+)/match/update/?$', wsrc.site.competitions.views.MatchChooseAndUpdateView.as_view(competition=None), name='match_choose_and_update'),
     url(r'^competition/(?P<comp_id>\d+)/match/(?P<pk>\d+)/?$', wsrc.site.competitions.views.MatchUpdateView.as_view(competition=None), name='match_update'),
     url(r'^competition/(?P<comp_id>\d+)/match/?$', wsrc.site.competitions.views.MatchCreateView.as_view(competition=None), name="match_create"),
-                       
+
+    url(r'^training/ghosting/?$', wsrc.site.views.generic_get_template_view, {'template_name': 'ghost_training.html'}, name="ghosting"),
+
     url(r'^settings/?$', wsrc.site.usermodel.views.settings_view, name="settings"),
 
     url(r'^membership_application/?$', wsrc.site.usermodel.views.MembershipApplicationCreateView.as_view(),\
