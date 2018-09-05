@@ -14,11 +14,19 @@
 # along with WSRC.  If not, see <http://www.gnu.org/licenses/>.
 
 from django import forms
+import codecs
 
-def upload_generator(upload):
+def upload_generator(upload, decode_codec=None, encode_codec=None):
+    decoder = codecs.getdecoder(decode_codec) if decode_codec is not None else None
+    encoder = codecs.getencoder(encode_codec) if encode_codec is not None else None
     last_line = ""
     for chunk in upload.chunks():
-        lines = (last_line + chunk).split("\n")
+        lines = (last_line + chunk)
+        if decoder is not None:
+            lines = decoder(lines)[0]
+        if encoder is not None:
+            lines = encoder(lines, 'ignore')[0]
+        lines = lines.split("\n")
         for i, line in enumerate(lines):
             if i < (len(lines) -1):
                 yield line

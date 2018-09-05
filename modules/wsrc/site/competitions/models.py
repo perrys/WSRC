@@ -43,16 +43,19 @@ class BoxLeaguePoints:
         return total
     
     
+class CompetitionType(models.Model):
+    id = models.CharField(max_length=32, primary_key=True)
+    name = models.CharField(max_length=64, unique=True)
+    is_knockout_comp = models.BooleanField()
+    def __unicode__(self):
+        return self.name
+    class Meta:
+        verbose_name = "Competition Type"
 
 class CompetitionGroup(models.Model):
     """A grouping of competitions, e.g. a set of league boxes"""
-    GROUP_TYPES = (
-        ("wsrc_boxes", "Club Leagues"),
-        ("wsrc_tournaments", "Club Tournaments"),
-        ("wsrc_qualifiers", "Club Tournament Qualifiers"),
-    )
     name = models.CharField(max_length=128)
-    comp_type = models.CharField(max_length=32, choices=GROUP_TYPES)
+    competition_type = models.ForeignKey(CompetitionType, on_delete=models.PROTECT, null=False)
     end_date = models.DateField()
     # TODO - this field is a less useful duplicate of the state field on
     # competition, and the two are used interchangably in the code. We
@@ -67,7 +70,7 @@ class CompetitionGroup(models.Model):
         "Return a set of Player objects who are entrants in the given competition groups"
         clause = None
         for group_type in group_types:
-            q = models.Q(comp_type=group_type)
+            q = models.Q(competition_type__name=group_type)
             if clause is None:
                 clause = q
             else:
@@ -84,7 +87,7 @@ class CompetitionGroup(models.Model):
         return players
     
     class Meta:
-        ordering = ["comp_type", "-end_date"]
+        ordering = ["-end_date", "competition_type"]
         verbose_name = "Competition Group"
 
 class Competition(models.Model):
@@ -221,7 +224,7 @@ class Match(models.Model):
             raise ValidationError("Two opponents in the same match must be different!")
         if self.walkover is None and (self.team1_score1 is None or self.team2_score1 is None):
             raise ValidationError("At least one score is required, or a walkover")
-        if self.competition.group.comp_type == "wsrc_tournaments":
+        if self.competition.group.competition_type.is_knockout_comp:
             winner = self.get_winner()
             if winner is None:
                 raise ValidationError("Tournament matches must have a winner")
@@ -243,7 +246,7 @@ class Match(models.Model):
 
     def save(self, *args, **kwargs):
         super(Match, self).save(*args, **kwargs)
-        if self.competition.group.comp_type == "wsrc_tournaments":
+        if self.competition.group.competition_type.is_knockout_comp:
             winner = self.get_winner()
             if winner is not None and self.competition_match_id > 1:
                 from .tournament import get_or_create_next_match
@@ -291,7 +294,7 @@ class Match(models.Model):
 
     def get_box_league_points(self, scores=None):
         if self.walkover is not None:
-            points = (self.walkover == 1) and [7, 2] or [2, 7]
+            points = (self.walkover == 1) and [7, 0] or [0, 7]
         else:
             if scores is None:
                 scores = self.get_scores()
@@ -348,7 +351,7 @@ class Match(models.Model):
         return None
 
     def is_knockout_comp(self):
-        return self.competition.group.comp_type == "wsrc_tournaments"
+        return self.competition.group.competition_type.is_knockout_comp
 
     def get_round(self):
         if self.competition_match_id is None:

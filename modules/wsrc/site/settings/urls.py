@@ -25,8 +25,8 @@ def perm_redirect(view, permanent=True):
 urlpatterns = [
 
 
-    url(r'^$',       wsrc.site.views.index_view),
-    url(r'^home/?$', wsrc.site.views.index_view, name="homepage"),
+    url(r'^$',       wsrc.site.views.index_view, name="homepage"),
+    url(r'^home/?$', wsrc.site.views.index_view),
 
     url(r'^login/?$',  wsrc.site.views.login, {'template_name': 'login.html', 'authentication_form': SpaceTranslatingAuthenticationForm}, name='login'),
     url(r'^logout/?$', auth_views.logout, name='logout'),
@@ -55,23 +55,25 @@ urlpatterns = [
     url(r'^courts/agenda/?$', wsrc.site.courts.views.agenda_view, name="agenda"),
     url(r'^courts/notifications/?$', wsrc.site.courts.views.notifier_view, name="notifier"),
     url(r'^courts/penalty_points/?$', wsrc.site.courts.views.penalty_points_view, name="penalty_points"),
+    url(r'^courts/condensation_report/?$', wsrc.site.courts.views.CondensationReportCreateView.as_view(), name="condensation_report"),
                        
     url(r'^court_booking/proxy/?$', wsrc.site.views.booking_proxy_view),
     url(r'^court_booking/cal_invite/send', wsrc.site.views.SendCalendarEmail.as_view()),
 
-    url(r'^boxes/admin/activate/',              wsrc.site.competitions.views.SetCompetitionGroupLive.as_view()),
-    url(r'^boxes/admin/email/',                 wsrc.site.competitions.views.SendCompetitionEmail.as_view()),
-    url(r'^boxes/admin/?$',                     wsrc.site.competitions.views.BoxesAdminView.as_view(), name=wsrc.site.competitions.views.BoxesAdminView.reverse_url_name),
-    url(r'^boxes/admin/(\d{4}-\d{2}-\d{2})/?$', wsrc.site.competitions.views.BoxesAdminView.as_view()),
-    url(r'^boxes/xl/?$',                        wsrc.site.competitions.views.BoxesExcelView.as_view()),
-    url(r'^boxes/xl/(\d{4}-\d{2}-\d{2})/?$',    wsrc.site.competitions.views.BoxesExcelView.as_view()),
-    url(r'^boxes/data/(?P<group_id>\d+)/?$',    wsrc.site.competitions.views.BoxesDataView.as_view()),
+    url(r'^competitions/admin/activate/',              wsrc.site.competitions.views.SetCompetitionGroupLive.as_view(), name="comp_group_activate"),
+    url(r'^competitions/admin/email/',                 wsrc.site.competitions.views.SendCompetitionEmail.as_view()),
 
-    url(r'^boxes/preview/(?P<group_id>\d+)/?$', wsrc.site.competitions.views.BoxesPreviewView.as_view()), # end-date based
+    url(r'^competitions/leagues/(?P<comp_type>\w+)/admin/?$',  wsrc.site.competitions.views.BoxesAdminView.as_view(), name=wsrc.site.competitions.views.BoxesAdminView.reverse_url_name),
+    url(r'^competitions/leagues/(?P<comp_type>\w+)/admin/(?P<end_date>\d{4}-\d{2}-\d{2})/?$', wsrc.site.competitions.views.BoxesAdminView.as_view()),
+    url(r'^competitions/leagues/(?P<comp_type>\w+)/xl/?$',                        wsrc.site.competitions.views.BoxesExcelView.as_view()),
+    url(r'^competitions/leagues/(?P<comp_type>\w+)/xl/(?P<end_date>\d{4}-\d{2}-\d{2})/?$',    wsrc.site.competitions.views.BoxesExcelView.as_view()),
+
+    url(r'^competitions/leagues/(?P<comp_type>\w+)/preview/(?P<group_id>\d+)/?$', wsrc.site.competitions.views.BoxesPreviewView.as_view(), name='leagues_preview'),
                        
-    url(r'^boxes/(\d{4}-\d{2}-\d{2})/?$', wsrc.site.competitions.views.BoxesUserView.as_view()), # end-date based
-    url(r'^boxes/?$',                     wsrc.site.competitions.views.BoxesUserView.as_view(), name=wsrc.site.competitions.views.BoxesUserView.reverse_url_name),
-
+    url(r'^competitions/leagues/(?P<comp_type>\w+)/(?P<end_date>\d{4}-\d{2}-\d{2})/?$', wsrc.site.competitions.views.BoxesUserView.as_view()), # end-date based
+    url(r'^competitions/leagues/(?P<comp_type>\w+)/?$',                     wsrc.site.competitions.views.BoxesUserView.as_view(), \
+        name=wsrc.site.competitions.views.BoxesUserView.reverse_url_name),
+  
     url(r'^tournaments/admin/(\d{4})/([\w\s]+)/?',  wsrc.site.competitions.views.bracket_admin_view),
     url(r'^tournaments/admin/?',                    wsrc.site.competitions.views.bracket_admin_view),
 #    url(r'^tournaments/qualifiers/(?P<year>\d{4})/(?P<name>[\w\s]+)?', wsrc.site.competitions.views.boxes_view, {'comp_type': 'qualifiers'}),
@@ -82,7 +84,9 @@ urlpatterns = [
     url(r'^competition/(?P<comp_id>\d+)/match/update/?$', wsrc.site.competitions.views.MatchChooseAndUpdateView.as_view(competition=None), name='match_choose_and_update'),
     url(r'^competition/(?P<comp_id>\d+)/match/(?P<pk>\d+)/?$', wsrc.site.competitions.views.MatchUpdateView.as_view(competition=None), name='match_update'),
     url(r'^competition/(?P<comp_id>\d+)/match/?$', wsrc.site.competitions.views.MatchCreateView.as_view(competition=None), name="match_create"),
-                       
+
+    url(r'^training/ghosting/?$', wsrc.site.views.generic_get_template_view, {'template_name': 'ghost_training.html'}, name="ghosting"),
+
     url(r'^settings/?$', wsrc.site.usermodel.views.settings_view, name="settings"),
 
     url(r'^membership_application/?$', wsrc.site.usermodel.views.MembershipApplicationCreateView.as_view(),\
@@ -127,7 +131,8 @@ urlpatterns = [
     url(r'^html/news.php',            perm_redirect('/home')),
     url(r'^html/links.html',          perm_redirect('/links')),
     url(r'^tournaments/index.html',   perm_redirect('/tournament')),
-
+    url(r'^boxes/?$',                 perm_redirect('/competitions/leagues/squash_boxes/')),
+    url(r'^boxes/admin/?$',           perm_redirect('/competitions/leagues/squash_boxes/admin')),
 
     url(r'^club_management/?$', wsrc.site.views.committee_view),
     url(r'^committee/?$', wsrc.site.views.committee_view),

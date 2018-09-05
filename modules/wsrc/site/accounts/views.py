@@ -262,7 +262,9 @@ from django.views.decorators.http import require_http_methods
 @require_http_methods(["GET"])
 def transaction_csv_view(request, account_name):
     account = Account.objects.get(name__iexact=account_name)
-    queryset = Transaction.objects.filter(account__name=account_name) 
+    queryset = Transaction.objects.filter(account__name=account_name).select_related()
+    subs_payments = SubscriptionPayment.objects.filter(transaction__account__name=account_name).select_related("subscription__player__user", "subscription__season")
+    subs_payments = dict([(s.transaction.pk, s) for s in subs_payments])
     start_date = request.GET.get("start_date")
     if start_date is not None:
         queryset = queryset.filter(date_issued__gte = start_date)
@@ -275,10 +277,14 @@ def transaction_csv_view(request, account_name):
     response['Content-Disposition'] = 'attachment; filename="%s"' % filename
     csvwriter = csv.writer(response)
     fields = ['date_issued', 'date_cleared', 'amount', 'bank_transaction_category', 'bank_number', 'bank_memo', 'category', 'comment']
-    csvwriter.writerow(fields)
+    joined_fields = ['subs_year', 'subs']
+    csvwriter.writerow(fields + joined_fields)
     for row in queryset:
-        print row.date_cleared
         data = [getattr(row, field) for field in fields]
+        sub_payment = subs_payments.get(row.pk)
+        if sub_payment is not None:
+            data.append(unicode(sub_payment.subscription.season).encode("utf-8"))
+            data.append(unicode(sub_payment.subscription).encode("utf-8"))
         csvwriter.writerow(data)
     return response
             

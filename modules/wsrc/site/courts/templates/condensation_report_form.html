@@ -1,0 +1,116 @@
+{% extends "06_wsrc_navigation.html" %}
+{% block titleprefix %}New Condensation Report - {% endblock %}
+
+{% block html_header_extra %}
+<meta name="robots" content="noindex" />
+{{ block.super }}
+<style>
+ form {
+     max-width: 768px;
+     padding: 15px;
+     margin: 0 auto 15px auto;
+ }
+ .buttonset {
+     text-align: center;
+ }
+ .underline {
+     text-decoration: underline;
+ }
+ .split-date-time-field > .form-control {
+     display: inline-block;
+     width: 40%;
+ }
+ .form-group.no-margins {
+     margin-left: 0;
+     margin-right: 0;
+ }
+ label.radio-inline {
+     padding-left: 2px;
+     padding-right: 25px;
+ }
+</style>
+{% endblock %}
+
+{% block centered_page_content %}
+
+<form method="post" class="form-horizontal">
+
+  <div class="well">
+    <p>
+      We sometimes have the problem of condensation appearing on the court walls, particularly later in the evening when the club has been busy.
+    </p>
+    <p>
+      Condensation occurs when humid air meets a cool surface&mdash;the more humid the air, the less cold the surface needs to be for condensation to form on it. We are gathering temperature and humidity data to try to understand the root cause(s) of the problem, to decide how best to tackle it.
+    </p>
+    <p>Members can help by reporting any occurences of condensation using the form below. </p>
+  </div>
+  
+  {% csrf_token %}
+  {% for hidden in form.hidden_fields %}
+  {{ hidden }}
+  {% endfor %}
+
+  {% if form_saved %}
+  <div class="alert alert-success">Your report has been saved, many thanks.</div>
+  {% endif %}
+  
+  {% if form.errors %}
+  <div class="alert alert-danger">ERROR. Please correct the problem(s) below and resubmit.
+    <ul>
+      {% for err in form.non_field_errors %}
+      <li class="form_error_message">{{ err|safe }}</li>
+      {% endfor %}
+    </ul>
+  </div>
+  {% endif %}
+<!-- 
+  <div class="form-group ">
+  
+    <span class="col-sm-3 control-label"><label for="id_time_0">Time:</label></span>
+  
+  <div class="col-sm-9 split-date-time-field">
+    <input type="text" name="time_0" value="{{ form.time.value|date:'Y-m-d'  }}" required="1" class="form-control" id="id_time_0">
+    <input type="text" name="time_1" value="{{ form.time.value|date:'H:i'  }}" required="1" class="form-control" id="id_time_1">
+    <input type="hidden" name="initial-time" value="2018-07-26 10:15:00" id="initial-id_time">
+  </div>
+  </div>
+  - -->  
+  {% include "form_field_snippet.html" with field=form.time field_container_class="split-date-time-field" %}
+  {% include "form_field_radio_snippet.html" with field=form.location %}
+
+  <div class="form-group {% if field.errors %}has-error{% endif %} no-margins">
+    <textarea class="form-control" name="comment" rows="5" placeholder="Optional comment&hellip;">{{ form.comment.value|default:"" }}</textarea>
+  </div>
+  
+  <div class="buttonset">
+    <button class="btn btn-primary" type="submit" value="Update"><span class="glyphicon glyphicon-ok"></span>&nbsp;Submit</button>
+  </div>
+  
+</form>
+
+ {% endblock %}
+
+{% block body_script_extra %}
+{% if debug %}
+<script src="/static/js/jquery-ui.js"></script>
+{% else %}
+<script
+    src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js"
+    integrity="sha256-VazP97ZCwtekAsvgPBSUwPFKdrwD3unUfSGVYrahUqU="
+    crossorigin="anonymous"></script>
+{% endif %}
+<script>
+  var datepicker_options = {
+      dateFormat: "d/m/yy",
+      firstDay: 1,
+      showOtherMonths: true,
+      selectOtherMonths: true
+  }
+  datepicker = $("input.date-input").datepicker(datepicker_options).show()
+  // jquery-ui appends this to the body, but we need it appended to
+  // the page wrapper for the overlays and CSS to work properly:
+  var widget = datepicker.datepicker("widget")
+  widget.hide().detach()
+  widget.appendTo("body .container")
+</script>
+{% endblock %}

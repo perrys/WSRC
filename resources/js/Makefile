@@ -14,7 +14,7 @@ all: all.min.js all_admin.js all_admin_mailshot.js all_admin_accounts.js all_adm
 %.min.js: %.js
 	$(MINIFY) $< > $@
 
-ORDERED_MAIN_JS_SRCS = wsrc_utils.js wsrc_homepage.js wsrc_notifiers.js wsrc_court_booking.js wsrc_tournaments.js wsrc_result_form.js
+ORDERED_MAIN_JS_SRCS = wsrc_utils.js wsrc_homepage.js wsrc_notifiers.js wsrc_court_booking.js wsrc_tournaments.js wsrc_result_form.js wsrc_training.js
 
 all.js: $(ORDERED_MAIN_JS_SRCS) jquery.vkeyboard.js 
 	cat $(ORDERED_MAIN_JS_SRCS) > $@

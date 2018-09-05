@@ -21,6 +21,7 @@ from django import urls
 
 import wsrc.site.competitions.models as comp_models
 from wsrc.utils.form_utils import CachingModelChoiceField, get_related_field_limited_queryset
+from wsrc.utils.admin_utils import CSVModelAdmin
 
 class CompetitionInline(admin.TabularInline):
     model = comp_models.Competition
@@ -29,11 +30,15 @@ class CompetitionInline(admin.TabularInline):
         qs = qs.select_related("group")
         return qs
 
-class CompetitionGroupAdmin(admin.ModelAdmin):
-    list_display = ("name", "comp_type", "end_date", "active",)
-    list_filter = ('comp_type',)
+class CompetitionGroupAdmin(CSVModelAdmin):
+    list_display = ("name", "competition_type", "end_date", "active",)
+    list_filter = ('competition_type',)
     inlines = (CompetitionInline,)
 admin.site.register(comp_models.CompetitionGroup, CompetitionGroupAdmin)
+
+class CompetitionTypeAdmin(CSVModelAdmin):
+    list_display = ("id", "name", "is_knockout_comp")
+admin.site.register(comp_models.CompetitionType, CompetitionTypeAdmin)
 
 class EntrantForm(forms.ModelForm):
     "Override subscription form for more efficient DB interaction"
@@ -96,9 +101,9 @@ def set_not_started(modeladmin, request, queryset):
   queryset.update(state="not_started")
 set_not_started.short_description="Un-start"
 
-class CompetitionAdmin(admin.ModelAdmin):
+class CompetitionAdmin(CSVModelAdmin):
     list_display = ("name", "group", "number_of_entrants", "state", "end_date", "ordering", "url")
-    list_filter = ('group__comp_type', 'group', 'state')
+    list_filter = ('group__competition_type', 'group', 'state')
     inlines = (EntrantInline,MatchInLine,)
     actions=(set_not_started, set_in_progress, set_concluded)
     def get_queryset(self, request):
@@ -115,7 +120,7 @@ class CompetitionAdmin(admin.ModelAdmin):
 admin.site.register(comp_models.Competition, CompetitionAdmin)
 
 
-class CompetitionRoundAdmin(admin.ModelAdmin):
+class CompetitionRoundAdmin(CSVModelAdmin):
     list_display = ("competition", "round", "end_date")
     form = CompetitionRoundForm
     def get_queryset(self, request):
@@ -132,7 +137,7 @@ class MatchAdminForm(MatchForm):
                                         self.instance.competition.entrant_set.select_related()
         self.fields['team1'].required = self.fields['team2'].required = False
 
-class MatchAdmin(admin.ModelAdmin):
+class MatchAdmin(CSVModelAdmin):
     form = MatchAdminForm
     list_filter = ('competition__group', 'competition__name')
     list_display = ("id", "competition_link", "team1", "team2", "competition_match_id", "get_scores_display", "walkover", "last_updated")
@@ -150,7 +155,7 @@ class MatchAdmin(admin.ModelAdmin):
     competition_link.short_description = u"Competition"    
 admin.site.register(comp_models.Match, MatchAdmin)
 
-class EntrantAdmin(admin.ModelAdmin):
+class EntrantAdmin(CSVModelAdmin):
     list_display = ("competition", "player1", "player2", "ordering", "handicap", "seeded")
     list_filter = ('competition__group', 'competition__name')
     list_editable = ('handicap', 'seeded')

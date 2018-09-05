@@ -1,0 +1,1 @@
+{% load admin_extras %}{% result_list_csv cl %}

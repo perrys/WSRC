@@ -22,10 +22,11 @@ from .models import Account, Category, Transaction
 from wsrc.site.usermodel.models import SubscriptionPayment, Subscription, Season
 from wsrc.utils.form_utils import SelectRelatedForeignFieldMixin, \
     SelectRelatedQuerysetMixin, PrefetchRelatedQuerysetMixin
+from wsrc.utils.admin_utils import CSVModelAdmin
 
 SUBS_CATEGORY_NAME = "subscriptions"
 
-class CategoryAdmin(admin.ModelAdmin):
+class CategoryAdmin(CSVModelAdmin):
     "Simple admin for accounts categories"
     list_display = ("id", "name", "ordering", "description", "regex", "is_reconciling",)
     list_editable = ("name", "ordering", "description", "regex", "is_reconciling",)
@@ -56,7 +57,7 @@ def assign_subs_payment(modeladmin, request, transactions_queryset):
             sub.match_transaction(trans, subs_category)
 assign_subs_payment.short_description = "Assign Subs Payment"
 
-class TransactionAdmin(PrefetchRelatedQuerysetMixin, admin.ModelAdmin):
+class TransactionAdmin(PrefetchRelatedQuerysetMixin, CSVModelAdmin):
     "Admin for account transactions"
     inlines = (SubscriptionPaymentInline,)
     list_display = ("date_issued", "date_cleared", "account", "bank_number", "amount",
@@ -71,8 +72,8 @@ class TransactionAdmin(PrefetchRelatedQuerysetMixin, admin.ModelAdmin):
     def subscription(self, obj):
         """Accessor for a possible subscription associated with this
         transaction, for use by the display list."""
-        subs_payments = obj.subs_payments
-        for subs_payment in subs_payments.all():
+        subs_payment = obj.subs_payments
+        if subs_payment:
             cache = getattr(self, 'subscription_cache', None)
             if cache is None:
                 cache = dict([(sub.pk, sub) for sub in Subscription.objects.all()])

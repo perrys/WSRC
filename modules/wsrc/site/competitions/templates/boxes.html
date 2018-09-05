@@ -152,7 +152,7 @@
 <div id="links_clear" class="clearfix"></div>
 
 {% if not user.is_authenticated %}
-<p class="well">Players' names have been obscured. To view the boxes in full please <a href="/login?next={% url 'boxes' %}">Sign In</a>.</p>
+<p class="well">Players' names have been obscured. To view the boxes in full please <a href="/login?next={% url 'boxes' competition.type %}">Sign In</a>.</p>
 {% endif %}
 
 <div id="source_boxes" class="competition-wrapper" data-id="{{ competition.id }}">

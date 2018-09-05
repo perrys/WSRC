@@ -23,13 +23,35 @@ class SessionTimeoutMiddleware:
     def __init__(self, get_response):
         self.get_response = get_response
 
-    def __call__(self, request):
+    @classmethod
+    def get_session_timeout(cls, request):
         session_timeout = request.COOKIES.get("session_timeout")
+        if session_timeout is not None:
+            if not session_timeout: # blank
+                session_timeout = None
+            else:
+                try:
+                    session_timeout = int(session_timeout)
+                except ValueError:
+                    LOGGER.warning("invalid value for session timeout cookie: \"%s\"", session_timeout)        
+                    session_timeout = None
+        return session_timeout
+    
+    def __call__(self, request):
+        session_timeout = self.get_session_timeout(request)
         if session_timeout:
-            try:
-                request.session.set_expiry(int(session_timeout))
-            except ValueError:
-                LOGGER.warning("invalid value for session timeout cookie: \"%s\"", session_timeout)        
+            request.session.set_expiry(session_timeout)
         return self.get_response(request)
+
+    def process_template_response(self, request, response):
+        session_timeout = self.get_session_timeout(request)
+        if request.user.is_authenticated and session_timeout:
+            if response.context_data is None:
+                response.context_data = {"session_timeout": session_timeout}
+            else:
+                response.context_data["session_timeout"] = session_timeout
+        return response
+        
                 
         
+    

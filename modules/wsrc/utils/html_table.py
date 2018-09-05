@@ -113,6 +113,8 @@ class Table:
     def addCell(self, c, colOrigin, rowOrigin):
         for i in range(0, c.nrows):
             row = rowOrigin+i
+            if row >= self.nrows:
+                break
             for j in range(0, c.ncols):
                 col = colOrigin+j
                 if not isinstance(self.cells[row][col], NullCell):

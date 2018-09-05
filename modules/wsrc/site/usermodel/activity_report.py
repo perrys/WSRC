@@ -166,13 +166,16 @@ class ActivityReport(object):
                               .filter(event="Granted",\
                                       received_time__gte=self.start_date,\
                                       received_time__lt=self.end_date)\
-                              .select_related("card__player__user")
+                              .prefetch_related("card__doorcardlease_set__player__user")
         
         results = dict()
         for dce in dce_qs:
             card = dce.card
-            if card is not None and card.player is not None:
-                player_list = self._get_or_add_set(results, card.player.pk, lambda: list())
+            if card is not None:
+                current_lease = card.get_current_ownership_data()
+                if current_lease is None:
+                    continue
+                player_list = self._get_or_add_set(results, current_lease.player.pk, lambda: list())
                 if len(player_list) > 0:
                     # ignore repeat entries by the same card
                     if (dce.timestamp - player_list[-1].timestamp).total_seconds() < (2 * 60 * 60):
@@ -358,9 +361,9 @@ class ActivityReport(object):
             if sub.player.user.date_joined.date() > sub.season.start_date:
                 sub_type["n_recent"] += 1
             activity = activity_data.get(sub.pk)
-            if activity is None:
-                sub_type["n_inactive"] = "N/A"
-            elif activity.activity == 0:
+#            if activity is None:
+#                sub_type["n_inactive"] = "N/A"
+            if activity is not None and activity.activity == 0:
                 sub_type["n_inactive"] += 1
         results = [results_t(**datum) for datum in sub_types.values()]
         results.sort(key=lambda (x): x.n_members, reverse=True)

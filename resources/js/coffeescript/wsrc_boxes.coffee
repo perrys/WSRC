@@ -4,7 +4,7 @@
 
 class WSRC_boxes_model
    
-  constructor: (@member_map) ->
+  constructor: (@member_map, @comp_type, @preview_url) ->
 
 
 ################################################################################
@@ -114,33 +114,9 @@ class WSRC_boxes
     view_radios = $("input[name='view_type']")
     view_radios.on "change", (evt) =>
       @handle_display_type_change(evt)
-    $("#box-refresh-button").click (evt) =>
-      @fetch_competition_group @get_competition_group_id()
 
   get_competition_group_id: () ->
     $("#source_boxes").data("id")
-
-  fetch_competition_group: (group_id) ->
-    jQuery.mobile.loading("show", 
-      text: "Loading Competition"
-      textVisible: true
-      textonly: false
-      theme: "a"
-      html: ""
-    )
-    opts =
-      url: "/boxes/data/#{ group_id }"
-      type: 'GET'
-      success: (data, status, jq_xhr) =>
-        jQuery.mobile.loading("hide")
-        nodes = $.parseHTML($.trim(data), null, true)
-        @view.update_tables(nodes)
-        @handle_display_type_change()
-      failureCB: (xhr, status) -> 
-        alert("ERROR #{ xhr.status }: #{ xhr.statusText }\nResponse: #{ xhr.responseText }\n\nUnable to fetch data for comp group '#{ group_id }'.")
-        jQuery.mobile.loading("hide")
-    jQuery.ajax(opts)
-
 
   get_points_totals: (this_box_config) ->
     newTotals = (entrant_id) -> {id: entrant_id, p: 0, w: 0, d: 0, l: 0, f: 0, a: 0, pts: 0}
@@ -445,7 +421,7 @@ class WSRC_boxes_admin extends WSRC_boxes
         jqmask.css("z-index", "-1")
         alert("ERROR #{ xhr.status }: #{ xhr.statusText }\nResponse: #{ xhr.responseText }\n\nEmail for '#{ competition.name }' may not have been sent.")
     jqmask.mask("Sending start-of-league emails for \'#{ competition.name }\'...")
-    wsrc.ajax.ajax_bare_helper("/boxes/admin/email/", data, opts, "PUT")
+    wsrc.ajax.ajax_bare_helper("/competitions/admin/email/", data, opts, "PUT")
 
 
   send_league_start_emails: (comp_group) ->
@@ -469,7 +445,7 @@ class WSRC_boxes_admin extends WSRC_boxes
         else
           doit1()
       else
-        document.location = "/boxes/admin"
+        document.location.reload(true)
     doit()
 
   handle_league_changed: (selector) ->
@@ -498,7 +474,7 @@ class WSRC_boxes_admin extends WSRC_boxes
     comp_group =
       name: "Leagues Ending #{ wsrc.utils.js_to_readable_date_str(end_js_date) }"
       end_date: end_date
-      comp_type: "wsrc_boxes"
+      competition_type: @model.comp_type
       active: false
       competitions_expanded: []
     id = $("#target_boxes").data("id")
@@ -535,7 +511,7 @@ class WSRC_boxes_admin extends WSRC_boxes
 
   handle_target_preview_click: (evt, ui) ->
     target_group_id = $("#target_boxes").data("id")    
-    window.open("/boxes/preview/#{ target_group_id }", "boxes_preview")
+    window.open("#{ @model.preview_url }#{ target_group_id }", "boxes_preview")
 
   handle_target_autocomplete_select: (evt, ui) ->
     player_str = ui.item.value
@@ -600,7 +576,6 @@ class WSRC_boxes_admin extends WSRC_boxes
     make_live = () =>
       data =
         competition_group_id: $("#target_boxes").data("id")
-        competition_type: "wsrc_boxes"
       jqmask  = $("#maskdiv")
       jqmask.css("z-index", "1")
       opts =
@@ -614,7 +589,7 @@ class WSRC_boxes_admin extends WSRC_boxes
           jqmask.css("z-index", "-1")
           alert("ERROR #{ xhr.status }: #{ xhr.statusText }\nResponse: #{ xhr.responseText }\n\nUnable to make league live.")
       jqmask.mask("Setting new league active...")
-      wsrc.ajax.ajax_bare_helper("/boxes/admin/activate", data, opts, "PUT")
+      wsrc.ajax.ajax_bare_helper("/competitions/admin/activate/", data, opts, "PUT")
         
     if @view.target_save_button.prop('disabled')
       make_live()
@@ -626,8 +601,8 @@ class WSRC_boxes_admin extends WSRC_boxes
     args = $.fn.toArray.call(arguments)
     @instance[method].apply(@instance, args[1..])
 
-  @onReady: (player_map) ->
-    model = new WSRC_boxes_model(player_map)
+  @onReady: (player_map, comp_type, preview_url) ->
+    model = new WSRC_boxes_model(player_map, comp_type, preview_url)
     @instance = new WSRC_boxes_admin(model)
 
     

@@ -17,6 +17,7 @@
 
 import csv
 import datetime
+import functools
 import re
 import StringIO
 
@@ -26,7 +27,7 @@ from django.db import models
 from django.contrib import admin
 
 from django.contrib.auth.admin import UserAdmin as AuthUserAdmin
-from django.contrib.auth.models import User
+from django.contrib.auth.models import User, Group
 
 from django import urls
 from django.core.exceptions import ValidationError, NON_FIELD_ERRORS
@@ -41,6 +42,7 @@ from wsrc.utils.form_utils import SelectRelatedQuerysetMixin, CachingModelChoice
 from wsrc.utils.upload_utils import upload_generator
 from wsrc.site.settings import settings
 from wsrc.utils import email_utils
+from wsrc.utils.admin_utils import CSVModelAdmin
 
 MEMBERSHIP_SEC_EMAIL_ADDRESS     = "membership@wokingsquashclub.org"
 
@@ -51,6 +53,23 @@ class UserProfileInline(admin.StackedInline):
     can_delete = False
 
 class UserAdmin(AuthUserAdmin):
+
+    def create_group_actions():
+        def toggle_fn(group, modeladmin, request, queryset):
+            group_users = group.user_set.all()
+            for user in queryset:
+                if user in group_users:
+                    user.groups.remove(group)
+                else:
+                    user.groups.add(group)
+                user.save()
+        def make_toggle_fn(group):
+            toggle = functools.partial(toggle_fn, group)
+            toggle.__name__ = "toggle_{0}".format(group.name)
+            toggle.short_description = "Toggle group membership: {0}".format(group.name)
+            return toggle
+        return [make_toggle_fn(group) for group in Group.objects.all()]
+        
     "Redefinition of user admin"
     inlines = AuthUserAdmin.inlines + [UserProfileInline,]
     list_display = ('username', 'last_name', 'first_name', 'email',\
@@ -58,14 +77,14 @@ class UserAdmin(AuthUserAdmin):
     list_filter = ('is_active', 'groups', 'is_staff', 'is_superuser')
     ordering = ('last_name', 'first_name', 'username')
     list_per_page = 400
-    list_select_related = ('player',)
+    actions = create_group_actions()
 
 # unregister old user admin
 admin.site.unregister(User)
 # register new user admin
 admin.site.register(User, UserAdmin)
 
-class SeasonAdmin(admin.ModelAdmin):
+class SeasonAdmin(CSVModelAdmin):
     "Simple admin for Seasons"
     list_display = ('__unicode__', "has_ended")
     list_editable = ("has_ended",)
@@ -112,7 +131,7 @@ def create_new_season_subscription(modeladmin, request, queryset):
     for subscription in queryset:
         subscription.clone_to_latest_season(latest_season)
 
-class SubscriptionAdmin(admin.ModelAdmin):
+class SubscriptionAdmin(CSVModelAdmin):
     "Subscription admin - heavilly used for subs management"
     inlines = (SubscriptionPaymentInline,)
     list_display = ('ordered_name', 'email', 'season', 'linked_membership_type', 'pro_rata_date',\
@@ -210,6 +229,12 @@ def update_subscriptions(modeladmin, request, queryset):
             
 update_subscriptions.short_description = "Check/update subscriptions"
 
+def set_inactive(modeladmin, request, queryset):
+    for player in queryset:
+        player.user.is_active = False
+        player.user.save()
+set_inactive.short_description = "Set Inactive"
+
 class HasESIDListFilter(admin.SimpleListFilter):
     "Simple filtering on ES ID not null"
     title = "Has ES ID"
@@ -227,6 +252,37 @@ class HasESIDListFilter(admin.SimpleListFilter):
                                            | models.Q(england_squash_id=''))
         return queryset
 
+class CurrentSubscriptionListFilter(admin.SimpleListFilter):
+    title = "Has Current Subscription"
+    parameter_name = "has_sub"
+    def lookups(self, request, model_admin):
+        return [('y', 'Yes'), ('n', 'No')]
+    def queryset(self, request, queryset):
+        if self.value():
+            latest_season = Season.latest()
+            latest_subs = Subscription.objects.filter(season=latest_season)
+            player_ids = [s.player_id for s in latest_subs.all()]
+            yes_flag = self.value() == 'y'
+            if yes_flag:
+                queryset = queryset.filter(pk__in=player_ids)
+            else:
+                queryset = queryset.exclude(pk__in=player_ids)
+        return queryset
+
+class CurrentSubscriptionTypeListFilter(admin.SimpleListFilter):
+    title = "Subscription Type"
+    parameter_name = "sub_type"
+    def lookups(self, request, model_admin):
+        return [(s.short_code, s.name) for s in SubscriptionType.objects.all()]
+    def queryset(self, request, queryset):
+        if self.value():
+            player_ids = []
+            for player in queryset:
+                sub = player.get_current_subscription()
+                if sub and sub.subscription_type.short_code == self.value():
+                    player_ids.append(player.pk)
+            queryset = queryset.filter(pk__in=player_ids)
+        return queryset
 
 class SubscriptionInline(admin.StackedInline):
     "Simple inline for player in User admin"
@@ -254,17 +310,18 @@ class DoorCardLeaseInline(admin.TabularInline):
         models.TextField: {'widget': forms.TextInput(attrs={'size': 80})},
     }
 
-class PlayerAdmin(SelectRelatedQuerysetMixin, PrefetchRelatedQuerysetMixin, admin.ModelAdmin):
+class PlayerAdmin(SelectRelatedQuerysetMixin, PrefetchRelatedQuerysetMixin, CSVModelAdmin):
     "Admin for Player (i.e. club member) model"
-    list_filter = ('user__is_active', 'subscription__subscription_type', HasESIDListFilter)
+    list_filter = ('user__is_active', CurrentSubscriptionTypeListFilter, 'gender', HasESIDListFilter, CurrentSubscriptionListFilter)
     list_display = ('ordered_name', 'active', 'date_joined_date', \
-                    'get_age', 'subscription_type', 'current_season', 'signed_off',
-                    'cell_phone', 'other_phone', 'booking_system_id', 'england_squash_id',
+                    'get_age', 'gender', 'subscription_type', 'current_season', 'signed_off',
+                    'user_email', 'booking_system_id', 'england_squash_id',
                     'prefs_receive_email', 'prefs_esra_member', 'prefs_display_contact_details')
+#    list_editable = ('gender',)
     search_fields = ('user__first_name', 'user__last_name')
     prefetch_related_fields = ('subscription_set__season','subscription_set__subscription_type')
     list_per_page = 400
-    actions = (update_subscriptions,)
+    actions = (update_subscriptions,set_inactive)
     inlines = (SubscriptionInline,DoorCardLeaseInline)
     readonly_fields = ("user_link", "date_joined_date")
     exclude = ("user",)
@@ -273,6 +330,11 @@ class PlayerAdmin(SelectRelatedQuerysetMixin, PrefetchRelatedQuerysetMixin, admi
         return obj.get_ordered_name()
     ordered_name.admin_order_field = 'user__last_name'
     ordered_name.short_description = "Name"
+
+    def user_email(self, obj):
+        return obj.user.email
+    user_email.admin_order_field = 'user__email'
+    user_email.short_description = "Email"
 
     def active(self, obj):
         return obj.user.is_active
@@ -285,7 +347,6 @@ class PlayerAdmin(SelectRelatedQuerysetMixin, PrefetchRelatedQuerysetMixin, admi
             return sub.season
         return None
     current_season.short_description = "Season"
-    current_season.admin_order_field = "subscription__season"
 
     def subscription_type(self, obj):
         sub = obj.get_current_subscription()
@@ -293,7 +354,6 @@ class PlayerAdmin(SelectRelatedQuerysetMixin, PrefetchRelatedQuerysetMixin, admi
             return sub.subscription_type.name
         return None
     subscription_type.short_description = "Subs Type"
-    subscription_type.admin_order_field = "subscription__subscription_type__name"
     
     def signed_off(self, obj):
         sub = obj.get_current_subscription()
@@ -344,7 +404,7 @@ class PlayerAdmin(SelectRelatedQuerysetMixin, PrefetchRelatedQuerysetMixin, admi
                 name_map = dict([(mem.get_ordered_name(), mem) for mem in members])
                 reader = csv.DictReader(upload_generator(request.FILES['es_csv_file']))
                 output = StringIO.StringIO()
-                fields = ["ES ID", "Name", "WSRC Name", "WSRC ID", "Email", "Subscription", "Status"]
+                fields = ["SquashID", "LastName", "FirstName", "WSRC Name", "WSRC ID", "Email", "Subscription", "GDPR", "Status"]
                 writer = csv.DictWriter(output, fields, extrasaction='ignore')
                 writer.writer.writerow(fields)
                 def set_fields(row, player, status):
@@ -354,15 +414,19 @@ class PlayerAdmin(SelectRelatedQuerysetMixin, PrefetchRelatedQuerysetMixin, admi
                     row["WSRC ID"] = player.pk
                     row["Email"] = player.user.email
                     row["Subscription"] = sub_str
+                    row["GDPR"] = player.prefs_esra_member
                     row["Status"] = status
                     del db_id_map[player.pk]
                 for row in reader:
-                    es_id = row["ES ID"]
+                    es_id = row["SquashID"]
                     if es_id is None or len(es_id) == 0:
                         continue
                     existing = es_id_map.get(es_id)
                     if existing is not None:
-                        set_fields(row, existing, "In Sync")
+                        if existing.user.is_active:
+                            set_fields(row, existing, "In Sync")
+                        else:
+                            set_fields(row, existing, "Inactive - Remove from ES")
                     elif row.get("Status") == "Update":
                         db_id = int(row["WSRC ID"])
                         player = db_id_map[db_id]
@@ -370,7 +434,8 @@ class PlayerAdmin(SelectRelatedQuerysetMixin, PrefetchRelatedQuerysetMixin, admi
                         player.save()
                         set_fields(row, player, "Updated - In Sync")
                     else:
-                        match = name_map.get(row["Name"])
+                        match_name = Player.make_ordered_name(row["LastName"], row["FirstName"])
+                        match = name_map.get(match_name)
                         if match is not None:
                             set_fields(row, match, "Name Match - Update Reqd")
                         else:
@@ -386,12 +451,12 @@ class PlayerAdmin(SelectRelatedQuerysetMixin, PrefetchRelatedQuerysetMixin, admi
                 response['Content-Disposition'] = 'attachment; filename="es_data.csv"'
                 return response
 
-class SubscriptionCostAdmin(SelectRelatedQuerysetMixin, admin.ModelAdmin):
+class SubscriptionCostAdmin(SelectRelatedQuerysetMixin, CSVModelAdmin):
     list_display = ('subscription_type', 'season', 'joining_fee', 'amount')
     list_filter = ('season',)
     save_as = True
 
-class SubscriptionTypeAdmin(admin.ModelAdmin):
+class SubscriptionTypeAdmin(CSVModelAdmin):
     list_display = ('name',)
 
 
@@ -434,7 +499,7 @@ class DoorCardUploadForm(forms.Form):
     upload_file = forms.FileField(required=False, label="Click to upload data from cardreader: ",
                                   widget=forms.widgets.ClearableFileInput(attrs={'accept':'.dat'}))
     
-class DoorEntryCardAdmin(admin.ModelAdmin):
+class DoorEntryCardAdmin(CSVModelAdmin):
     search_fields = ('cardnumber',)
     list_select_related = True
     list_display = ('cardnumber', 'is_registered', 'linked_current_owner', 'comment')
@@ -522,7 +587,7 @@ class CurrentSeasonListFilter(admin.SimpleListFilter):
             queryset = queryset.filter(pk__in=ids)
         return queryset
 
-class DoorCardLeaseAdmin(admin.ModelAdmin):
+class DoorCardLeaseAdmin(CSVModelAdmin):
     search_fields = ('player__user__first_name', 'player__user__last_name', 'card__cardnumber')
     list_display = ('card', "card_is_registered", 'linked_player', 'current_owner_active', 'subscription', 'date_issued', 'date_returned', 'comment')
     list_filter = ("card__is_registered", "player__user__is_active", IsCurrentListFilter, CurrentSeasonListFilter)
@@ -580,9 +645,8 @@ class EventHasPlayerListFilter(HasPlayerListFilter):
 class DoorEventForm(forms.ModelForm):
     "Override form for more efficient DB interaction"
     queryset = get_related_field_limited_queryset(DoorCardEvent.card.field)
-    card = forms.ModelChoiceField(queryset=queryset.select_related("player__user"), required=False)
 
-class DoorCardEventAdmin(admin.ModelAdmin):
+class DoorCardEventAdmin(CSVModelAdmin):
     search_fields = ('card__cardnumber',)
     list_display = ('event', 'linked_cardnumber', 'linked_player', 'timestamp', 'received_time')
     list_filter = ("event", EventHasPlayerListFilter)
@@ -649,12 +713,12 @@ class MembershipApplicationForm(forms.ModelForm):
         return super(MembershipApplicationForm, self).clean()
 
     class Meta:
-        fields = ["first_name", "last_name", "email", "date_of_birth", "cell_phone", "other_phone",
+        fields = ["first_name", "last_name", "email", "cell_phone", "other_phone", "gender", "date_of_birth",
                   "subscription_type", "season", "pro_rata_date", "payment_frequency",
                   "prefs_receive_email", "prefs_esra_member", "prefs_display_contact_details",
                   "player_link", "username", "password", "guid", "email_verified", "comment", "signed_off"]
 
-class MembershipApplicationAdmin(admin.ModelAdmin):
+class MembershipApplicationAdmin(CSVModelAdmin):
     list_display = ('last_name', 'first_name', 'username', 'email', 'email_verified', 'subscription_type',
                     'cell_phone', 'other_phone',
                     'prefs_receive_email', 'prefs_esra_member', 'prefs_display_contact_details')

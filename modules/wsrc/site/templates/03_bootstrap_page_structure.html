@@ -49,4 +49,37 @@ window.WSRC_username = null;
 
 {% block body_script_extra %}{% endblock %}
 
+{% block auto_logout %}
+{% if session_timeout %}
+<div id="auto_logout_dialog" class="modal fade" tabindex="-1" role="dialog">
+  <div class="modal-dialog modal-sm" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+        <h4 class="modal-title">Login Expired</h4>
+      </div>
+      <div class="modal-body">
+        <p>The login for this page has expired, and the page will now reload. You will need to sign in again to book courts etc.</p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+      </div>
+    </div><!-- /.modal-content -->
+  </div><!-- /.modal-dialog -->
+</div><!-- /.modal -->
+<script>
+ function session_timeout_callback() {
+     var dialog = $("#auto_logout_dialog");
+     var show_modal_timeout_seconds = 10;
+     dialog.on('hidden.bs.modal', function(e) {
+         document.location.reload();
+     });
+     dialog.modal('show');
+     setTimeout(function() { dialog.modal('hide'); }, 1000 * show_modal_timeout_seconds);     
+ }
+ window.setTimeout(session_timeout_callback, {{ session_timeout }} * 1000);
+</script>
+{% endif %}
+{% endblock %}
+
 {% endblock %}

@@ -22,26 +22,29 @@ import logging
 import operator
 import sys
 import urllib
+import pytz
 
 from django import forms
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.core.exceptions import SuspiciousOperation, PermissionDenied
 from django.core.mail import SafeMIMEMultipart, SafeMIMEText
-from django.urls import reverse as reverse_url
+from django.urls import reverse as reverse_url, reverse_lazy
 from django.db import transaction
 from django.http import HttpResponse, HttpResponsePermanentRedirect, HttpResponseNotFound
 from django.db.models import Q
 from django.shortcuts import redirect
 from django.template.response import TemplateResponse
+from django.utils.decorators import method_decorator
 from django.views.decorators.http import require_safe
+from django.views.generic.edit import CreateView
 from django.utils import timezone
 
 from icalendar import Calendar, Event, vCalAddress, vText
 
 from .forms import START_TIME, END_TIME, RESOLUTION, COURTS,\
     format_date, make_date_formats, validate_quarter_hour, create_notifier_filter_formset_factory,\
-    BookingForm, CalendarInviteForm
+    BookingForm, CalendarInviteForm, CondensationReportForm
 import wsrc.site.settings.settings as settings
 from wsrc.utils.form_utils import LabeledSelect, make_readonly_widget, add_formfield_attrs
 from wsrc.site.courts.models import BookingSystemEvent, EventFilter, BookingOffence
@@ -506,8 +509,8 @@ def send_calendar_invite(request, slot, recipients, event_type):
 
 
 def create_icalendar(request, cal_data, recipients, method):
-
     start_datetime = datetime.datetime.combine(cal_data["date"], cal_data["start_time"])
+    start_datetime = start_datetime.replace(tzinfo=pytz.timezone("Europe/London"))
     duration = cal_data["duration"]
     url = request.build_absolute_uri("/courts/booking/{booking_id}".format(**cal_data))
     # could use last update timestamp (cal_data["timestamp"]) from
@@ -526,6 +529,8 @@ def create_icalendar(request, cal_data, recipients, method):
     cal = Calendar()
     cal.add("version", "2.0")
     cal.add("prodid", "-//Woking Squash Rackets Club//NONSGML court_booking//EN")
+    cal.add_component(timezones.create_icalendar_uk_timezone())
+    
     evt = Event()
     evt.add("uid", "WSRC_booking_{booking_id}".format(**cal_data))
     organizer = vCalAddress("MAILTO:{email}".format(email=BOOKING_SYSTEM_EMAIL_ADRESS))
@@ -672,3 +677,16 @@ def penalty_points_view(request):
         "point_limit": BookingOffence.POINT_LIMIT
     }
     return TemplateResponse(request, 'penalty_points.html', context)
+
+
+@method_decorator(login_required, name='dispatch')        
+class CondensationReportCreateView(CreateView):
+    template_name = 'condensation_report_form.html'
+    success_url = reverse_lazy("condensation_report")
+    form_class = CondensationReportForm
+    def form_valid(self, form):
+        form.instance.reporter = self.request.user.player
+        self.object = form.save()
+        context = self.get_context_data(form=self.get_form())
+        context["form_saved"] = True
+        return self.render_to_response(context)

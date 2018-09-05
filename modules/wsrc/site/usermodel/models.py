@@ -37,6 +37,7 @@ class AbstractPlayer(models.Model):
 
     PREFS_CHOICES = ((None, 'Not Specified'), (True, "Allow"), (False, "Do Not Allow"))
     PREFS_CHOICES_VIS = ((None, 'Not Specified'), (True, "Visible"), (False, "Not Visible"))
+    GENDER_CHOICES = ((None, 'Unspecified'), ("Male", "Male"), ("Female", "Female"))
 
     cell_phone  = models.CharField('Mobile Phone', max_length=30, validators=[phone_validator], blank=True)
     other_phone = models.CharField('Other Phone', max_length=30, validators=[phone_validator], blank=True)
@@ -48,6 +49,7 @@ class AbstractPlayer(models.Model):
     prefs_display_contact_details = models.NullBooleanField("Member List Visibility", default=None, null=True, blank=True, choices=PREFS_CHOICES_VIS,
                                                             help_text="Display your contact details in the club's membership list, " +
                                                             "enabling other members to contact you regarding league games etc.")
+    gender = models.CharField("Gender", max_length=16, default=None, null=True, blank=True, choices=GENDER_CHOICES)    
     date_of_birth = models.DateField("Date of Birth", null=True, blank=True, help_text="Only required for age-restricted subscriptions.")
 
     class Meta:
@@ -77,14 +79,18 @@ class Player(AbstractPlayer):
         return None
     get_current_subscription.short_description = 'Subscription'
 
+    @classmethod
+    def make_ordered_name(cls, last_name, first_name, encoding=None):
+        full_name = '%s, %s' % (last_name, first_name)
+        if encoding is not None:
+            full_name = full_name.encode(encoding)
+        return full_name.strip()
+    
     def get_ordered_name(self, encoding=None):
         """
         Returns the last_name plus the first_name, with a comma in between.
         """
-        full_name = '%s, %s' % (self.user.last_name, self.user.first_name)
-        if encoding is not None:
-            full_name = full_name.encode(encoding)
-        return full_name.strip()
+        return self.make_ordered_name(self.user.last_name, self.user.first_name, encoding)
 
     def get_obfuscated_name(self):
         """Return an anonomized version of this player's name"""

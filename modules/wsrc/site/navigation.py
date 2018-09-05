@@ -31,25 +31,32 @@ class NavigationMiddleWare:
         return self.get_response(request)
 
     def process_template_response(self, request, response):
-        tree_nodes = NavigationNode.objects.tree(request.user.is_authenticated())
-        nodes = [node_t(node.pk, node.name, [], False) for node in tree_nodes]
-        nodes_map = dict([(n.pk, n) for n in nodes])
-        for link in [node for node in tree_nodes if hasattr(node, "url")]:
-            if link.parent_id is not None:
-                parent = nodes_map[link.parent_id]
-                url = reverse(link.url) if link.is_reverse_url else link.url
-                if request.path.startswith(url):
-                    nodes_map[link.parent_id] = parent._replace(is_expanded=True)
-                    link = link_t(link.pk, link.name, url, True)
-                parent.children.append(link)
-                del nodes_map[link.pk]
+        navnode_model_records = NavigationNode.objects.tree(request.user.is_authenticated)
+        # create a map of proxy nodes - we will arrange this into a
+        # tree structure with only the root nodes remaining in the map
+        proxy_nodes = [node_t(node.pk, node.name, [], False) for node in navnode_model_records]
+        navnode_proxy_map = dict([(n.pk, n) for n in proxy_nodes])
+        for link in [node for node in navnode_model_records if hasattr(node, "url")]:
+            if link.is_reverse_url:
+                args = link.url.split("::")
+                url_name = args[0]
+                args = args[1:]
+                url = reverse(url_name, args=args)
             else:
-                url = reverse(link.url) if link.is_reverse_url else link.url
-                if request.path.startswith(url):
-                    link = link_t(link.pk, link.name, link.url, True)
-                nodes_map[link.pk] = link
+                url = link.url
+            is_active = request.path.startswith(url)
+            link_proxy = link_t(link.pk, link.name, url, is_active)
+            if link.parent_id is not None:
+                parent = navnode_proxy_map[link.parent_id]
+                if is_active:
+                    navnode_proxy_map[link.parent_id] = parent._replace(is_expanded=True)
+                parent.children.append(link_proxy)
+                del navnode_proxy_map[link.pk] # remove this leaf from the map
+            else:
+                navnode_proxy_map[link.pk] = link_proxy
 
-        nodes = [nodes_map[node.pk] for node in tree_nodes if node.pk in nodes_map]
+        # create a list of top-level nodes in the original model order:
+        nodes = [navnode_proxy_map[node.pk] for node in navnode_model_records if node.pk in navnode_proxy_map]
         if response.context_data is None:
             response.context_data = {"navlinks": nodes}
         else:

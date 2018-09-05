@@ -39,12 +39,13 @@
 <legend>Personal Details</legend>
 {% include "form_field_snippet.html" with field=user_form.first_name %}
 {% include "form_field_snippet.html" with field=user_form.last_name %}
-{% if player_form.date_of_birth %}
-{% include "form_field_snippet.html" with field=player_form.date_of_birth %}
-{% endif %}
 {% include "form_field_snippet.html" with field=user_form.email %}
 {% include "form_field_snippet.html" with field=player_form.cell_phone %}
 {% include "form_field_snippet.html" with field=player_form.other_phone %}
+{% include "form_field_snippet.html" with field=player_form.gender %}
+{% if player_form.date_of_birth %}
+{% include "form_field_snippet.html" with field=player_form.date_of_birth %}
+{% endif %}
 </fieldset>
 
 <fieldset name="contact_details">

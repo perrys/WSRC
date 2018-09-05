@@ -28,14 +28,17 @@
   <title>Boxes Admin - Woking Squash Rackets Club</title>
 
   <script type="text/javascript">
-var players = {{ player_data|safe }};
-jQuery(document).ready(function(){wsrc.admin.boxes.onReady(players)});
+    var players = {{ player_data|safe }};
+    var comp_type = "{{ competition.type }}";
+    var preview_url = "{% url 'leagues_preview' competition.type 0 %}";
+jQuery(document).ready(function(){wsrc.admin.boxes.onReady(players, comp_type, preview_url)});
   </script>
 
 </head>
 <body>
   <div class="column-wrapper ui-widget">
   <div class="hrow">
+    {% if competition.id %}
     <form class="column" id="source_boxes" method="GET" action="#" onsubmit="return false;" data-id="{{ competition.id }}">{% csrf_token %}
     <fieldset class="ui-corner-all">
       <legend>Old League</legend>
@@ -74,7 +77,8 @@ jQuery(document).ready(function(){wsrc.admin.boxes.onReady(players)});
 {% endfor %}
     </fieldset>
     </form>
-    <form class="column" id="target_boxes" method="GET" action="#" onsubmit="return false;" {% if new_competition_group %}data-id="{{ new_competition_group.id }}"{% endif %}>  
+    {% endif %}
+    <form class="column" id="target_boxes" method="GET" action="#" onsubmit="return false;" {% if new_competition_group %}data-id="{{ new_competition_group.id }}"{% endif %}>  {% csrf_token %}
     <fieldset class="ui-corner-all">
       <legend>New League</legend>
       <div class="top-form-field-container">

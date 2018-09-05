@@ -49,7 +49,7 @@ class SettingsUserForm(ModelForm):
 class SettingsPlayerForm(ModelForm):    
     class Meta:
         model = Player
-        fields = ["cell_phone", "other_phone", "prefs_receive_email", "prefs_esra_member", "prefs_display_contact_details"]
+        fields = ["cell_phone", "other_phone", "prefs_receive_email", "prefs_esra_member", "prefs_display_contact_details", "gender"]
         exclude = ('user', 'date_of_birth')
 
 class SettingsYoungPlayerForm(SettingsPlayerForm):
@@ -143,7 +143,7 @@ class MembershipApplicationForm(ModelForm):
 
     class Meta:
         model = MembershipApplication
-        fields = ["first_name", "last_name", "email", "date_of_birth", "cell_phone", "other_phone",
+        fields = ["first_name", "last_name", "email", "date_of_birth", "cell_phone", "other_phone", "gender",
                   "subscription_type", "season", "comment",
                   "prefs_receive_email", "prefs_esra_member", "prefs_display_contact_details", "recaptcha_token"]
         

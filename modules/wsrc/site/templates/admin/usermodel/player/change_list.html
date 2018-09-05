@@ -4,20 +4,25 @@
 {% block extrastyle %}
 {{ block.super }}
 <style>
-#id_es_csv_file {
-  width: 0.1px;
-  height: 0.1px;
-  opacity: 0;
-  overflow: hidden;
-  position: absolute;
-  z-index: -1;
-}
-#upload-es-csv-form {
-  display: inline-block;
-  float: right;
-  font-size: 0.8em;
-  margin-right: 20em;
-}
+ #id_es_csv_file {
+     width: 0.1px;
+     height: 0.1px;
+     opacity: 0;
+     overflow: hidden;
+     position: absolute;
+     z-index: -1;
+ }
+ #upload-es-csv-form {
+     display: inline-block;
+     float: right;
+     font-size: 0.8em;
+     margin-right: 280px;
+ }
+ #es_csv_file_label {
+     margin-right: 1em;
+     cursor: pointer;
+     text-decoration: underline;
+ }
 </style>
 {% endblock %}
 
@@ -38,10 +43,14 @@
 const $ = django.jQuery
 const label = $('#es_csv_file_label')
 $('#id_es_csv_file').on('change', function(evt) {
-  var fileName
-  filename = evt.target.value.split( '\\' ).pop()
-  if (filename)
-    label.text("ES csv file: " + filename)
+     var fileName
+     filename = evt.target.value.split( '\\' ).pop()
+     if (filename) {
+         label.text("ES csv file: " + filename)
+         label.css("cursor", "text")
+         label.css("text-decoration", "none")
+     }
+     
 })
 })()
 </script>

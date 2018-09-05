@@ -119,6 +119,15 @@ def nearest_last_monday(date=None):
         date = datetime.date.today()
     return date - datetime.timedelta(days=date.weekday())
 
+def nearest_last_quarter_hour(epoch=None):
+    """Return the time nearest to the given time (defaults to now) on a quarter-hour boundary.
+    DATE defaults to today if not supplied"""
+    if epoch is None:
+        from django.utils import timezone        
+        epoch = timezone.now()
+    delta_t = datetime.timedelta(minutes=(epoch.minute % 15), seconds=epoch.second, microseconds=epoch.microsecond)
+    return epoch - delta_t
+
 def duration_str(duration):
     mins = int(duration.seconds/60)
     hours = int(mins/60)
@@ -152,3 +161,28 @@ def parse_duration(s):
             raise Exception("Unrecognised unit: \"{unit}\"".format(**locals()))
         tokens = tokens[2:]
     return datetime.timedelta(seconds=seconds)
+
+def create_icalendar_uk_timezone():
+    import icalendar
+    tzc = icalendar.Timezone()
+    tzc.add('tzid', 'Europe/London')
+    tzc.add('x-lic-location', 'Europe/London')
+    
+    tzs = icalendar.TimezoneStandard()
+    tzs.add('tzname', 'GMT')
+    tzs.add('TZOFFSETFROM', datetime.timedelta(hours=1))
+    tzs.add('TZOFFSETTO', datetime.timedelta(hours=0))
+    tzs.add('dtstart', datetime.datetime(1970, 10, 25, 2, 0, 0))
+    tzs.add('rrule', {'freq': 'yearly', 'bymonth': 10, 'byday': '-1su'})
+    
+    tzd = icalendar.TimezoneDaylight()
+    tzd.add('tzname', 'BST')
+    tzd.add('TZOFFSETFROM', datetime.timedelta(hours=0))
+    tzd.add('TZOFFSETTO', datetime.timedelta(hours=1))
+    tzd.add('dtstart', datetime.datetime(1970, 3, 29, 1, 0, 0))
+    tzd.add('rrule', {'freq': 'yearly', 'bymonth': 3, 'byday': '-1su'})
+    
+    tzc.add_component(tzs)
+    tzc.add_component(tzd)
+    return tzc
+

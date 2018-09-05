@@ -1,0 +1,77 @@
+{% extends "06_wsrc_navigation.html" %}
+
+{% block titleprefix %}Ghosting - {% endblock %}
+
+{% block html_header_extra %}
+{{ block.super }}
+<style>
+ .court {
+     width: 200px;
+     height: 300px;
+     border: 4px solid red;
+     display: table;
+     border-collapse: collapse;
+ }
+ .court .short_line {
+     width: 200px;
+     height: 150px;
+     border-bottom: 4px solid red;
+     display: table-row;
+ }
+ .court .servicebox_row {
+     width: 200px;
+     height: 75px;
+     display: table-row;
+ }
+ .court .servicebox {
+     display: table-cell;
+     width: 50px;
+     height: 50px;
+     border: 4px solid red;
+ }
+ .court .halfcourt_line {
+     width: 2px;
+     height: 150px;
+     margin-top: 150px;
+     margin-left: 2px;
+     border-left: 2px solid red;
+     display: inline block;
+ }
+</style>
+{% endblock %}
+
+{% block centered_page_content %}
+<h3>Ghosting</h3> 
+<div class="well">
+  <p>
+    This page is designed to help with ghost training, using your mobile phone and a set of sports headphones. The phone will shout instructions to run to certain places on the court -- 
+  </p>
+</div>
+
+<canvas id="meter" width="500" height="50"></canvas>
+
+<form>
+  <select name="voices">
+  </select>
+  <div class="court">
+    <div class="short_line"></div>
+    <div class="servicebox_row">
+      <div class="servicebox"></div>
+      <div class="servicebox" style="border: 0"></div>
+      <div class="servicebox" style="border: 0"></div>
+      <div class="servicebox"></div>
+    </div>
+    <div class="servicebox_row">
+      <div class="halfcourt_line"></div>
+    </div>
+  </div>
+</form>
+
+{% endblock %}
+
+{% block body_script_extra %}
+<script>
+ training_instance = new wsrc.training()
+ training_instance.drawLoop()
+</script>
+{% endblock %}
