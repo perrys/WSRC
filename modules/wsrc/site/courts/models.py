@@ -103,11 +103,22 @@ class BookingSystemEvent(models.Model):
             return self.created_time.strftime("%Y-%m-%d %H:%M:%s")
         else:
             return getattr(self, key)
-        
+
+    def validate_unique(self):
+        overlap = BookingSystemEvent.objects.filter(court=self.court, start_time__lt=self.end_time, end_time__gt=self.start_time)
+        print "overlap"
+        print overlap
+        if overlap.count() > 0:
+            raise ValidationError("Would conflict with " + unicode(overlap[0]))
+
     def __unicode__(self):
         if self.start_time is None or self.end_time is None:
             return "Invalid event"
-        return "{event_id} Court {court} {start_time:%Y-%m-%d %H:%M}-{end_time:%H:%M} {name} \"{description}\"".format(**self.__dict__)
+        prefix = "[{0}] ".format(self.event_id) if self.event_id is not None else ""
+        kwargs = dict(self.__dict__)
+        kwargs["start_time"] = timezone.localtime(kwargs["start_time"])
+        kwargs["end_time"] = timezone.localtime(kwargs["end_time"])
+        return prefix + "Court {court} {start_time:%Y-%m-%d %H:%M}-{end_time:%H:%M} {name} \"{description}\"".format(**kwargs)
 
     class Meta:
         verbose_name = "Booking"
