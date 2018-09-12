@@ -27,7 +27,7 @@ import pytz
 from django import forms
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
-from django.core.exceptions import SuspiciousOperation, PermissionDenied
+from django.core.exceptions import SuspiciousOperation, PermissionDenied, ValidationError
 from django.core.mail import SafeMIMEMultipart, SafeMIMEText
 from django.urls import reverse as reverse_url, reverse_lazy
 from django.db import transaction
@@ -140,6 +140,15 @@ def get_booking(id):
     return server_time, result
 
 def create_booking(booking_user_id, slot):
+    if hasattr(settings, "BOOKING_SYSTEM_SETTINGS"):
+        model = BookingForm.transform_to_booking_system_event(slot)
+        if model.hmac_token() != slot.get("token"):
+            raise ValidationError("Incorrect token supplied")
+        model.validate_unique()
+        model.save()
+        now = timezone.localtime(timezone.now())
+        return now, model
+        
     start_time = slot["start_time"]
     data = {
         "date": timezones.as_iso_date(slot["date"]),
@@ -307,6 +316,7 @@ def edit_entry_view(request, id=None):
     method = request.method
     booking_form = None
     server_time = datetime.datetime.now()
+    response_code = httplib.OK
 
     if method == "POST":
         action = request.POST.get("action") or ""
@@ -326,10 +336,15 @@ def edit_entry_view(request, id=None):
                 id = booking_data["booking_id"] = new_booking.get("id")
                 send_calendar_invite(request, booking_data, [request.user], "create")
                 return redirect(reverse_url(day_view) + "/" + timezones.as_iso_date(booking_form.cleaned_data["date"]))
+            except ValidationError, e:
+                booking_form.add_error(None, ", ".join(e.messages))
+                response_code = httplib.CONFLICT
             except RemoteException, e:
                 booking_form.add_error(None, str(e))
+                response_code = httplib.CONFLICT
             except EmailingException, e:
                 booking_form.add_error(None, str(e))
+                response_code = httplib.SERVICE_UNAVAILABLE
 
     elif method == "DELETE":
         booking_form = BookingForm(request.POST)
@@ -474,7 +489,7 @@ def edit_entry_view(request, id=None):
         'booking_id': id,
         'booking_user_id': booking_user_id
     }
-    return TemplateResponse(request, 'booking.html', context)
+    return TemplateResponse(request, 'booking.html', context, status=response_code)
 
 def send_calendar_invite(request, slot, recipients, event_type):
     method = "CANCEL" if event_type == "delete" else "REQUEST"
