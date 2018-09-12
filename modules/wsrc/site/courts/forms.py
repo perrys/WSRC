@@ -27,7 +27,7 @@ from django import forms
 
 from wsrc.utils import timezones
 from wsrc.utils.form_utils import make_readonly_widget, LabeledSelect, CachingModelMultipleChoiceField, add_formfield_attrs
-from wsrc.site.courts.models import DayOfWeek, EventFilter, CondensationReport
+from wsrc.site.courts.models import DayOfWeek, EventFilter, CondensationReport, BookingSystemEvent
 
 COURTS = [1, 2, 3]
 START_TIME =  8*60 + 30
@@ -104,6 +104,19 @@ class BookingForm(forms.Form):
     token = forms.CharField(required=False, widget=forms.HiddenInput())
     no_show = forms.BooleanField(required=False, widget=forms.HiddenInput())
 
+    @staticmethod
+    def transform_to_booking_system_event(cleaned_data):
+        slot = dict()
+        start_time = cleaned_data["start_time"].replace(tzinfo=timezones.UK_TZINFO)
+        slot["start_time"] = datetime.datetime.combine(cleaned_data["date"], start_time)
+        slot["end_time"] = slot["start_time"] + cleaned_data["duration"]
+        mapping = {"court": None, "name": None, "description": None, "event_type": "booking_type", "created_time": "created_ts"}
+        for k, v in mapping.items():
+            if v is None: v = k
+            value = cleaned_data.get(v)
+            slot[k] = value
+        return BookingSystemEvent(**slot)
+        
     @staticmethod
     def transform_booking_system_entry(entry):
         mapping = {"booking_id": "id", "booking_type": "type", "duration": "duration_mins"}
