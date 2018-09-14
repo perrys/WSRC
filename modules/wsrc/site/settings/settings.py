@@ -39,6 +39,7 @@ INSTALLED_APPS = (
     'wsrc.site.usermodel',
     'wsrc.site.courts',
     'wsrc.site.competitions',
+    'wsrc.site.email',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
