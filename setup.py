@@ -35,6 +35,7 @@ setup(name='WSRC',
                 'wsrc.site.competitions.migrations',
                 'wsrc.site.competitions.templatetags',
                 'wsrc.site.email',
+                'wsrc.site.email.migrations',
       ],
       package_dir = {'wsrc': 'modules/wsrc',
                      'wsrc.external_sites': 'modules/wsrc/external_sites',
@@ -55,7 +56,7 @@ setup(name='WSRC',
                       'wsrc.site.courts': ['templates/*.html'],
                       'wsrc.site.usermodel': ['templates/*.html']
                       },
-      scripts = ['scripts/wsrc'],
+      scripts = ['scripts/wsrc', 'scripts/dovecot-checkpassword'],
       data_files = [('www/css', glob.glob(os.path.join('resources', 'css', 'all*.css'))),
                     ('www/js', [os.path.join('resources', 'js', 'jquery.vkeyboard.js'), \
                                 os.path.join('resources', 'js', 'legacy_shims.js')] +\
