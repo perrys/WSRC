@@ -19,6 +19,7 @@ import datetime
 from django.core.exceptions import ValidationError
 from django.db import models
 from django.utils import timezone
+from django.contrib.auth import models as auth_models
 
 import wsrc.site.settings
 import wsrc.site.usermodel.models as user_models
@@ -34,12 +35,15 @@ class BookingSystemEvent(models.Model):
     end_time = models.DateTimeField()
     court = models.SmallIntegerField()
     name = models.CharField(max_length=64)
+    description = models.CharField(max_length=128, blank=True, null=True)
     event_type = models.CharField(max_length=1, choices=EVENT_TYPES)
     event_id = models.IntegerField(blank=True, null=True)
-    description = models.CharField(max_length=128, blank=True, null=True)
-    created_by = models.ForeignKey(user_models.Player, blank=True, null=True, limit_choices_to={"user__is_active": True}, on_delete=models.SET_NULL)
-    created_time = models.DateTimeField()
     no_show = models.BooleanField(default=False)
+    created_by = models.ForeignKey(user_models.Player, blank=True, null=True, limit_choices_to={"user__is_active": True}, on_delete=models.SET_NULL)
+    created_by_user = models.ForeignKey(auth_models.User, blank=True, null=True, limit_choices_to={"is_active": True}, on_delete=models.SET_NULL, related_name="created_by")
+    created_time = models.DateTimeField(auto_now_add=True)
+    last_updated = models.DateTimeField(auto_now=True)
+    last_updated_by = models.ForeignKey(auth_models.User, blank=True, null=True, on_delete=models.SET_NULL, related_name="last_updated_by")
 
     @staticmethod
     def generate_hmac_token(start_time, court):
@@ -54,6 +58,12 @@ class BookingSystemEvent(models.Model):
         start_time = timezone.localtime(self.start_time)
         return BookingSystemEvent.generate_hmac_token(start_time, self.court)
 
+    @property 
+    def in_the_past(self):
+        return self.start_time < timezone.now()
+
+    # Properties to emulate a legacy booking system entry:
+
     @property
     def start_minutes(self):
         start_time = timezone.localtime(self.start_time)
@@ -64,8 +74,24 @@ class BookingSystemEvent(models.Model):
         dt = self.end_time - self.start_time
         return int(dt.total_seconds() / 60)
 
-    def in_the_past(self):
-        return self.start_time < timezone.now()
+    # Properties to emulate a booking form:
+    @property
+    def duration(self):
+        return datetime.timedelta(minutes=self.duration_minutes)
+
+    @property
+    def date(self):
+        return self.start_time.date()
+
+    @property
+    def booking_id(self):
+        if self.created_by is not None:
+            return self.created_by.booking_system_id
+        return None
+    
+    @property
+    def token(self):
+        return self.hmac_token()
 
     def obfuscated_name(self):
         if self.event_type == "E":

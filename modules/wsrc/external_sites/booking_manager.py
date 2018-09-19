@@ -81,7 +81,7 @@ class BookingSystemSession:
             start_date = datetime.date.today()
         from wsrc.site.courts.models import BookingSystemEvent
         from wsrc.site.usermodel.models import Player
-        player_map = dict([(p.booking_system_id, p) for p in Player.objects.all()])
+        player_map = dict([(p.booking_system_id, p) for p in Player.objects.all().select_related("user")])
         bookingSystemEvents = []
         data = self.get_week_view(start_date)
         def make_aware_datetime(datetime_str, fmt="%Y-%m-%d %H:%M:%S"):
@@ -101,6 +101,7 @@ class BookingSystemSession:
                                                    description=entry["description"],
                                                    event_type=entry["type"],
                                                    created_time=make_aware_datetime(entry["created_ts"]),
+                                                   last_updated=make_aware_datetime(entry["timestamp"]),
                                                    no_show=entry["no_show"],
                         )
                         created_by_id = entry.get("created_by_id")
@@ -108,6 +109,7 @@ class BookingSystemSession:
                             player = player_map.get(int(created_by_id))
                             if player is not None:
                                 event.created_by = player
+                                event.created_by_user = player.user
                         bookingSystemEvents.append(event)
 
         return bookingSystemEvents, start_date

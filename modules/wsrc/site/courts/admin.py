@@ -78,7 +78,7 @@ class NotifierEventAdmin(PrefetchRelatedQuerysetMixin, CSVModelAdmin):
 
 class BookingAdmin(CSVModelAdmin):
     search_fields = ('name', 'description')
-    list_display = ("name", "start_time", "end_time", "court", "event_type", "description", "created_by", "created_time", "used")
+    list_display = ("name", "start_time", "end_time", "court", "event_type", "description", "created_by_user", "created_time", "last_updated_by", "last_updated", "used")
     date_hierarchy = "start_time"
     list_filter = ("court", "event_type", "no_show")
     list_select_related = ("created_by__user",)
