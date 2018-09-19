@@ -44,7 +44,7 @@ from icalendar import Calendar, Event, vCalAddress, vText
 
 from .forms import START_TIME, END_TIME, RESOLUTION, COURTS,\
     format_date, make_date_formats, validate_quarter_hour, create_notifier_filter_formset_factory,\
-    BookingForm, CalendarInviteForm, CondensationReportForm
+    BookingForm, CalendarInviteForm, CondensationReportForm, using_local_database
 import wsrc.site.settings.settings as settings
 from wsrc.utils.form_utils import LabeledSelect, make_readonly_widget, add_formfield_attrs
 from wsrc.site.courts.models import BookingSystemEvent, EventFilter, BookingOffence
@@ -98,7 +98,7 @@ def auth_query_booking_system(booking_user_id, data={}, query_params={}, method=
     return query_booking_system(query_params, json.dumps(data), method, path)
 
 def get_bookings(date):
-    if hasattr(settings, "BOOKING_SYSTEM_SETTINGS"):
+    if using_local_database():
         MIDNIGHT_NAIVE = datetime.time()
         date = timezone.make_aware(datetime.datetime.combine(date, MIDNIGHT_NAIVE))
         now = timezone.localtime(timezone.now())
@@ -123,7 +123,12 @@ def get_bookings(date):
     courts = data[today_str]
     return server_time, dict([(int(i), v) for i,v in courts.iteritems()])
 
-def get_booking(id):
+def get_booking_form_data(id):
+    if using_local_database():
+        now = timezone.localtime(timezone.now())
+        booking_data = BookingSystemEvent.objects.get(pk=id)
+        booking_data = BookingForm.transform_booking_model(booking_data)
+        return now, booking_data 
     params = {
         "id": id,
         "with_tokens": 1
@@ -137,17 +142,26 @@ def get_booking(id):
                     slot["court"] = int(court)
                     slot["date"] = date
                     result = slot
-    return server_time, result
+    booking_data = BookingForm.transform_booking_system_entry(result)
+    return server_time, booking_data
 
-def create_booking(booking_user_id, slot):
-    if hasattr(settings, "BOOKING_SYSTEM_SETTINGS"):
+def create_booking(user, slot):
+    if using_local_database():
+        now = timezone.localtime(timezone.now())
         model = BookingForm.transform_to_booking_system_event(slot)
         if model.hmac_token() != slot.get("token"):
             raise ValidationError("Incorrect token supplied")
+        model.created_by_user = user
+        model.last_updated_by = user
+        model.created_time = now
         model.validate_unique()
         model.save()
-        now = timezone.localtime(timezone.now())
         return now, model
+    
+    player = Player.get_player_for_user(user)
+    booking_user_id = None if player is None else player.booking_system_id
+    if booking_user_id is None:
+        raise SuspiciousOperation()
         
     start_time = slot["start_time"]
     data = {
@@ -327,11 +341,9 @@ def edit_entry_view(request, id=None):
 
     if method == "POST":
         booking_form = BookingForm(request.POST)
-        if booking_user_id is None:
-            raise SuspiciousOperation()
         if booking_form.is_valid():
             try:
-                server_time, new_booking = create_booking(booking_user_id, booking_form.cleaned_data)
+                server_time, new_booking = create_booking(request.user, booking_form.cleaned_data)
                 booking_data = dict(booking_form.cleaned_data)
                 id = booking_data["booking_id"] = new_booking.get("id")
                 send_calendar_invite(request, booking_data, [request.user], "create")
@@ -430,14 +442,13 @@ def edit_entry_view(request, id=None):
                 """.format(link=link)
                 booking_form.add_error(None, error)
         else:
-            server_time, booking_data = get_booking(id)
+            server_time, booking_data = get_booking_form_data(id)
             if booking_data is None:
                 error = "Booking not found - has it already been deleted?"
                 booking_form = BookingForm.empty_form(error)
                 id = None
             else:
-                initial_data = BookingForm.transform_booking_system_entry(booking_data)
-                booking_form = BookingForm(data=initial_data)
+                booking_form = BookingForm(data=booking_data)
 
 
     is_admin = False # TODO: keep these writable for admin
@@ -453,9 +464,7 @@ def edit_entry_view(request, id=None):
         if booking_form.is_valid():
             days_diff = server_time.date().toordinal() - booking_form.cleaned_data['date'].toordinal()
             seconds_diff = timezones.to_seconds(server_time.time()) - timezones.to_seconds(booking_form.cleaned_data['start_time'])
-        if booking_user_id is not None and \
-           booking_form.is_valid() and \
-           booking_user_id == booking_form.cleaned_data.get("created_by_id") \
+        if booking_form.is_authorized(request.user) \
            and (days_diff < 0 or (days_diff == 0 and seconds_diff < 0)):
             mode = "update"
         elif is_admin:
@@ -594,7 +603,7 @@ def calendar_invite_view(request, id):
                 form.add_error(None, str(e))
 
     else:
-        server_time, booking_data = get_booking(id)
+        server_time, booking_data = get_booking_form_data(id)
         if booking_data is None:
             error = "Booking not found - has it already been deleted?"
             form = CalendarInviteForm(empty_permitted=True)

@@ -25,9 +25,11 @@ from django.forms.models import modelformset_factory
 from django.utils import timezone        
 from django import forms
 
+import wsrc.site.settings.settings as settings
 from wsrc.utils import timezones
 from wsrc.utils.form_utils import make_readonly_widget, LabeledSelect, CachingModelMultipleChoiceField, add_formfield_attrs
 from wsrc.site.courts.models import DayOfWeek, EventFilter, CondensationReport, BookingSystemEvent
+from wsrc.site.usermodel.models import Player
 
 COURTS = [1, 2, 3]
 START_TIME =  8*60 + 30
@@ -37,6 +39,9 @@ EMPTY_DUR  = 3 * RESOLUTION
 START_TIMES = [datetime.time(hour=t/60, minute=t%60) for t in range(START_TIME, END_TIME-RESOLUTION, RESOLUTION)]
 ALL_TIMES = [datetime.time(hour=t/60, minute=t%60) for t in range(0, 24*60, RESOLUTION)]
 DURATIONS = [datetime.timedelta(minutes=i) for i in range(15, END_TIME-START_TIME, 15)]
+
+def using_local_database():
+    return hasattr(settings, "BOOKING_SYSTEM_SETTINGS")
 
 def get_active_user_choices():
     return [(None, '')] + [(u.id, u.get_full_name()) for u in User.objects.filter(is_active=True).filter(player__isnull=False).order_by('first_name', 'last_name')]
@@ -104,6 +109,23 @@ class BookingForm(forms.Form):
     token = forms.CharField(required=False, widget=forms.HiddenInput())
     no_show = forms.BooleanField(required=False, widget=forms.HiddenInput())
 
+    def is_authorized(self, user):
+        if user is None:
+            return False
+        if not self.is_valid():
+            return False
+
+        if using_local_database():
+            if user.is_superuser:
+                return True
+            return user.pk == self.cleaned_data.get("created_by_id")
+
+        # Legacy system - check the booking user id matches
+        player = Player.get_player_for_user(user)
+        booking_user_id = None if player is None else player.booking_system_id
+        return booking_user_id is not None and \
+            booking_user_id == booking_form.cleaned_data.get("created_by_id")        
+        
     @staticmethod
     def transform_to_booking_system_event(cleaned_data):
         slot = dict()
@@ -147,6 +169,32 @@ class BookingForm(forms.Form):
             "description": entry["description"],
         }
         return data
+
+    @staticmethod
+    def transform_booking_model(entry):
+        slot = dict()
+        mapping = {"name": None, "description": None, "date": None, "duration": None, "court": None, 
+                   "booking_type": "event_type", "created_ts": "created_time", "timestamp": "last_updated", "token": None}
+        for k, v in mapping.items():
+            value = getattr(entry, v if v is not None else k)
+            slot[k] = value
+        mapping = {"start_time": lambda(s): s.start_time.time(),
+                   "created_by": lambda(s): s.created_by_user.get_full_name() if s.created_by_user is not None else "",
+                   "created_by_id": lambda(s): s.created_by_user.pk if s.created_by_user is not None else None,
+        }
+        for k, v in mapping.items():
+            value = v(entry)
+            slot[k] = value
+        def format_date1(k, fmts):
+            slot[k] = slot[k].strftime(fmts[0])
+        format_date1("date", make_date_formats())
+        format_date1("created_ts", make_datetime_formats())
+        format_date1("timestamp", make_datetime_formats())
+        dur = slot["duration"]
+        if not isinstance(dur, datetime.timedelta):
+            dur = datetime.timedelta(minutes=dur)
+        slot["duration"] = timezones.duration_str(dur)
+        return slot
 
     @staticmethod
     def empty_form(error=None):
