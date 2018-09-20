@@ -176,7 +176,29 @@ def create_booking(user, slot):
     }
     return auth_query_booking_system(booking_user_id, data)
 
-def update_booking(booking_user_id, id, slot):
+def update_booking(user, id, booking_form):
+    if id is None:
+        raise SuspiciousOperation()
+    
+    if using_local_database():
+        model = BookingSystemEvent.objects.get(pk=id)
+        if not model.is_writable_by_user(user):
+            raise PermissionDenied()
+        slot = booking_form.cleaned_data
+        model.name =  slot["name"]
+        model.description = slot["description"]
+        model.event_type = slot["booking_type"]
+        model.last_updated_by = user
+        model.save()
+        now = timezone.localtime(timezone.now())
+        return now, model
+
+    slot = booking_form.cleaned_data
+    player = Player.get_player_for_user(user)
+    booking_user_id = None if player is None else player.booking_system_id
+    if booking_user_id is None:
+        raise SuspiciousOperation()
+
     params = {
         "id": id,
         "method": "PATCH"
@@ -189,12 +211,40 @@ def update_booking(booking_user_id, id, slot):
     return auth_query_booking_system(booking_user_id, data, query_params=params)
 
 
-def delete_booking(booking_user_id, id):
+def delete_booking(user, id):
+    if id is None:
+        raise SuspiciousOperation()
+
+    if using_local_database():
+        model = BookingSystemEvent.objects.get(pk=id)
+        if not model.is_writable_by_user(user):
+            raise PermissionDenied()
+        start_time = model.start_time.astimezone(timezones.UK_TZINFO)
+        cal_invite_data = {
+            "date": start_time.date(),
+            "start_time": start_time.time(),
+            "court": model.court,
+            "name": model.name,
+            "description": model.description,
+            "duration": model.duration,
+            "booking_id": model.pk,
+        }
+        model.delete()
+        now = timezone.localtime(timezone.now())
+        return now, cal_invite_data
+
+    player = Player.get_player_for_user(user)
+    booking_user_id = None if player is None else player.booking_system_id
+    if booking_user_id is None:
+        raise SuspiciousOperation()
     params = {
         "id": id,
         "method": "DELETE"
     }
-    return auth_query_booking_system(booking_user_id, query_params=params)
+    timestamp, data = auth_query_booking_system(booking_user_id, query_params=params)
+    data = BookingForm.transform_booking_system_deleted_entry(data)
+    data["booking_id"] = id
+    return timestamp, data
 
 def set_noshow(booking_user_id, id, is_noshow):
     params = {
@@ -363,9 +413,7 @@ def edit_entry_view(request, id=None):
         if id is None or booking_user_id is None:
             raise SuspiciousOperation()
         try:
-            server_time, data = delete_booking(booking_user_id, id)
-            data = BookingForm.transform_booking_system_deleted_entry(data)
-            data["booking_id"] = id
+            server_time, data = delete_booking(request.user, id)
             send_calendar_invite(request, data, [request.user], "delete")
             return redirect(request.POST.get("next"))
         except RemoteException, e:
@@ -394,7 +442,7 @@ def edit_entry_view(request, id=None):
                 booking_form.is_valid()
             else:
                 if booking_form.is_valid():
-                    server_time, data = update_booking(booking_user_id, id, booking_form.cleaned_data)
+                    server_time, data = update_booking(request.user, id, booking_form)
                     send_calendar_invite(request, booking_form.cleaned_data, [request.user], "update")
                     back = reverse_url(day_view) + "/" + timezones.as_iso_date(booking_form.cleaned_data["date"])
                     return redirect(back)
