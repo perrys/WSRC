@@ -45,6 +45,19 @@ class BookingSystemEvent(models.Model):
     last_updated = models.DateTimeField(auto_now=True)
     last_updated_by = models.ForeignKey(auth_models.User, blank=True, null=True, on_delete=models.SET_NULL, related_name="last_updated_by")
 
+    
+    @classmethod
+    def is_writable(cls, created_by_id, user):
+        if user is None:
+            return False
+        if user.is_superuser:
+            return True
+        return user.pk == created_by_id
+        
+    def is_writable_by_user(self, user):
+        created_by_id = self.created_by_user.pk if self.created_by_user is not None else None
+        return self.is_writable(created_by_id, user)
+        
     @staticmethod
     def generate_hmac_token(start_time, court):
         msg = "{start_time:%Y-%m-%dT%H:%M}/{court}".format(**locals())

@@ -110,15 +110,11 @@ class BookingForm(forms.Form):
     no_show = forms.BooleanField(required=False, widget=forms.HiddenInput())
 
     def is_authorized(self, user):
-        if user is None:
-            return False
         if not self.is_valid():
             return False
 
         if using_local_database():
-            if user.is_superuser:
-                return True
-            return user.pk == self.cleaned_data.get("created_by_id")
+            return BookingSystemEvent.is_writable(self.cleaned_data.get("created_by_id"), user)
 
         # Legacy system - check the booking user id matches
         player = Player.get_player_for_user(user)
@@ -187,6 +183,7 @@ class BookingForm(forms.Form):
             slot[k] = value
         def format_date1(k, fmts):
             slot[k] = slot[k].strftime(fmts[0])
+        format_date1("start_time", ["%H:%M"])
         format_date1("date", make_date_formats())
         format_date1("created_ts", make_datetime_formats())
         format_date1("timestamp", make_datetime_formats())
