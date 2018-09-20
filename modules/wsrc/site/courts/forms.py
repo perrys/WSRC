@@ -170,7 +170,8 @@ class BookingForm(forms.Form):
     def transform_booking_model(entry):
         slot = dict()
         mapping = {"name": None, "description": None, "date": None, "duration": None, "court": None, 
-                   "booking_type": "event_type", "created_ts": "created_time", "timestamp": "last_updated", "token": None}
+                   "booking_type": "event_type", "created_ts": "created_time", "timestamp": "last_updated",
+                   "no_show": None, "token": None}
         for k, v in mapping.items():
             value = getattr(entry, v if v is not None else k)
             slot[k] = value
