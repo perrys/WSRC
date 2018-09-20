@@ -246,7 +246,32 @@ def delete_booking(user, id):
     data["booking_id"] = id
     return timestamp, data
 
-def set_noshow(booking_user_id, id, is_noshow):
+def set_noshow(user, id, is_noshow):
+    if using_local_database():
+        model = BookingSystemEvent.objects.get(pk=id)
+        now = timezone.localtime(timezone.now())
+        if is_noshow:
+            if model.no_show == True:
+                raise SuspiciousOperation()
+            delta_t = now - model.start_time
+            if delta_t.total_seconds() < (15 * 60):
+                raise PermissionDenied("cannot report noshow less than 15 minutes after start time")
+            model.no_show = True
+        else:
+            if model.no_show == False:
+                raise SuspiciousOperation()
+            if user != model.no_show_reporter and (not user.is_superuser):
+                raise PermissionDenied("not authorized to change this entry")
+            model.no_show = False
+            model.no_show_reporter = None                
+        model.save()            
+        return now, model
+                
+        
+    player = Player.get_player_for_user(user)
+    booking_user_id = None if player is None else player.booking_system_id
+    if booking_user_id is None:
+        raise SuspiciousOperation()        
     params = {
         "id": id,
     }
@@ -433,12 +458,12 @@ def edit_entry_view(request, id=None):
             raise SuspiciousOperation()
         try:
             if request.POST.get("action") == "report_noshow":
-                server_time, data = set_noshow(booking_user_id, id, True)
-                booking_form.data["no_show"] = True
+                server_time, data = set_noshow(request.user, id, True)
+                booking_form.cleaned_data["no_show"] = True
                 booking_form.is_valid()
             elif request.POST.get("action") == "remove_noshow":
-                server_time, data = set_noshow(booking_user_id, id, False)
-                booking_form.data["no_show"] = False
+                server_time, data = set_noshow(request.user, id, False)
+                booking_form.cleaned_data["no_show"] = False
                 booking_form.is_valid()
             else:
                 if booking_form.is_valid():
