@@ -39,11 +39,16 @@ class BookingSystemEvent(models.Model):
     event_type = models.CharField(max_length=1, choices=EVENT_TYPES)
     event_id = models.IntegerField(blank=True, null=True)
     no_show = models.BooleanField(default=False)
-    created_by = models.ForeignKey(user_models.Player, blank=True, null=True, limit_choices_to={"user__is_active": True}, on_delete=models.SET_NULL)
-    created_by_user = models.ForeignKey(auth_models.User, blank=True, null=True, limit_choices_to={"is_active": True}, on_delete=models.SET_NULL, related_name="created_by")
+    no_show_reporter = models.ForeignKey(auth_models.User, blank=True, null=True, limit_choices_to={"is_active": True},
+                                         on_delete=models.SET_NULL, related_name="none+")
+    created_by = models.ForeignKey(user_models.Player, blank=True, null=True, limit_choices_to={"user__is_active": True},
+                                   on_delete=models.SET_NULL)
+    created_by_user = models.ForeignKey(auth_models.User, blank=True, null=True, limit_choices_to={"is_active": True},
+                                        on_delete=models.SET_NULL, related_name="created_by")
     created_time = models.DateTimeField(auto_now_add=True)
     last_updated = models.DateTimeField(auto_now=True)
-    last_updated_by = models.ForeignKey(auth_models.User, blank=True, null=True, on_delete=models.SET_NULL, related_name="last_updated_by")
+    last_updated_by = models.ForeignKey(auth_models.User, blank=True, null=True, limit_choices_to={"is_active": True},
+                                        on_delete=models.SET_NULL, related_name="last_updated_by")
 
     
     @classmethod
@@ -143,10 +148,11 @@ class BookingSystemEvent(models.Model):
         else:
             return getattr(self, key)
 
-    def validate_unique(self):
+    def validate_unique(self, exclude):
+        super(BookingSystemEvent, self).validate_unique(exclude)
         overlap = BookingSystemEvent.objects.filter(court=self.court, start_time__lt=self.end_time, end_time__gt=self.start_time)
-        print "overlap"
-        print overlap
+        if self.pk:
+            overlap = overlap.exclude(pk=self.pk)
         if overlap.count() > 0:
             raise ValidationError("Would conflict with " + unicode(overlap[0]))
 
