@@ -257,6 +257,7 @@ def set_noshow(user, id, is_noshow):
             if delta_t.total_seconds() < (15 * 60):
                 raise PermissionDenied("cannot report noshow less than 15 minutes after start time")
             model.no_show = True
+            model.no_show_reporter = user
         else:
             if model.no_show == False:
                 raise SuspiciousOperation()
@@ -264,7 +265,7 @@ def set_noshow(user, id, is_noshow):
                 raise PermissionDenied("not authorized to change this entry")
             model.no_show = False
             model.no_show_reporter = None                
-        model.save()            
+        model.save()
         return now, model
                 
         
@@ -458,13 +459,13 @@ def edit_entry_view(request, id=None):
             raise SuspiciousOperation()
         try:
             if request.POST.get("action") == "report_noshow":
-                server_time, data = set_noshow(request.user, id, True)
-                booking_form.cleaned_data["no_show"] = True
-                booking_form.is_valid()
+                server_time, model = set_noshow(request.user, id, True)
+                booking_data = BookingForm.transform_booking_model(model)
+                booking_form = BookingForm(data=booking_data)
             elif request.POST.get("action") == "remove_noshow":
-                server_time, data = set_noshow(request.user, id, False)
-                booking_form.cleaned_data["no_show"] = False
-                booking_form.is_valid()
+                server_time, model = set_noshow(request.user, id, False)
+                booking_data = BookingForm.transform_booking_model(model)
+                booking_form = BookingForm(data=booking_data)
             else:
                 if booking_form.is_valid():
                     server_time, data = update_booking(request.user, id, booking_form)
