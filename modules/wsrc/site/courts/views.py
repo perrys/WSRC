@@ -539,7 +539,7 @@ def edit_entry_view(request, id=None, is_admin_view=False):
             booking_form = BookingForm(data=initial_data)
             if is_admin_view:
                 booking_form.set_admin()
-            if booking_user_id is None:
+            if booking_user_id is None and not using_local_database():
                 link = settings.BOOKING_SYSTEM_ORIGIN + "/day.php"
                 if booking_form.is_valid():
                     link += "?year={date:%Y}&month={date:%m}&day={date:%d}&area=1".format(date=booking_form.cleaned_data["date"])
