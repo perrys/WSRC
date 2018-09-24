@@ -109,6 +109,13 @@ class BookingForm(forms.Form):
     token = forms.CharField(required=False, widget=forms.HiddenInput())
     no_show = forms.BooleanField(required=False, widget=forms.HiddenInput())
 
+    def set_admin(self):
+        attrs = self.fields["description"].widget.attrs
+        if "autofocus" in attrs:
+            del attrs["autofocus"]
+        attrs = self.fields["name"].widget.attrs
+        attrs["autofocus"] = "autofocus"
+        
     def is_authorized(self, user):
         if not self.is_valid():
             return False
@@ -170,14 +177,16 @@ class BookingForm(forms.Form):
     def transform_booking_model(entry):
         slot = dict()
         mapping = {"name": None, "description": None, "date": None, "duration": None, "court": None, 
-                   "booking_type": "event_type", "created_ts": "created_time", "timestamp": "last_updated",
+                   "booking_type": "event_type", "booking_id": "pk",
                    "no_show": None, "token": None}
         for k, v in mapping.items():
             value = getattr(entry, v if v is not None else k)
             slot[k] = value
-        mapping = {"start_time": lambda(s): s.start_time.time(),
+        mapping = {"start_time": lambda(s): s.start_time.astimezone(timezones.UK_TZINFO).time(),
                    "created_by": lambda(s): s.created_by_user.get_full_name() if s.created_by_user is not None else "",
                    "created_by_id": lambda(s): s.created_by_user.pk if s.created_by_user is not None else None,
+                   "created_ts": lambda(s): s.created_time.astimezone(timezones.UK_TZINFO),
+                   "timestamp": lambda(s): s.last_updated.astimezone(timezones.UK_TZINFO),
         }
         for k, v in mapping.items():
             value = v(entry)
