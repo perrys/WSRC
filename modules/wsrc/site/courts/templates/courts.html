@@ -1,11 +1,24 @@
 {% extends "06_wsrc_navigation.html" %}
 
-{% block titleprefix %}Court Booking - {% endblock %}
+{% block titleprefix %}Court Booking {% if is_admin_view %}[ADMIN] {% endif %}- {% endblock %}
 {% block pagetitle %}Courts{% endblock %}
 
 {% block html_header_extra %}
 {{ block.super }}
 <meta name="robots" content="noindex" />
+{% if is_admin_view %}
+<style>
+ body {
+     background-color: #f7eee1;
+ }
+ .form-control {
+ }
+ table.booking_day tbody td.slot {
+     border-color: #eea236;
+     background-color: #ffffff;
+ }
+</style>
+{% endif %}
 {% endblock %}
 
 {% block container-classes %}{{ block.super }} restrict-width{% endblock %}
@@ -15,12 +28,15 @@
   <div class="datepicker_container">
     <div class="input-group">
       <span class="input-group-btn">
-        <a class="btn btn-default previous" title="Go to previous day [Alt-P]" href='{% url "courts" %}/{{ prev_date|date:"Y-m-d" }}'><span class="glyphicon glyphicon-chevron-left"></span></a>
+        <a class="btn btn-default previous{% if is_admin_view %}_admin{% endif %}" title="Go to previous day [Alt-P]" href='{% if is_admin_view %}{% url "courts_admin" prev_date %}{% else %}{% url "courts" %}/{{ prev_date|date:"Y-m-d" }}{% endif %}'><span class="glyphicon glyphicon-chevron-left"></span></a>
       </span>
       <input type="text" class="form-control date-input" placeholder="YYYY-MM-DD" value='{{ date|date:"D, j N Y" }}'>
       <div class="input-group-btn">
-        <a class="btn btn-default refresh" title="Refresh all data [Alt-R]" href='{% url 'courts' %}/{{ date|date:"Y-m-d" }}'><span class="glyphicon glyphicon-refresh"></span></a>
-        <a class="btn btn-default next" title="Go to next day [Alt-N]" href='{% url 'courts' %}/{{ next_date|date:"Y-m-d" }}'><span class="glyphicon glyphicon-chevron-right"></span></a>
+        <a class="btn btn-default refresh{% if is_admin_view %}_noadmin{% endif %}" title="Refresh all data [Alt-R]" href='{% url 'courts' %}/{{ date|date:"Y-m-d" }}'><span class="glyphicon glyphicon-refresh"></span></a>
+{% if court_admin %}
+        <a class="btn btn-default refresh_admin" title="Admin View" href='{% url 'courts_admin' date %}'><span class="glyphicon glyphicon-flash"></span></a>
+{% endif %}
+        <a class="btn btn-default next{% if is_admin_view %}_admin{% endif %}" title="Go to next day [Alt-N]" href='{% if is_admin_view %}{% url "courts_admin" next_date %}{% else %}{% url 'courts' %}/{{ next_date|date:"Y-m-d" }}{% endif %}'><span class="glyphicon glyphicon-chevron-right"></span></a>
       </div>
     </div>
   </div>
@@ -35,12 +51,15 @@
   <div class="datepicker_container">
     <div class="input-group">
       <span class="input-group-btn">
-        <a class="btn btn-default previous" title="Go to previous day [Alt-P]" href='{% url "courts" %}/{{ prev_date|date:"Y-m-d" }}'><span class="glyphicon glyphicon-chevron-left"></span></a>
+        <a class="btn btn-default previous{% if is_admin_view %}_admin{% endif %}" title="Go to previous day [Alt-P]" href='{% if is_admin_view %}{% url "courts_admin" prev_date %}{% else %}{% url "courts" %}/{{ prev_date|date:"Y-m-d" }}{% endif %}'><span class="glyphicon glyphicon-chevron-left"></span></a>
       </span>
       <input type="text" class="form-control date-input" placeholder="YYYY-MM-DD" value='{{ date|date:"D, j N Y" }}'>
       <div class="input-group-btn">
-        <a class="btn btn-default refresh" title="Refresh all data [Alt-R]" href='{% url 'courts' %}/{{ date|date:"Y-m-d" }}'><span class="glyphicon glyphicon-refresh"></span></a>
-        <a class="btn btn-default next" title="Go to next day [Alt-N]" href='{% url 'courts' %}/{{ next_date|date:"Y-m-d" }}'><span class="glyphicon glyphicon-chevron-right"></span></a>
+        <a class="btn btn-default refresh{% if is_admin_view %}_noadmin{% endif %}" title="Refresh all data [Alt-R]" href='{% url 'courts' %}/{{ date|date:"Y-m-d" }}'><span class="glyphicon glyphicon-refresh"></span></a>
+        {% if court_admin %}
+        <a class="btn btn-default refresh_admin" title="Admin View" href='{% url 'courts_admin' date %}'><span class="glyphicon glyphicon-flash"></span></a>
+        {% endif %}
+        <a class="btn btn-default next{% if is_admin_view %}_admin{% endif %}" title="Go to next day [Alt-N]" href='{% if is_admin_view %}{% url "courts_admin" next_date %}{% else %}{% url 'courts' %}/{{ next_date|date:"Y-m-d" }}{% endif %}'><span class="glyphicon glyphicon-chevron-right"></span></a>
       </div>
     </div>
   </div>
