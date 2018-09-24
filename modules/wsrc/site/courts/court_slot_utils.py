@@ -22,7 +22,7 @@ from django.utils import timezone
 from .models import BookingSystemEvent
 from wsrc.site.settings import settings
 
-def add_free_slots(court, booked_slots, booking_date_midnight, now):
+def add_free_slots(court, booked_slots, booking_date_midnight, now, ignore_cutoff=False):
     
     RESOLUTION_MINS = settings.BOOKING_SYSTEM_SETTINGS["resolution_mins"]
     DEFAULT_DURATION = settings.BOOKING_SYSTEM_SETTINGS["stagger_set"] * RESOLUTION_MINS
@@ -63,12 +63,13 @@ def add_free_slots(court, booked_slots, booking_date_midnight, now):
                 remainder = (iter_mins - start_mins) % DEFAULT_DURATION
                 duration_mins = DEFAULT_DURATION - remainder;
             slot_dt = booking_date_midnight + datetime.timedelta(minutes=iter_mins)
+            slot_end_dt = slot_dt + datetime.timedelta(minutes=duration_mins)
             booking = {
                 "start_time": slot_dt.strftime("%H:%M"),
                 "start_mins": iter_mins,
                 "duration_mins": duration_mins,
             }
-            if slot_dt > now and slot_dt < cutoff_point:
+            if slot_end_dt > now and (ignore_cutoff or slot_dt < cutoff_point):
                 booking["token"] = BookingSystemEvent.generate_hmac_token(slot_dt, court);
             booked_slots.append(booking)
             iter_mins += duration_mins
