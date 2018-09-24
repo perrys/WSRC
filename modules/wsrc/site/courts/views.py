@@ -25,7 +25,7 @@ import urllib
 import pytz
 
 from django import forms
-from django.contrib.auth.decorators import login_required
+from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib.auth.models import User
 from django.core.exceptions import SuspiciousOperation, PermissionDenied, ValidationError
 from django.core.mail import SafeMIMEMultipart, SafeMIMEText
@@ -97,7 +97,7 @@ def auth_query_booking_system(booking_user_id, data={}, query_params={}, method=
     })
     return query_booking_system(query_params, json.dumps(data), method, path)
 
-def get_bookings(date):
+def get_bookings(date, ignore_cutoff=False):
     if using_local_database():
         MIDNIGHT_NAIVE = datetime.time()
         date = timezone.make_aware(datetime.datetime.combine(date, MIDNIGHT_NAIVE))
@@ -109,7 +109,7 @@ def get_bookings(date):
             results[booked_slot.court].append(booked_slot)
         for court in COURTS:
             booked_slots = results[court]
-            add_free_slots(court, booked_slots, date, now)
+            add_free_slots(court, booked_slots, date, now, ignore_cutoff)
             results[court] = dict([(slot["start_mins"], slot) for slot in booked_slots])
         return (now, results)
     today_str    = timezones.as_iso_date(date)
@@ -154,7 +154,7 @@ def create_booking(user, slot):
         model.created_by_user = user
         model.last_updated_by = user
         model.created_time = now
-        model.validate_unique()
+        model.validate_unique([])
         model.save()
         return now, model
     
@@ -279,7 +279,7 @@ def set_noshow(user, id, is_noshow):
     method = "POST" if is_noshow else "DELETE"
     return auth_query_booking_system(booking_user_id, query_params=params, path=settings.BOOKING_SYSTEM_NOSHOW, method=method)
 
-def make_booking_link(slot, court, date):
+def make_booking_link(slot, court, date, is_admin_view=False):
     params = {
         'start_time': slot['start_time'],
         'date': timezones.as_iso_date(date),
@@ -287,25 +287,27 @@ def make_booking_link(slot, court, date):
         'court': court,
         'token': slot['token']
     }
-    return '{path}/?{params}'.format(path=reverse_url('booking'), params=urllib.urlencode(params))
+    url_name = 'booking_admin' if is_admin_view else 'booking'
+    return '{path}/?{params}'.format(path=reverse_url(url_name), params=urllib.urlencode(params))
 
-def create_booking_cell_content (slot, court, date):
+def create_booking_cell_content (slot, court, date, is_admin_view=False):
     start_mins = slot["start_mins"]
     start = timezones.to_time(start_mins)
     end   = timezones.to_time(start_mins + slot["duration_mins"])
     result = "<div><div class='slot_time'>{start:%H:%M}&ndash;{end:%H:%M}</div>".format(**locals())
     if "id" in slot:
-        result += u"<span class='booking'><a href='{path}/{id}'>{name}</a></span>".format(path=reverse_url('booking'), id=slot['id'], name=slot['name'])
+        url_name = 'booking_admin' if is_admin_view else 'booking'
+        result += u"<span class='booking'><a href='{path}/{id}'>{name}</a></span>".format(path=reverse_url(url_name), id=slot['id'], name=slot['name'])
         if slot.get("no_show"):
             result += '<div class="noshow label label-danger">NO SHOW</div>'
 
     elif "token" in slot:
-        result += "<span class='available'><a href='{href}'>(available)</a></span>".format(href=make_booking_link(slot, court, date))
+        result += "<span class='available'><a href='{href}'>(available)</a></span>".format(href=make_booking_link(slot, court, date, is_admin_view))
     result += "</div>"
     return result
 
 
-def render_day_table(court_slots, date, server_time, allow_booking_shortcut):
+def render_day_table(court_slots, date, server_time, allow_booking_shortcut, is_admin_view=False):
     start = START_TIME
     end   = END_TIME
     for (court, slots) in court_slots.iteritems():
@@ -359,7 +361,7 @@ def render_day_table(court_slots, date, server_time, allow_booking_shortcut):
                 for k in ["token", "start_time", "duration_mins"]:
                     attrs["data-" + k] = str(slot[k])
             attrs["class"] = " ".join(classes)
-            content = create_booking_cell_content(slot, court, date)
+            content = create_booking_cell_content(slot, court, date, is_admin_view)
             cell = SpanningCell(1, nrows, content=content, attrs=attrs, isHTML=True)
             table.addCell(cell, court, row_idx)
             row_idx += nrows
@@ -372,16 +374,33 @@ def render_day_table(court_slots, date, server_time, allow_booking_shortcut):
     table_head = "<thead><tr><td class='time-col'></td>{courts}<td class='time-col'></td></tr></thead>".format(courts=court_headers)
     return table.toHtmlString(table_head)
 
+def has_admin_permission(user, raise_exception=True):
+    if user.has_perm("courts.add_bookingsystemevent") and \
+       user.has_perm("courts.add_bookingsystemevent") and \
+       user.has_perm("courts.add_bookingsystemevent"):
+        return True
+    if raise_exception:
+        raise PermissionDenied("You are not authorized to edit court bookings")
+    return False
+
 @require_safe
-def day_view(request, date=None):
+@user_passes_test(has_admin_permission)
+def day_view_admin(request, date):
+    return day_view(request, date, True)
+
+@require_safe
+def day_view(request, date=None, is_admin_view=False):
     if date is None:
         date = datetime.date.today()
     else:
         date = timezones.parse_iso_date_to_naive(date)
     player = Player.get_player_for_user(request.user)
     booking_user_id = None if player is None else player.booking_system_id
-    server_time, bookings = get_bookings(date)
-    table_html = render_day_table(bookings, date, server_time, booking_user_id is not None)
+    server_time, bookings = get_bookings(date, ignore_cutoff=is_admin_view)
+    allow_booking_shortcut = booking_user_id is not None
+    if is_admin_view:
+        allow_booking_shortcut = False
+    table_html = render_day_table(bookings, date, server_time, allow_booking_shortcut, is_admin_view)
     if request.GET.get("table_only") is not None:
         return HttpResponse(table_html)
     context = {
@@ -389,7 +408,9 @@ def day_view(request, date=None):
         "prev_date": date - datetime.timedelta(days=1),
         "next_date": date + datetime.timedelta(days=1),
         "day_table": table_html,
-        "booking_user_name": request.user.get_full_name() if booking_user_id is not None else ''
+        "booking_user_name": request.user.get_full_name() if booking_user_id is not None else '',
+        "court_admin": has_admin_permission(request.user, raise_exception=False),
+        "is_admin_view": is_admin_view
     }
     return TemplateResponse(request, 'courts.html', context)
 
@@ -398,9 +419,13 @@ def day_view_redirect(request, date=None):
     if date is not None:
         url += "/" + date
     return HttpResponsePermanentRedirect(url)
-    
+
+@user_passes_test(has_admin_permission)
+def edit_entry_admin_view(request, id=None):
+    return edit_entry_view(request, id, is_admin_view=True)
+
 @login_required
-def edit_entry_view(request, id=None):
+def edit_entry_view(request, id=None, is_admin_view=False):
     player = Player.get_player_for_user(request.user)
     booking_user_id = None if player is None else player.booking_system_id
     method = request.method
@@ -489,10 +514,16 @@ def edit_entry_view(request, id=None):
         if id is None:
             if not request.user.is_authenticated():
                 return redirect('/login/?next=%s' % urllib.quote(request.get_full_path()))
-            initial_data = {
-                'name': request.user.get_full_name(),
-                'booking_type': 'I'
-            }
+            if is_admin_view:
+                initial_data = {
+                    'name': "Club Booking",
+                    'booking_type': 'E'
+                }
+            else:
+                initial_data = {
+                    'name': request.user.get_full_name(),
+                    'booking_type': 'I'
+                }
             def get(field):
                 val = request.GET.get(field)
                 if val is None:
@@ -506,6 +537,8 @@ def edit_entry_view(request, id=None):
             val = get("duration_mins")
             initial_data["duration"] = timezones.duration_str(datetime.timedelta(minutes=int(val)))
             booking_form = BookingForm(data=initial_data)
+            if is_admin_view:
+                booking_form.set_admin()
             if booking_user_id is None:
                 link = settings.BOOKING_SYSTEM_ORIGIN + "/day.php"
                 if booking_form.is_valid():
@@ -525,11 +558,15 @@ def edit_entry_view(request, id=None):
                 booking_form = BookingForm(data=booking_data)
 
 
-    is_admin = False # TODO: keep these writable for admin
-    readonly_fields = ['name', 'date', 'start_time', 'duration', 'court']
-    hidden_fields = ['booking_type']
+    if is_admin_view:
+        readonly_fields = []
+        hidden_fields = []
+    else:
+        readonly_fields = ['name', 'date', 'start_time', 'duration', 'court']
+        hidden_fields = ['booking_type']
 
     days_diff = seconds_diff = None
+    is_future_event = False
     if id is None:
         mode = "create"
         hidden_fields.extend(['created_ts', 'created_by', 'timestamp'])
@@ -538,13 +575,12 @@ def edit_entry_view(request, id=None):
         if booking_form.is_valid():
             days_diff = server_time.date().toordinal() - booking_form.cleaned_data['date'].toordinal()
             seconds_diff = timezones.to_seconds(server_time.time()) - timezones.to_seconds(booking_form.cleaned_data['start_time'])
-        if booking_form.is_authorized(request.user) \
-           and (days_diff < 0 or (days_diff == 0 and seconds_diff < 0)):
+            is_future_event = (days_diff < 0 or (days_diff == 0 and seconds_diff < 0))
+        if is_admin_view: 
             mode = "update"
-        elif is_admin:
+            readonly_fields = ['date', 'start_time', 'duration', 'court']
+        elif is_future_event and booking_form.is_authorized(request.user):
             mode = "update"
-            readonly_fields.remove("name")
-            hidden_fields.remove("booking_type")
         else:
             readonly_fields.append("description")
 
@@ -570,7 +606,8 @@ def edit_entry_view(request, id=None):
         'days_diff': days_diff,
         'seconds_diff': seconds_diff,
         'booking_id': id,
-        'booking_user_id': booking_user_id
+        'booking_user_id': booking_user_id,
+        'is_admin_view': is_admin_view,
     }
     return TemplateResponse(request, 'booking.html', context, status=response_code)
 
@@ -685,7 +722,6 @@ def calendar_invite_view(request, id):
             form.add_error(None, error)
         else:
             created_by_id = booking_data["created_by_id"]
-            booking_data = BookingForm.transform_booking_system_entry(booking_data)
             booking_data["location"] = CalendarInviteForm.get_location(booking_data)
             booking_data["summary"] = CalendarInviteForm.get_summary(booking_data)
             booking_data["invitee_1"] = request.user.id
