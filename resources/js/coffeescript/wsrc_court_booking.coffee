@@ -52,6 +52,7 @@ class WSRC_court_booking
     
     $("a.previous").on("click", (evt) => @load_day_table(evt, -1))
     $("a.refresh").on("click", (evt) => @load_day_table(evt))
+    $("a.refresh_admin").on("click", (evt) => @load_day_table(evt, 0, true))
     $("a.next").on("click", (evt) => @load_day_table(evt, 1))
 
     # swipe function
@@ -125,7 +126,7 @@ class WSRC_court_booking
       url = @base_path + "/" +  wsrc.utils.js_to_iso_date_str(date)
       history.pushState({}, "", url)
 
-  load_day_table: (evt, offset) ->
+  load_day_table: (evt, offset, admin_view) ->
     if evt
       evt.stopPropagation()
       evt.preventDefault()
@@ -133,7 +134,11 @@ class WSRC_court_booking
     d1 = new Date(table.data("date"))
     if offset
       d1.setDate(d1.getDate()+offset)
-    @fast_load_day(d1)
+    if admin_view
+      url = @base_path + "/admin/" +  wsrc.utils.js_to_iso_date_str(d1)
+      document.location = url
+    else
+      @fast_load_day(d1)
     return undefined
 
   handle_booking_request: (e, elt) ->
