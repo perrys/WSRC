@@ -4,6 +4,16 @@
 {{ block.super }}
 <meta name="robots" content="noindex" />
 <link href="/static/css/wsrc_courts.css" rel="stylesheet" />
+{% if is_admin_view %}
+<style>
+ body {
+     background-color: #f7eee1;
+ }
+ .form-control {
+     border-color: #eea236;
+ }
+</style>
+{% endif %}
 {% endblock %}
   
 {% block titleprefix %}Booking Detail - {% endblock %}
@@ -14,7 +24,7 @@
 <input type="hidden" name="next" value="{{ back_url }}"/>
 
 <fieldset>
-<legend>{% if mode == 'create' %}New Booking{% elif mode == 'update' %}Update Booking{% else %}Booking Details{% endif %}</legend>
+  <legend>{% if mode == 'create' %}New Booking{% elif mode == 'update' %}Update Booking{% else %}Booking Details{% endif %}{% if is_admin_view %} <strong>[Admin]</strong>{% endif %}</legend>
 
 {% include "form_snippet.html" with form=booking_form %}
 
