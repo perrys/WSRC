@@ -6,20 +6,10 @@
 {% block html_header_extra %}
 {{ block.super }}
 <meta name="robots" content="noindex" />
-{% if is_admin_view %}
-<style>
- body {
-     background-color: #f7eee1;
- }
- .form-control {
- }
- table.booking_day tbody td.slot {
-     border-color: #eea236;
-     background-color: #ffffff;
- }
-</style>
-{% endif %}
+
 {% endblock %}
+
+{% block body_extra_classes %}{{ block.super }}{% if is_admin_view %} admin-view{% endif %}{% endblock %}
 
 {% block container-classes %}{{ block.super }} restrict-width{% endblock %}
 {% block centered_page_content %}

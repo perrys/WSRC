@@ -158,6 +158,20 @@ table.booking_day {
 	}
 }
 
+@courts-admin-color: @brand-warning;
+
+body.admin-view {
+    
+    background-color: lighten(@courts-admin-color, 20%);
+    table.booking_day tbody td.slot {
+        border-color: darken(@courts-admin-color, 5%);
+        background-color: #ffffff;
+    }
+    .form-control {
+        border-color: darken(@courts-admin-color, 5%);
+    }
+}
+
 .glyphicon-refresh-animate {
     -animation: spin .7s infinite linear;
     -webkit-animation: spin2 .7s infinite linear;

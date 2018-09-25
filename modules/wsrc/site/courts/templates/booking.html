@@ -4,19 +4,11 @@
 {{ block.super }}
 <meta name="robots" content="noindex" />
 <link href="/static/css/wsrc_courts.css" rel="stylesheet" />
-{% if is_admin_view %}
-<style>
- body {
-     background-color: #f7eee1;
- }
- .form-control {
-     border-color: #eea236;
- }
-</style>
-{% endif %}
 {% endblock %}
   
-{% block titleprefix %}Booking Detail - {% endblock %}
+{% block titleprefix %}Booking Detail {% if is_admin_view %}[Admin] {% endif %}- {% endblock %}
+
+{% block body_extra_classes %}{{ block.super }}{% if is_admin_view %} admin-view{% endif %}{% endblock %}
 
 {% block centered_page_content %}
 
