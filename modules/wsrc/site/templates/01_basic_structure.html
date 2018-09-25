@@ -5,7 +5,7 @@
 {% block html_header %}{% endblock %}
 <!-- session expiry: {{ request.session.get_expiry_date|date:'c' }} -->
   </head>
-  <body>
+  <body class="{% block body_extra_classes %}{% endblock %}">
 {% block html_body %}{% endblock %}
   </body>
 </html>
