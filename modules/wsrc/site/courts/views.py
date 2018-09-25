@@ -342,8 +342,9 @@ def render_day_table(court_slots, date, server_time, allow_booking_shortcut, is_
             nrows =  duration_mins / RESOLUTION
             attrs = {"data-court": str(court)}
             classes = ["slot"]
+            admin_prefix = "/admin" if is_admin_view else ""
             if "id" in slot:
-                attrs['onclick'] = "document.location.href='{path}/{id}'".format(path=booking_path, id=slot['id'])
+                attrs['onclick'] = "document.location.href='{path}{prfx}/{id}'".format(path=booking_path, prfx=admin_prefix, id=slot['id'])
                 classes.append("booking")
                 classes.append(slot["type"])
                 for k in ["id"]:
@@ -356,7 +357,7 @@ def render_day_table(court_slots, date, server_time, allow_booking_shortcut, is_
                 if allow_booking_shortcut:
                     attrs["onclick"] = "handle_booking_request(event, this)"
                 else:
-                    attrs["onclick"] = "document.location.href='{href}'".format(href=make_booking_link(slot, court, date))
+                    attrs["onclick"] = "document.location.href='{href}'".format(href=make_booking_link(slot, court, date, is_admin_view))
                 classes.append("available")
                 for k in ["token", "start_time", "duration_mins"]:
                     attrs["data-" + k] = str(slot[k])
@@ -432,6 +433,7 @@ def edit_entry_view(request, id=None, is_admin_view=False):
     booking_form = None
     server_time = datetime.datetime.now()
     response_code = httplib.OK
+    reverse_view = day_view_admin if is_admin_view else day_view
 
     if method == "POST":
         action = request.POST.get("action") or ""
@@ -448,7 +450,7 @@ def edit_entry_view(request, id=None, is_admin_view=False):
                 booking_data = dict(booking_form.cleaned_data)
                 id = booking_data["booking_id"] = new_booking.get("id")
                 send_calendar_invite(request, booking_data, [request.user], "create")
-                return redirect(reverse_url(day_view) + "/" + timezones.as_iso_date(booking_form.cleaned_data["date"]))
+                return redirect(reverse_url(reverse_view, args=[booking_form.cleaned_data["date"]]))
             except ValidationError, e:
                 booking_form.add_error(None, ", ".join(e.messages))
                 response_code = httplib.CONFLICT
@@ -495,11 +497,11 @@ def edit_entry_view(request, id=None, is_admin_view=False):
                 if booking_form.is_valid():
                     server_time, data = update_booking(request.user, id, booking_form)
                     send_calendar_invite(request, booking_form.cleaned_data, [request.user], "update")
-                    back = reverse_url(day_view) + "/" + timezones.as_iso_date(booking_form.cleaned_data["date"])
+                    back = reverse_url(reverse_view, args=[booking_form.cleaned_data["date"]])
                     return redirect(back)
         except RemoteException, e:
             if e.status == httplib.NOT_MODIFIED:
-                back = reverse_url(day_view) + "/" + timezones.as_iso_date(booking_form.cleaned_data["date"])
+                back = reverse_url(day_view, booking_form.cleaned_data["date"])
                 return redirect(back)
             if e.status == httplib.NOT_FOUND:
                 id = None
@@ -594,8 +596,7 @@ def edit_entry_view(request, id=None, is_admin_view=False):
     back = request.POST.get("next", request.GET.get("next"))
     if back is None:
         if booking_form.is_valid():
-            back = reverse_url(day_view)
-            back += "/" + timezones.as_iso_date(booking_form.cleaned_data["date"])
+            back = reverse_url(reverse_view, args=[booking_form.cleaned_data["date"]])
         else:
             back = reverse_url(day_view)
 

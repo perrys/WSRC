@@ -35,7 +35,7 @@ utils =
 
 class WSRC_court_booking
 
-  constructor: (@base_path) ->
+  constructor: (@base_path, @is_admin_view) ->
     datepicker_options =
       dateFormat: "D, d M yy"
       firstDay: 1
@@ -52,7 +52,7 @@ class WSRC_court_booking
     
     $("a.previous").on("click", (evt) => @load_day_table(evt, -1))
     $("a.refresh").on("click", (evt) => @load_day_table(evt))
-    $("a.refresh_admin").on("click", (evt) => @load_day_table(evt, 0, true))
+    $("a.toggle_admin").on("click", (evt) => @handle_toggle_admin(evt, 0))
     $("a.next").on("click", (evt) => @load_day_table(evt, 1))
 
     # swipe function
@@ -103,11 +103,19 @@ class WSRC_court_booking
  
   stop_load_spinner: () ->
     $(".refresh span").removeClass("glyphicon-refresh-animate")
- 
-  fast_load_day: (date) ->
+
+  make_base_url: (date, is_admin_view) ->
     date_str = wsrc.utils.js_to_iso_date_str(date)
+    admin_prefix = if is_admin_view then "/admin" else ""
+    return @base_path + admin_prefix + "/" + date_str
+
+  get_table_date: () ->
+    table = $("div#booking-day table")    
+    return new Date(table.data("date"))
+         
+  fast_load_day: (date) ->
     opts =
-      url: @base_path + "/" + date_str + "?table_only=1"
+      url: @make_base_url(date, @is_admin_view) + "?table_only=1"
       type: 'GET' 
       success: (data, status, jqxhr) =>
         @stop_load_spinner()
@@ -123,22 +131,25 @@ class WSRC_court_booking
     table.replaceWith(data)
     $("input.date-input").datepicker("setDate", date);
     if history
-      url = @base_path + "/" +  wsrc.utils.js_to_iso_date_str(date)
+      url = @make_base_url(date, @is_admin_view)
       history.pushState({}, "", url)
 
-  load_day_table: (evt, offset, admin_view) ->
+  load_day_table: (evt, offset) ->
     if evt
       evt.stopPropagation()
       evt.preventDefault()
-    table = $("div#booking-day table")    
-    d1 = new Date(table.data("date"))
+    d1 = @get_table_date()
     if offset
       d1.setDate(d1.getDate()+offset)
-    if admin_view
-      url = @base_path + "/admin/" +  wsrc.utils.js_to_iso_date_str(d1)
-      document.location = url
-    else
-      @fast_load_day(d1)
+    @fast_load_day(d1)
+    return undefined
+
+  handle_toggle_admin: (e) ->
+    e.stopPropagation()
+    e.preventDefault()
+    date = @get_table_date()
+    url = @make_base_url(date, not @is_admin_view)
+    document.location = url
     return undefined
 
   handle_booking_request: (e, elt) ->
@@ -176,8 +187,8 @@ class WSRC_court_booking
     date = new Date(picker.selectedYear, picker.selectedMonth, picker.selectedDay)
     @fast_load_day(date)
     
-  @onReady: (base_path) ->
-    @instance = new WSRC_court_booking(base_path)
+  @onReady: (base_path, is_admin_view) ->
+    @instance = new WSRC_court_booking(base_path, is_admin_view)
         
 
 window.wsrc.court_booking = WSRC_court_booking
