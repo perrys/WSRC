@@ -208,7 +208,7 @@ def sync_db_booking_events(events, start_date, end_date):
     from wsrc.site.courts.models import BookingSystemEvent
 
     midnight = datetime.time(0, 0, 0, tzinfo=UK_TZINFO)
-    existing_events_qs = BookingSystemEvent.objects.all()
+    existing_events_qs = BookingSystemEvent.objects.filter(is_active=True)
     existing_events_qs = existing_events_qs.filter(start_time__gte=datetime.datetime.combine(start_date, midnight))
     existing_events_qs = existing_events_qs.filter(start_time__lt=datetime.datetime.combine(end_date, midnight))
     existing_events = set(existing_events_qs)

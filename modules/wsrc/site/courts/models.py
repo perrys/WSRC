@@ -31,6 +31,7 @@ class BookingSystemEvent(models.Model):
         ("I", "Member"),
         ("E", "Club"),
     )
+    is_active = models.BooleanField(default=True)
     start_time = models.DateTimeField(db_index=True)
     end_time = models.DateTimeField()
     court = models.SmallIntegerField()
@@ -49,6 +50,7 @@ class BookingSystemEvent(models.Model):
     last_updated = models.DateTimeField(auto_now=True)
     last_updated_by = models.ForeignKey(auth_models.User, blank=True, null=True, limit_choices_to={"is_active": True},
                                         on_delete=models.SET_NULL, related_name="last_updated_by")
+    
 
     
     @classmethod
@@ -150,11 +152,14 @@ class BookingSystemEvent(models.Model):
 
     def validate_unique(self, exclude):
         super(BookingSystemEvent, self).validate_unique(exclude)
-        overlap = BookingSystemEvent.objects.filter(court=self.court, start_time__lt=self.end_time, end_time__gt=self.start_time)
+        overlap = BookingSystemEvent.objects.filter(is_active=True, court=self.court, start_time__lt=self.end_time, end_time__gt=self.start_time)
         if self.pk:
             overlap = overlap.exclude(pk=self.pk)
         if overlap.count() > 0:
             raise ValidationError("Would conflict with " + unicode(overlap[0]))
+
+    def delete(self, *args, **kwargs):
+        raise Exception("Bookings cannot be deleted, set is_active to False instead")
 
     def __unicode__(self):
         if self.start_time is None or self.end_time is None:
@@ -167,6 +172,7 @@ class BookingSystemEvent(models.Model):
 
     class Meta:
         verbose_name = "Booking"
+        ordering = ("-start_time", "-court")
 
 
 class BookingOffence(models.Model):

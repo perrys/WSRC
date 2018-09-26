@@ -58,7 +58,7 @@ class ActivityReport(object):
                                             team1_score1__isnull=False, team2_score1__isnull=False)
         self.bookings = BookingSystemEvent.objects\
                                           .select_related("created_by")\
-                                          .filter(start_time__gte=self.start_date, start_time__lt=self.end_date)
+                                          .filter(is_active=True, start_time__gte=self.start_date, start_time__lt=self.end_date)
         self.offences = BookingOffence.objects.filter(start_time__gte=self.start_date, start_time__lt=self.end_date)
         self.competitions = Competition.objects.select_related("group")\
                                                .prefetch_related("entrant_set")\

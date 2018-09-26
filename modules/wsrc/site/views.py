@@ -283,7 +283,7 @@ def index_view(request):
     midnight_today = now - datetime.timedelta(hours=now.hour, minutes=now.minute, seconds=now.second, microseconds = now.microsecond)
     cutoff_today = midnight_today + datetime.timedelta(hours=7)
     midnight_tomorrow = midnight_today + datetime.timedelta(days=1)
-    bookings = BookingSystemEvent.objects.filter(start_time__gte=cutoff_today, start_time__lt=midnight_tomorrow).order_by('start_time')
+    bookings = BookingSystemEvent.objects.filter(is_active=True, start_time__gte=cutoff_today, start_time__lt=midnight_tomorrow).order_by('start_time')
 
     fake_context = {"request": LW_REQUEST({"date": today_str}, user=request.user)}
     bookings_data = BookingSerializer(bookings, many=True, context=fake_context).data
@@ -681,7 +681,7 @@ class ObfuscatedBookingSerializer(BookingSerializer):
 class BookingList(rest_generics.ListAPIView):
     serializer_class = BookingSerializer
     def get_queryset(self):
-        queryset = BookingSystemEvent.objects.order_by("start_time")
+        queryset = BookingSystemEvent.objects.filter(is_active=True).order_by("start_time")
         date = self.request.query_params.get('date', None)
         if date is not None:
             date = timezones.parse_iso_date_to_naive(date)

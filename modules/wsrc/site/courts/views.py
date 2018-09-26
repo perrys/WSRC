@@ -103,7 +103,7 @@ def get_bookings(date, ignore_cutoff=False):
         date = timezone.make_aware(datetime.datetime.combine(date, MIDNIGHT_NAIVE))
         now = timezone.localtime(timezone.now())
         tomorrow = date + datetime.timedelta(days=1)
-        booked_slots = BookingSystemEvent.objects.filter(start_time__gt=date, end_time__lt=tomorrow)
+        booked_slots = BookingSystemEvent.objects.filter(is_active=True, start_time__gt=date, end_time__lt=tomorrow)
         results = dict([(court, []) for court in COURTS])
         for booked_slot in booked_slots:
             results[booked_slot.court].append(booked_slot)
@@ -126,7 +126,7 @@ def get_bookings(date, ignore_cutoff=False):
 def get_booking_form_data(id):
     if using_local_database():
         now = timezone.localtime(timezone.now())
-        booking_data = BookingSystemEvent.objects.get(pk=id)
+        booking_data = BookingSystemEvent.objects.get(pk=id, is_active=True)
         booking_data = BookingForm.transform_booking_model(booking_data)
         return now, booking_data 
     params = {
@@ -181,7 +181,7 @@ def update_booking(user, id, booking_form):
         raise SuspiciousOperation()
     
     if using_local_database():
-        model = BookingSystemEvent.objects.get(pk=id)
+        model = BookingSystemEvent.objects.get(pk=id, is_active=True)
         if not model.is_writable_by_user(user):
             raise PermissionDenied()
         slot = booking_form.cleaned_data
@@ -216,7 +216,7 @@ def delete_booking(user, id):
         raise SuspiciousOperation()
 
     if using_local_database():
-        model = BookingSystemEvent.objects.get(pk=id)
+        model = BookingSystemEvent.objects.get(pk=id, is_active=True)
         if not model.is_writable_by_user(user):
             raise PermissionDenied()
         start_time = model.start_time.astimezone(timezones.UK_TZINFO)
@@ -229,7 +229,9 @@ def delete_booking(user, id):
             "duration": model.duration,
             "booking_id": model.pk,
         }
-        model.delete()
+        model.last_updated_by = user
+        model.is_active = False
+        model.save()
         now = timezone.localtime(timezone.now())
         return now, cal_invite_data
 
@@ -248,7 +250,7 @@ def delete_booking(user, id):
 
 def set_noshow(user, id, is_noshow):
     if using_local_database():
-        model = BookingSystemEvent.objects.get(pk=id)
+        model = BookingSystemEvent.objects.get(pk=id, is_active=True)
         now = timezone.localtime(timezone.now())
         if is_noshow:
             if model.no_show == True:
@@ -749,7 +751,7 @@ def agenda_view(request):
         start_date = datetime.date.today()
     else:
         start_date = timezones.parse_iso_date_to_naive(start_date)
-    agenda_items = BookingSystemEvent.objects.filter(start_time__gte=start_date)
+    agenda_items = BookingSystemEvent.objects.filter(is_active=True, start_time__gte=start_date)
 
     name = request.GET.get("name")
     filter_created_by = False
