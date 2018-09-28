@@ -15,20 +15,25 @@
 
 from django.contrib import admin
 from .models import VirtualDomain, VirtualUser, VirtualAlias
+from wsrc.site.usermodel.models import Player
 
 class VirtualDomainAdmin(admin.ModelAdmin):
     list_display = ("name",)
 
 class VirtualUserAdmin(admin.ModelAdmin):
-    list_display = ("user", "domain")
+    list_display = ("user_ordered_name", "domain")
+    def get_queryset(self, *args, **kwargs):
+        return super(VirtualUserAdmin, self).get_queryset(*args, **kwargs).order_by("user__last_name", "user__first_name")
+    def user_ordered_name(self, obj):
+        return Player.make_ordered_name(obj.user.last_name, obj.user.first_name)
+    user_ordered_name.short_description = "User"
 
 class VirtualAliasAdmin(admin.ModelAdmin):
     list_display = ("from_username", "from_domain", "destination")
     list_filter = ("from_username", "from_domain")
     def destination(self, obj):
-        if obj.use_user_email:
-            return obj.to.user.email
-        return unicode(obj.to)
+        email = obj.to.user.email if obj.use_user_email else unicode(obj.to)
+        return "{0} [{1}]".format(Player.make_ordered_name(obj.to.user.last_name, obj.to.user.first_name), email)
 
 admin.site.register(VirtualDomain, VirtualDomainAdmin)
 admin.site.register(VirtualUser, VirtualUserAdmin)

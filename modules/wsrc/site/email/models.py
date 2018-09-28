@@ -35,9 +35,10 @@ class VirtualUser(models.Model):
         verbose_name = "Virtual User"
         verbose_name_plural = "Virtual Users"
         unique_together = ("user", "domain")
+        ordering = ("user__last_name", "user__first_name")
 
 class VirtualAlias(models.Model):
-    from_username = models.CharField(max_length=255)
+    from_username = models.CharField("from name", max_length=255)
     from_domain = models.ForeignKey(VirtualDomain)
     to = models.ForeignKey(VirtualUser)
     use_user_email = models.BooleanField(default=False)
@@ -47,3 +48,4 @@ class VirtualAlias(models.Model):
         verbose_name = "Virtual Alias"
         verbose_name_plural = "Virtual Aliases"
         unique_together = ("from_username", "from_domain", "to")
+        ordering = ("from_username",)
