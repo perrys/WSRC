@@ -23,5 +23,5 @@ def my_handler(sender, **kwargs):
     instance = kwargs["instance"]
     was_created = kwargs["created"]
     update_fields = kwargs["update_fields"]
-    import pprint
-    pprint.pprint(locals())
+#    import pprint
+#    pprint.pprint(locals())
