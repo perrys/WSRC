@@ -40,7 +40,7 @@ from django.views.decorators.http import require_safe
 from django.views.generic.edit import CreateView
 from django.utils import timezone
 
-from icalendar import Calendar, Event, vCalAddress, vText
+from icalendar import Calendar, Event, vCalAddress, vText, parser_tools
 
 from .forms import START_TIME, END_TIME, RESOLUTION, COURTS,\
     format_date, make_date_formats, validate_quarter_hour, create_notifier_filter_formset_factory,\
@@ -621,7 +621,9 @@ def send_calendar_invite(request, slot, recipients, event_type):
     method = "CANCEL" if event_type == "delete" else "REQUEST"
     cal = create_icalendar(request, slot, recipients, method)
     encoding = settings.DEFAULT_CHARSET
-    msg_cal = SafeMIMEText(cal.to_ical(), "calendar", encoding)
+    cal_encoding = parser_tools.DEFAULT_ENCODING
+    cal_body_unicode = cal.to_ical().decode(cal_encoding)
+    msg_cal = SafeMIMEText(cal_body_unicode, "calendar", encoding)
     msg_cal.set_param("method", method)
     context = {
       'event_type': event_type
