@@ -39,8 +39,8 @@
       <td class="centered"><span>Court:</span><span>{{ item.court }}</span></td>
       <td><span>Description:</span>{{ item.description }}</td>      
       <td class="buttonset"><span>&nbsp;</span>
-        <a class="btn btn-default" href="{% url 'booking' %}/{{ item.event_id }}">Details</a>
-        <a class="btn btn-default {% if item.in_the_past %}disabled{% endif %}" href="{% if item.in_the_past %}javascript:{% else %}{% url 'cal_invite' %}/{{ item.event_id }}{% endif %}">Send Invite</a>
+        <a class="btn btn-default" href="{% url 'booking' %}/{% if using_local_database %}{{ item.pk }}{% else %}{{ item.event_id }}{% endif %}">Details</a>
+        <a class="btn btn-default {% if item.in_the_past %}disabled{% endif %}" href="{% if item.in_the_past %}javascript:{% else %}{% url 'cal_invite' %}/{% if using_local_database %}{{ item.pk }}{% else %}{{ item.event_id }}{% endif %}{% endif %}">Send Invite</a>
       </td>
     </tr>
     {% endfor %}

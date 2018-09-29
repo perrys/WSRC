@@ -770,7 +770,7 @@ def agenda_view(request):
             name_clause |= Q(created_by=myself)
 
     agenda_items = agenda_items.filter(name_clause)
-    context = {'agenda_items': agenda_items, 'name': name}
+    context = {'agenda_items': agenda_items, 'name': name, 'using_local_database': using_local_database()}
     return TemplateResponse(request, 'agenda.html', context)
 
 
