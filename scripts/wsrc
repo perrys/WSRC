@@ -17,6 +17,7 @@ LOGGER.setLevel(logging.INFO)
 
 import wsrc.utils.email_utils as email_utils
 from django.template import Template, Context
+from django.db import transaction
 from wsrc.utils.text import formatTable as format_text_table
 from wsrc.utils.html_table import formatTable as format_html_table
 
@@ -325,6 +326,23 @@ def download_met_office_data():
     from wsrc.external_sites.met_office import fetch_and_store_distance_weigted_average_observations
     obs_locations = [l[0] for l in settings.MET_OFFICE_OBSERVATION_LOCATIONS]
     fetch_and_store_distance_weigted_average_observations(settings.CLUB_LOCATION, *obs_locations)
+
+@transaction.atomic
+def book_courts(date, courts, times, duration, event_type, name, description):
+    import wsrc.site.courts.models as court_models;
+    import django.contrib.auth.models as auth_models;
+    admin_user = auth_models.User.objects.get(username="admin")
+
+    LOGGER.info("booking %d court(s), name=%s", len(courts), name)
+    for court,time in zip(courts, times):
+        start_time = datetime.datetime.combine(date, time)
+        start_time = start_time.replace(tzinfo=timezone)
+        end_time = start_time + duration
+        model = court_models.BookingSystemEvent(start_time=start_time, end_time=end_time, court=court,
+                                     name=name, description=description, event_type=event_type,
+                                     created_by_user=admin_user, last_updated_by=admin_user)
+        model.validate_unique([])
+        model.save()
     
 if __name__ == "__main__":
     prog = os.path.basename(sys.argv[0])
@@ -465,6 +483,45 @@ if __name__ == "__main__":
             process_date(date)
             date = date + datetime.timedelta(days=1)
             ndays -= 1
+            
+    elif command in ("create-bookings"):
+        def usage():
+            sys.stderr.write("USAGE: {prog} {command} --name=<name> [--description=<description>] --advancedays=<ndays> " +
+                             "--courts=<n1,n2..> --times=<t1,t2..> --duration=<nminutes> [--type=<I|E>]\n".format(**locals()))
+        try:
+            optlist, args = getopt.getopt(sys.argv[2:], "a:c:t:d", ["advancedays=", "courts=", "times=", "duration=", "name=", "description=", "type="])
+        except getopt.GetoptError as err:
+            sys.stderr.write(str(err) + "\n")
+            usage()
+            sys.exit(2)
+        timezone = timezone_utils.UK_TZINFO
+        date = None
+        duration = None
+        courts = []
+        times = []
+        booking_type = "E"
+        name = None
+        description = None
+        for opt,val in optlist:
+            if opt in ["-a", "--advancedays"]:
+                date = datetime.date.today() + datetime.timedelta(days=int(val))
+            elif opt in ["-c", "--courts"]:
+                courts = [int(v) for v in val.split(",")]
+            elif opt in ["-t", "--times"]:
+                times = [datetime.datetime.strptime(v, "%H:%M").time() for v in val.split(",")]
+            elif opt in ["-d", "--duration"]:
+                duration = datetime.timedelta(minutes=int(val))
+            elif opt in ["--type"]:
+                booking_type = val[0]
+            elif opt in ["--name"]:
+                name = val
+            elif opt in ["--description"]:
+                description = val
+        if name is None or date is None or duration is None or len(courts) != len(times):
+            usage()
+            sys.exit(1)
+        book_courts(date, courts, times, duration, booking_type, name, description)
+                
 
     elif command in ("purge-personal-data"):
         from wsrc.site.usermodel.data_purge import policy_purge_data
