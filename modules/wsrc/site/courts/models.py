@@ -170,11 +170,11 @@ class BookingSystemEvent(models.Model):
     def __unicode__(self):
         if self.start_time is None or self.end_time is None:
             return "Invalid event"
-        prefix = "[{0}] ".format(self.event_id) if self.event_id is not None else ""
+        prefix = u"[{0}] ".format(self.event_id) if self.event_id is not None else u""
         kwargs = dict(self.__dict__)
         kwargs["start_time"] = timezone.localtime(kwargs["start_time"])
         kwargs["end_time"] = timezone.localtime(kwargs["end_time"])
-        return prefix + "Court {court} {start_time:%Y-%m-%d %H:%M}-{end_time:%H:%M} {name} \"{description}\"".format(**kwargs)
+        return prefix + u"Court {court} {start_time:%Y-%m-%d %H:%M}-{end_time:%H:%M} {name} \"{description}\"".format(**kwargs)
 
     class Meta:
         verbose_name = "Booking"
