@@ -158,6 +158,12 @@ class BookingSystemEvent(models.Model):
         if overlap.count() > 0:
             raise ValidationError("Would conflict with " + unicode(overlap[0]))
 
+    def save(self, *args, **kwargs):
+        is_new = self.pk is None
+        super(BookingSystemEvent, self).save(*args, **kwargs)
+        audit = BookingSystemEventAuditEntry.create_from_current(self, is_new=is_new)
+        audit.save()
+
     def delete(self, *args, **kwargs):
         raise Exception("Bookings cannot be deleted, set is_active to False instead")
 
@@ -174,6 +180,39 @@ class BookingSystemEvent(models.Model):
         verbose_name = "Booking"
         ordering = ("-start_time", "-court")
 
+class BookingSystemEventAuditEntry(models.Model):
+    booking = models.ForeignKey(BookingSystemEvent)
+    UPDATE_TYPES = (
+        ("C", "Create"),
+        ("U", "Update"),
+        ("D", "Delete"),
+    )
+    update_type = models.CharField(max_length=1, choices=UPDATE_TYPES)
+    name = models.CharField(max_length=64)
+    description = models.CharField(max_length=128, blank=True, null=True)
+    event_type = models.CharField(max_length=1, choices=BookingSystemEvent.EVENT_TYPES)
+    updated = models.DateTimeField()
+    updated_by = models.ForeignKey(auth_models.User, on_delete=models.PROTECT)
+
+    @classmethod
+    def create_from_current(cls, obj, is_new=False):
+        if is_new:
+            update_type = "C"
+        elif obj.is_active:
+            update_type = "U"
+        else:
+            update_type = "D"
+        self = cls(update_type=update_type, booking=obj, name=obj.name, description=obj.description, event_type=obj.event_type,
+                   updated=obj.last_updated, updated_by=obj.last_updated_by)
+        return self
+
+    def __unicode__(self):
+        return self.updated.isoformat()
+                                             
+    class Meta:
+        verbose_name = "Booking Audit Entry"
+        verbose_name_plural = "Booking Audit Entries"
+        ordering = ("-booking__pk", "-updated")
 
 class BookingOffence(models.Model):
     POINT_LIMIT = 11

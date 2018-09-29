@@ -25,9 +25,10 @@ from django.utils import timezone
 from django.shortcuts import redirect
 
 from wsrc.site.courts.models import BookingOffence, EventFilter, BookingSystemEvent, ClimateMeasurement, \
-    CondensationLocation, CondensationReport
+    CondensationLocation, CondensationReport, BookingSystemEventAuditEntry
+from wsrc.site.usermodel.models import Player
 from wsrc.utils.admin_utils import CSVModelAdmin
-from wsrc.utils.form_utils import PrefetchRelatedQuerysetMixin, get_related_field_limited_queryset
+from wsrc.utils.form_utils import PrefetchRelatedQuerysetMixin, get_related_field_limited_queryset, CachingModelChoiceField
 from wsrc.utils.upload_utils import upload_generator
 from wsrc.utils import timezones
 
@@ -68,6 +69,10 @@ class BookingOffenceAdmin(CSVModelAdmin):
         queryset = queryset.select_related('player__user')
         return queryset
 
+class UserModelChoiceField(forms.ModelChoiceField):
+    def label_from_instance(self, obj):
+        return Player.make_ordered_name(obj.last_name, obj.first_name)
+
 class NotifierEventAdmin(PrefetchRelatedQuerysetMixin, CSVModelAdmin):
     list_display = ("player", "earliest", "latest", "get_day_list", "notice_period_minutes")
     list_select_related = ('player__user',)
@@ -76,12 +81,32 @@ class NotifierEventAdmin(PrefetchRelatedQuerysetMixin, CSVModelAdmin):
         return ",".join([str(d) for d in obj.days.all()])
     get_day_list.short_description = "Days"
 
+class BookingAuditInline(admin.TabularInline):
+    model = BookingSystemEventAuditEntry
+    readonly_fields = ("update_type", "name", "description", "event_type", "updated", "updated_by")
+
+class BookingForm(forms.ModelForm):
+    queryset = get_related_field_limited_queryset(BookingSystemEventAuditEntry.updated_by.field) \
+               .order_by("last_name", "first_name")
+    created_by_user = UserModelChoiceField(queryset)
+    last_updated_by = UserModelChoiceField(queryset)
+    class Meta:
+        model = BookingSystemEvent
+        exclude = ["created_by"]
+
 class BookingAdmin(CSVModelAdmin):
+    form = BookingForm
     search_fields = ('name', 'description')
-    list_display = ("is_active", "name", "start_time", "end_time", "court", "event_type", "description", "created_by_user", "created_time", "last_updated_by", "last_updated", "used")
+    list_display = ("name", "is_active", "start_time", "end_time", "court", "event_type", "description", "created_by_user", "created_time", "last_updated_by", "last_updated", "used")
     date_hierarchy = "start_time"
     list_filter = ("is_active", "court", "event_type", "no_show")
     list_select_related = ("created_by__user",)
+    inlines = (BookingAuditInline,)
+    def get_queryset(self, request):
+        qs = super(BookingAdmin, self).get_queryset(request)
+        qs = qs.select_related("last_updated_by", "created_by_user", "no_show_reporter")
+        return qs
+    
     def used(self, obj):
         if obj.start_time > timezone.now() + datetime.timedelta(minutes=15):
             return None        

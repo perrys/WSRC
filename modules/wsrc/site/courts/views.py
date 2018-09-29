@@ -465,7 +465,7 @@ def edit_entry_view(request, id=None, is_admin_view=False):
 
     elif method == "DELETE":
         booking_form = BookingForm(request.POST)
-        if id is None or booking_user_id is None:
+        if id is None:
             raise SuspiciousOperation()
         try:
             server_time, data = delete_booking(request.user, id)
@@ -484,7 +484,7 @@ def edit_entry_view(request, id=None, is_admin_view=False):
 
     elif method == "PATCH":
         booking_form = BookingForm(request.POST)
-        if id is None or booking_user_id is None:
+        if id is None:
             raise SuspiciousOperation()
         try:
             if request.POST.get("action") == "report_noshow":
