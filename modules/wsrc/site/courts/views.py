@@ -145,6 +145,7 @@ def get_booking_form_data(id):
     booking_data = BookingForm.transform_booking_system_entry(result)
     return server_time, booking_data
 
+@transaction.atomic
 def create_booking(user, slot):
     if using_local_database():
         now = timezone.localtime(timezone.now())
@@ -176,6 +177,7 @@ def create_booking(user, slot):
     }
     return auth_query_booking_system(booking_user_id, data)
 
+@transaction.atomic
 def update_booking(user, id, booking_form):
     if id is None:
         raise SuspiciousOperation()
@@ -211,6 +213,7 @@ def update_booking(user, id, booking_form):
     return auth_query_booking_system(booking_user_id, data, query_params=params)
 
 
+@transaction.atomic
 def delete_booking(user, id):
     if id is None:
         raise SuspiciousOperation()
