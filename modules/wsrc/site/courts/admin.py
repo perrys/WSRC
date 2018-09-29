@@ -83,6 +83,7 @@ class NotifierEventAdmin(PrefetchRelatedQuerysetMixin, CSVModelAdmin):
 
 class BookingAuditInline(admin.TabularInline):
     model = BookingSystemEventAuditEntry
+    can_delete = False
     readonly_fields = ("update_type", "name", "description", "event_type", "updated", "updated_by")
 
 class BookingForm(forms.ModelForm):
