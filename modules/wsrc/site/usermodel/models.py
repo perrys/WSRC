@@ -23,7 +23,7 @@ from django.core.exceptions import ValidationError, NON_FIELD_ERRORS
 from django.core.mail import send_mail
 from django.core import validators
 from django.db.models import Q
-from django.contrib.auth.models import AbstractUser
+from django.contrib.auth.models import User
 
 import datetime
 import re
@@ -81,7 +81,10 @@ class Player(AbstractPlayer):
 
     @classmethod
     def make_ordered_name(cls, last_name, first_name, encoding=None):
-        full_name = '%s, %s' % (last_name, first_name)
+        if last_name is None or len(last_name) == 0:
+            full_name = first_name
+        else:
+            full_name = '%s, %s' % (last_name, first_name)
         if encoding is not None:
             full_name = full_name.encode(encoding)
         return full_name.strip()
