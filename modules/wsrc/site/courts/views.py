@@ -146,11 +146,11 @@ def get_booking_form_data(id):
     return server_time, booking_data
 
 @transaction.atomic
-def create_booking(user, slot):
+def create_booking(user, slot, is_admin_view=False):
     if using_local_database():
         now = timezone.localtime(timezone.now())
-        model = BookingForm.transform_to_booking_system_event(slot)
-        if model.hmac_token() != slot.get("token"):
+        model = BookingForm.transform_to_booking_system_event(slot)        
+        if not is_admin_view and model.hmac_token() != slot.get("token"):
             raise ValidationError("Incorrect token supplied")
         model.created_by_user = user
         model.last_updated_by = user
@@ -451,7 +451,7 @@ def edit_entry_view(request, id=None, is_admin_view=False):
         booking_form = BookingForm(request.POST)
         if booking_form.is_valid():
             try:
-                server_time, new_booking = create_booking(request.user, booking_form.cleaned_data)
+                server_time, new_booking = create_booking(request.user, booking_form.cleaned_data, is_admin_view)
                 booking_data = dict(booking_form.cleaned_data)
                 id = booking_data["booking_id"] = new_booking.get("id")
                 send_calendar_invite(request, booking_data, [request.user], "create")
