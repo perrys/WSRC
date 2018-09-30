@@ -486,10 +486,10 @@ if __name__ == "__main__":
             
     elif command in ("create-bookings"):
         def usage():
-            sys.stderr.write("USAGE: {prog} {command} --name=<name> [--description=<description>] --advancedays=<ndays> " +
+            sys.stderr.write("USAGE: {prog} {command} --name=<name> [--description=<description>] --advancedays=<ndays>|--date=yyyy-mm-dd " +
                              "--courts=<n1,n2..> --times=<t1,t2..> --duration=<nminutes> [--type=<I|E>]\n".format(**locals()))
         try:
-            optlist, args = getopt.getopt(sys.argv[2:], "a:c:t:d", ["advancedays=", "courts=", "times=", "duration=", "name=", "description=", "type="])
+            optlist, args = getopt.getopt(sys.argv[2:], "a:c:t:d", ["advancedays=", "date=", "courts=", "times=", "duration=", "name=", "description=", "type="])
         except getopt.GetoptError as err:
             sys.stderr.write(str(err) + "\n")
             usage()
@@ -505,6 +505,8 @@ if __name__ == "__main__":
         for opt,val in optlist:
             if opt in ["-a", "--advancedays"]:
                 date = datetime.date.today() + datetime.timedelta(days=int(val))
+            if opt in ["--date"]:
+                date = datetime.datetime.strptime(val, "%Y-%m-%d").date()
             elif opt in ["-c", "--courts"]:
                 courts = [int(v) for v in val.split(",")]
             elif opt in ["-t", "--times"]:
