@@ -4,6 +4,7 @@ import datetime
 import logging
 
 from django.template import Template, Context
+from threading import Thread
 import markdown
 
 from wsrc.utils import timezones, email_utils, text as text_utils
@@ -28,6 +29,11 @@ class Notifier:
     self.email_template = Template(template_obj.markup)
     self.send_email = email_utils.send_email
 
+  def async_process_removed_events(self, *removedEvents):
+    thread = Thread(target=self.process_removed_events, args=(removedEvents,))
+    thread.start()
+    return thread
+    
   def process_removed_events(self, removedEvents):
 
     for event in removedEvents:
