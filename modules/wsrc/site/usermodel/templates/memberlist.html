@@ -30,6 +30,9 @@ form.form-search:before {
 {% block centered_page_content %}
 
 <div class="wsrc-member-list">
+  <div class="alert alert-info">
+    <strong>Note</strong>: members' contact details will only appear in this list if they have given permission via the <a href="/settings">Settings</a> page.
+  </div>
   <form class="form-inline form-search pull-right">
     <div class="input-group"> <!-- {{ form.search }} -->
       <input name="search" class="form-control search-query" placeholder="Search . . ." {% if form.search.value %}value="{{ form.search.value }}"{% endif %}>
