@@ -302,7 +302,7 @@ class DayOfWeek(models.Model):
         ordering = ["ordinal"]
 
 class EventFilter(models.Model):
-    player = models.ForeignKey(user_models.Player, on_delete=models.PROTECT)
+    player = models.ForeignKey(user_models.Player, on_delete=models.CASCADE)
     earliest = models.TimeField()
     latest = models.TimeField()
     days = models.ManyToManyField(DayOfWeek, blank=True)
