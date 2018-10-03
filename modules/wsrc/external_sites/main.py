@@ -274,18 +274,6 @@ def add_old_league_data(boxes_data, end_date):
       match_record.save()
       group.save()
 
-def cmdline_sync_bookings():
-
-  import wsrc.external_sites.booking_manager as booking_manager
-
-  session = booking_manager.BookingSystemSession()
-  events, start_date_used = session.get_booked_courts()
-  (new_events, modified_events, removed_events) = booking_manager.sync_db_booking_events(events, start_date_used, start_date_used + datetime.timedelta(days=14))
-  LOGGER.info("{0} new bookings, {1} modified, {2} cancelled".format(len(new_events), len(modified_events), len(removed_events)))
-
-  notifier = cancel_notifier.Notifier()
-  notifier.process_removed_events(removed_events)
-  
 def cmdline_sync_squashlevels(*args):
 
   if len(args) > 0:

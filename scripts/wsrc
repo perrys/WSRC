@@ -363,10 +363,7 @@ if __name__ == "__main__":
 
     command = sys.argv[1]
     args = sys.argv[2:]
-    if command in ("sync", "sync-bookings"):
-        wsrc.external_sites.main.cmdline_sync_bookings()
-
-    elif command in ("sync-squashlevels"):
+    if command in ("sync-squashlevels"):
         wsrc.external_sites.main.cmdline_sync_squashlevels(*args)
 
     elif command in ("sync-leaguemaster"):
