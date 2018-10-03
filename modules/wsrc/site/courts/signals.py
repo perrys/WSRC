@@ -17,11 +17,12 @@
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from .models import BookingSystemEvent
+from .cancel_notifier import Notifier
 
 @receiver(post_save, sender=BookingSystemEvent, dispatch_uid="42fd3c1e732611e8a541e512b4beadf4")
-def my_handler(sender, **kwargs):
-    instance = kwargs["instance"]
-    was_created = kwargs["created"]
-    update_fields = kwargs["update_fields"]
-#    import pprint
-#    pprint.pprint(locals())
+def my_handler(sender, *args, **kwargs):
+    if kwargs.get("created", False) != True:
+        instance = kwargs["instance"]
+        if not instance.is_active:
+            notifier = Notifier()
+            notifier.async_process_removed_events(instance)
