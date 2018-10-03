@@ -131,10 +131,10 @@ if __name__ == "__main__":
       self.player2 = Player(user=user)
       self.player2.save()
     def tearDown(self):
-      self.player1.user.delete()
-      self.player2.user.delete()
-      self.player1.delete()
-      self.player2.delete()
+      for player in self.player1, self.player2:
+        user = player.user
+        player.delete()
+        user.delete()
 
     @staticmethod
     def create_filter(player, earliest, latest, notice, days):
