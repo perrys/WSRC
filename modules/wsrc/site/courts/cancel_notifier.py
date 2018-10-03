@@ -7,12 +7,12 @@ from django.template import Template, Context
 import markdown
 
 from wsrc.utils import timezones, email_utils, text as text_utils
-from wsrc.external_sites import evt_filters
+import wsrc.site.courts.evt_filters as evt_filters
 
 FUTURE_CUTTOFF = datetime.timedelta(days=7)
 
 LOGGER = logging.getLogger(__name__)
-LOGGER.setLevel(logging.DEBUG)
+LOGGER.setLevel(logging.INFO)
 
 class Notifier:
   """Emails players when a booking has been cancelled, to allow them to
@@ -100,7 +100,16 @@ class Notifier:
   
 if __name__ == "__main__":
 
-  import wsrc.external_sites # call __init__.py
+  import os
+  os.environ.setdefault("DJANGO_SETTINGS_MODULE", "wsrc.site.settings.settings")
+
+  import logging
+  logging.basicConfig(format='%(asctime)-10s [%(levelname)s] %(message)s',datefmt="%Y-%m-%d %H:%M:%S")
+
+  import django
+  if hasattr(django, "setup"):
+    django.setup()
+  
   import unittest
 
   from wsrc.site.usermodel.models import Player
