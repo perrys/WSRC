@@ -27,7 +27,7 @@ class VirtualDomain(models.Model):
         verbose_name_plural = "Virtual Domains"
 
 class VirtualUser(models.Model):
-    user = models.OneToOneField(User, on_delete=models.PROTECT)
+    user = models.OneToOneField(User, on_delete=models.PROTECT, limit_choices_to=models.Q(is_active=True))
     domain = models.ForeignKey(VirtualDomain, on_delete=models.PROTECT)
     def __unicode__(self):
         return "{0}@{1}".format(self.user.username, self.domain.name)
@@ -35,7 +35,7 @@ class VirtualUser(models.Model):
         verbose_name = "Virtual User"
         verbose_name_plural = "Virtual Users"
         unique_together = ("user", "domain")
-        ordering = ("user__last_name", "user__first_name")
+        ordering = ("user__username",)
 
 class VirtualAlias(models.Model):
     from_username = models.CharField("from name", max_length=255)
