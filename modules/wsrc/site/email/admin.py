@@ -13,15 +13,23 @@
 # You should have received a copy of the GNU General Public License
 # along with WSRC.  If not, see <http://www.gnu.org/licenses/>.
 
+from django import forms
 from django.contrib import admin
 from .models import VirtualDomain, VirtualUser, VirtualAlias
 from wsrc.site.usermodel.models import Player
+from wsrc.utils.form_utils import get_related_field_limited_queryset
 
 class VirtualDomainAdmin(admin.ModelAdmin):
     list_display = ("name",)
 
+class UserForm(forms.ModelForm):
+    queryset = get_related_field_limited_queryset(VirtualUser.user.field) \
+               .order_by("username")
+    user = forms.ModelChoiceField(queryset)
+    
 class VirtualUserAdmin(admin.ModelAdmin):
     list_display = ("user_ordered_name", "domain")
+    form = UserForm
     def get_queryset(self, *args, **kwargs):
         return super(VirtualUserAdmin, self).get_queryset(*args, **kwargs).order_by("user__last_name", "user__first_name")
     def user_ordered_name(self, obj):
