@@ -223,10 +223,9 @@ class AbstractSubscription(models.Model):
         ("monthly", "Monthly", 12),
     )
     PAY_TYPE_CHOICES = [(ptype[0], ptype[1]) for ptype in PAYMENT_TYPES]
-    not_ended = Q(has_ended=False)
     # pylint: disable=bad-whitespace
     subscription_type = models.ForeignKey(SubscriptionType, on_delete=models.PROTECT)
-    season            = models.ForeignKey(Season, db_index=True, limit_choices_to=not_ended, default=latest_season, on_delete=models.PROTECT)
+    season            = models.ForeignKey(Season, db_index=True, default=latest_season, on_delete=models.PROTECT)
     pro_rata_date     = models.DateField("Pro Rata Date", blank=True, null=True)
     payment_frequency = models.CharField("Payment Freq", max_length=16, choices=PAY_TYPE_CHOICES, default="annual")
     comment           = models.TextField(blank=True, null=True)
