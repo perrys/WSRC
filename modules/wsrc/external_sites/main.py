@@ -12,7 +12,6 @@ import re
 
 import scrape_page
 import evt_filters
-import cancel_notifier
 
 from wsrc.utils import jsonutils, timezones, url_utils
 from wsrc.site.usermodel.models import Player
