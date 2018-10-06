@@ -297,7 +297,7 @@ class ActivityReport(object):
         for booking in self.bookings:
             duration_mins = int((booking.end_time - booking.start_time).total_seconds() / 60)
             total += duration_mins
-            is_peak = booking.start_time.time().hour >= 17 and booking.start_time.date().weekday() <= 4
+            is_peak = booking.start_time.time().hour >= 17 and booking.start_time.time().hour <= 20 and booking.start_time.date().weekday() <= 4
             if is_peak:
                 total_peak += duration_mins
             name = booking.name.lower().strip()
