@@ -49,6 +49,7 @@ from django.db.models import Q
 
 import rest_framework.generics as rest_generics
 from rest_framework.renderers import JSONRenderer
+from rest_framework.exceptions import ValidationError as RestValidationError
 from rest_framework import serializers
 from rest_framework.parsers import JSONParser, FormParser
 from rest_framework.views import APIView
@@ -281,10 +282,7 @@ def index_view(request):
 
     now = timezone.now()
     today_str = timezones.as_iso_date(now)
-    midnight_today = now - datetime.timedelta(hours=now.hour, minutes=now.minute, seconds=now.second, microseconds = now.microsecond)
-    cutoff_today = midnight_today + datetime.timedelta(hours=7)
-    midnight_tomorrow = midnight_today + datetime.timedelta(days=1)
-    bookings = BookingSystemEvent.objects.filter(is_active=True, start_time__gte=cutoff_today, start_time__lt=midnight_tomorrow).order_by('start_time')
+    bookings = BookingSystemEvent.get_bookings_for_date(now)
 
     fake_context = {"request": LW_REQUEST({"date": today_str}, user=request.user)}
     bookings_data = BookingSerializer(bookings, many=True, context=fake_context).data
@@ -682,17 +680,15 @@ class ObfuscatedBookingSerializer(BookingSerializer):
 class BookingList(rest_generics.ListAPIView):
     serializer_class = BookingSerializer
     def get_queryset(self):
-        queryset = BookingSystemEvent.objects.filter(is_active=True).order_by("start_time")
         date = self.request.query_params.get('date', None)
-        if date is not None:
-            date = timezones.parse_iso_date_to_naive(date)
-            date = datetime.datetime.combine(date, datetime.time(0, tzinfo=timezone.get_default_timezone()))
-            delta = self.request.query_params.get('day_offset', None)
-            if delta is not None:
-                date = date + datetime.timedelta(days=int(delta))
-            tplus1 = date + datetime.timedelta(days=1)
-            queryset = queryset.filter(start_time__gte=date, start_time__lt=tplus1)
-        return queryset
+        if date is None:
+            raise RestValidationError("required date parameter not supplied")
+        date = timezones.parse_iso_date_to_naive(date)
+        date = datetime.datetime.combine(date, datetime.time(0, tzinfo=timezone.get_default_timezone()))
+        delta = self.request.query_params.get('day_offset', None)
+        if delta is not None:
+            date = date + datetime.timedelta(days=int(delta))
+        return BookingSystemEvent.get_bookings_for_date(date)
 
 def auth_view(request):
     if request.method == 'GET':

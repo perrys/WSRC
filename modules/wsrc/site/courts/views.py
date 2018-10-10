@@ -101,9 +101,8 @@ def get_bookings(date, ignore_cutoff=False):
     if using_local_database():
         MIDNIGHT_NAIVE = datetime.time()
         date = timezone.make_aware(datetime.datetime.combine(date, MIDNIGHT_NAIVE))
+        booked_slots = BookingSystemEvent.get_bookings_for_date(date)
         now = timezone.localtime(timezone.now())
-        tomorrow = date + datetime.timedelta(days=1)
-        booked_slots = BookingSystemEvent.objects.filter(is_active=True, start_time__gt=date, end_time__lt=tomorrow)
         results = dict([(court, []) for court in COURTS])
         for booked_slot in booked_slots:
             results[booked_slot.court].append(booked_slot)

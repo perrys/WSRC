@@ -113,6 +113,13 @@ class BookingSystemEvent(models.Model):
     def token(self):
         return self.hmac_token()
 
+    @classmethod
+    def get_bookings_for_date(cls, right_now=timezone.now(), earliest_hour=7):
+        midnight_today = right_now - datetime.timedelta(hours=right_now.hour, minutes=right_now.minute, seconds=right_now.second, microseconds = right_now.microsecond)
+        cutoff_today = midnight_today + datetime.timedelta(hours=earliest_hour)
+        midnight_tomorrow = midnight_today + datetime.timedelta(days=1)
+        return BookingSystemEvent.objects.filter(is_active=True, start_time__gte=cutoff_today, start_time__lt=midnight_tomorrow).order_by('start_time')
+        
     def obfuscated_name(self):
         if self.event_type == "E":
             return self.name
