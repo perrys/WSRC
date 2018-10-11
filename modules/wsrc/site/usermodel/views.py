@@ -49,7 +49,6 @@ from rest_framework.views import APIView
 
 from wsrc.site.models import OAuthAccess
 from wsrc.site.settings import settings
-from wsrc.external_sites.booking_manager import BookingSystemSession
 from wsrc.site.usermodel.models import Player, DoorCardEvent, MembershipApplication
 from wsrc.utils import xls_utils, sync_utils, email_utils
 from wsrc.utils.timezones import parse_iso_date_to_naive
@@ -149,61 +148,6 @@ class DoorCardEventCreateView(rest_generics.CreateAPIView):
     serializer_class = DoorCardEventSerializer
     model = DoorCardEvent
     queryset = DoorCardEvent.objects.all()
-
-class BookingSystemMemberView(APIView):
-    "REST methods for an individual user of the booking system"
-    def delete(self, request, bs_id): #pylint: disable=no-self-use
-        "Permanently delete an id from the booking system"
-        if request.user.groups.filter(name="Membership Editor").count() == 0 \
-           and not request.user.is_superuser:
-            raise PermissionDenied()
-        credentials = settings.BOOKING_SYSTEM_CREDENTIALS
-        username = credentials["username"]
-        password = credentials["password"]
-        booking_session = BookingSystemSession(username, password)
-        booking_session.delete_user_from_booking_system(bs_id)
-        return Response()
-    def post(self, request): #pylint: disable=no-self-use
-        "Create a new user on the booking system"
-        if request.user.groups.filter(name="Membership Editor").count() == 0 \
-           and not request.user.is_superuser:
-            raise PermissionDenied()
-        credentials = settings.BOOKING_SYSTEM_CREDENTIALS
-        username = credentials["username"]
-        password = credentials["password"]
-        booking_session = BookingSystemSession(username, password)
-        name = request.data["name"]
-        pwd = request.data["password"]
-        email = request.data.get("email")
-        response = booking_session.add_user_to_booking_system(name, pwd, email)
-        return Response(response)
-
-
-class BookingSystemMembersView(APIView):
-    "REST view of data obtained from the booking system"
-    authentication_classes = (SessionAuthentication,)
-    permission_classes = (IsAuthenticated,)
-    parser_classes = (JSONParser,)
-    def post(self, request, format="json"):
-        if request.user.groups.filter(name="Membership Editor").count() == 0 \
-           and not request.user.is_superuser:
-            raise PermissionDenied()
-        credentials = request.data
-        username = credentials["username"]
-        password = credentials["password"]
-        booking_session = BookingSystemSession(username, password)
-        bs_contacts = booking_session.get_memberlist()
-        for row in bs_contacts:
-            for field, value in row.items():
-                value = row[field] = str(value)
-                if field == 'name':
-                    (first, last) = sync_utils.split_first_and_last_names(value)
-                    row["first_name"] = first
-                    row["last_name"] = last
-        bs_contacts = [c for c in bs_contacts if c.get("name")]
-        bs_contacts.sort(key=operator.itemgetter("last_name", "first_name"))
-        bs_vs_db_diffs = sync_utils.get_differences_bs_vs_db(bs_contacts, Player.objects.filter(user__is_active=True).select_related())
-        return Response({"contacts": bs_contacts, "diffs": bs_vs_db_diffs})
 
 @login_required
 def member_activity_view(request):

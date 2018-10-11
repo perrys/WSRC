@@ -8,7 +8,6 @@ from django.shortcuts import redirect
 
 import wsrc.site.competitions.data_urls
 import wsrc.site.accounts.data_urls
-import wsrc.site.usermodel.data_urls
 from wsrc.site.usermodel.forms import SpaceTranslatingAuthenticationForm
 
 import wsrc.site.views
@@ -108,7 +107,6 @@ urlpatterns = [
     url(r'^data/facebook$', wsrc.site.views.facebook_view, name="facebook"),
     url(r'^data/bookings$', wsrc.site.views.BookingList.as_view()),
     url(r'^data/accounts/',  include(wsrc.site.accounts.data_urls)),
-    url(r'^data/memberlist/',  include(wsrc.site.usermodel.data_urls)),
     url(r'^data/auth/', wsrc.site.views.auth_view),
     url(r'^data/club_events/', wsrc.site.views.ClubEventList.as_view()),
     url(r'^data/activity_report', wsrc.site.usermodel.views.member_activity_view),                       
