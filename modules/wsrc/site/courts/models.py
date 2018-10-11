@@ -120,6 +120,10 @@ class BookingSystemEvent(models.Model):
         midnight_tomorrow = midnight_today + datetime.timedelta(days=1)
         return BookingSystemEvent.objects.filter(is_active=True, start_time__gte=cutoff_today, start_time__lt=midnight_tomorrow).order_by('start_time')
         
+    @classmethod
+    def get_all_bookings(cls, start_date):
+        return BookingSystemEvent.objects.filter(is_active=True, start_time__gte=start_date).order_by('start_time')
+
     def obfuscated_name(self):
         if self.event_type == "E":
             return self.name
