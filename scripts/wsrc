@@ -25,7 +25,7 @@ COMMITTEE_EMAIL_ADDRESS = "committee@wokingsquashclub.org"
 TOURNAMENTS_EMAIL_ADDRESS = "tournaments@wokingsquashclub.org"
 MEMBERSHIP_EMAIL_ADDRESS = "membership@wokingsquashclub.org"
 
-def manage_tournament_bookings(username, password):
+def manage_tournament_bookings():
 
     ADVANCE_BOOKING_DAYS = 10
     RELEASE_BOOKING_DAYS = 2
@@ -33,32 +33,35 @@ def manage_tournament_bookings(username, password):
     TARGET_DAYS          = [0,1,2,3] # monday - thursday
     TARGET_DESCRIPTION   = "Unreserved - will be released 2 days in advance"
     TARGET_NAME          = "Tournament Matches"
+    TARGET_DURATION      = datetime.timedelta(minutes=45)
 
-    today = datetime.date.today()
+
+    from django.utils import timezone
+    today = timezone.localtime().replace(hour=0, minute=0, second=0, microsecond=0)
+
     target_date = today + datetime.timedelta(days=ADVANCE_BOOKING_DAYS)
-    from wsrc.external_sites.booking_manager import BookingSystemSession
-    session = BookingSystemSession(username, password)
+    import wsrc.site.courts.models as court_models;
 
     if target_date.weekday() in TARGET_DAYS:
         for time, court in TARGET_SLOTS:
             try:
-                date_and_time = datetime.datetime.combine(target_date, time)
-                LOGGER.info("Booking tournament court @ {0}".format(date_and_time.isoformat()))
-                session.make_admin_booking(target_date, time, 45, court, TARGET_NAME, TARGET_DESCRIPTION, "E")
+                LOGGER.info("Booking tournament court {0} @ {1:%Y-%m-%d} {2:%H:%M}".format(court, target_date, time))
+                book_courts(target_date, [time], TARGET_DURATION, [court], TARGET_NAME, TARGET_DESCRIPTION, "E")
             except Exception:
                 LOGGER.exception("unable to book court")
 
-    booking_events, start_date = session.get_booked_courts(today)
+    booking_events = court_models.BookingSystemEvent.get_all_bookings(start_date=today)
     for evt in booking_events:
-        ndays = (evt.start_time.date() - today).days
+        ndays = (evt.start_time.date() - today.date()).days
         if ndays > 0 and ndays <= RELEASE_BOOKING_DAYS:
             if evt.name.lower().find("tournament") >= 0:
                 if evt.description.lower().find("unreserved") >= 0:
-                    LOGGER.info("deleting booking id {0}, time: {1}, name: \"{2}\", description: \"{3}\"".format(evt.event_id,
+                    LOGGER.info("deleting booking id {0}, time: {1}, name: \"{2}\", description: \"{3}\"".format(evt.pk,
                                                                                                                  evt.start_time.isoformat(" "),
                                                                                                                  evt.name,
                                                                                                                  evt.description))
-                    session.delete_booking(evt.event_id)
+                    evt.is_active = False
+                    evt.save()
 
 def email_report_overdue_tournament_matches():
     import wsrc.site.competitions.tournament as tournament_utils
@@ -328,10 +331,11 @@ def download_met_office_data():
     fetch_and_store_distance_weigted_average_observations(settings.CLUB_LOCATION, *obs_locations)
 
 @transaction.atomic
-def book_courts(date, courts, times, duration, event_type, name, description):
+def book_courts(date, times, duration, courts, name, description, event_type):
     import wsrc.site.courts.models as court_models;
     import django.contrib.auth.models as auth_models;
     admin_user = auth_models.User.objects.get(username="admin")
+    timezone = timezone_utils.UK_TZINFO
 
     LOGGER.info("booking %d court(s), name=%s", len(courts), name)
     for court,time in zip(courts, times):
@@ -376,9 +380,9 @@ if __name__ == "__main__":
 
         def usage():
             prog = os.path.basename(sys.argv[0])
-            sys.stderr.write("USAGE: %s %s --username=<user> --password=<pw>\n" % (prog, sys.argv[1]))
+            sys.stderr.write("USAGE: %s %s\n" % (prog, sys.argv[1]))
         try:
-            optlist, args = getopt.getopt(args, "u:p:h", ["username=", "password="])
+            optlist, args = getopt.getopt(args, "h", [])
         except getopt.GetoptError as err:
             sys.stderr.write(str(err) + "\n")
             usage()
@@ -386,21 +390,13 @@ if __name__ == "__main__":
 
         username = password = None
         for opt,val in optlist:
-            if opt in ["-u", "--username"]:
-                username = val
-            elif opt in ["-p", "--password"]:
-                password = val
-            elif opt in ["-h"]:
+            if opt in ["-h"]:
                 usage()
                 sys.exit(0)
             else:
                 assert False, "unhandled option"
 
-        if username is None or password is None:
-            usage()
-            sys.exit(1)
-
-        manage_tournament_bookings(username, password)
+        manage_tournament_bookings()
 
     elif command in ("send-tournament-reminders"):
         def usage():
@@ -491,7 +487,6 @@ if __name__ == "__main__":
             sys.stderr.write(str(err) + "\n")
             usage()
             sys.exit(2)
-        timezone = timezone_utils.UK_TZINFO
         date = None
         duration = None
         courts = []
@@ -519,7 +514,7 @@ if __name__ == "__main__":
         if name is None or date is None or duration is None or len(courts) != len(times):
             usage()
             sys.exit(1)
-        book_courts(date, courts, times, duration, booking_type, name, description)
+        book_courts(date, times, duration, courts, name, description, booking_type)
                 
 
     elif command in ("purge-personal-data"):
