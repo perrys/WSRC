@@ -134,7 +134,7 @@ def create_new_season_subscription(modeladmin, request, queryset):
 class SubscriptionAdmin(CSVModelAdmin):
     "Subscription admin - heavilly used for subs management"
     inlines = (SubscriptionPaymentInline,)
-    list_display = ('ordered_name', 'email', 'season', 'linked_membership_type', 'pro_rata_date',\
+    list_display = ('ordered_name', 'email', 'season', 'linked_membership_type', 'date_joined_date', 'pro_rata_date',\
                     'payment_frequency', 'pro_rata_cost', 'payments_count', 'total_payments',\
                     'due_amount', 'signed_off', "comment")
     list_filter = (SeasonListFilter, 'signed_off', 'payment_frequency', 'subscription_type', )
@@ -152,6 +152,11 @@ class SubscriptionAdmin(CSVModelAdmin):
         return obj.player.user.email
     email.admin_order_field = "player__user__email"
     email.short_description = "Email"
+
+    def date_joined_date(self, obj):
+        return obj.player.user.date_joined.date()
+    date_joined_date.short_description = "Joined"
+    date_joined_date.admin_order_field = 'player__user__date_joined'
 
     def ordered_name(self, obj):
         return obj.player.get_ordered_name()

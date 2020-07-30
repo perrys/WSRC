@@ -23,6 +23,9 @@ from wsrc.site.models import PageContent, EmailContent, MaintenanceIssue,\
     Suggestion, ClubEvent, CommitteeMeetingMinutes, GenericPDFDocument, Image,\
     NavigationLink, NavigationNode, OAuthAccess
 
+from django.contrib.admin.models import LogEntry
+admin.site.register(LogEntry)
+
 from wsrc.utils.form_utils import CachingModelChoiceField, \
     get_related_field_limited_queryset, PrefetchRelatedQuerysetMixin
 

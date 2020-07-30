@@ -122,6 +122,7 @@ admin.site.register(comp_models.Competition, CompetitionAdmin)
 
 class CompetitionRoundAdmin(CSVModelAdmin):
     list_display = ("competition", "round", "end_date")
+    list_filter = ('competition__group', 'competition__name')
     form = CompetitionRoundForm
     def get_queryset(self, request):
         qs = super(CompetitionRoundAdmin, self).get_queryset(request)

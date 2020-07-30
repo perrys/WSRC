@@ -305,7 +305,7 @@ def facebook_view(request):
     oauth_record = get_object_or_404(OAuthAccess, name="Facebook")
 
     def fb_get():
-        url = oauth_record.auth_server_uri + "/" + str(WSRC_FACEBOOK_PAGE_ID) + "/feed"
+        url = oauth_record.auth_server_uri + "/v3.2/" + str(WSRC_FACEBOOK_PAGE_ID) + "/feed"
         params = {
             # no longer have to pre-request an access token, can just provide ids from server-side call:
             "access_token": "{id}|{secret}".format(id=oauth_record.client_id, secret=oauth_record.client_secret)
@@ -729,7 +729,8 @@ def auth_view(request):
 
 class MarkdownField(serializers.Field):
     def to_representation(self, value):
-        return markdown.markdown(value)
+        return markdown.markdown(value, extensions=["markdown.extensions.attr_list"])
+
 
 class PictureField(serializers.Field):
     def to_representation(self, value):

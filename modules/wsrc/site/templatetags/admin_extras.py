@@ -37,6 +37,7 @@ def result_list_csv(cl):
     buf = StringIO.StringIO()
     writer = csv.writer(buf)
     writer.writerow([header["text"].encode("utf-8") for header in headers[1:]])
+    empty_value_display = ""
     for result in cl.result_list:
         row = []
         for field_index, field_name in enumerate(cl.list_display):

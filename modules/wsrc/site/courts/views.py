@@ -33,7 +33,7 @@ from django.urls import reverse as reverse_url, reverse_lazy
 from django.db import transaction
 from django.http import HttpResponse, HttpResponsePermanentRedirect, HttpResponseNotFound
 from django.db.models import Q
-from django.shortcuts import redirect
+from django.shortcuts import redirect, get_object_or_404
 from django.template.response import TemplateResponse
 from django.utils.decorators import method_decorator
 from django.views.decorators.http import require_safe
@@ -125,7 +125,7 @@ def get_bookings(date, ignore_cutoff=False):
 def get_booking_form_data(id):
     if using_local_database():
         now = timezone.localtime(timezone.now())
-        booking_data = BookingSystemEvent.objects.get(pk=id, is_active=True)
+        booking_data = get_object_or_404(BookingSystemEvent, pk=id, is_active=True)
         booking_data = BookingForm.transform_booking_model(booking_data)
         return now, booking_data 
     params = {
@@ -182,8 +182,8 @@ def update_booking(user, id, booking_form):
         raise SuspiciousOperation()
     
     if using_local_database():
-        model = BookingSystemEvent.objects.get(pk=id, is_active=True)
-        if not model.is_writable_by_user(user):
+        model = get_object_or_404(BookingSystemEvent, pk=id, is_active=True)
+        if not (model.is_writable_by_user(user) or has_admin_permission(user, False)):
             raise PermissionDenied()
         slot = booking_form.cleaned_data
         model.name =  slot["name"]
@@ -218,8 +218,8 @@ def delete_booking(user, id):
         raise SuspiciousOperation()
 
     if using_local_database():
-        model = BookingSystemEvent.objects.get(pk=id, is_active=True)
-        if not model.is_writable_by_user(user):
+        model = get_object_or_404(BookingSystemEvent, pk=id, is_active=True)
+        if not (model.is_writable_by_user(user) or has_admin_permission(user, False)):
             raise PermissionDenied()
         start_time = model.start_time.astimezone(timezones.UK_TZINFO)
         cal_invite_data = {
@@ -252,7 +252,7 @@ def delete_booking(user, id):
 
 def set_noshow(user, id, is_noshow):
     if using_local_database():
-        model = BookingSystemEvent.objects.get(pk=id, is_active=True)
+        model = get_object_or_404(BookingSystemEvent, pk=id, is_active=True)
         now = timezone.localtime(timezone.now())
         if is_noshow:
             if model.no_show == True:
@@ -710,7 +710,7 @@ def calendar_invite_view(request, id):
         if form.is_valid():
             try:
                 invitees = []
-                for i in range(1,4):
+                for i in range(1,5):
                     user_id = form.cleaned_data.get("invitee_{i}".format(i=i))
                     if user_id is not None and len(user_id) > 0:
                         invitees.append(User.objects.get(pk=user_id))

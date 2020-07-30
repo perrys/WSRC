@@ -831,7 +831,7 @@ def bracket_admin_view(request, year=None, name=None):
 
     competition = None
     comp_data = '{}'
-    comps = Competition.objects.filter(group__competition_type.is_knockout_comp).select_related("group")\
+    comps = Competition.objects.filter(group__competition_type__is_knockout_comp=True).select_related("group")\
                                                                            .prefetch_related("entrant_set__player1__user", \
                                                                            "entrant_set__player2__user")
     if name is not None:

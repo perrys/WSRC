@@ -122,7 +122,7 @@
     if (! is_set)
       settings.dataType= "json"
 
-    var url = "{% url 'booking_system_user' %}"
+    var url = ""
     if (is_set) url += `${input.val()}`
     spinner.start()
     $.ajax(url, settings)

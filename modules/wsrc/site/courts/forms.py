@@ -185,7 +185,7 @@ class BookingForm(forms.Form):
         mapping = {"start_time": lambda(s): s.start_time.astimezone(timezones.UK_TZINFO).time(),
                    "created_by": lambda(s): s.created_by_user.get_full_name() if s.created_by_user is not None else "",
                    "created_by_id": lambda(s): s.created_by_user.pk if s.created_by_user is not None else None,
-                   "created_ts": lambda(s): s.created_time.astimezone(timezones.UK_TZINFO),
+                   "created_ts": lambda(s): s.created_time.astimezone(timezones.UK_TZINFO) if s.created_time is not None else "",
                    "timestamp": lambda(s): s.last_updated.astimezone(timezones.UK_TZINFO),
         }
         for k, v in mapping.items():
@@ -195,7 +195,8 @@ class BookingForm(forms.Form):
             slot[k] = slot[k].strftime(fmts[0])
         format_date1("start_time", ["%H:%M"])
         format_date1("date", make_date_formats())
-        format_date1("created_ts", make_datetime_formats())
+        if entry.created_time is not None:
+            format_date1("created_ts", make_datetime_formats())
         format_date1("timestamp", make_datetime_formats())
         dur = slot["duration"]
         if not isinstance(dur, datetime.timedelta):

@@ -11,6 +11,8 @@ def dotted_lookup(record, name):
         item = record = getattr(record, tok)
         if hasattr(item, "__call__"):
             item = record = item()
+        if item is None:
+            break
     return item
 
 class ModelRecordWrapper(object):

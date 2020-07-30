@@ -308,6 +308,7 @@ class MailChimpSession:
             # subs type and entitlement groups:
             members[sub.player.id] = user = EmailUser(sub.player)
             user.add_attribute("Subscription", sub.subscription_type.name)
+            user.add_attribute("Gender", sub.player.get_gender_display())
             for group in sub.player.user.groups.all():
                 user.add_attribute("Roles", group.name)
 
@@ -319,7 +320,7 @@ class MailChimpSession:
                     user.add_attribute("Competitions", comp_name)
 
         league_players = CompetitionGroup.get_comp_entrants("wsrc_boxes")
-        tournament_players = CompetitionGroup.get_comp_entrants("wsrc_tournaments", "wsrc_qualifiers")
+        tournament_players = CompetitionGroup.get_comp_entrants("Tournaments")
         attribute(league_players, "Squash Leagues")
         attribute(tournament_players, "Tournaments")
         return members

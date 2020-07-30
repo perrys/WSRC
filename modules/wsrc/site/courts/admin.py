@@ -102,6 +102,7 @@ class BookingAdmin(CSVModelAdmin):
     date_hierarchy = "start_time"
     list_filter = ("is_active", "court", "event_type", "no_show")
     list_select_related = ("created_by__user",)
+    save_as = True
     inlines = (BookingAuditInline,)
     def get_queryset(self, request):
         qs = super(BookingAdmin, self).get_queryset(request)

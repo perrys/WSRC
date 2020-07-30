@@ -9,7 +9,7 @@ from wsrc.utils.upload_utils import UploadFileForm, upload_generator
 
 from django import forms
 from django.contrib.auth.decorators import user_passes_test
-from django.core.exceptions import PermissionDenied
+from django.core.exceptions import PermissionDenied, SuspiciousOperation
 from django.db import transaction
 from django.shortcuts import render
 from django.views.generic.list import ListView

@@ -64,7 +64,7 @@ class TransactionAdmin(PrefetchRelatedQuerysetMixin, CSVModelAdmin):
                     "bank_memo", "category", "subscription", "comment")
     list_editable = ("comment",)
     list_filter = ('account', 'category')
-    list_per_page = 100
+    list_per_page = 300
     list_select_related = True
     prefetch_related_fields = ('subs_payments',)
     search_fields = ('bank_memo', 'comment')

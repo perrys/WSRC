@@ -13,13 +13,20 @@
 # You should have received a copy of the GNU General Public License
 # along with WSRC.  If not, see <http://www.gnu.org/licenses/>.
 
+import logging
+import re
+
 from wsrc.site.competitions.models import CompetitionGroup, Competition, Entrant, Match
+from wsrc.site.usermodel.models import Player
 from wsrc.utils.html_table import Table, Cell, SpanningCell
 from django.db import transaction
 from django.db.models import Q
 
 import wsrc.utils.bracket
 import lxml.etree as etree
+
+LOGGER = logging.getLogger(__name__)
+LOGGER.setLevel(logging.INFO)
 
 NON_BRK_SPACE     = u'\xa0'
 
@@ -249,9 +256,9 @@ def render_tournament(competition):
     return etree.tostring(table.toHtml(), encoding='UTF-8', method='html')
 
 def get_current_competitions():
-    tournament_group = CompetitionGroup.objects.filter(comp_type="wsrc_tournaments").get(active=True)
+    tournament_group = CompetitionGroup.objects.filter(competition_type__name="tournaments").get(active=True)
     comps = [c for c in tournament_group.competition_set.all()]
-    tournament_groups = CompetitionGroup.objects.filter(comp_type="wsrc_qualifiers", active=True)
+    tournament_groups = CompetitionGroup.objects.filter(competition_type__name="tournament_qualifiers", active=True)
     for group in tournament_groups:
         comps.extend([c for c in group.competition_set.all()])
     return comps
@@ -260,7 +267,7 @@ def get_unplayed_matches(comp):
     def exclude_played_matches(queryset):
         predicate = (Q(team1_score1__isnull=True) | Q(team2_score1__isnull=True)) & Q(walkover__isnull=True)
         return queryset.filter(predicate)
-    if comp.group.comp_type in ("wsrc_qualifiers", "wsrc_boxes"):
+    if comp.group.competition_type.name in ("tournament_qualifiers", "squash_boxes"):
         unplayed_matches = []
         entrants = comp.entrant_set.all()
         nentrants = len(entrants)
@@ -312,8 +319,10 @@ def other_team_number(team_number):
 def get_or_create_next_match(competition, slot_id, winning_team):
     is_bottomSlot = slot_id & 1
     match_id = slot_id >> 1
+    was_added = False
     try:
         match = competition.match_set.get(competition_match_id=match_id)
+        was_added = True
     except Match.DoesNotExist:
         match = competition.match_set.create(competition_match_id=match_id)
     if is_bottomSlot:
@@ -321,6 +330,7 @@ def get_or_create_next_match(competition, slot_id, winning_team):
     else:
         match.team1 = winning_team
     match.save()
+    LOGGER.info("%s match %s, opponent(s): %s", (was_added and "Creating" or "Updating"), match_id, match.get_teams_display())    
     return match
 
 @transaction.atomic
@@ -345,6 +355,63 @@ def reset(comp_id, entrants):
         get_or_create_next_match(competition, slot, entrant)
 
 @transaction.atomic
+def reset_from_bracket(comp_id, entrant_name_position_list):
+    competition = Competition.objects.get(pk=comp_id)
+    all_players = Player.objects.filter(user__is_active=True).select_related("user")
+    ordering = 1000
+    for e in competition.entrant_set.all():
+        e.delete()
+    for m in competition.match_set.all():
+        m.delete()
+    slots = []
+    slot_map = dict()
+    entrants = []
+    matcher = re.compile(".*\((-?\d+)\) *")
+    LOGGER.info("Reseting entrants for \"%s\", number of entrants: %s", competition, len(entrant_name_position_list))    
+    for (name, position) in entrant_name_position_list:
+        players = name.split(" & ")
+        players = [player.split() for player in players] # to fistname, lastname pairs
+        kwargs = {"competition": competition}  
+        round_number, ordinal, seed = position
+        for i, p in enumerate(players):
+            try:
+                player = all_players.get(user__first_name=p[0], user__last_name=p[1])
+            except Player.DoesNotExist:
+                if p[0][1] == ".":
+                    first_initial = p[0][0]
+                    try:
+                        player = all_players.get(user__first_name__startswith=first_initial, user__last_name=p[1])
+                    except Player.DoesNotExist:
+                        raise Exception("Unable to find player with first initial \"{0}\" and last name \"{1}\"".format(first_initial, p[1]))
+                else:
+                    raise Exception("Unable to find player with first name \"{0}\" and last name \"{1}\"".format(*p))
+            kwargs["player{0}".format(i+1)] = player
+            if seed is not None:
+                kwargs["ordering"] = int(seed)
+                kwargs["seeded"] = True
+            else:
+                kwargs["ordering"] = ordering
+                ordering += 1
+            match = matcher.match(name)
+            if match is not None:
+                kwargs["handicap"] = int(match.groups()[0])
+        entrant = Entrant.objects.create(**kwargs)
+        entrant.save()
+        entrants.append(entrant)
+        slot = (1<<(round_number-1)) + (ordinal-1)
+        slot <<= 1
+        count = slot_map.setdefault(slot, 0)
+        if count == 2:
+            raise Exception("Already have two opponents for round {0}, ordinal {1}".format(round_number, ordinal))
+        elif count == 1:
+            slots.append(slot+1)
+        else:
+            slots.append(slot)
+        slot_map[slot] = count+1
+    for slot,entrant in zip(slots, entrants):
+        get_or_create_next_match(competition, slot, entrant)
+
+@transaction.atomic
 def submit_match_winner(match, winning_team):
     match.save()
     get_or_create_next_match(match.competition, match.competition_match_id, winning_team)
@@ -353,6 +420,7 @@ def submit_match_winner(match, winning_team):
 @transaction.atomic
 def set_rounds(comp_id, rounds):
     competition = Competition.objects.get(pk=comp_id)
+    LOGGER.info("Reseting tournament round dates for \"%s\" to: %s", competition, rounds)
     for r in competition.rounds.all():
         r.delete()
     for r in rounds:
