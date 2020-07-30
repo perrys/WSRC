@@ -29,9 +29,10 @@ utils =
       x = event.pageX - winPageX;
       y = event.pageY - winPageY;
 
-    return
+    return {
       x: x
       y: y
+    }
 
 class WSRC_court_booking
 
