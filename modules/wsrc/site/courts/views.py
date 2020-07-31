@@ -312,9 +312,18 @@ def create_booking_cell_content(slot, court, date, is_admin_view=False):
     result = "<div><div class='slot_time'>{start:%H:%M}&ndash;{end:%H:%M}</div>".format(**locals())
     if "id" in slot:
         url_name = 'booking_admin' if is_admin_view else 'booking'
-        result += u"<span class='booking'><a href='{path}/{id}'>{name}</a></span>".format(path=reverse_url(url_name),
+        opponent = slot["opponent"]
+        content = slot['name']
+        if slot["type"] == "I":
+            if opponent is None:
+                content += "<span class='no_opponent label label-danger'>No Opponent</span>"
+            elif opponent == "Solo":
+                content += " [Solo&nbsp;Practice]"
+            else:
+                content += " vs " + opponent
+        result += u"<span class='booking'><a href='{path}/{id}'>{content}</a></span>".format(path=reverse_url(url_name),
                                                                                           id=slot['id'],
-                                                                                          name=slot['name'])
+                                                                                          content=content)
         if slot.get("no_show"):
             result += '<div class="noshow label label-danger">NO SHOW</div>'
 
@@ -803,6 +812,7 @@ def agenda_view(request):
         filter_created_by = True
 
     name_clause = Q(name__icontains=name)
+    name_clause |= Q(opponent__icontains=name)
     name_clause |= Q(description__icontains=name)
     if filter_created_by:
         myself = Player.get_player_for_user(request.user)
