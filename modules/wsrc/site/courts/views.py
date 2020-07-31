@@ -194,6 +194,7 @@ def update_booking(user, event_id, booking_form):
             raise PermissionDenied()
         slot = booking_form.cleaned_data
         model.name = slot["name"]
+        model.opponent = slot["opponent"]
         model.description = slot["description"]
         model.event_type = slot["booking_type"]
         model.last_updated_by = user
@@ -220,12 +221,12 @@ def update_booking(user, event_id, booking_form):
 
 
 @transaction.atomic
-def delete_booking(user, id):
-    if id is None:
+def delete_booking(user, event_id):
+    if event_id is None:
         raise SuspiciousOperation()
 
     if using_local_database():
-        model = get_object_or_404(BookingSystemEvent, pk=id, is_active=True)
+        model = get_object_or_404(BookingSystemEvent, pk=event_id, is_active=True)
         if not (model.is_writable_by_user(user) or has_admin_permission(user, False)):
             raise PermissionDenied()
         start_time = model.start_time.astimezone(timezones.UK_TZINFO)
@@ -249,12 +250,12 @@ def delete_booking(user, id):
     if booking_user_id is None:
         raise SuspiciousOperation()
     params = {
-        "id": id,
+        "id": event_id,
         "method": "DELETE"
     }
     timestamp, data = auth_query_booking_system(booking_user_id, query_params=params)
     data = BookingForm.transform_booking_system_deleted_entry(data)
-    data["booking_id"] = id
+    data["booking_id"] = event_id
     return timestamp, data
 
 
@@ -421,7 +422,8 @@ def day_view(request, date=None, is_admin_view=False):
     player = Player.get_player_for_user(request.user)
     booking_user_id = None if player is None else player.booking_system_id
     server_time, bookings = get_bookings(date, ignore_cutoff=is_admin_view)
-    allow_booking_shortcut = booking_user_id is not None
+    allow_booking_shortcut = settings.BOOKING_SYSTEM_SETTINGS.get("allow_booking_shortcut") and \
+                             booking_user_id is not None
     if is_admin_view:
         allow_booking_shortcut = False
     table_html = render_day_table(bookings, date, server_time, allow_booking_shortcut, is_admin_view)
@@ -471,21 +473,28 @@ def edit_entry_view(request, event_id=None, is_admin_view=False):
     if method == "POST":
         booking_form = BookingForm(request.POST)
         if booking_form.is_valid():
-            try:
-                server_time, new_booking = create_booking(request.user, booking_form.cleaned_data, is_admin_view)
-                booking_data = dict(booking_form.cleaned_data)
-                event_id = booking_data["booking_id"] = new_booking.get("id")
-                send_calendar_invite(request, booking_data, [request.user], "create")
-                return redirect(reverse_url(reverse_view, args=[booking_form.cleaned_data["date"]]))
-            except ValidationError, e:
-                booking_form.add_error(None, ", ".join(e.messages))
-                response_code = httplib.CONFLICT
-            except RemoteException, e:
-                booking_form.add_error(None, str(e))
-                response_code = httplib.CONFLICT
-            except EmailingException, e:
-                booking_form.add_error(None, str(e))
-                response_code = httplib.SERVICE_UNAVAILABLE
+            opponent = booking_form.cleaned_data["opponent"]
+            if settings.BOOKING_SYSTEM_SETTINGS.get("require_opponent") and \
+                    opponent is None or len(opponent) == 0:
+                booking_form.add_error("opponent", "Please enter the name of your opponent, or 'Solo Practice'")
+                booking_form.is_retry = True
+                response_code = httplib.FORBIDDEN
+            else:
+                try:
+                    server_time, new_booking = create_booking(request.user, booking_form.cleaned_data, is_admin_view)
+                    booking_data = dict(booking_form.cleaned_data)
+                    event_id = booking_data["booking_id"] = new_booking.get("id")
+                    send_calendar_invite(request, booking_data, [request.user], "create")
+                    return redirect(reverse_url(reverse_view, args=[booking_form.cleaned_data["date"]]))
+                except ValidationError, e:
+                    booking_form.add_error(None, ", ".join(e.messages))
+                    response_code = httplib.CONFLICT
+                except RemoteException, e:
+                    booking_form.add_error(None, str(e))
+                    response_code = httplib.CONFLICT
+                except EmailingException, e:
+                    booking_form.add_error(None, str(e))
+                    response_code = httplib.SERVICE_UNAVAILABLE
 
     elif method == "DELETE":
         booking_form = BookingForm(request.POST)
@@ -550,6 +559,7 @@ def edit_entry_view(request, event_id=None, is_admin_view=False):
             else:
                 initial_data = {
                     'name': request.user.get_full_name(),
+                    'opponent': None,
                     'booking_type': 'I'
                 }
 

@@ -37,6 +37,7 @@ class BookingSystemEvent(models.Model):
     end_time = models.DateTimeField()
     court = models.SmallIntegerField()
     name = models.CharField(max_length=64)
+    opponent = models.CharField(max_length=64, null=True, blank=False)
     description = models.CharField(max_length=128, blank=True, null=True)
     event_type = models.CharField(max_length=1, choices=EVENT_TYPES)
     event_id = models.IntegerField(blank=True, null=True)

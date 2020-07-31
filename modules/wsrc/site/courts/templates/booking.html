@@ -28,7 +28,7 @@
 
 <div class="buttonset">
 {% if mode ==  'create' %}
- {% if booking_form.is_valid %}
+ {% if booking_form.is_valid or booking_form.is_retry %}
  <button class="btn btn-success" type="submit"><span class="glyphicon glyphicon-ok"></span>&nbsp;Book this Court</button>
  {% endif %}
 {% else %}

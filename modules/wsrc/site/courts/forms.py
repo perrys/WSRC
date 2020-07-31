@@ -27,7 +27,7 @@ from django.utils import timezone
 
 import wsrc.site.settings.settings as settings
 from wsrc.site.courts.models import DayOfWeek, EventFilter, CondensationReport, BookingSystemEvent
-from wsrc.site.usermodel.models import Player
+from wsrc.site.usermodel.models import Player, Subscription
 from wsrc.utils import timezones
 from wsrc.utils.form_utils import make_readonly_widget, LabeledSelect, CachingModelMultipleChoiceField, \
     add_formfield_attrs
@@ -46,10 +46,16 @@ def using_local_database():
     return hasattr(settings, "BOOKING_SYSTEM_SETTINGS")
 
 
+def get_opponent_names():
+    names = [(kv[1], kv[1]) for kv in get_active_user_choices() if kv[0] is not None]
+    return names + [("Solo", "[Solo Practice]")]
+
+
 def get_active_user_choices():
-    return [(None, '')] + [(u.id, u.get_full_name()) for u in
-                           User.objects.filter(is_active=True).filter(player__isnull=False).order_by('first_name',
-                                                                                                     'last_name')]
+    subscriptions = Subscription.objects.filter(player__user__is_active=True, season__has_ended=False) \
+        .order_by("player__user__first_name", "player__user__last_name")
+    users = [s.player.user for s in subscriptions]
+    return [(None, '')] + [(u.id, u.get_full_name()) for u in users]
 
 
 def validate_15_minute_multiple(value):
@@ -106,7 +112,12 @@ class HourAndMinuteDurationField(BaseTemporalField):
 
 class BookingForm(forms.Form):
     name = forms.CharField(max_length=80)
-    description = forms.CharField(required=False, widget=forms.TextInput(attrs={'autofocus': 'autofocus'}))
+    opponent = forms.ChoiceField(choices=[(None, "")] + get_opponent_names(),
+                                 widget=LabeledSelect(default_label="(please select)", disable_default=True,
+                                                      attrs={'autofocus': True}),
+                                 required=False)
+
+    description = forms.CharField(required=False, widget=forms.TextInput)
 
     date = forms.DateField(input_formats=make_date_formats())
     start_time = forms.TimeField(label="Time", input_formats=['%H:%M'], validators=[validate_quarter_hour],
@@ -129,6 +140,10 @@ class BookingForm(forms.Form):
     created_by_id = forms.IntegerField(required=False, widget=forms.HiddenInput())
     token = forms.CharField(required=False, widget=forms.HiddenInput())
     no_show = forms.BooleanField(required=False, widget=forms.HiddenInput())
+
+    def __init__(self, *args, **kwargs):
+        super(BookingForm, self).__init__(*args, **kwargs)
+        self.is_retry = False
 
     def set_admin(self):
         attrs = self.fields["description"].widget.attrs
@@ -156,7 +171,7 @@ class BookingForm(forms.Form):
         start_time = cleaned_data["start_time"].replace(tzinfo=timezones.UK_TZINFO)
         slot["start_time"] = datetime.datetime.combine(cleaned_data["date"], start_time)
         slot["end_time"] = slot["start_time"] + cleaned_data["duration"]
-        mapping = {"court": None, "name": None, "description": None, "event_type": "booking_type",
+        mapping = {"court": None, "name": None, "opponent": None, "description": None, "event_type": "booking_type",
                    "created_time": "created_ts"}
         for k, v in mapping.items():
             if v is None: v = k
@@ -200,7 +215,7 @@ class BookingForm(forms.Form):
     @staticmethod
     def transform_booking_model(entry):
         slot = dict()
-        mapping = {"name": None, "description": None, "date": None, "duration": None, "court": None,
+        mapping = {"name": None, "opponent": None, "description": None, "date": None, "duration": None, "court": None,
                    "booking_type": "event_type", "booking_id": "pk",
                    "no_show": None, "token": None}
         for k, v in mapping.items():
@@ -340,10 +355,13 @@ class SplitDateTimeSelectorWidget(forms.SplitDateTimeWidget):
 
 
 class CondensationReportForm(forms.ModelForm):
-    time = forms.SplitDateTimeField(widget=SplitDateTimeSelectorWidget(
-        time_choices=[(t.strftime("%H:%M:%S"), t.strftime("%-I:%M %P")) for t in ALL_TIMES]),
-                                    validators=[validate_quarter_hour, validate_not_future],
-                                    label="Observation Time")
+    time = forms.SplitDateTimeField(
+        widget=SplitDateTimeSelectorWidget(
+            time_choices=[(t.strftime("%H:%M:%S"), t.strftime("%-I:%M %P")) for t in ALL_TIMES]
+        ),
+        validators=[validate_quarter_hour, validate_not_future],
+        label="Observation Time"
+    )
 
     def __init__(self, *args, **kwargs):
         if "data" not in kwargs:

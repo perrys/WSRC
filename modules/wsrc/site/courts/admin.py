@@ -114,8 +114,8 @@ class BookingAdmin(CSVModelAdmin):
     form = BookingForm
     search_fields = ('name', 'description')
     list_display = (
-        "name", "is_active", "start_time", "end_time", "court", "event_type", "description", "created_by_user",
-        "created_time", "last_updated_by", "last_updated", "used")
+        "name", "opponent", "is_active", "start_time", "end_time", "court", "event_type", "description",
+        "created_by_user", "created_time", "last_updated_by", "last_updated", "used")
     date_hierarchy = "start_time"
     list_filter = ("is_active", "court", "event_type", "no_show")
     list_select_related = ("created_by__user",)
