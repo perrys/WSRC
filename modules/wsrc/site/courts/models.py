@@ -13,18 +13,19 @@
 # You should have received a copy of the GNU General Public License
 # along with WSRC.  If not, see <http://www.gnu.org/licenses/>.
 
-import hmac
 import datetime
+import hmac
 
+from django.contrib.auth import models as auth_models
 from django.core.exceptions import ValidationError
 from django.db import models
 from django.utils import timezone
-from django.contrib.auth import models as auth_models
 
 import wsrc.site.settings
 import wsrc.site.usermodel.models as user_models
 from wsrc.utils.text import obfuscate
 from wsrc.utils.timezones import UK_TZINFO, nearest_last_quarter_hour
+
 
 class BookingSystemEvent(models.Model):
     EVENT_TYPES = (
@@ -42,7 +43,8 @@ class BookingSystemEvent(models.Model):
     no_show = models.BooleanField(default=False)
     no_show_reporter = models.ForeignKey(auth_models.User, blank=True, null=True, limit_choices_to={"is_active": True},
                                          on_delete=models.SET_NULL, related_name="none+")
-    created_by = models.ForeignKey(user_models.Player, blank=True, null=True, limit_choices_to={"user__is_active": True},
+    created_by = models.ForeignKey(user_models.Player, blank=True, null=True,
+                                   limit_choices_to={"user__is_active": True},
                                    on_delete=models.SET_NULL)
     created_by_user = models.ForeignKey(auth_models.User, blank=True, null=True, limit_choices_to={"is_active": True},
                                         on_delete=models.SET_NULL, related_name="created_by")
@@ -50,9 +52,7 @@ class BookingSystemEvent(models.Model):
     last_updated = models.DateTimeField(auto_now=True)
     last_updated_by = models.ForeignKey(auth_models.User, blank=True, null=True, limit_choices_to={"is_active": True},
                                         on_delete=models.SET_NULL, related_name="last_updated_by")
-    
 
-    
     @classmethod
     def is_writable(cls, created_by_id, user):
         if user is None:
@@ -60,11 +60,11 @@ class BookingSystemEvent(models.Model):
         if user.is_superuser:
             return True
         return user.pk == created_by_id
-        
+
     def is_writable_by_user(self, user):
         created_by_id = self.created_by_user.pk if self.created_by_user is not None else None
         return self.is_writable(created_by_id, user)
-        
+
     @staticmethod
     def generate_hmac_token(start_time, court):
         msg = "{start_time:%Y-%m-%dT%H:%M}/{court}".format(**locals())
@@ -78,7 +78,7 @@ class BookingSystemEvent(models.Model):
         start_time = timezone.localtime(self.start_time)
         return BookingSystemEvent.generate_hmac_token(start_time, self.court)
 
-    @property 
+    @property
     def in_the_past(self):
         return self.start_time < timezone.now()
 
@@ -88,7 +88,7 @@ class BookingSystemEvent(models.Model):
     def start_minutes(self):
         start_time = timezone.localtime(self.start_time)
         return start_time.hour * 60 + start_time.minute
-        
+
     @property
     def duration_minutes(self):
         dt = self.end_time - self.start_time
@@ -108,18 +108,20 @@ class BookingSystemEvent(models.Model):
         if self.created_by is not None:
             return self.created_by.booking_system_id
         return None
-    
+
     @property
     def token(self):
         return self.hmac_token()
 
     @classmethod
     def get_bookings_for_date(cls, right_now=timezone.now(), earliest_hour=7):
-        midnight_today = right_now - datetime.timedelta(hours=right_now.hour, minutes=right_now.minute, seconds=right_now.second, microseconds = right_now.microsecond)
+        midnight_today = right_now - datetime.timedelta(hours=right_now.hour, minutes=right_now.minute,
+                                                        seconds=right_now.second, microseconds=right_now.microsecond)
         cutoff_today = midnight_today + datetime.timedelta(hours=earliest_hour)
         midnight_tomorrow = midnight_today + datetime.timedelta(days=1)
-        return BookingSystemEvent.objects.filter(is_active=True, start_time__gte=cutoff_today, start_time__lt=midnight_tomorrow).order_by('start_time')
-        
+        return BookingSystemEvent.objects.filter(is_active=True, start_time__gte=cutoff_today,
+                                                 start_time__lt=midnight_tomorrow).order_by('start_time')
+
     @classmethod
     def get_all_bookings(cls, start_date):
         return BookingSystemEvent.objects.filter(is_active=True, start_time__gte=start_date).order_by('start_time')
@@ -128,13 +130,13 @@ class BookingSystemEvent(models.Model):
         if self.event_type == "E":
             return self.name
         toks = self.name.split()
-        toks = [obfuscate(tok, to_initial=(len(toks)>1 and idx==0)) for idx,tok in enumerate(toks)]
+        toks = [obfuscate(tok, to_initial=(len(toks) > 1 and idx == 0)) for idx, tok in enumerate(toks)]
         return " ".join(toks)
 
     # emulate dictionary API used by JSON events returned from legacy booking system:
     def get(self, key):
         return self.__getitem__(key)
-    
+
     def __contains__(self, key):
         return self.__getitem__(key) is not None
 
@@ -163,7 +165,8 @@ class BookingSystemEvent(models.Model):
 
     def validate_unique(self, exclude):
         super(BookingSystemEvent, self).validate_unique(exclude)
-        overlap = BookingSystemEvent.objects.filter(is_active=True, court=self.court, start_time__lt=self.end_time, end_time__gt=self.start_time)
+        overlap = BookingSystemEvent.objects.filter(is_active=True, court=self.court, start_time__lt=self.end_time,
+                                                    end_time__gt=self.start_time)
         if self.pk:
             overlap = overlap.exclude(pk=self.pk)
         if overlap.count() > 0:
@@ -185,11 +188,13 @@ class BookingSystemEvent(models.Model):
         kwargs = dict(self.__dict__)
         kwargs["start_time"] = timezone.localtime(kwargs["start_time"])
         kwargs["end_time"] = timezone.localtime(kwargs["end_time"])
-        return prefix + u"Court {court} {start_time:%Y-%m-%d %H:%M}-{end_time:%H:%M} {name} \"{description}\"".format(**kwargs)
+        return prefix + u"Court {court} {start_time:%Y-%m-%d %H:%M}-{end_time:%H:%M} {name} \"{description}\"" \
+            .format(**kwargs)
 
     class Meta:
         verbose_name = "Booking"
         ordering = ("-start_time", "-court")
+
 
 class BookingSystemEventAuditEntry(models.Model):
     booking = models.ForeignKey(BookingSystemEvent)
@@ -213,17 +218,18 @@ class BookingSystemEventAuditEntry(models.Model):
             update_type = "U"
         else:
             update_type = "D"
-        self = cls(update_type=update_type, booking=obj, name=obj.name, description=obj.description, event_type=obj.event_type,
-                   updated=obj.last_updated, updated_by=obj.last_updated_by)
+        self = cls(update_type=update_type, booking=obj, name=obj.name, description=obj.description,
+                   event_type=obj.event_type, updated=obj.last_updated, updated_by=obj.last_updated_by)
         return self
 
     def __unicode__(self):
         return self.updated.isoformat()
-                                             
+
     class Meta:
         verbose_name = "Booking Audit Entry"
         verbose_name_plural = "Booking Audit Entries"
         ordering = ("-booking__pk", "-updated")
+
 
 class BookingOffence(models.Model):
     POINT_LIMIT = 11
@@ -255,13 +261,15 @@ class BookingOffence(models.Model):
     penalty_points = models.SmallIntegerField("Points")
     comment = models.TextField(blank=True, null=True)
     is_active = models.BooleanField("Active", default=True)
+
     def get_prebook_period(self):
         delta_t = self.start_time - self.creation_time
         if delta_t.days > 0:
-            return "{days} day{plural}".format(days=delta_t.days, plural = delta_t.days == 1 and "" or "s")
+            return "{days} day{plural}".format(days=delta_t.days, plural=delta_t.days == 1 and "" or "s")
         hours = delta_t.seconds / 3600
         mins = (delta_t.seconds % 3600) / 60
         return "{hours}h {mins}m".format(**locals())
+
     def __unicode__(self):
         ctx = {"offence": self.get_offence_display().lower(),
                "name": self.name,
@@ -303,14 +311,18 @@ class BookingOffence(models.Model):
         verbose_name_plural = "Booking Offences"
         ordering = ["-start_time"]
 
+
 class DayOfWeek(models.Model):
     name = models.CharField(max_length=3)
     ordinal = models.IntegerField(unique=True)
+
     def __unicode__(self):
         return self.name
+
     class Meta:
         verbose_name_plural = "DaysOfTheWeek"
         ordering = ["ordinal"]
+
 
 class EventFilter(models.Model):
     player = models.ForeignKey(user_models.Player, on_delete=models.CASCADE)
@@ -318,17 +330,20 @@ class EventFilter(models.Model):
     latest = models.TimeField()
     days = models.ManyToManyField(DayOfWeek, blank=True)
     notice_period_minutes = models.IntegerField("Minimum Notice")
+
     def clean(self):
         super(EventFilter, self).clean()
         if self.earliest >= self.latest:
             raise ValidationError("Earliest must be prior to latest.")
-        
+
     def __unicode__(self):
-        return "EventFilter <%s %s-%s [%s] notice: %s" %\
-            (self.player.user.username, self.earliest, self.latest,\
-             ",".join([str(d) for d in self.days.all()]), self.notice_period_minutes)
+        return "EventFilter <%s %s-%s [%s] notice: %s" % \
+               (self.player.user.username, self.earliest, self.latest,
+                ",".join([str(d) for d in self.days.all()]), self.notice_period_minutes)
+
     class Meta:
         verbose_name = "Cancellation Notifier"
+
 
 class ClimateMeasurement(models.Model):
     location = models.CharField(max_length=64)
@@ -344,16 +359,19 @@ class ClimateMeasurement(models.Model):
 
     def temperature_display(self):
         return u'{0:.1f} \u00B1 {1:.1f}'.format(self.temperature, self.temperature_error)
+
     temperature_display.short_description = u"Temperature (\u00B0C)"
     temperature_display.admin_order_field = "temperature"
-    
+
     def dew_point_display(self):
         return u'{0:.1f} \u00B1 {1:.1f}'.format(self.dew_point, self.dew_point_error)
+
     dew_point_display.short_description = u"Dew Point (\u00B0C)"
     dew_point_display.admin_order_field = "dew_point"
-    
+
     def relative_humidity_display(self):
         return u'{0:.0f} \u00B1 {1:.0f}'.format(self.relative_humidity, self.relative_humidity_error)
+
     relative_humidity_display.short_description = u"Relative Humidity (%)"
     relative_humidity_display.admin_order_field = "relative_humidity"
 
@@ -361,6 +379,7 @@ class ClimateMeasurement(models.Model):
         if self.pressure:
             return u'{0:.1f} \u00B1 {1:.1f}'.format(self.pressure, self.pressure_error)
         return "-"
+
     pressure_display.short_description = u"Pressure (hPa)"
     pressure_display.admin_order_field = "pressure"
 
@@ -372,13 +391,17 @@ class ClimateMeasurement(models.Model):
         ordering = ("-time", "location")
         verbose_name = "Climate Measurement"
 
+
 class CondensationLocation(models.Model):
     name = models.CharField(primary_key=True, max_length=32)
+
     def __str__(self):
         return self.name
+
     class Meta:
         ordering = ("name",)
         verbose_name = "Condensation Location"
+
 
 class CondensationReport(models.Model):
     reporter = models.ForeignKey(user_models.Player, blank=True, null=True, on_delete=models.PROTECT)
@@ -389,14 +412,9 @@ class CondensationReport(models.Model):
     def get_locations_display(self):
         result = ", ".join([location.pk for location in self.location.all()])
         return result
+
     get_locations_display.short_description = "Location(s)"
 
     class Meta:
         ordering = ("-time",)
         verbose_name = "Condensation Report"
-
-
-    
-    
-    
-        
