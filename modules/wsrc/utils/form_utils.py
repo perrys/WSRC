@@ -28,26 +28,21 @@ class LabeledSelect(forms.Select):
     """Extends Select widget to set a default label attribute on empty options, 
     passing html5 validation"""
 
-    def __init__(self, attrs=None, choices=(), default_label="(None)"):
+    def __init__(self, attrs=None, choices=(), default_label="(None)", disable_default=False):
         super(LabeledSelect, self).__init__(attrs, choices)
         self.default_label = default_label
+        self.disable_default = disable_default
 
-    def render_option(self, selected_choices, option_value, option_label):
-        label_html = ''
-        if option_value is None:
-            option_value = ''
-        option_value = force_text(option_value)
-        if option_label is None or len(option_label) == 0:
-            label_html = mark_safe(' label="{label}"'.format(label=self.default_label))
-        if option_value in selected_choices:
-            selected_html = mark_safe(' selected="selected"')
-            if not self.allow_multiple_selected:
-                # Only allow for a single selection.
-                selected_choices.remove(option_value)
-        else:
-            selected_html = ''
-        return format_html('<option value="{0}"{1}{2}>{3}</option>',
-                           option_value, selected_html, label_html, force_text(option_label))
+    def create_option(self, name, value, label, selected, index, subindex=None, attrs=None):
+        option = super(LabeledSelect, self).create_option(name, value, label, selected, index, subindex, attrs)
+        option_value = option["value"]
+        option_attrs = option["attrs"]
+        if option_value is None or len(option_value) == 0:
+            option_attrs["label"] = self.default_label
+            if self.disable_default:
+                option_attrs["disabled"] = True
+                option_attrs["hidden"] = True
+        return option
 
 
 def make_readonly_widget():
