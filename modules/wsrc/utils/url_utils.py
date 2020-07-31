@@ -22,13 +22,14 @@ import urllib2
 import httplib2
 
 LOGGER = logging.getLogger(__name__)
-LOGGER.setLevel(logging.INFO)
+
 
 def get_url_params(url):
     "Return the params from the url as a dict. Does not support multi-valued parameters"
     base, query = urllib.splitquery(url)
     params = query.split("&")
     return dict([urllib.splitvalue(p) for p in params])
+
 
 def get_content(url, params, headers=None):
     url += "?" + urllib.urlencode(params)
@@ -37,10 +38,12 @@ def get_content(url, params, headers=None):
     (resp_headers, content) = opener.request(url, "GET", headers=headers)
     return content
 
+
 def request(url, method, body=None, headers=None):
     LOGGER.debug("%s %s: %s", method, url, body)
     opener = httplib2.Http()
     return opener.request(url, method, headers=headers, body=body)
+
 
 def get_access_token(url, grant_type, client_id, client_secret, redirect_uri=None, temp_access_code=None):
     """
@@ -49,8 +52,8 @@ def get_access_token(url, grant_type, client_id, client_secret, redirect_uri=Non
     is the latter, a temp_auth_code should be provided
     """
     params = {
-        "grant_type":    grant_type,
-        "client_id" :    client_id,
+        "grant_type": grant_type,
+        "client_id": client_id,
         "client_secret": client_secret,
     }
     if redirect_uri is not None:
@@ -62,17 +65,22 @@ def get_access_token(url, grant_type, client_id, client_secret, redirect_uri=Non
     data = json.load(response)
     return data.get("access_token")
 
+
 class MyHTTPRedirectHandler(urllib2.HTTPRedirectHandler):
     def __init__(self):
         self.redirections = []
+
     def redirect_request(self, req, fp, code, msg, headers, newurl):
         self.redirections.append([code, msg, headers, newurl])
         return urllib2.HTTPRedirectHandler.redirect_request(self, req, fp, code, msg, headers, newurl)
+
     def clear(self):
         self.redirections = []
 
+
 class SimpleHttpClient:
     "Simple httpclient which keeps session cookies and does not follow redirect requests"
+
     def __init__(self, base_url):
         self.base_url = base_url
         self.cookiejar = cookielib.CookieJar()
@@ -80,7 +88,8 @@ class SimpleHttpClient:
         self.opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(self.cookiejar), self.redirect_recorder)
 
     def request(self, selector, params=None, timeout=None):
-        """Make a request for the given selector. This method returns a file like object as specified by urllib2.urlopen()"""
+        """Make a request for the given selector. This method returns a file like object as
+        specified by urllib2.urlopen()"""
         url = self.base_url + selector
         if params is not None:
             params = urllib.urlencode(params)
@@ -90,7 +99,8 @@ class SimpleHttpClient:
         return fh
 
     def get(self, selector, params=None, timeout=None):
-        """Make a GET request for the given selector. This method returns a file like object as specified by urllib2.urlopen()"""
+        """Make a GET request for the given selector. This method returns a file like object
+        as specified by urllib2.urlopen()"""
         if params is not None:
             params = urllib.urlencode(params)
             selector = "%s?%s" % (selector, params)
