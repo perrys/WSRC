@@ -1,4 +1,4 @@
-# This file is part of WSRC.
+ This file is part of WSRC.
 #
 # WSRC is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -340,8 +340,7 @@ class MailChimpSession:
     def api_request(self, server, endpoint, method, body=None):
         headers = {
             "user-agent": "oauth2-draft-v10",
-            "Accept": "application/json",
-            "Authorization": "OAuth " + self.oauth_record.access_token
+            "Authorization": "OAuth " + self.oauth_record.access_token.encode('UTF-8')
         }
         headers, data = url_utils.request(server + endpoint, method, headers=headers, body=body)
         if headers.status >= httplib.BAD_REQUEST:
