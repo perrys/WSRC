@@ -25,7 +25,15 @@ from wsrc.site.settings import settings
 def add_free_slots(court, booked_slots, booking_date_midnight, now, ignore_cutoff=False):
     
     RESOLUTION_MINS = settings.BOOKING_SYSTEM_SETTINGS["resolution_mins"]
-    DEFAULT_DURATION = settings.BOOKING_SYSTEM_SETTINGS["stagger_set"] * RESOLUTION_MINS
+
+    COVID_LOCKDOWN_DAY = timezone.make_aware(datetime.datetime(2020, 3, 21))
+    COVID_FREEDOM_DAY = timezone.make_aware(datetime.datetime(2021, 07, 19))
+    if booking_date_midnight >= COVID_LOCKDOWN_DAY and booking_date_midnight < COVID_FREEDOM_DAY:
+        STAGGER = 4
+    else:
+        STAGGER = settings.BOOKING_SYSTEM_SETTINGS["stagger_set"]
+    DEFAULT_DURATION = STAGGER * RESOLUTION_MINS
+
     STARTS_ENDS = settings.BOOKING_SYSTEM_SETTINGS["starts_ends"]
     CUTOFF_PERIOD = datetime.timedelta(days=settings.BOOKING_SYSTEM_SETTINGS["cutoff_days"])
 
