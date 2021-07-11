@@ -32,7 +32,7 @@ class CompetitionInline(admin.TabularInline):
 
 class CompetitionGroupAdmin(CSVModelAdmin):
     list_display = ("name", "competition_type", "end_date", "active",)
-    list_filter = ('competition_type',)
+    list_filter = ('competition_type', "active")
     inlines = (CompetitionInline,)
 admin.site.register(comp_models.CompetitionGroup, CompetitionGroupAdmin)
 
@@ -86,9 +86,10 @@ class MatchInLine(admin.TabularInline):
     def get_formset(self, request, obj=None, **kwargs):
         "Override the inline Match formset to restrict entrants to this competition's"
         result = super(MatchInLine, self).get_formset(request, obj, **kwargs)
-        queryset = obj.entrant_set.select_related("player1__user", "player2__user")
-        result.form.base_fields['team1'].queryset = queryset
-        result.form.base_fields['team2'].queryset = queryset
+        if obj is not None:
+            queryset = obj.entrant_set.select_related("player1__user", "player2__user")
+            result.form.base_fields['team1'].queryset = queryset
+            result.form.base_fields['team2'].queryset = queryset
         return result
 
 def set_in_progress(modeladmin, request, queryset):
