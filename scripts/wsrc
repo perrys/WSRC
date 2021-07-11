@@ -11,6 +11,7 @@ import sys
 import markdown
 from django.db import transaction
 from django.template import Template, Context
+from django.core.exceptions import ValidationError
 
 import wsrc.site.settings.settings as settings
 import wsrc.utils.email_utils as email_utils
@@ -293,20 +294,21 @@ def email_subscription_reminders(user_list):
     for sub in new_subs:
         already_subscribed.add(sub.player)
 
-    costs = user_models.SubscriptionCost.objects.filter(season=this_season).exclude(
+    all_costs = user_models.SubscriptionCost.objects.filter(season=this_season).exclude(
         subscription_type__name__icontains="*") \
         .select_related("subscription_type")
+    costs_map = dict([(cost.subscription_type, cost.amount) for cost in all_costs])
     emails = dict()
     for sub in subs:
-        if not sub.player.is_active:
+        if not sub.player.user.is_active:
             continue
         if sub.player in already_subscribed:
             continue
         if user_list and sub.player.user.email not in user_list:
             continue
         email = sub.player.user.email
-        costs = [cost for cost in costs if cost.subscription_type == sub.subscription_type]
-        if len(costs) > 0 and cost.amount > 0 and email and email.find('@') > 0:
+        cost = costs_map.get(sub.subscription_type)
+        if cost is not None and cost > 0 and email and email.find('@') > 0:
             subs_for_email = emails.setdefault(email, [])
             subs_for_email.append(sub)
     LOGGER.info("found %d unique email addresses with current subscriptions", len(emails))
@@ -317,11 +319,13 @@ def email_subscription_reminders(user_list):
     email_keys.sort()
     failed_players = list()
     for email in email_keys:
-        player = emails[email][0].player
+        subs = emails[email]
+        subs.sort(key=lambda(x): costs_map[x.subscription_type], reverse=True)
+        player = subs[0].player
         context = Context({
-            "subscriptions": emails[email],
+            "subscriptions": subs,
             "player": player,
-            "costs": costs,
+            "costs": all_costs,
             "content_type": "text/html"
         })
         subject = "{this_season} Subscriptions".format(**locals())
@@ -349,7 +353,7 @@ def download_met_office_data():
     fetch_and_store_distance_weigted_average_observations(settings.CLUB_LOCATION, *obs_locations)
 
 
-@transaction.atomic
+#@transaction.atomic
 def book_courts(date, times, duration, courts, name, description, event_type):
     import wsrc.site.courts.models as court_models;
     import django.contrib.auth.models as auth_models;
@@ -364,8 +368,11 @@ def book_courts(date, times, duration, courts, name, description, event_type):
         model = court_models.BookingSystemEvent(start_time=start_time, end_time=end_time, court=court,
                                                 name=name, description=description, event_type=event_type,
                                                 created_by_user=admin_user, last_updated_by=admin_user)
-        model.validate_unique([])
-        model.save()
+        try:
+            model.validate_unique([])
+            model.save()
+        except ValidationError as ex:
+            LOGGER.error(str(ex))
 
 
 if __name__ == "__main__":
@@ -459,7 +466,7 @@ if __name__ == "__main__":
                 "USAGE: {prog} {command} --all|--username=<username> ".format(**locals()))
 
         try:
-            optlist, args = getopt.getopt(sys.argv[2:], "au:", ["all", "username="])
+            optlist, args = getopt.getopt(sys.argv[2:], "au:f:", ["all", "username=", "filename="])
         except getopt.GetoptError as err:
             sys.stderr.write(str(err) + "\n")
             usage()
@@ -471,6 +478,10 @@ if __name__ == "__main__":
                 user_list = []
             elif opt in ["-u", "--username"]:
                 user_list = [val]
+            elif opt in ["-f", "--filename"]:
+                fh = open(os.path.expanduser(val))
+                user_list = [line.strip() for line in fh]
+                fh.close()
 
         if user_list is None:
             usage()
