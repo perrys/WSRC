@@ -40,7 +40,7 @@ def get_content(url, params, headers=None):
 
 
 def request(url, method, body=None, headers=None):
-    LOGGER.debug("%s %s: %s", method, url, body)
+    LOGGER.debug("%s %s: %s\n%s", method, url, headers, body)
     opener = httplib2.Http()
     return opener.request(url, method, headers=headers, body=body)
 
