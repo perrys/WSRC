@@ -33,7 +33,7 @@ from wsrc.utils.form_utils import make_readonly_widget, LabeledSelect, CachingMo
     add_formfield_attrs
 
 COURTS = [1, 2, 3]
-START_TIME = 8 * 60 + 30
+START_TIME = 8 * 60 + 15
 END_TIME = 22 * 60 + 15
 RESOLUTION = 15
 EMPTY_DUR = 3 * RESOLUTION
