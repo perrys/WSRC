@@ -391,6 +391,7 @@ def admin_mailshot_view(request):
                             "coach",
                             "committee",
                             "development",
+                            "fixtures",
                             "juniors",
                             "leagues",
                             "maintenance",
