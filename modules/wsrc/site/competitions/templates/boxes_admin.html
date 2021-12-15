@@ -39,7 +39,7 @@ jQuery(document).ready(function(){wsrc.admin.boxes.onReady(players, comp_type, p
   <div class="column-wrapper ui-widget">
   <div class="hrow">
     {% if competition.id %}
-    <form class="column" id="source_boxes" method="GET" action="#" onsubmit="return false;" data-id="{{ competition.id }}">{% csrf_token %}
+    <form class="column" id="source_boxes" method="GET" action="#" onsubmit="return false;" data-id="{{ competition.id }}" style="vertical-align: top;">{% csrf_token %}
     <fieldset class="ui-corner-all">
       <legend>Old League</legend>
       <div class="top-form-field-container">
