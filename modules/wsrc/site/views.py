@@ -398,6 +398,8 @@ def admin_mailshot_view(request):
                             "membership",
                             "secretary",
                             "social",
+                            "squash_boxes",
+                            "squash57_boxes",
                             "tournaments",
                             "treasurer",
                             "webmaster"]
@@ -418,9 +420,10 @@ def admin_mailshot_view(request):
         "players": JSON_RENDERER.render(players),
         "from_email_addresses": [x + "@wokingsquashclub.org" for x in from_email_addresses],
         "subscription_types": SubscriptionType.objects.all(),
-        "tournament_player_ids": get_comp_entrants("wsrc_tournaments", "wsrc_qualifiers"),
-        "box_player_ids": get_comp_entrants("wsrc_boxes"),
-        }
+        "tournament_player_ids": get_comp_entrants("tournaments", "tournament_qualifiers"),
+        "box_player_ids": get_comp_entrants("squash_boxes"),
+        "squash57_box_player_ids": get_comp_entrants("squash57_boxes"),
+        }    
     return TemplateResponse(request, 'mailshot.html', ctx)
 
 class SendEmail(APIView):

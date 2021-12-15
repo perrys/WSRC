@@ -589,14 +589,16 @@ class BoxesAdminView(BoxesTemplateViewBase):
         def create_new_box_config(idx):
             result = {"id": None, "players": None}
             if idx == 0:
+                prefix = "RB" if kwargs["comp_type"] == "squash57_boxes" else ""
                 result["colspec"] = "single"
-                result["name"] = "Premier"
+                result["name"] = "Premier %(prefix)s" % locals()
                 result["nthcol"] = "first"
             else:
+                prefix = "RB_" if kwargs["comp_type"] == "squash57_boxes" else ""
                 result["colspec"] = "double"
                 suffix = (idx % 2 == 1) and "A" or "B"
                 number = (idx+1)/2
-                result["name"] = "League %(number)d%(suffix)s" % locals()
+                result["name"] = "League %(prefix)s%(number)d%(suffix)s" % locals()
                 result["nthcol"] = suffix == "A" and "first" or "second"
             result["entrants"] = entrants = []
             if all_leagues is not None:

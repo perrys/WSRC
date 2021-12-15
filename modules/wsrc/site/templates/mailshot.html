@@ -11,9 +11,10 @@
   <script type="text/javascript">
 var players  = {{ players|safe }};
 var box_player_ids  = [{{ box_player_ids|join:',' }}];
+var squash57_box_player_ids  = [{{ squash57_box_player_ids|join:',' }}];
 var tournament_player_ids  = [{{ tournament_player_ids|join:',' }}];
 
-jQuery(document).ready(function(){wsrc.admin.mailshot.onReady(players, box_player_ids, tournament_player_ids)});
+    jQuery(document).ready(function(){wsrc.admin.mailshot.onReady(players, box_player_ids, tournament_player_ids, squash57_box_player_ids)});
   </script>
 
 </head>
@@ -74,7 +75,8 @@ jQuery(document).ready(function(){wsrc.admin.mailshot.onReady(players, box_playe
       <div id="competition_entrants" class="ui-field-contain ui-helper-hidden selection-type">
         <label for="member_type">Competitions: </label>
         <input type="checkbox" name="comp_type" value="tournament">Tournaments</input>
-        <input type="checkbox" name="comp_type" value="box">Leagues</input>
+        <input type="checkbox" name="comp_type" value="box">Squash Leagues</input>
+        <input type="checkbox" name="comp_type" value="squash57_box">Squash57 Leagues</input>
       </div>
       <div class="ui-field-contain">
         <label for="respect_opt_out" class="tall_label">Respect Opt-outs<sup>&Dagger;</sup>: </label>

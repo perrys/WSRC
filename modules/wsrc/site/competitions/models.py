@@ -70,7 +70,7 @@ class CompetitionGroup(models.Model):
         "Return a set of Player objects who are entrants in the given competition groups"
         clause = None
         for group_type in group_types:
-            q = models.Q(competition_type__name=group_type)
+            q = models.Q(competition_type__id=group_type)
             if clause is None:
                 clause = q
             else:

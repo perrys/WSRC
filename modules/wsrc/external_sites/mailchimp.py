@@ -319,9 +319,11 @@ class MailChimpSession:
                 if user is not None:
                     user.add_attribute("Competitions", comp_name)
 
-        league_players = CompetitionGroup.get_comp_entrants("wsrc_boxes")
-        tournament_players = CompetitionGroup.get_comp_entrants("Tournaments")
+        league_players = CompetitionGroup.get_comp_entrants("squash_boxes")
+        squash57_players = CompetitionGroup.get_comp_entrants("squash57_boxes")
+        tournament_players = CompetitionGroup.get_comp_entrants("tournaments")
         attribute(league_players, "Squash Leagues")
+        attribute(squash57_players, "Squash57 Leagues")
         attribute(tournament_players, "Tournaments")
         return members
 
