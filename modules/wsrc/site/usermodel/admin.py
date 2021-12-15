@@ -137,7 +137,7 @@ class SubscriptionAdmin(CSVModelAdmin):
     list_display = ('ordered_name', 'email', 'season', 'linked_membership_type', 'date_joined_date', 'pro_rata_date',\
                     'payment_frequency', 'pro_rata_cost', 'payments_count', 'total_payments',\
                     'due_amount', 'signed_off', "comment")
-    list_filter = (SeasonListFilter, 'signed_off', 'payment_frequency', 'subscription_type', )
+    list_filter = (SeasonListFilter, 'signed_off', 'payment_frequency', 'subscription_type', 'player__user__is_active', )
     list_editable = ('signed_off', 'comment')
     formfield_overrides = {
         models.TextField: {'widget': forms.TextInput(attrs={'size': 30})},
