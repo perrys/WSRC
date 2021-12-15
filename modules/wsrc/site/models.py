@@ -130,7 +130,7 @@ class ClubEvent(models.Model):
         verbose_name_plural = "Lobby Screen Events"
 
 class AbstractPDFDocumentModel(models.Model):
-    date = models.DateField(auto_now_add=True)
+    date = models.DateField()
 
     def get_url(self):
         return self.pdf_file.url
