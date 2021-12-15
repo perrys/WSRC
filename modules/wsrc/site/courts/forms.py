@@ -47,8 +47,13 @@ def using_local_database():
 
 
 def get_opponent_names():
-    names = [(kv[1], kv[1]) for kv in get_active_user_choices() if kv[0] is not None]
-    return names + [("Solo", "[Solo Practice]")]
+    names = [
+        ("_Solo_", "[Solo Practice]"),
+        ("_Guest_", "[Guest]"),
+        ("_Coaching_", "[Coaching]"),
+    ]
+    names += [(kv[1], kv[1]) for kv in get_active_user_choices() if kv[0] is not None]
+    return names 
 
 
 def get_active_user_choices():

@@ -319,6 +319,8 @@ def create_booking_cell_content(slot, court, date, is_admin_view=False):
                 content += "<span class='no_opponent label label-danger'>No Opponent</span>"
             elif opponent == "Solo":
                 content += " [Solo&nbsp;Practice]"
+            elif opponent == "_Coaching_":
+                content += " [Coaching]"
             else:
                 content += " vs " + opponent
         result += u"<span class='booking'><a href='{path}/{id}'>{content}</a></span>".format(path=reverse_url(url_name),
