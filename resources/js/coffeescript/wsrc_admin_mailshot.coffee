@@ -3,7 +3,7 @@ class WSRC_admin_mailshot
 
   individual_ids: []
 
-  constructor: (@player_map, @box_player_ids, @tournament_player_ids) ->
+  constructor: (@player_map, @box_player_ids, @tournament_player_ids, @squash57_box_player_ids, ) ->
     player_list = ({label: p.full_name, value: id} for id,p of @player_map)
     wsrc.utils.lexical_sort(player_list, 'label')
     $("input[name='respect_opt_out']").on("change", (evt) => @selected_players_changed(evt))
@@ -176,8 +176,8 @@ class WSRC_admin_mailshot
     args = $.fn.toArray.call(arguments)
     @instance[method].apply(@instance, args[1..])
 
-  @onReady: (players, box_player_ids, tournament_player_ids) ->
-    @instance = new WSRC_admin_mailshot(players, box_player_ids, tournament_player_ids)
+  @onReady: (players, box_player_ids, tournament_player_ids, squash57_box_player_ids) ->
+    @instance = new WSRC_admin_mailshot(players, box_player_ids, tournament_player_ids, squash57_box_player_ids)
     
     return null
     
