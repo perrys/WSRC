@@ -521,7 +521,7 @@ if __name__ == "__main__":
 
         email_subscription_reminders(user_list)
 
-    elif command in ("monitor_bookings"):
+    elif command in ("monitor-bookings"):
         def usage():
             sys.stderr.write("USAGE: %s %s [--date=<YYYY-MM-DD>] [--ndays=<n>]\n" % (prog, command))
 
@@ -543,7 +543,7 @@ if __name__ == "__main__":
             elif opt in ["-n", "--ndays"]:
                 ndays = int(val)
 
-        from wsrc.external_sites.booking_monitor import process_date
+        from wsrc.site.courts.booking_monitor import process_date
 
         while ndays > 0:
             process_date(date)
