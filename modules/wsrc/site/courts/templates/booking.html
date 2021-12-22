@@ -42,7 +42,7 @@
  {% if days_diff < 0 or days_diff == 0 and seconds_diff < 0 %} 
   <a class="btn btn-primary" href="{% url 'cal_invite' %}/{{ booking_id }}" title="Send a calendar invite for this booking"><span class="glyphicon glyphicon-calendar"></span>&nbsp;Notify&nbsp;Opponent</a>
  {% endif %}
- {% if booking_user_id and days_diff == 0 and seconds_diff > 900 %}
+ {% if user.is_authenticated and days_diff == 0 and seconds_diff > 900 %}
   {% if not booking_form.no_show.value %}                   
    <button name="action" value="report_noshow" class="btn btn-danger" onclick="if (! confirm('Are you sure you want to report this court as unused?\n')) return false;"><span class="glyphicon glyphicon-exclamation-sign"></span>&nbsp;Report a NO-SHOW</button>
   {% else %}

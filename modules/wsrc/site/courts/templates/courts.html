@@ -58,7 +58,6 @@
 
 <form id="court_booking_form" method="POST" action="{% url 'booking' %}">
 {% csrf_token %}
-<input type="hidden" name="name" value="{{ booking_user_name }}"/>
 <input type="hidden" name="booking_type" value="I" />
 <input type="hidden" name="date" />
 <input type="hidden" name="duration" />
