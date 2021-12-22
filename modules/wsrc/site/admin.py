@@ -21,7 +21,7 @@ from django.db import models
 from django.contrib import admin
 from wsrc.site.models import PageContent, EmailContent, MaintenanceIssue,\
     Suggestion, ClubEvent, CommitteeMeetingMinutes, GenericPDFDocument, Image,\
-    NavigationLink, NavigationNode, OAuthAccess
+    NavigationLink, NavigationNode, OAuthAccess, LeagueMasterFixtures, SquashLevels
 
 from django.contrib.admin.models import LogEntry
 admin.site.register(LogEntry)
@@ -136,3 +136,6 @@ admin.site.register(CommitteeMeetingMinutes, PDFFileAdmin)
 admin.site.register(GenericPDFDocument, PDFFileAdmin)
 admin.site.register(Image, ImageAdmin)
 admin.site.register(OAuthAccess, OAuthAdmin)
+
+admin.site.register(LeagueMasterFixtures, admin.ModelAdmin) 
+admin.site.register(SquashLevels, admin.ModelAdmin) 
