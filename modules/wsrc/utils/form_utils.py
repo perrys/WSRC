@@ -124,8 +124,8 @@ class CachingModelMultipleChoiceField(CachingModelChoiceField, forms.ModelMultip
 
 def get_related_field_limited_queryset(db_field):
     "Get the default queryset for choices for a related field, limited as specified on the model"
-    rel_field = db_field.rel
+    rel_field = db_field.remote_field
     q_filter = rel_field.limit_choices_to
     if q_filter is not None and len(q_filter) > 0:
-        return rel_field.to.objects.filter(q_filter)
-    return rel_field.to.objects.all()
+        return rel_field.model.objects.filter(q_filter)
+    return rel_field.model.objects.all()
