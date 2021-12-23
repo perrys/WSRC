@@ -36,6 +36,8 @@ class LabeledSelect(forms.Select):
     def create_option(self, name, value, label, selected, index, subindex=None, attrs=None):
         option = super(LabeledSelect, self).create_option(name, value, label, selected, index, subindex, attrs)
         option_value = option["value"]
+        if option_value is not None:
+            option_value = force_text(option_value) 
         option_attrs = option["attrs"]
         if option_value is None or len(option_value) == 0:
             option_attrs["label"] = self.default_label
