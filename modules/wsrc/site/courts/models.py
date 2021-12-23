@@ -192,7 +192,7 @@ class BookingSystemEvent(models.Model):
 
 
 class BookingSystemEventAuditEntry(models.Model):
-    booking = models.ForeignKey(BookingSystemEvent)
+    booking = models.ForeignKey(BookingSystemEvent, on_delete=models.CASCADE)
     UPDATE_TYPES = (
         ("C", "Create"),
         ("U", "Update"),
