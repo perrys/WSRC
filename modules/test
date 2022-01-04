@@ -1,0 +1,26 @@
+#!/usr/bin/python2.7
+
+import argparse
+import logging
+import os.path
+import sys
+import unittest
+
+sys.path.append(os.path.dirname(__file__))
+import wsrc.external_sites # call __init__.py
+
+if __name__ == "__main__":
+    logging.basicConfig(stream=sys.stderr, level=logging.WARNING)
+    parser = argparse.ArgumentParser(description='Run unit tests.')
+    parser.add_argument("-l", "--debug_level", default="WARNING", help="Root logger level (DEBUG|INFO|WARNING|ERROR)")
+    parser.add_argument("test_names", nargs="*")
+    args = parser.parse_args()
+    
+    logging.getLogger().setLevel(args.debug_level)
+    
+    loader = unittest.TestLoader()
+    if args.test_names:
+        suite = loader.loadTestsFromNames(args.test_names)
+    else:
+        suite = loader.discover(os.path.join(os.path.dirname(__file__), "tests/unittests"))
+    unittest.TextTestRunner(verbosity=2).run(suite)

@@ -20,6 +20,7 @@ from wsrc.site.models import PageContent, SquashLevels, LeagueMasterFixtures, Ma
     Suggestion, ClubEvent, CommitteeMeetingMinutes, NavigationLink, OAuthAccess
 from wsrc.site.competitions.models import CompetitionGroup
 from wsrc.site.courts.models import BookingSystemEvent
+from wsrc.site.email.models import VirtualAlias, VirtualDomain
 from wsrc.site.usermodel.models import Player, SubscriptionType
 import wsrc.site.settings.settings as settings
 from wsrc.utils import timezones, email_utils, url_utils
@@ -54,8 +55,6 @@ from rest_framework import serializers
 from rest_framework.parsers import JSONParser, FormParser
 from rest_framework.views import APIView
 from rest_framework.utils.serializer_helpers import ReturnDict
-
-from icalendar import Calendar, Event, vCalAddress, vText
 
 import collections
 import markdown
@@ -171,52 +170,6 @@ def committee_view(request):
     ctx["pagedata"]["content"] = template.render(Context({'meetings': CommitteeMeetingMinutes.objects.all()}))
     return TemplateResponse(request, 'generic_page.html', ctx)
 
-@require_safe
-def booking_view(request, date=None):
-    if date is None:
-        date = datetime.date.today()
-    else:
-        date = timezones.parse_iso_date_to_naive(date)
-    def get_bookings(date):
-        today_str    = timezones.as_iso_date(date)
-        tomorrow_str = timezones.as_iso_date(date + datetime.timedelta(days=1))
-        url = settings.BOOKING_SYSTEM_ORIGIN + settings.BOOKING_SYSTEM_PATH + "?start_date={today_str}&end_date={tomorrow_str}&with_tokens=1".format(**locals())
-        h = httplib2.Http()
-        (resp_headers, content) = h.request(url, "GET")
-        if resp_headers.status != httplib.OK:
-            raise Exception("unable to fetch bookings data, status = " + str(resp_headers.status) + ", response: " +  content)
-        return content
-    bookings = get_bookings(date)
-    context = {
-        "date": date,
-        "bookings": bookings,
-        "booking_system_origin": settings.BOOKING_SYSTEM_ORIGIN,
-        "booking_system_path":   settings.BOOKING_SYSTEM_PATH,
-        "booking_system_noshow": settings.BOOKING_SYSTEM_NOSHOW,
-        "starts": range(420, 1380, 15),
-        "durations": [30, 45, 60, 75, 90, 120, 180, 240]
-    }
-    if request.user.is_authenticated:
-        player = Player.get_player_for_user(request.user)
-        if player is not None:
-            booking_user_id = player.booking_system_id
-            context["booking_user_id"] = booking_user_id
-            context["booking_user_auth_token"] = BookingSystemEvent.generate_hmac_token_raw("id:{booking_user_id}".format(**locals()))
-            context["booking_user_name"] = player.user.get_full_name()
-            context["usernames"] = Player.objects.filter(user__is_active=True)
-
-    return render(request, 'court_booking.html', context)
-
-@require_http_methods(["GET", "POST", "DELETE", "PATCH"])
-def booking_proxy_view(request):
-    req_vars = json.loads(request.body)
-    url = req_vars.pop("url")
-    method = req_vars.pop("method", None) or request.method
-    headers = req_vars.pop("headers", None)
-    h = httplib2.Http()
-    (resp, content) = h.request(url, headers=headers, method=method, body=json.dumps(req_vars))
-    return HttpResponse(content, resp.get("content-type"), status=resp.status)
-
 
 def generate_tokens(date):
     start_times = {
@@ -330,7 +283,8 @@ def facebook_view(request):
 
     try:
         # the response is JSON so pass it straight through
-        return HttpResponse(fb_get(), content_type="application/json")
+        data = fb_get()
+        return HttpResponse(data, content_type="application/json")
     except FBException, e:
         msg = "ERROR: Unable to fetch Facebook page: {msg} [{code}] - {type}".format(msg=str(e), code=e.statuscode, type=e.errortype)
         return HttpResponse(content=msg,
@@ -386,26 +340,11 @@ def login(request, *args, **kwargs):
 def admin_mailshot_view(request):
     if not request.user.is_staff:
         raise PermissionDenied()
-    from_email_addresses = ["chairman",
-                            "clubnight",
-                            "coach",
-                            "committee",
-                            "development",
-                            "fixtures",
-                            "juniors",
-                            "leagues",
-                            "maintenance",
-                            "membership",
-                            "secretary",
-                            "social",
-                            "squash_boxes",
-                            "squash57_boxes",
-                            "tournaments",
-                            "treasurer",
-                            "webmaster"]
+    from_domain = VirtualDomain.objects.first()
+    from_email_addresses = [e for e in VirtualAlias.objects.filter(from_domain=from_domain).values_list("from_username", flat=True).distinct()]
     def get_comp_entrants(*group_types):
         players = CompetitionGroup.get_comp_entrants(*group_types)
-        return [player.id for player in players]
+        return [player.id for player in players if player.user.is_active]
     def player_data(p):
         sub = p.get_current_subscription()
         
@@ -418,7 +357,7 @@ def admin_mailshot_view(request):
     players = dict([player_data(player) for player in players])
     ctx = {
         "players": JSON_RENDERER.render(players),
-        "from_email_addresses": [x + "@wokingsquashclub.org" for x in from_email_addresses],
+        "from_email_addresses": ["{0}@{1}".format(x, from_domain.name) for x in from_email_addresses],
         "subscription_types": SubscriptionType.objects.all(),
         "tournament_player_ids": get_comp_entrants("tournaments", "tournament_qualifiers"),
         "box_player_ids": get_comp_entrants("squash_boxes"),
@@ -458,95 +397,6 @@ class SendEmail(APIView):
             import wsrc.utils.email_utils as email_utils
             email_utils.send_email(**email_data)
         return HttpResponse(status=204)
-
-class SendCalendarEmail(APIView):
-    parser_classes = (JSONParser,)
-    def put(self, request, format="json"):
-        if not request.user.is_authenticated:
-            raise PermissionDenied()
-        cal_data = request.data
-        import pprint
-        print pprint.pprint( cal_data)
-        sys.stdout.flush()
-        start_datetime = datetime.datetime.strptime(cal_data["date"], timezones.ISO_DATE_FMT)
-        start_datetime += datetime.timedelta(minutes=cal_data["start_mins"])
-        start_datetime.replace(tzinfo=timezones.UK_TZINFO)
-        duration = datetime.timedelta(minutes=cal_data["duration_mins"])
-        url = request.build_absolute_uri("/courts/{date:%Y-%m-%d}".format(date=start_datetime))
-
-        # could use last update timestamp (cal_data["timestamp"]) from
-        # the event, except when it is a deletion. For simplicity we
-        # will just use the current time - this ensures that the
-        # recipient calendar always accepts the event as the latest
-        # version
-        timestamp = datetime.datetime.now(timezones.UK_TZINFO)
-
-        cal = Calendar()
-        cal.add("version", "2.0")
-        cal.add("prodid", "-//Woking Squash Rackets Club//NONSGML court_booking//EN")
-
-        evt = Event()
-        evt.add("uid", "WSRC_booking_{id}".format(**cal_data))
-        organizer = vCalAddress("MAILTO:{email}".format(email=BOOKING_SYSTEM_EMAIL_ADRESS))
-        organizer.params["cn"] = vText("Woking Squash Club")
-        evt.add("organizer", organizer)
-        def add_attendee(user):
-            attendee = vCalAddress("MAILTO:{email}".format(email=user.email))
-            attendee.params["cn"] = vText(user.get_full_name())
-            attendee.params["ROLE"] = vText("REQ-PARTICIPANT")
-            evt.add('attendee', attendee, encode=0)
-        add_attendee(request.user)
-        opponent = cal_data.get("opponent_username")
-        if opponent is not None:
-            opponent = Player.objects.get(user__username = opponent)
-            add_attendee(opponent.user)
-        evt.add("dtstamp", timestamp)
-        evt.add("dtstart", start_datetime)
-        evt.add("duration", duration)
-        evt.add("summary", "WSRC Court Booking: " + cal_data["name"])
-        evt.add("url", url)
-        evt.add("location", "Court {court}".format(**cal_data))
-        evt.add("description", cal_data.get("description", ""))
-
-        if cal_data["event_type"] == "delete":
-            method = "CANCEL"
-            evt.add("status", "CANCELLED")
-        else:
-            method = "REQUEST"
-        cal.add("method", method)
-
-        cal.add_component(evt)
-        encoding = settings.DEFAULT_CHARSET
-        msg_cal = SafeMIMEText(cal.to_ical(), "calendar", encoding)
-        msg_cal.set_param("method", method)
-        context = {
-            "start": start_datetime,
-            "duration": timezones.duration_str(duration),
-            "url": url
-        }
-        context.update(cal_data)
-        try:
-            text_body, html_body = email_utils.get_email_bodies("BookingUpdate", context)
-            msg_bodies = SafeMIMEMultipart(_subtype="alternative", encoding=encoding)
-            msg_bodies.attach(SafeMIMEText(text_body, "plain", encoding))
-            msg_bodies.attach(SafeMIMEText(html_body, "html", encoding))
-            to_list = [request.user.email]
-            if opponent is not None and opponent.user.email is not None:
-                to_list.append(opponent.user.email)
-            subject="WSRC Court Booking - {start:%Y-%m-%d %H:%M} Court {court}".format(start=start_datetime, court=cal_data["court"])
-            email_utils.send_email(subject, None, None,
-                                   from_address=BOOKING_SYSTEM_EMAIL_ADRESS,
-                                   to_list=to_list, cc_list=None,
-                                   extra_attachments=[msg_bodies, msg_cal])
-            return HttpResponse(status=204)
-        except Exception, e:
-            err = ""
-            if hasattr(e, "smtp_code"):
-                err += "EMAIL SERVER ERROR [{smtp_code:d}] {smtp_error:s} ".format(**e.__dict__)
-                if e.message:
-                    err += " - "
-            err += e.message
-            return HttpResponse(err, status=503)
 
 def notify(template_name, kwargs, subject, to_list, cc_list, from_address, attachments=None):
     text_body, html_body = email_utils.get_email_bodies(template_name, kwargs)

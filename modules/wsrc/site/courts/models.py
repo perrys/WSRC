@@ -105,12 +105,6 @@ class BookingSystemEvent(models.Model):
         return self.start_time.date()
 
     @property
-    def booking_id(self):
-        if self.created_by is not None:
-            return self.created_by.booking_system_id
-        return None
-
-    @property
     def token(self):
         return self.hmac_token()
 
@@ -198,7 +192,7 @@ class BookingSystemEvent(models.Model):
 
 
 class BookingSystemEventAuditEntry(models.Model):
-    booking = models.ForeignKey(BookingSystemEvent)
+    booking = models.ForeignKey(BookingSystemEvent, on_delete=models.CASCADE)
     UPDATE_TYPES = (
         ("C", "Create"),
         ("U", "Update"),

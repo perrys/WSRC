@@ -285,11 +285,11 @@ def email_subscription_reminders(user_list):
     seasons = user_models.Season.objects.exclude(has_ended=True)
     last_season = seasons.first()
     this_season = seasons.last()
-    subs = user_models.Subscription.objects.filter(season=last_season).exclude(subscription_type__name__icontains="*") \
-        .select_related("player__user", "subscription_type")
-    new_subs = user_models.Subscription.objects.filter(season=this_season).exclude(
-        subscription_type__name__icontains="*") \
-        .select_related("player__user", "subscription_type")
+    subs = user_models.Subscription.objects.filter(season=last_season).exclude(subscription_type__name__icontains="*")\
+                                                                      .select_related("player__user", "subscription_type")\
+                                                                      .order_by("subscription_type__max_age_years")
+    new_subs = user_models.Subscription.objects.filter(season=this_season).exclude(subscription_type__name__icontains="*")\
+                                                                      .select_related("player__user", "subscription_type")
     already_subscribed = set()
     for sub in new_subs:
         already_subscribed.add(sub.player)
@@ -352,8 +352,40 @@ def download_met_office_data():
     obs_locations = [l[0] for l in settings.MET_OFFICE_OBSERVATION_LOCATIONS]
     fetch_and_store_distance_weigted_average_observations(settings.CLUB_LOCATION, *obs_locations)
 
-
-#@transaction.atomic
+def upload_bracket(comp_id, datafile):
+    import csv
+    import wsrc.site.competitions.tournament as tournament
+    reader = csv.DictReader(datafile)
+    entrants = []
+    rounds = []
+    def safeint(s):
+        if s is None:
+            return None
+        if s.startswith("S"):
+            s = s[1:]
+        try:
+            return int(s)
+        except ValueError:
+            return None
+    def get_name(line):
+        for k,v in line.iteritems():
+            if k.startswith("Name") and v is not None and len(v.strip()) > 0:
+                return v
+        return None
+    for line in reader:
+        name = get_name(line)
+        if name is not None:
+            entrants.append([name, (int(line["Round"]), int(line["Ordinal"]), safeint(line.get("Seeds")))])
+            round_date = line.get("round_dates")
+            if round_date is not None and len(round_date.strip()) > 0:
+                rounds.append({"round": len(rounds)+1, "end_date": round_date})
+    tournament.reset_from_bracket(comp_id, entrants)
+    if len(rounds) > 0:
+        import operator
+        rounds.sort(key=operator.itemgetter("end_date"))
+        tournament.set_rounds(comp_id, rounds)
+    
+@transaction.atomic
 def book_courts(date, times, duration, courts, name, description, event_type):
     import wsrc.site.courts.models as court_models;
     import django.contrib.auth.models as auth_models;
@@ -489,10 +521,7 @@ if __name__ == "__main__":
 
         email_subscription_reminders(user_list)
 
-    elif command in ("add-old-league"):
-        wsrc.external_sites.main.cmdline_add_old_league(args)
-
-    elif command in ("monitor_bookings"):
+    elif command in ("monitor-bookings"):
         def usage():
             sys.stderr.write("USAGE: %s %s [--date=<YYYY-MM-DD>] [--ndays=<n>]\n" % (prog, command))
 
@@ -514,7 +543,7 @@ if __name__ == "__main__":
             elif opt in ["-n", "--ndays"]:
                 ndays = int(val)
 
-        from wsrc.external_sites.booking_monitor import process_date
+        from wsrc.site.courts.booking_monitor import process_date
 
         while ndays > 0:
             process_date(date)
@@ -573,7 +602,28 @@ if __name__ == "__main__":
 
     elif command in ("download-met-office-data"):
         download_met_office_data()
-
+        
+    elif command in ("upload-bracket"):
+        def usage():
+            sys.stderr.write("USAGE: {prog} {command} --comp_id=<id> --infile=<bracket.csv>\n".format(**globals()))
+        try:
+            optlist, args = getopt.getopt(sys.argv[2:], "i:f:", ["comp_id=", "infile="])
+        except getopt.GetoptError as err:
+            sys.stderr.write(str(err) + "\n")
+            usage()
+            sys.exit(2)
+        comp_id = None
+        infile = None
+        for opt,val in optlist:
+            if opt in ["-i", "--comp_id"]:
+                comp_id = int(val)
+            if opt in ["-f", "--infile"]:
+                infile = open(val)
+        if comp_id is None or infile is None:
+            usage()
+            sys.exit(1)
+        upload_bracket(comp_id, infile)
+        
     else:
         sys.stderr.write("ERROR: unrecognized command \"{0}\"\n".format(command))
         sys.exit(1)

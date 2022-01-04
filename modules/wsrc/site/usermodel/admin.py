@@ -33,6 +33,8 @@ from django import urls
 from django.core.exceptions import ValidationError, NON_FIELD_ERRORS
 from django.http import HttpResponse
 from django.shortcuts import redirect
+from django.utils.html import format_html
+from django.utils.safestring import mark_safe
 
 from .models import Player, Season, Subscription, SubscriptionPayment,\
     SubscriptionCost, SubscriptionType, DoorEntryCard, DoorCardEvent, DoorCardLease, \
@@ -165,21 +167,18 @@ class SubscriptionAdmin(CSVModelAdmin):
 
     def linked_membership_type(self, obj):
         link = urls.reverse("admin:usermodel_player_change", args=[obj.player.id])
-        return u'<a href="%s">%s</a>' % (link, obj.subscription_type.name)
-    linked_membership_type.allow_tags = True
+        return format_html('<a href="{}">{}</a>', mark_safe(link), mark_safe(obj.subscription_type.name))
     linked_membership_type.short_description = "Type"
     linked_membership_type.admin_order_field = "subscription_type"
 
     def total_payments(self, obj):
-        return "<span style='width:100%; display:inline-block; text-align:right;'>{0:.2f}</span>"\
-            .format(obj.get_total_payments())
-    total_payments.allow_tags = True
+        return format_html("<span style='width:100%; display:inline-block; text-align:right;'>{}</span>", 
+            mark_safe("{0:.2f}".format(obj.get_total_payments())))
     total_payments.short_description = u"Paid (\xa3)"
 
     def pro_rata_cost(self, obj):
-        return "<span style='width:100%; display:inline-block; text-align:right;'>{0:.2f}</span>"\
-            .format(obj.get_pro_rata_cost())
-    pro_rata_cost.allow_tags = True
+        return format_html("<span style='width:100%; display:inline-block; text-align:right;'>{}</span>",
+            mark_safe("{0:.2f}".format(obj.get_pro_rata_cost())))
     pro_rata_cost.short_description = u"Cost (\xa3)"
 
     def due_amount(self, obj):
@@ -190,9 +189,8 @@ class SubscriptionAdmin(CSVModelAdmin):
                 style = 'color: red'
             elif amount == 0:
                 style = 'color: green'
-        return "<span style='width:100%; display:inline-block; text-align:right; {1}'>{0:.2f}</span>"\
-            .format(max(0, amount), style)
-    due_amount.allow_tags = True
+        return format_html("<span style='width:100%; display:inline-block; text-align:right; {}'>{}</span>",
+                           mark_safe(style), mark_safe("{0:.2f}".format(max(0, amount))))
     due_amount.short_description = u"Due (\xa3)"
 
     def get_queryset(self, request):

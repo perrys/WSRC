@@ -27,7 +27,7 @@ NAME_PAIRS = [
 
 
 def get_squashlevels_rankings():
-    WOKING_SQUASH_CLUB_ID = 60
+    WOKING_SQUASH_CLUB_ID = 6941
     SURREY_COUNTY_ID = 24
     PARAMS = {
         "club": WOKING_SQUASH_CLUB_ID,
@@ -41,7 +41,7 @@ def get_squashlevels_rankings():
         "format": "json",
         "perpage": 200,
     }
-    URL = 'http://www.squashlevels.com/players.php'
+    URL = 'https://www.squashlevels.com/players.php'
     AGENT = "SL-client/Woking (+http://www.wokingsquashclub.org)"
     return url_utils.get_content(URL, PARAMS, {"User-Agent": AGENT})
 
@@ -241,44 +241,6 @@ def update_leaguemaster_data(data):
         result.save()
 
 
-@transaction.atomic
-def add_old_league_data(boxes_data, end_date):
-    from wsrc.site.competitions.models import CompetitionGroup, Competition, Match
-
-    datefmt = end_date.strftime("%d %B %Y")
-    group = CompetitionGroup(name='Leagues Ending %s' % datefmt, comp_type='wsrc_boxes', end_date=end_date,
-                             active=False)
-    group.save()
-    LOGGER.info("Saved CompetitionGroup {group.name} {group.id}".format(**locals()))
-
-    # create a competition for each box and insert players and match scores
-    ordering = 1
-    for name, matches, players in boxes_data:
-        comp = Competition(name=name, end_date=end_date, ordering=ordering)
-        ordering += 1
-        comp.save()
-        LOGGER.info("Saved Competition {comp.name} {comp.id}".format(**locals()))
-        group.competition_set.add(comp)
-        order = 1
-        for record in players:
-            comp.entrant_set.create(player=record, ordering=order)
-            order += 1
-        for match in matches:
-            match_record = Match(competition=comp, team1_player1=match["player1"], team2_player1=match["player2"])
-            # we don't know the set scores so just assign 1-0 to the winner of each set
-            set = 1
-            for i in range(0, match["scores"][0]):
-                setattr(match_record, "team1_score%(set)d" % locals(), 1)
-                setattr(match_record, "team2_score%(set)d" % locals(), 0)
-                set += 1
-            for i in range(0, match["scores"][1]):
-                setattr(match_record, "team1_score%(set)d" % locals(), 0)
-                setattr(match_record, "team2_score%(set)d" % locals(), 1)
-                set += 1
-            match_record.save()
-            group.save()
-
-
 def cmdline_sync_squashlevels(*args):
     if len(args) > 0:
         data = open(os.path.expanduser(args[0])).read()
@@ -310,66 +272,6 @@ def cmdline_sync_leaguemaster(*args):
     if len(data) > 0:
         update_leaguemaster_data(data)
 
-
-def cmdline_add_old_league(args):
-    if len(args) != 2:
-        sys.stderr.write("USAGE: {0} {1} <yyyy-mm-dd> <file.csv>\n".format(*sys.argv))
-        sys.exit(1)
-    end_date = timezones.parse_iso_date_to_naive(args[0])
-
-    from wsrc.site.competitions.models import CompetitionGroup
-    from wsrc.site.usermodel.models import Player
-
-    def convert(s):
-        result = ''
-        for c in s:
-            if ord(c) < 127:
-                result += chr(ord(c))
-        return result.lower()
-
-    players = Player.objects.all()
-    players = dict([(convert(p.user.get_full_name()), p) for p in players])
-
-    existing = CompetitionGroup.objects.filter(comp_type="wsrc_boxes", end_date=end_date)
-    if len(existing) > 0:
-        raise Exception("ERROR - league ending " + end_date.isoformat() + " already exists, delete it first!")
-
-    fh = open(os.path.expanduser(args[1]), "r")
-    reader = csv.reader(fh)
-
-    boxes = []
-
-    def is_blank(row):
-        for item in row:
-            if len(item) != 0:
-                return False
-        return True
-
-    for row in reader:
-        if row[0]:
-            league_name = row[0]
-            if league_name == '#':
-                continue
-            current_box = []
-            boxes.append([league_name, current_box])
-        elif is_blank(row):
-            current_box = None
-        else:
-            name = convert(row[1])
-            player = players.get(name)
-            if player is None:
-                raise Exception("ERROR - player {0} not found.".format(name))
-            current_box.append((player, row[3:]))
-
-    LOOKUP_TABLE = PointsTable()
-
-    for kv in boxes:
-        [name, box] = kv
-        kv.pop()
-        matches, players = analyse_box(box, LOOKUP_TABLE)
-        kv.extend([matches, players])
-
-    add_old_league_data(boxes, end_date)
 
 # Local Variables:
 # mode: python

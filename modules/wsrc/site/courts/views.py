@@ -49,7 +49,7 @@ from wsrc.utils.html_table import Table, Cell, SpanningCell
 from .court_slot_utils import add_free_slots
 from .forms import START_TIME, END_TIME, RESOLUTION, COURTS, \
     format_date, make_date_formats, create_notifier_filter_formset_factory, \
-    BookingForm, CalendarInviteForm, CondensationReportForm, using_local_database
+    BookingForm, CalendarInviteForm, CondensationReportForm
 
 LOGGER = logging.getLogger(__name__)
 LOGGER.setLevel(logging.WARNING)
@@ -102,7 +102,7 @@ def auth_query_booking_system(booking_user_id, data={}, query_params={}, method=
 
 
 def get_bookings(date, ignore_cutoff=False):
-    if using_local_database():
+    if True:
         MIDNIGHT_NAIVE = datetime.time()
         date = timezone.make_aware(datetime.datetime.combine(date, MIDNIGHT_NAIVE))
         booked_slots = BookingSystemEvent.get_bookings_for_date(date)
@@ -115,44 +115,19 @@ def get_bookings(date, ignore_cutoff=False):
             add_free_slots(court, booked_slots, date, now, ignore_cutoff)
             results[court] = dict([(slot["start_mins"], slot) for slot in booked_slots])
         return now, results
-    today_str = timezones.as_iso_date(date)
-    tomorrow_str = timezones.as_iso_date(date + datetime.timedelta(days=1))
-    params = {
-        "start_date": today_str,
-        "end_date": tomorrow_str,
-        "with_tokens": 1
-    }
-    server_time, data = query_booking_system(params)
-    courts = data[today_str]
-    return server_time, dict([(int(i), v) for i, v in courts.iteritems()])
 
 
 def get_booking_form_data(id):
-    if using_local_database():
+    if True:
         now = timezone.localtime(timezone.now())
         booking_data = get_object_or_404(BookingSystemEvent, pk=id, is_active=True)
         booking_data = BookingForm.transform_booking_model(booking_data)
         return now, booking_data
-    params = {
-        "id": id,
-        "with_tokens": 1
-    }
-    server_time, data = query_booking_system(params)
-    result = None
-    if data is not None and len(data) > 0:
-        for date, courts in data.iteritems():
-            for court, start_times in courts.iteritems():
-                for start_time, slot in start_times.iteritems():
-                    slot["court"] = int(court)
-                    slot["date"] = date
-                    result = slot
-    booking_data = BookingForm.transform_booking_system_entry(result)
-    return server_time, booking_data
 
 
 @transaction.atomic
 def create_booking(user, slot, is_admin_view=False):
-    if using_local_database():
+    if True:
         now = timezone.localtime(timezone.now())
         model = BookingForm.transform_to_booking_system_event(slot)
         if not is_admin_view and model.hmac_token() != slot.get("token"):
@@ -164,31 +139,13 @@ def create_booking(user, slot, is_admin_view=False):
         model.save()
         return now, model
 
-    player = Player.get_player_for_user(user)
-    booking_user_id = None if player is None else player.booking_system_id
-    if booking_user_id is None:
-        raise SuspiciousOperation()
-
-    start_time = slot["start_time"]
-    data = {
-        "date": timezones.as_iso_date(slot["date"]),
-        "start_mins": start_time.hour * 60 + start_time.minute,
-        "duration_mins": slot["duration"].total_seconds() / 60,
-        "court": slot["court"],
-        "name": slot["name"],
-        "description": slot["description"],
-        "type": slot["booking_type"],
-        "token": slot["token"],
-    }
-    return auth_query_booking_system(booking_user_id, data)
-
 
 @transaction.atomic
 def update_booking(user, event_id, booking_form):
     if event_id is None:
         raise SuspiciousOperation()
 
-    if using_local_database():
+    if True:
         model = get_object_or_404(BookingSystemEvent, pk=event_id, is_active=True)
         if not (model.is_writable_by_user(user) or has_admin_permission(user, False)):
             raise PermissionDenied()
@@ -202,30 +159,13 @@ def update_booking(user, event_id, booking_form):
         now = timezone.localtime(timezone.now())
         return now, model
 
-    slot = booking_form.cleaned_data
-    player = Player.get_player_for_user(user)
-    booking_user_id = None if player is None else player.booking_system_id
-    if booking_user_id is None:
-        raise SuspiciousOperation()
-
-    params = {
-        "id": event_id,
-        "method": "PATCH"
-    }
-    data = {
-        "name": slot["name"],
-        "description": slot["description"],
-        "type": slot["booking_type"],
-    }
-    return auth_query_booking_system(booking_user_id, data, query_params=params)
-
 
 @transaction.atomic
 def delete_booking(user, event_id):
     if event_id is None:
         raise SuspiciousOperation()
 
-    if using_local_database():
+    if True:
         model = get_object_or_404(BookingSystemEvent, pk=event_id, is_active=True)
         if not (model.is_writable_by_user(user) or has_admin_permission(user, False)):
             raise PermissionDenied()
@@ -245,22 +185,9 @@ def delete_booking(user, event_id):
         now = timezone.localtime(timezone.now())
         return now, cal_invite_data
 
-    player = Player.get_player_for_user(user)
-    booking_user_id = None if player is None else player.booking_system_id
-    if booking_user_id is None:
-        raise SuspiciousOperation()
-    params = {
-        "id": event_id,
-        "method": "DELETE"
-    }
-    timestamp, data = auth_query_booking_system(booking_user_id, query_params=params)
-    data = BookingForm.transform_booking_system_deleted_entry(data)
-    data["booking_id"] = event_id
-    return timestamp, data
-
 
 def set_noshow(user, event_id, is_noshow):
-    if using_local_database():
+    if True:
         model = get_object_or_404(BookingSystemEvent, pk=event_id, is_active=True)
         now = timezone.localtime(timezone.now())
         if is_noshow:
@@ -280,17 +207,6 @@ def set_noshow(user, event_id, is_noshow):
             model.no_show_reporter = None
         model.save()
         return now, model
-
-    player = Player.get_player_for_user(user)
-    booking_user_id = None if player is None else player.booking_system_id
-    if booking_user_id is None:
-        raise SuspiciousOperation()
-    params = {
-        "id": event_id,
-    }
-    method = "POST" if is_noshow else "DELETE"
-    return auth_query_booking_system(booking_user_id, query_params=params, path=settings.BOOKING_SYSTEM_NOSHOW,
-                                     method=method)
 
 
 def make_booking_link(slot, court, date, is_admin_view=False):
@@ -412,8 +328,7 @@ def render_day_table(court_slots, date, server_time, allow_booking_shortcut, is_
 
 def has_admin_permission(user, raise_exception=True):
     if user.has_perm("courts.add_bookingsystemevent") and \
-            user.has_perm("courts.add_bookingsystemevent") and \
-            user.has_perm("courts.add_bookingsystemevent"):
+       user.has_perm("courts.change_bookingsystemevent"):
         return True
     if raise_exception:
         raise PermissionDenied("You are not authorized to edit court bookings")
@@ -433,10 +348,9 @@ def day_view(request, date=None, is_admin_view=False):
     else:
         date = timezones.parse_iso_date_to_naive(date)
     player = Player.get_player_for_user(request.user)
-    booking_user_id = None if player is None else player.booking_system_id
     server_time, bookings = get_bookings(date, ignore_cutoff=is_admin_view)
     allow_booking_shortcut = settings.BOOKING_SYSTEM_SETTINGS.get("allow_booking_shortcut") and \
-                             booking_user_id is not None
+                             request.user.is_authenticated()
     if is_admin_view:
         allow_booking_shortcut = False
     table_html = render_day_table(bookings, date, server_time, allow_booking_shortcut, is_admin_view)
@@ -447,7 +361,6 @@ def day_view(request, date=None, is_admin_view=False):
         "prev_date": date - datetime.timedelta(days=1),
         "next_date": date + datetime.timedelta(days=1),
         "day_table": table_html,
-        "booking_user_name": request.user.get_full_name() if booking_user_id is not None else '',
         "court_admin": has_admin_permission(request.user, raise_exception=False),
         "is_admin_view": is_admin_view
     }
@@ -592,16 +505,6 @@ def edit_entry_view(request, event_id=None, is_admin_view=False):
             booking_form = BookingForm(data=initial_data)
             if is_admin_view:
                 booking_form.set_admin()
-            if booking_user_id is None and not using_local_database():
-                link = settings.BOOKING_SYSTEM_ORIGIN + "/day.php"
-                if booking_form.is_valid():
-                    link += "?year={date:%Y}&month={date:%m}&day={date:%d}&area=1".format(
-                        date=booking_form.cleaned_data["date"])
-                error = """Sorry, your login is not set up to book courts from this website.
-                Please contact <a href='mailto:webmaster@wokingsquashclub.org'>webmaster@wokingsquashclub.org</a>
-                to get this fixed, and use the <a href='{link}'>old booking site</a> in the meantime.
-                """.format(link=link)
-                booking_form.add_error(None, error)
         else:
             server_time, booking_data = get_booking_form_data(event_id)
             if booking_data is None:
@@ -819,12 +722,10 @@ def agenda_view(request):
     name_clause |= Q(opponent__icontains=name)
     name_clause |= Q(description__icontains=name)
     if filter_created_by:
-        myself = Player.get_player_for_user(request.user)
-        if myself is not None:
-            name_clause |= Q(created_by=myself)
+        name_clause |= Q(created_by_user=request.user)
 
     agenda_items = agenda_items.filter(name_clause)
-    context = {'agenda_items': agenda_items, 'name': name, 'using_local_database': using_local_database()}
+    context = {'agenda_items': agenda_items, 'name': name}
     return TemplateResponse(request, 'agenda.html', context)
 
 

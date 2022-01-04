@@ -42,10 +42,6 @@ ALL_TIMES = [datetime.time(hour=t / 60, minute=t % 60) for t in range(0, 24 * 60
 DURATIONS = [datetime.timedelta(minutes=i) for i in range(15, END_TIME - START_TIME, 15)]
 
 
-def using_local_database():
-    return hasattr(settings, "BOOKING_SYSTEM_SETTINGS")
-
-
 def get_opponent_names():
     names = [(kv[1], kv[1]) for kv in get_active_user_choices() if kv[0] is not None]
     return [("Solo", "[Solo Practice]"), ("Guest", "[Guest]"),  ("Coaching", "[Coaching]")] + names
@@ -156,14 +152,7 @@ class BookingForm(forms.Form):
         if not self.is_valid():
             return False
 
-        if using_local_database():
-            return BookingSystemEvent.is_writable(self.cleaned_data.get("created_by_id"), user)
-
-        # Legacy system - check the booking user id matches
-        player = Player.get_player_for_user(user)
-        booking_user_id = None if player is None else player.booking_system_id
-        return booking_user_id is not None and \
-               booking_user_id == booking_form.cleaned_data.get("created_by_id")
+        return BookingSystemEvent.is_writable(self.cleaned_data.get("created_by_id"), user)
 
     @staticmethod
     def transform_to_booking_system_event(cleaned_data):
@@ -273,6 +262,14 @@ class CalendarInviteForm(forms.Form):
     invitee_3 = forms.ChoiceField(choices=get_active_user_choices(), widget=LabeledSelect, required=False)
     invitee_4 = forms.ChoiceField(choices=get_active_user_choices(), widget=LabeledSelect, required=False)
 
+    def __init__(self, *args, **kwargs):
+        super(CalendarInviteForm, self).__init__(*args, **kwargs)
+        choices = get_active_user_choices()
+        self.fields["invitee_1"] = forms.ChoiceField(choices=choices, widget=LabeledSelect(attrs={'disabled': 'disabled', 'class': 'readonly'}))
+        self.fields["invitee_2"] = forms.ChoiceField(choices=choices, widget=LabeledSelect(attrs={'autofocus': 'autofocus'}))
+        self.fields["invitee_3"] = forms.ChoiceField(choices=choices, widget=LabeledSelect, required=False)
+        self.fields["invitee_4"] = forms.ChoiceField(choices=choices, widget=LabeledSelect, required=False)
+    
     @staticmethod
     def get_location(booking_data):
         return "Court {court}, Woking Squash Club, Horsell Moor, Woking GU21 4NR".format(**booking_data)

@@ -36,6 +36,8 @@ class LabeledSelect(forms.Select):
     def create_option(self, name, value, label, selected, index, subindex=None, attrs=None):
         option = super(LabeledSelect, self).create_option(name, value, label, selected, index, subindex, attrs)
         option_value = option["value"]
+        if option_value is not None:
+            option_value = force_text(option_value) 
         option_attrs = option["attrs"]
         if option_value is None or len(option_value) == 0:
             option_attrs["label"] = self.default_label
@@ -122,8 +124,8 @@ class CachingModelMultipleChoiceField(CachingModelChoiceField, forms.ModelMultip
 
 def get_related_field_limited_queryset(db_field):
     "Get the default queryset for choices for a related field, limited as specified on the model"
-    rel_field = db_field.rel
+    rel_field = db_field.remote_field
     q_filter = rel_field.limit_choices_to
     if q_filter is not None and len(q_filter) > 0:
-        return rel_field.to.objects.filter(q_filter)
-    return rel_field.to.objects.all()
+        return rel_field.model.objects.filter(q_filter)
+    return rel_field.model.objects.all()

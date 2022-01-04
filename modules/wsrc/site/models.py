@@ -167,6 +167,12 @@ class SquashLevels(models.Model):
     last_match_date = models.DateField()
     last_match_id = models.IntegerField()
     level = models.IntegerField()
+    def __unicode__(self):
+        from django.forms.models import model_to_dict
+        fields = model_to_dict(self)
+        return "{name} ({level})".format(**fields)
+    class Meta:
+        ordering = ["-level"]
 
 class LeagueMasterFixtures(models.Model):
     VENUE_TYPES = (
@@ -182,6 +188,13 @@ class LeagueMasterFixtures(models.Model):
     team1_points = models.IntegerField(blank=True, null=True)
     team2_points = models.IntegerField(blank=True, null=True)
     url = models.CharField(max_length=128, blank=True, null=True)
+    def __unicode__(self):
+        from django.forms.models import model_to_dict
+        fields = model_to_dict(self)
+        return "{date} {team} vs {opponents} ({home_or_away}) ({team1_points} {team2_points})" \
+            .format(**fields)
+    class Meta:
+        ordering = ["date"]
 
 class MaintenanceIssue(models.Model):
     STATUS_VALUES = (

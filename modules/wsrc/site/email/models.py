@@ -39,8 +39,8 @@ class VirtualUser(models.Model):
 
 class VirtualAlias(models.Model):
     from_username = models.CharField("from name", max_length=255)
-    from_domain = models.ForeignKey(VirtualDomain)
-    to = models.ForeignKey(VirtualUser)
+    from_domain = models.ForeignKey(VirtualDomain, on_delete=models.PROTECT)
+    to = models.ForeignKey(VirtualUser, on_delete=models.PROTECT)
     use_user_email = models.BooleanField(default=False)
     def __unicode__(self):
         return "{0}@{1} to {2}".format(self.from_username, self.from_domain.name, self.to)

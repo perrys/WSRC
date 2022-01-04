@@ -64,5 +64,6 @@ setup(name='WSRC',
                     ('www/images', get_images(['resources', 'images'])),
                     ('www/css/images', get_images(['resources', 'css', 'images'])),
                     ('www/css/images/icons-png', glob.glob(os.path.join('resources', 'images', 'icons-png', '*.png'))),
-                    ]
-     )
+                    ],
+      requires=['django']
+)
