@@ -319,7 +319,9 @@ def create_booking_cell_content(slot, court, date, is_admin_view=False):
                 content += "<span class='no_opponent label label-danger'>No Opponent</span>"
             elif opponent == "Solo":
                 content += " [Solo&nbsp;Practice]"
-            elif opponent == "_Coaching_":
+            elif opponent == "Guest":
+                content += " [+&nbsp;Guest]"
+            elif opponent == "Coaching":
                 content += " [Coaching]"
             else:
                 content += " vs " + opponent
