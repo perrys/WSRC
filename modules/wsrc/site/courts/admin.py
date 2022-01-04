@@ -112,7 +112,7 @@ class BookingForm(forms.ModelForm):
 
 class BookingAdmin(CSVModelAdmin):
     form = BookingForm
-    search_fields = ('name', 'description')
+    search_fields = ('name', 'description', 'opponent')
     list_display = (
         "name", "opponent", "is_active", "start_time", "end_time", "court", "event_type", "description",
         "created_by_user", "created_time", "last_updated_by", "last_updated", "used")
