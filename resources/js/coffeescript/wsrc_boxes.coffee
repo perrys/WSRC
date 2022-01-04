@@ -406,7 +406,7 @@ class WSRC_boxes_admin extends WSRC_boxes
       competition_id: competition.id
       template_name: "StartOfNewLeague"
       subject: "New Leagues Ending #{ end_date }"
-      from_address: "leagues@wokingsquashclub.org" 
+      from_address: "#{ @model.comp_type }@wokingsquashclub.org" 
     jqmask  = $("#maskdiv")
     jqmask.css("z-index", "1")
     opts =
