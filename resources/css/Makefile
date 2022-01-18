@@ -1,6 +1,6 @@
 # -*- mode: makefile-gmake; -*-
 
-LESSC = lessc --no-color --strict-math=on
+LESSC = lessc --no-color --strict-math=on --source-map-rootpath=.
 MINIFY = minify 
 
 CSS_TARGETS = _jquery.mobile.datepicker.css wsrc_common.css wsrc_courts.css wsrc_tournaments.css wsrc_reflow_table.css wsrc_scores.css \
