@@ -8,11 +8,11 @@ window.WSRC_homepage =
     table = $("#facebook_news tbody").show()
     if data? and data.data.length > 0
       trim_words = (text) ->
-        return text.split(/\s+/).slice(0,10).join(" ") + "&hellip;"
+        return text.split(/\s+/).slice(0,20).join(" ") + "&hellip;"
       table.find("tr").remove()
       odd = true
       for e in data.data[0..10]
-        dt = e.updated_time or e.created_time
+        dt = e.display_date or e.updated_time or e.created_time
         dt = dt.substring(8,10) + " " + this.MONTHS_OF_YEAR[parseInt(dt.substring(5,7))-1]
         title = if e.message? then e.message else e.description
         unless title
