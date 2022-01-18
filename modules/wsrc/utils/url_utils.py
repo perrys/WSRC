@@ -21,6 +21,8 @@ import urllib2
 
 import httplib2
 
+from wsrc.site.settings import settings
+
 LOGGER = logging.getLogger(__name__)
 
 
@@ -34,7 +36,7 @@ def get_url_params(url):
 def get_content(url, params, headers=None):
     url += "?" + urllib.urlencode(params)
     LOGGER.debug("Fetching {url}".format(**locals()))
-    opener = httplib2.Http()
+    opener = httplib2.Http(ca_certs = settings.CA_CERTS_LOCATION)
     (resp_headers, content) = opener.request(url, "GET", headers=headers)
     return content
 
