@@ -17,7 +17,7 @@
 import sys
 
 from wsrc.site.models import PageContent, SquashLevels, LeagueMasterFixtures, MaintenanceIssue,\
-    Suggestion, ClubEvent, CommitteeMeetingMinutes, NavigationLink, OAuthAccess
+    Suggestion, ClubEvent, CommitteeMeetingMinutes, NavigationLink, OAuthAccess, NewsItem
 from wsrc.site.competitions.models import CompetitionGroup
 from wsrc.site.courts.models import BookingSystemEvent
 from wsrc.site.email.models import VirtualAlias, VirtualDomain
@@ -190,7 +190,7 @@ def generate_tokens(date):
 @require_safe
 def index_view(request):
 
-    ctx = get_pagecontent_ctx('home')
+    ctx = get_pagecontent_ctx(request.GET.get('page', 'home'))
     levels = SquashLevels.objects.values('name', 'level', 'player__squashlevels_id').order_by('-level')
     if len(levels) > 0:
         ctx["squashlevels"] = levels
@@ -242,7 +242,7 @@ def index_view(request):
 
     ctx["bookings"] = JSON_RENDERER.render(bookings_data)
     ctx["today"] = today_str
-    return TemplateResponse(request, 'index.html', ctx)
+    return TemplateResponse(request, request.GET.get('template', 'index') + '.html', ctx)
 
 
 @require_safe
@@ -283,7 +283,11 @@ def facebook_view(request):
 
     try:
         # the response is JSON so pass it straight through
-        data = fb_get()
+#        data = fb_get()
+
+        news_items = [item for item in NewsItem.objects.all()[:10]]
+        from wsrc.utils.jsonutils import serialize
+        data = serialize({"data": news_items})
         return HttpResponse(data, content_type="application/json")
     except FBException, e:
         msg = "ERROR: Unable to fetch Facebook page: {msg} [{code}] - {type}".format(msg=str(e), code=e.statuscode, type=e.errortype)

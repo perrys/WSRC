@@ -21,7 +21,8 @@ from django.db import models
 from django.contrib import admin
 from wsrc.site.models import PageContent, EmailContent, MaintenanceIssue,\
     Suggestion, ClubEvent, CommitteeMeetingMinutes, GenericPDFDocument, Image,\
-    NavigationLink, NavigationNode, OAuthAccess, LeagueMasterFixtures, SquashLevels
+    NavigationLink, NavigationNode, OAuthAccess, LeagueMasterFixtures, SquashLevels,\
+    NewsItem
 
 from django.contrib.admin.models import LogEntry
 admin.site.register(LogEntry)
@@ -65,6 +66,12 @@ class EmailContentAdmin(admin.ModelAdmin):
 
 class ClubEventAdmin(CSVModelAdmin):
     list_display = ("title", "display_date", "display_time")
+    formfield_overrides = {
+        models.TextField: {'widget': txt_widget(20)},
+    }
+
+class NewsItemAdmin(CSVModelAdmin):
+    list_display = ("display_date",)
     formfield_overrides = {
         models.TextField: {'widget': txt_widget(20)},
     }
@@ -132,6 +139,7 @@ admin.site.register(EmailContent, EmailContentAdmin)
 admin.site.register(MaintenanceIssue, MaintenanceIssueAdmin)
 admin.site.register(Suggestion, SuggestionAdmin)
 admin.site.register(ClubEvent, ClubEventAdmin)
+admin.site.register(NewsItem, NewsItemAdmin)
 admin.site.register(CommitteeMeetingMinutes, PDFFileAdmin)
 admin.site.register(GenericPDFDocument, PDFFileAdmin)
 admin.site.register(Image, ImageAdmin)
