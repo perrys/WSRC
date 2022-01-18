@@ -131,16 +131,17 @@ class ClubEvent(models.Model):
 
 class NewsItem(models.Model):
     display_date = models.DateField(blank=True, null=True)
+    title = models.CharField(max_length=255, blank=True, null=True)
     message = models.TextField()
     last_updated = models.DateTimeField(auto_now=True)
-    link = models.CharField(max_length=255)
+    link = models.CharField(max_length=255, blank=True, null=True)
     def __unicode__(self):
-        date_str = self.display_date is not None and\
-                   "{display_date:%Y-%m-%d}".format(**self.__dict__) or ""
-        return "{title} {date}".format(title=self.message, date=date_str)
+        date_str = self.display_date.strftime("%Y-%m-%d") \
+                   if self.display_date is not None else ""
+        return "{title} {date}".format(title=self.title, date=date_str)
     def tojson(self):
         return {"display_date": self.display_date.strftime("%Y-%m-%d"),
-                           "message": self.message, "link": self.link}
+                "title": self.title, "message": self.message, "link": self.link}
     class Meta:
         ordering = ["-display_date"]
         verbose_name = "News Item"

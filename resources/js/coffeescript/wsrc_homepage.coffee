@@ -14,12 +14,12 @@ window.WSRC_homepage =
       for e in data.data[0..10]
         dt = e.display_date or e.updated_time or e.created_time
         dt = dt.substring(8,10) + " " + this.MONTHS_OF_YEAR[parseInt(dt.substring(5,7))-1]
-        title = if e.message? then e.message else e.description
-        unless title
+        title = if e.title? then "<strong>" + e.title + "</strong> &ndash; " else ""
+        message = if e.message? then e.message else e.description
+        unless message
           continue
-        title = trim_words(title)
         link = if e.link? then e.link else "http://www.facebook.com/#{ e.id }" 
-        row = $("<tr><td class='nobreak'><a href='#{ link }'>#{ dt }</td><td>#{ title }</td></tr>")
+        row = $("<tr><td class='nobreak'><a href='#{ link }'>#{ dt }</td><td>#{ title }#{ message }</td></tr>")
         if odd
           row.addClass("odd")
           odd = false

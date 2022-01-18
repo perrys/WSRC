@@ -71,7 +71,7 @@ class ClubEventAdmin(CSVModelAdmin):
     }
 
 class NewsItemAdmin(CSVModelAdmin):
-    list_display = ("display_date",)
+    list_display = ("display_date", "title")
     formfield_overrides = {
         models.TextField: {'widget': txt_widget(20)},
     }
