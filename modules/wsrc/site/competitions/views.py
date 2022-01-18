@@ -578,7 +578,8 @@ class BoxesAdminView(BoxesTemplateViewBase):
         context['player_data'] = JSON_RENDERER.render(dict([(p["id"], p) for p in player_data]))
 
         # add any unstarted competition
-        group_queryset = CompetitionGroup.objects.filter(competition_type=kwargs["comp_type"], competition__state="not_started").order_by('-end_date')
+        comp_type = kwargs["comp_type"]
+        group_queryset = CompetitionGroup.objects.filter(competition_type=comp_type, competition__state="not_started").order_by('-end_date')
         all_entrants = all_leagues = None
         if group_queryset.count() > 0:
             group = group_queryset[0]
@@ -589,12 +590,12 @@ class BoxesAdminView(BoxesTemplateViewBase):
         def create_new_box_config(idx):
             result = {"id": None, "players": None}
             if idx == 0:
-                prefix = "RB" if kwargs["comp_type"] == "squash57_boxes" else ""
+                prefix = "RB" if "squash57" in comp_type else ""
                 result["colspec"] = "single"
                 result["name"] = "Premier %(prefix)s" % locals()
                 result["nthcol"] = "first"
             else:
-                prefix = "RB_" if kwargs["comp_type"] == "squash57_boxes" else ""
+                prefix = "RB_" if "squash57" in comp_type else ""
                 result["colspec"] = "double"
                 suffix = (idx % 2 == 1) and "A" or "B"
                 number = (idx+1)/2
