@@ -78,7 +78,7 @@ urlpatterns = [
 #    url(r'^tournaments/qualifiers/(?P<year>\d{4})/(?P<name>[\w\s]+)?', wsrc.site.competitions.views.boxes_view, {'comp_type': 'qualifiers'}),
     url(r'^tournaments/(\d{4})/([\w\s]+)/print/?$', wsrc.site.competitions.views.bracket_view, {'template_name': 'tournaments_printable.html'}),
     url(r'^tournaments/(\d{4})/([\w\s]+)/?$',       wsrc.site.competitions.views.bracket_view, name="tournament"),
-    url(r'^tournaments/?',                          wsrc.site.competitions.views.bracket_view, {"year":None, "name":"Open"} , name="tournaments"),
+    url(r'^tournaments/?',                          wsrc.site.competitions.views.bracket_view, {"year":None, "name":"Squash Open"} , name="tournaments"),
 
     url(r'^competition/(?P<comp_id>\d+)/match/update/?$', wsrc.site.competitions.views.MatchChooseAndUpdateView.as_view(competition=None), name='match_choose_and_update'),
     url(r'^competition/(?P<comp_id>\d+)/match/(?P<pk>\d+)/?$', wsrc.site.competitions.views.MatchUpdateView.as_view(competition=None), name='match_update'),
