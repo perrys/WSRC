@@ -1,6 +1,7 @@
 *.pyc
 TODO
 TAGS
+.unused-migrations
 
 resources/js/*.min.js
 resources/js/all*.js

@@ -5,7 +5,10 @@
 class WSRC_boxes_model
    
   constructor: (@member_map, @comp_type, @preview_url) ->
-
+    tokens = @comp_type.replace("_", " ").split(" ")
+    capitalize = (s) -> s.charAt(0).toUpperCase() + s.slice(1)
+    tokens = ( capitalize(t) for t in tokens )
+    @comp_type_display = tokens.join(" ")
 
 ################################################################################
 # View - JQuery interactions with the html
@@ -284,26 +287,27 @@ class WSRC_boxes_admin extends WSRC_boxes
     jtable = source_box.parents(".table-wrapper").find("table.leagues")
     source_name = @view.get_table_name(source_box)
     other = (suffix) -> if suffix == "A" then "B" else "A"
-    if source_name == "Premier"
+    prefix = if @model.comp_type.startsWith("squash57") then "RB_" else ""
+    if source_name.startsWith("Premier")
       league_number = 0
-      myself = sibling = "Premier"
-      child_1 = "League 1A"
-      child_2 = "League 1B"
+      myself = sibling = source_name
+      child_1 = "League #{ prefix }1A"
+      child_2 = "League #{ prefix }1B"
     else
       unless source_name.startsWith("League ")
         throw "ERROR: invalid source_name: #{ source_name }"
       league_number = wsrc.utils.to_int(source_name.slice(-2,-1))
       league_suffix = source_name.slice(-1).toUpperCase()
       if league_number == 1
-        parent_1 = "Premier"
+        parent_1 = "Premier #{ prefix }".replace("_", "")
         parent_2 = null
       else
-        parent_1 = "League #{ league_number-1 }#{ league_suffix }"
-        parent_2 = "League #{ league_number-1 }#{ other(league_suffix) }"
-      myself  = "League #{ league_number }#{ league_suffix }"
-      sibling = "League #{ league_number }#{ other(league_suffix) }"
-      child_1 = "League #{ league_number+1 }#{ league_suffix }"
-      child_2 = "League #{ league_number+1 }#{ other(league_suffix) }"
+        parent_1 = "League #{ prefix }#{ league_number-1 }#{ league_suffix }"
+        parent_2 = "League #{ prefix }#{ league_number-1 }#{ other(league_suffix) }"
+      myself  = "League #{ prefix }#{ league_number }#{ league_suffix }"
+      sibling = "League #{ prefix }#{ league_number }#{ other(league_suffix) }"
+      child_1 = "League #{ prefix }#{ league_number+1 }#{ league_suffix }"
+      child_2 = "League #{ prefix }#{ league_number+1 }#{ other(league_suffix) }"
 
     entrants = @collect_source_league_players(jtable)
     idx = 1
@@ -404,8 +408,8 @@ class WSRC_boxes_admin extends WSRC_boxes
     end_date = wsrc.utils.js_to_readable_date_str(end_date)
     data =
       competition_id: competition.id
-      template_name: "StartOfNewLeague"
-      subject: "New Leagues Ending #{ end_date }"
+      template_name: "New Competition [#{ @model.comp_type }]"
+      subject: "New #{ @model.comp_type_display } Ending #{ end_date }"
       from_address: "#{ @model.comp_type }@wokingsquashclub.org" 
     jqmask  = $("#maskdiv")
     jqmask.css("z-index", "1")
@@ -472,7 +476,7 @@ class WSRC_boxes_admin extends WSRC_boxes
       return
     end_js_date = wsrc.utils.iso_to_js_date(end_date)
     comp_group =
-      name: "Leagues Ending #{ wsrc.utils.js_to_readable_date_str(end_js_date) }"
+      name: "#{@model.comp_type_display} Ending #{ wsrc.utils.js_to_readable_date_str(end_js_date) }"
       end_date: end_date
       competition_type: @model.comp_type
       active: false
