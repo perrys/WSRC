@@ -1,0 +1,4 @@
+set -eo pipefail
+export PIP_CERT=/app/ca-certificates.crt
+ls -l $PIP_CERT
+pip install -r /app/requirements.txt

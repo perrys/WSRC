@@ -1,0 +1,71 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
+"""
+Simply utility to convert the fixtures table on county leaguemaster to a set of booking commands.
+
+To use, grab the relevant html table from county leaguemaster: (select league) -> Clubs -> View Fixtures/Results,  and then load the html into libreoffice. Save as a csv and pipe into this command. Supply StartTime, Duration, Courts and Court columns to override the defaults if required. 
+"""
+
+from __future__ import print_function
+import csv
+import sys
+import datetime
+
+COMMAND = "wsrc create-booking"
+
+REQUIRE_CONFIRMATION = False
+
+def write_cmd(row):
+    fields = dict(row)
+    fields["DateString"] = fields["Date"]
+    fields["Date"] = datetime.datetime.strptime(fields["Date"][:18], "%a %d/%m/%y %H:%M")
+    time = fields.get("StartTime", None)
+    duration = fields.get("Slots", None)
+    if duration is None:
+        duration = 3
+    else:
+        duration = int(duration)
+    fields["Duration"] = duration * 45
+    if time is not None and len(time) > 0:
+        fields["Time"] = datetime.datetime.strptime(time[:5], "%H:%M")
+    else:
+        fields["Time"] = fields["Date"]
+    ncourts = fields.get("Courts", 2)
+    if not ncourts:
+        ncourts = 2
+    ncourts = int(ncourts)
+    start_court = fields.get("Court", 1)
+    if not start_court:
+        start_court = 1
+    else:
+        start_court = int(start_court)
+        
+    print("# {DateString} (actual {Time:%H:%M}) {Home Team} vs {Opponents}".format(**fields))
+    if (not REQUIRE_CONFIRMATION) or fields["DateString"].strip().endswith("(c)"):
+        court = start_court
+        while ncourts >= 1 :
+            fields["Court"] = court
+            print(COMMAND + " --date={Date:%Y-%m-%d} --court={Court} --times={Time:%H:%M} --duration={Duration} --name=\"{Home Team} vs {Opponents}\"".format(**fields))
+            fields["Time"] = fields["Time"] + datetime.timedelta(minutes=15)
+            court += 1
+            ncourts -= 1
+    else:
+        print("# Not booking as unconfirmed")
+    print("\n")
+
+def main(fh=sys.stdin):
+    reader = csv.DictReader(fh)
+    for row in reader:
+        if "Venue" in row:
+            if "Home" in row.get("Venue"):
+                home_team = " ".join(sys.argv[1:])
+                row["Home Team"] = home_team
+                write_cmd(row)
+        else:
+            if "Woking" in row.get("Home Team"):
+                row["Opponents"] = row["Away Team"]
+                write_cmd(row)
+            
+if __name__ == "__main__":
+    main(sys.stdin)
