@@ -4,27 +4,29 @@
 JS_SRCS  = resources/js/main.js
 
 
-.PHONY: build build_js build_css install dist clean etags
+.PHONY: build build_js build_css install dist clean etags update_npm
 
 build: build_css build_js
 
-build_css:
-	$(MAKE) -C resources/css
+build_using_docker:
 
-build_js:
-	$(MAKE) -C resources/js
+update_npm:
+	npm install
+
+build_css: update_npm
+	PATH=${PATH}:${PWD}/node_modules/.bin $(MAKE) -C resources/css
+
+build_js: update_npm
+	PATH=${PATH}:${PWD}/node_modules/.bin $(MAKE) -C resources/js
 
 install: build 
-	python ./setup.py install
-
-bdist: build
-	python ./setup.py bdist
-
-bdist_windows: build
-	python ./setup.py bdist_wininst
+	docker run -u`id -u`:`id -g` -v .:/mnt --entrypoint /mnt/run_docker_build.sh grahamdumpleton/mod-wsgi-docker:python-2.7-onbuild 
+	mkdir -p install/certs
+	cp /etc/ssl/certs/ca-certificates.crt install/certs
+	docker build -f Dockerfile -t wsrc install
 
 clean:
-	/bin/rm -rf build dist
+	/bin/rm -rf build install
 	find . -name '*.pyc' -exec /bin/rm {} \;
 
 etags: 

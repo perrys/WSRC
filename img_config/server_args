@@ -1,0 +1,3 @@
+--working-directory lib/python2.7/site-packages
+--url-alias /static resources
+lib/python2.7/site-packages/wsrc/site/settings/wsgi.py

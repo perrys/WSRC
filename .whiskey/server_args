@@ -1,3 +1,0 @@
---working-directory modules
---url-alias /static resources
-modules/wsrc/site/settings/wsgi.py

@@ -60,3 +60,6 @@ npm install -g bootstrap@3
 
 ```
 
+To run from docker container locally:
+
+docker run -v ~/etc:/home/whiskey/etc -v /var/run/mysqld:/var/run/mysqld -p 8080:80 wsrc

@@ -1,0 +1,28 @@
+{
+  "dependencies": {
+    "coffee-script": "^1.8.0",
+    "less": "^2.5.0",
+    "minify": "^1.4.3"
+  },
+  "name": "wsrc",
+  "description": "WSRC ====",
+  "version": "1.0.0",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/perrys/WSRC.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/perrys/WSRC/issues"
+  },
+  "homepage": "https://github.com/perrys/WSRC#readme"
+}
