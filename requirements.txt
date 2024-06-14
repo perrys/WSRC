@@ -6,7 +6,7 @@ httplib2==0.22.0
 icalendar==4.1.1
 lxml==5.0.2
 Markdown==3.1.1
-mod-wsgi==4.5.18
+mod-wsgi==4.9.3
 mysqlclient==1.4.6
 pyparsing==2.4.7
 python-dateutil==2.9.0.post0
