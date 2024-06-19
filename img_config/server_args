@@ -1,3 +1,4 @@
 --working-directory lib/python2.7/site-packages
---url-alias /static resources
+--url-alias /static www
+--url-alias /static/admin /usr/local/python/lib/python2.7/site-packages/django/contrib/admin/static/admin
 lib/python2.7/site-packages/wsrc/site/settings/wsgi.py

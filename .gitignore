@@ -32,3 +32,5 @@ docs
 etc
 build
 dist
+install
+node_modules
