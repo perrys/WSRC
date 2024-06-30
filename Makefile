@@ -8,8 +8,6 @@ JS_SRCS  = resources/js/main.js
 
 build: build_css build_js
 
-build_using_docker:
-
 update_npm:
 	npm install
 

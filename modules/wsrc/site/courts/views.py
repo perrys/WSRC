@@ -21,7 +21,6 @@ import logging
 import operator
 import urllib
 
-import httplib2
 import pytz
 from django import forms
 from django.contrib.auth.decorators import login_required, user_passes_test
@@ -54,7 +53,6 @@ from .forms import START_TIME, END_TIME, RESOLUTION, COURTS, \
 LOGGER = logging.getLogger(__name__)
 LOGGER.setLevel(logging.WARNING)
 
-BOOKING_SYSTEM_EMAIL_ADDRESS = "court_booking@wokingsquashclub.org"
 
 
 class RemoteException(Exception):
@@ -76,29 +74,6 @@ def get_server_time(headers):
                 raise Exception("Expected server time to be returned in GMT")
             date = datetime.datetime.strptime(val, "%a, %d %b %Y %H:%M:%S %Z")
             return timezones.naive_utc_to_local(date, timezones.UK_TZINFO)
-
-
-def query_booking_system(query_params={}, body=None, method="GET", path=settings.BOOKING_SYSTEM_PATH):
-    url = settings.BOOKING_SYSTEM_ORIGIN + path + "?" + urllib.urlencode(query_params)
-    h = httplib2.Http()
-    (resp_headers, content) = h.request(url, method=method, body=body)
-    server_time = get_server_time(resp_headers.items())
-    if resp_headers.status in (httplib.CREATED, httplib.ACCEPTED):
-        return server_time, None
-    if resp_headers.status == httplib.OK:
-        return server_time, json.loads(content)
-    raise RemoteException(content, resp_headers.status)
-
-
-def auth_query_booking_system(booking_user_id, data={}, query_params={}, method="POST",
-                              path=settings.BOOKING_SYSTEM_PATH):
-    booking_user_token = BookingSystemEvent.generate_hmac_token_raw("id:{booking_user_id}".format(**locals()))
-    data = dict(data)
-    data.update({
-        "user_id": booking_user_id,
-        "user_token": booking_user_token
-    })
-    return query_booking_system(query_params, json.dumps(data), method, path)
 
 
 def get_bookings(date, ignore_cutoff=False):
@@ -349,7 +324,7 @@ def day_view(request, date=None, is_admin_view=False):
         date = timezones.parse_iso_date_to_naive(date)
     player = Player.get_player_for_user(request.user)
     server_time, bookings = get_bookings(date, ignore_cutoff=is_admin_view)
-    allow_booking_shortcut = settings.BOOKING_SYSTEM_SETTINGS.get("allow_booking_shortcut") and \
+    allow_booking_shortcut = settings.BOOKING_SYSTEM_ALLOW_BOOKING_SHORTCUT and \
                              request.user.is_authenticated()
     if is_admin_view:
         allow_booking_shortcut = False
@@ -400,7 +375,7 @@ def edit_entry_view(request, event_id=None, is_admin_view=False):
         booking_form = BookingForm(request.POST)
         if booking_form.is_valid():
             opponent = booking_form.cleaned_data["opponent"]
-            if settings.BOOKING_SYSTEM_SETTINGS.get("require_opponent") and \
+            if settings.BOOKING_SYSTEM_REQUIRE_OPPONENT and \
                     opponent is None or len(opponent) == 0:
                 booking_form.add_error("opponent", "Please enter the name of your opponent, or 'Solo Practice'")
                 booking_form.is_retry = True
@@ -587,7 +562,7 @@ def send_calendar_invite(request, slot, recipients, event_type):
     subject = "WSRC Court Booking - {date:%Y-%m-%d} {start_time:%H:%M} Court {court}".format(**slot)
     try:
         email_utils.send_email(subject, "", None,
-                               from_address=BOOKING_SYSTEM_EMAIL_ADDRESS,
+                               from_address=settings.BOOKING_SYSTEM_EMAIL_ADDRESS,
                                to_list=to_list, cc_list=None,
                                extra_attachments=[msg_bodies, msg_cal])
     except Exception, e:
@@ -626,7 +601,7 @@ def create_icalendar(request, cal_data, recipients, method):
 
     evt = Event()
     evt.add("uid", "WSRC_booking_{booking_id}".format(**cal_data))
-    organizer = vCalAddress("MAILTO:{email}".format(email=BOOKING_SYSTEM_EMAIL_ADDRESS))
+    organizer = vCalAddress("MAILTO:{email}".format(email=settings.BOOKING_SYSTEM_EMAIL_ADDRESS))
     organizer.params["cn"] = vText("Woking Squash Club")
     evt.add("organizer", organizer)
 

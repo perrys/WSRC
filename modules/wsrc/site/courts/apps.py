@@ -21,6 +21,6 @@ class CourtsModelAppConfig(AppConfig):
     name = 'wsrc.site.courts'
     def ready(self):
         import wsrc.site.settings.settings as settings
-        if hasattr(settings, "BOOKING_SYSTEM_SETTINGS"):
-            import signals
+        if hasattr(settings, "BOOKING_SYSTEM_STARTS_ENDS"):
+            import signal
         

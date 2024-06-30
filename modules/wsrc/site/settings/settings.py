@@ -13,8 +13,7 @@ import os
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
 
-# Import sensitive settings not stored in this file
-execfile(os.path.expanduser("~/etc/.wsrc-settings"))
+SECRET_KEY = os.getenv('SECRET_KEY')
 
 TEMPLATES = [
     {
@@ -67,12 +66,20 @@ ROOT_URLCONF = 'wsrc.site.settings.urls'
 
 WSGI_APPLICATION = 'wsrc.site.settings.wsgi.application'
 
+SESSION_COOKIE_SECURE = True
+CSRF_COOKIE_SECURE = True
 
 # Database
 # https://docs.djangoproject.com/en/1.6/ref/settings/#databases
 
 DATABASES = {
-    'default': _WSRC_SETTINGS["default_db"]
+    'default': {
+        'ENGINE': 'django.db.backends.mysql',
+        'HOST': os.getenv('DB_HOST'),
+        'NAME': os.getenv('DB_NAME'),
+        'USER': os.getenv('DB_USER'),
+        'PASSWORD': os.getenv('DB_PASSWORD')
+    },
 }
 
 # Internationalization
@@ -103,10 +110,21 @@ STATICFILES_DIRS = (
     '/var/www/static',
 )
 
+MEDIA_ROOT = os.getenv('MEDIA_ROOT')
+MEDIA_URL = os.getenv('MEDIA_URL')
 INTERNAL_IPS = "127.0.0.1"
 
 DEFAULT_FROM_EMAIL = "webmaster@wokingsquashclub.org"
 SERVER_EMAIL       = "admin@wokingsquashclub.org"
+
+EMAIL_BACKEND       = os.getenv('EMAIL_BACKEND', 'django.core.mail.backends.console.EmailBackend')
+
+EMAIL_HOST          = os.getenv('EMAIL_HOST')
+EMAIL_HOST_USER     = os.getenv('EMAIL_HOST_USER')
+EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD')
+
+EMAIL_PORT          = int(os.getenv('EMAIL_PORT', '587'))
+EMAIL_USE_TLS       = True
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
@@ -114,4 +132,23 @@ REST_FRAMEWORK = {
     )
 }
 
+ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
+DEBUG = os.getenv("DEBUG") is not None
+if DEBUG:  
+  import urllib2
+  try:
+    sock = urllib2.urlopen("https://checkip.amazonaws.com/")
+    my_ip = sock.read().strip()
+    print "adding local IP " + str(my_ip)
+    ALLOWED_HOSTS.append(my_ip)
+  except Exception, ex:
+    print str(ex)
+
+BOOKING_SYSTEM_HMAC_KEY = os.getenv('BOOKING_SYSTEM_HMAC_KEY')
+BOOKING_SYSTEM_RESOLUTION_MINS = int(os.getenv("BOOKING_SYSTEM_RESOLUTION_MINS"))
+BOOKING_SYSTEM_STAGGER_SET = int(os.getenv("BOOKING_SYSTEM_STAGGER_SET"))
+BOOKING_SYSTEM_STARTS_ENDS = [int(t) for t in os.getenv("BOOKING_SYSTEM_STARTS_ENDS").split(',')]
+BOOKING_SYSTEM_CUTOFF_DAYS = int(os.getenv("BOOKING_SYSTEM_CUTOFF_DAYS"))
+BOOKING_SYSTEM_REQUIRE_OPPONENT = bool(os.getenv("BOOKING_SYSTEM_REQUIRE_OPPONENT", "True"))
+BOOKING_SYSTEM_ALLOW_BOOKING_SHORTCUT = False
 
