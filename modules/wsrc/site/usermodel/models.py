@@ -493,7 +493,7 @@ class MembershipApplication(AbstractPlayer, AbstractSubscription):
     def clean_fields(self, *args, **kwargs):
         super(MembershipApplication, self).clean_fields(*args, **kwargs)
         result = {}
-        for field in ["prefs_display_contact_details", "prefs_receive_email", "prefs_esra_member"]:
+        for field in ["prefs_display_contact_details", "prefs_receive_email"]:
             if getattr(self, field) is None:
                 result[field] = ValidationError("You must choose Yes or No.")
         if self.signed_off:

@@ -54,7 +54,6 @@
 <fieldset name="data_protection">
   <legend>Data Protection</legend>
   {% include "form_field_snippet.html" with field=form.prefs_receive_email %}
-  {% include "form_field_snippet.html" with field=form.prefs_esra_member label="England Squash Enrolment<sup>&dagger;</sup>" %}
   {% include "form_field_snippet.html" with field=form.prefs_display_contact_details %}
 </fieldset>
 
@@ -72,13 +71,6 @@
   <br>
   <button class="btn btn-primary" type="submit" value="Update" disabled="disabled"><span class="glyphicon glyphicon-ok"></span>&nbsp;Submit</button>
 </div>
-
-<hr />
-<footer class="small">
-  <p>
-    <sup>&dagger;</sup> For more information, visit the <a class="underline" href="http://www.englandsquash.com/membership/players">England Squash website</a>. If you do not want us to pass on your email address, you can always apply to England Squash directly at a later time. Note that you will not be able to play in Surrey league competitions or national competitions if you are not an England Squash member.
-  </p>
-</footer>
 
 </form>
 
